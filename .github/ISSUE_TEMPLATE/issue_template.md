@@ -11,7 +11,7 @@ assignees: ''
 A clear and concise description of what the issue is about.
 
 #### Screenshots
-![Downhill Windmills](http://i.giphy.com/KO8AG2EByqkFi.gif)
+A list of relevant Screenshots for this issue. This will help people navigate the project and offer some clues of where to start.
 
 #### Files
 A list of relevant files for this issue. This will help people navigate the project and offer some clues of where to start.
@@ -25,4 +25,3 @@ Include specific tasks in the order they need to be done in. Include links to sp
 - [ ] Task 2
 - [ ] Task 3
 
-Remember to use helpful labels and milestones. If you use the "help wanted" label, Code for America will [promote it widely](http://www.codeforamerica.org/geeks/civicissues).
