@@ -4,7 +4,7 @@ description: API reference for the error.js special file.
 related:
   title: Learn more about error handling
   links:
-    - app/building-your-application/routing/error-handling
+    - app-router/building-your-application/routing/error-handling
 sidebar_position: 2
 ---
 
@@ -70,8 +70,6 @@ Server Component でスローされたエラーの自動生成ハッシュ。サ
 
 > **Good to know**:
 
-<!-- TODO: fix link -->
-
 > - `error.js` は[Client Component](/docs/app-router/building-your-application/rendering/client-components)である必要があります
 > - プロダクション用のビルドでは、Server Components から転送されたエラーは、機密情報の漏洩を避けるために、特定のエラー詳細が取り除かれます
 > - `error.js`バウンダリは、**同じ**Segment 内の`layout.js`コンポーネントでスローされたエラーを処理しません。なぜなら、エラーバウンダリはそのレイアウト・コンポーネントの中にネストされているからです
@@ -107,6 +105,10 @@ export default function GlobalError({
 >
 > - `global-error.js`は、アクティブになるとルートの`layout.js`と置き換わるので、`<html>`タグと`<body>`タグを定義する必要があります
 > - エラー UI をデザインする際、[React Developer Tools](https://ja.react.dev/learn/react-developer-tools)を使って手動でエラーバウンダリに切り替えると便利です
+
+## `not-found.js`
+
+[not-found](/docs/app-router/api-reference/file-conventions/not-found) ファイルは、ルートセグメント内で `notFound()` 関数がスローされたときに UI をレンダリングするために使用されます。
 
 ## バージョン履歴
 

@@ -3,18 +3,16 @@ title: インストール
 description: Create a new Next.js application with `create-next-app`. Set up TypeScript, styles, and configure your `next.config.js` file.
 related:
   title: Next Steps
-  description: For more information on what to do next, we recommend the following sections
+  description: Learn about the files and folders in your Next.js project.
   links:
-    - getting-started/react-essentials
-    - app/building-your-application
-    - app/building-your-application/configuring/typescript
+    - getting-started/project-structure
 ---
 
 # インストール
 
 システム要件：
 
-- [Node.js 16.8](https://nodejs.org/)以降
+- [Node.js 18.17](https://nodejs.org/)以降
 - macOS, Windows（WSL 含む）、Linux
 
 ## 自動インストール
@@ -34,12 +32,16 @@ Would you like to use ESLint? No / Yes
 Would you like to use Tailwind CSS? No / Yes
 Would you like to use `src/` directory? No / Yes
 Would you like to use App Router? (recommended) No / Yes
-Would you like to customize the default import alias? No / Yes
+Would you like to customize the default import alias (@/*)? No / Yes
+What import alias would you like configured? @/*
 ```
 
-Next.js では、TypeScript、ESLint、Tailwind CSS の設定がデフォルトで同梱されるようになりました。またアプリケーションコードに`src`ディレクトリを使用できます。
-
 プロンプトの後、`create-next-app`はプロジェクト名のフォルダを作成し、必要な依存関係をインストールします。
+
+> **Good to know**:
+>
+> - Next.js では、[TypeScript](/docs/app-router/building-your-application/configuring/typescript)、[ESLint](/docs/app-router/building-your-application/configuring/eslint)、[Tailwind CSS](/docs/app-router/building-your-application/styling/tailwind-css) の設定がデフォルトで提供されるようになりました。
+> - オプションで、プロジェクトのルートに [src ディレクトリ](/docs/app-router/building-your-application/configuring/src-directory)を使い、アプリケーションのコードと設定ファイルを分けることができます。
 
 ## 手動インストール
 
@@ -75,13 +77,13 @@ Next.js はファイルシステムによるルーティングを使用します
 
 ## `app` ディレクトリ
 
-新しいアプリケーションには、App Router の使用をお勧めします。この Router は、React の最新機能を使うことができ、コミュニティからのフィードバックに基づいて Pages Router を進化させたものです。
+新しいアプリケーションには、[App Router](/docs/app-router) の使用をお勧めします。この Router は、React の最新機能を使うことができ、コミュニティからのフィードバックに基づいて [Pages Router](https://nextjs.org/docs/pages) を進化させたものです。
 
 App Router を使用するには、`app/`フォルダを作成し、`layout.tsx`と`page.tsx`ファイルを追加します。これらは、ユーザーがアプリケーションのルート（`/`）へアクセスしたときにレンダリングされます。
 
 ![](../assets/app-getting-started.svg)
 
-`app/layout.tsx`内に、必要な`<html>`タグと`<body>`タグを含むルート・レイアウトを作成します：
+`app/layout.tsx`内に、必要な`<html>`タグと`<body>`タグを含む[ルート・レイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#ルートレイアウト-必須)を作成します：
 
 ```tsx title="app/layout.tsx"
 export default function RootLayout({

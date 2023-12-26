@@ -6,26 +6,6 @@ description: A list of folders and files conventions in a Next.js project
 
 このページでは、Next.js プロジェクトのファイルおよびフォルダー構造の概要を説明します。トップレベルのファイルやフォルダ、設定ファイル、そして `app` ディレクトリと `pages` ディレクトリ内のルーティング規約について説明します。
 
-## トップレベルファイル
-
-|                                                                                                    |                                        |
-| -------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| **Next.js**                                                                                        |                                        |
-| [`next.config.js`](/docs/app-router/api-reference/next-config-js/)                                 | Next.js の設定ファイル                 |
-| [`middleware.ts`](/docs/app-router/building-your-application/routing/middleware)                   | Next.js のリクエスト Middleware        |
-| [`instrumentation.ts`](/docs/app-router/building-your-application/optimizing/instrumentation)      | OpenTelemetry と Instrumentation       |
-| [`.env`](/docs/app-router/building-your-application/configuring/environment-variables)             | 環境変数                               |
-| [`.env.local`](/docs/app-router/building-your-application/configuring/environment-variables)       | ローカル環境変数                       |
-| [`.env.production`](/docs/app-router/building-your-application/configuring/environment-variables)  | プロダクション環境変数                 |
-| [`.env.development`](/docs/app-router/building-your-application/configuring/environment-variables) | 開発環境変数                           |
-| `.next-env.d.ts`                                                                                   | Next.js の TypeScript 定義ファイル     |
-| **Ecosystem**                                                                                      |                                        |
-| [`package.json`](/docs/app-router/getting-started/installation)                                    | プロジェクトの依存関係およびスクリプト |
-| `.gitignore`                                                                                       | Git が無視するファイルやフォルダの定義 |
-| `tsconfig.json`                                                                                    | TypeScript 用の設定ファイル            |
-| `jsconfig.json`                                                                                    | JavaScript 用の設定ファイル            |
-| [`.eslintrc.json`](/docs/app-router/building-your-application/configuring/eslint)                  | ESLint の設定ファイル                  |
-
 ## トップレベルフォルダ
 
 |                                                                                 |                                                |
@@ -34,6 +14,25 @@ description: A list of folders and files conventions in a Next.js project
 | [`pages`](https://nextjs.org/docs/pages/building-your-application/routing)      | Pages Router                                   |
 | [`public`](/docs/app-router/building-your-application/optimizing/static-assets) | 配信される静的アセット                         |
 | [`src`](/docs/app-router/building-your-application/configuring/src-directory)   | （オプション）アプリケーションのソースフォルダ |
+
+## トップレベルファイル
+
+|                                                                                                    |                                        |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **Next.js**                                                                                        |                                        |
+| [`next.config.js`](/docs/app-router/api-reference/next-config-js/)                                 | Next.js の設定ファイル                 |
+| [`package.json`](/docs/app-router/getting-started/installation)                                    | プロジェクトの依存関係およびスクリプト |
+| [`instrumentation.ts`](/docs/app-router/building-your-application/optimizing/instrumentation)      | OpenTelemetry と Instrumentation       |
+| [`middleware.ts`](/docs/app-router/building-your-application/routing/middleware)                   | Next.js のリクエスト Middleware        |
+| [`.env`](/docs/app-router/building-your-application/configuring/environment-variables)             | 環境変数                               |
+| [`.env.local`](/docs/app-router/building-your-application/configuring/environment-variables)       | ローカル環境変数                       |
+| [`.env.production`](/docs/app-router/building-your-application/configuring/environment-variables)  | プロダクション環境変数                 |
+| [`.env.development`](/docs/app-router/building-your-application/configuring/environment-variables) | 開発環境変数                           |
+| [`.eslintrc.json`](/docs/app-router/building-your-application/configuring/eslint)                  | ESLint の設定ファイル                  |
+| `.gitignore`                                                                                       | Git が無視するファイルやフォルダの定義 |
+| `.next-env.d.ts`                                                                                   | Next.js の TypeScript 定義ファイル     |
+| `tsconfig.json`                                                                                    | TypeScript 用の設定ファイル            |
+| `jsconfig.json`                                                                                    | JavaScript 用の設定ファイル            |
 
 ## `app` Routing の規則
 
@@ -60,13 +59,18 @@ description: A list of folders and files conventions in a Next.js project
 
 ### Dynamic Routes
 
-|                                                                                                                         |                                                           |
-| ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| [`[folder]`](/docs/app-router/building-your-application/routing/dynamic-routes#規約)                                    | Dynamic route Segment                                     |
-| [`[...folder]`](/docs/app-router/building-your-application/routing/dynamic-routes#キャッチオール-segment)               | Catch-all Segment                                         |
-| [`[[...folder]]`](/docs/app-router/building-your-application/routing/dynamic-routes#オプションのキャッチオール-segment) | Optional catch-all Segment                                |
-| [`(folder)`](/docs/app-router/building-your-application/routing/route-groups#規約)                                      | ルーティングに影響を与えずにルートをグループ化する        |
-| [`_folder`](/docs/app-router/building-your-application/routing/colocation#プライベートフォルダ)                         | フォルダーとすべての子 Segment をルーティングから除外する |
+|                                                                                                                         |                            |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| [`[folder]`](/docs/app-router/building-your-application/routing/dynamic-routes#規約)                                    | Dynamic route Segment      |
+| [`[...folder]`](/docs/app-router/building-your-application/routing/dynamic-routes#キャッチオール-segment)               | Catch-all Segment          |
+| [`[[...folder]]`](/docs/app-router/building-your-application/routing/dynamic-routes#オプションのキャッチオール-segment) | Optional catch-all Segment |
+
+### Route Groups と Private Folders
+
+|                                                                                                 |                                                           |
+| ----------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| [`(folder)`](/docs/app-router/building-your-application/routing/route-groups#規約)              | ルーティングに影響を与えずにルートをグループ化する        |
+| [`_folder`](/docs/app-router/building-your-application/routing/colocation#プライベートフォルダ) | フォルダーとすべての子 Segment をルーティングから除外する |
 
 ### Parallel と Intercepted Routes
 

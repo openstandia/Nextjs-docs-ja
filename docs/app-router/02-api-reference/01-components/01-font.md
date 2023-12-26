@@ -4,7 +4,7 @@ nav_title: Font
 description: Optimizing loading web fonts with the built-in `next/font` loaders.
 ---
 
-この API リファレンスは、`next/font/google`と`next/font/local`の使い方を理解するのに役立ちます。機能や使い方については、[フォントの最適化](/docs/app-router/building-your-application/optimizing/fonts)ページを参照してください。
+この API リファレンスは、[`next/font/google`](/docs/app-router/building-your-application/optimizing/fonts#google-fonts)と[`next/font/local`](/docs/app-router/building-your-application/optimizing/fonts#ローカルのフォント)の使い方を理解するのに役立ちます。機能や使い方については、[フォントの最適化](/docs/app-router/building-your-application/optimizing/fonts)ページを参照してください。
 
 ## Font 関数の引数
 

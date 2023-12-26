@@ -151,10 +151,9 @@ const config = {
         { name: 'twitter:card', content: 'summary_large_image' },
         {
           name: 'twitter:image',
-          content: 'https://ja.next-community-docs.dev/img/logo.svg',
+          content: 'https://ja.next-community-docs.dev/img/logo.png',
         },
         { name: 'twitter:title', content: 'Next.js Docs' },
-        { name: 'twitter:site', content: '@OpenStandia' },
         {
           name: 'twitter:description',
           content:
@@ -163,7 +162,7 @@ const config = {
         { property: 'og:site_name', content: 'Next.js Docs' },
         {
           property: 'og:image',
-          content: 'https://ja.next-community-docs.dev/img/logo.svg',
+          content: 'https://ja.next-community-docs.dev/img/logo.png',
         },
       ],
     }),

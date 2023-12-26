@@ -27,8 +27,6 @@ Next.js の Metadata API では、ページの`<head>`要素を変更できま�
 - **設定ベースのメタデータ**: 静的なメタデータ・オブジェクトまたは動的な`generateMetadata`関数を`layout.js`または`page.js`ファイルにエクスポートします
 - **ファイルベースのメタデータ**: ルート Segment に静的または動的に生成された特殊ファイルを追加します
 
-<!-- TODO: Fix link -->
-
 さらに、[`imageResponse`](/docs/app-router/api-reference/functions/image-response)コンストラクタを使用して、JSX と CSS をから動的な Open Graph 画像を作成できます。
 
 ## 静的アセット
@@ -36,7 +34,5 @@ Next.js の Metadata API では、ページの`<head>`要素を変更できま�
 Next.js の`/public`フォルダは、画像やフォントなどの静的アセットを配信するために使用できます。`/public`フォルダ内のファイルは、CDN プロバイダーによってキャッシュされ、効率的に配信されます。
 
 ## 分析とモニタリング
-
-<!-- TODO: Fix link -->
 
 大規模なアプリケーションの場合、Next.js は一般的な分析ツールやモニタリングツールと統合して、アプリケーションのパフォーマンスを把握するのに役立ちます。詳しくは[OpenTelemetry](https://nextjs.org/docs/pages/building-your-application/optimizing/open-telemetry)と[Instrumentation](https://nextjs.org/docs/pages/building-your-application/optimizing/instrumentation)ガイドをご覧ください。

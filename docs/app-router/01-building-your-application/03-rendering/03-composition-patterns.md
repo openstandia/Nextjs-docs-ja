@@ -38,8 +38,6 @@ Server Component と Client Component の使用例を簡単にまとめました
 
 <!-- textlint-enable -->
 
-<!-- TODO: Fix link -->
-
 React のメモ化の詳細は[こちら](/docs/app-router/building-your-application/caching#request-memoization)を参照してください。
 
 ### サーバー専用のコードをクライアント環境に持ち込まない
@@ -247,7 +245,7 @@ export default function RootLayout({
 
 バンドラーによっては`"use client"`ディレクティブを削除する場合があります。`"use client"`ディレクティブを含めるように esbuild を設定する例は、[React Wrap Balancer](https://github.com/shuding/react-wrap-balancer/blob/main/tsup.config.ts#L10-L13)と[Vercel Analytics](https://github.com/vercel/analytics/blob/main/packages/web/tsup.config.js#L26-L30)のリポジトリにあります。
 
-## Client Component
+## Client Components
 
 ### クライアントのコンポーネントをツリーの下部に移動する
 

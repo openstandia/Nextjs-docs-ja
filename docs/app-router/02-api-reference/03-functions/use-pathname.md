@@ -5,7 +5,7 @@ description: API Reference for the usePathname hook.
 
 `usePathname`は、現在の URL のパス名を読み取るための**Client Component**のフックです。
 
-```tsx filename="app/example-client-component.tsx"
+```tsx title="app/example-client-component.tsx"
 'use client'
 
 import { usePathname } from 'next/navigation'
@@ -50,7 +50,7 @@ const pathname = usePathname()
 
 ### ルート変更に応じて処理を実施する
 
-```tsx filename="app/example-client-component.tsx"
+```tsx title="app/example-client-component.tsx"
 'use client'
 
 import { usePathname, useSearchParams } from 'next/navigation'

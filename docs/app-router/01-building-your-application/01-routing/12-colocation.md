@@ -4,10 +4,10 @@ nav_title: Project Organization
 description: Learn how to organize your Next.js project and colocate files.
 related:
   links:
-    - app/building-your-application/routing/defining-routes
-    - app/building-your-application/routing/route-groups
-    - app/building-your-application/configuring/src-directory
-    - app/building-your-application/configuring/absolute-imports-and-module-aliases
+    - app-router/building-your-application/routing/defining-routes
+    - app-router/building-your-application/routing/route-groups
+    - app-router/building-your-application/configuring/src-directory
+    - app-router/building-your-application/configuring/absolute-imports-and-module-aliases
 ---
 
 [ルーティングフォルダとファイルの規約](/docs/app-router/getting-started/project-structure#app-routing-conventions)を除けば、Next.js はプロジェクトファイルをどのように整理し、配置するかについて**無論**です。
@@ -90,7 +90,7 @@ Next.js では、アプリケーションコード（`app`を含む）をオプ�
 
 Next.js は[Module Path Aliases](/docs/app-router/building-your-application/configuring/absolute-imports-and-module-aliases)をサポートしています。これにより、深くネストしたプロジェクト・ファイル間のインポートの読み取りと維持が容易になります。
 
-```tsx filename="app/dashboard/settings/analytics/page.js"
+```tsx title="app/dashboard/settings/analytics/page.js"
 // before
 import { Button } from '../../../components/button'
 
@@ -104,7 +104,7 @@ Next.js プロジェクトでファイルやフォルダを整理する方法に
 
 次のセクションでは、一般的な戦略について、ごく大まかな概要を説明します。もっとも簡単なのは、自分とチームに合った戦略を選び、プロジェクト全体で一貫性を保つことです。
 
-> **Note:** 以下の例では、`components` と `lib` フォルダを一般的なプレースホルダとして使用しています。これらの命名にフレームワークの特別な意味はなく、あなたのプロジェクトでは `ui`、`utils`、`hooks`、`styles` などの他のフォルダを使用するかもしれません。
+> **Good to know:** 以下の例では、`components` と `lib` フォルダを一般的なプレースホルダとして使用しています。これらの命名にフレームワークの特別な意味はなく、あなたのプロジェクトでは `ui`、`utils`、`hooks`、`styles` などの他のフォルダを使用するかもしれません。
 
 ### `app` の外側にプロジェクトファイルを保存する
 

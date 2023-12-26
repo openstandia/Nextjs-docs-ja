@@ -38,7 +38,7 @@ URL に影響を与えずにルートを整理するには、関連するルー�
 
 ### 複数のルートレイアウトを作成する
 
-複数の[ルートレイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#ルートレイアウト-必須)を作成するには、トップレベルの`layout.js`ファイルを削除し、各ルートグループの中に`layout.js`ファイルを追加します。これは、アプリケーションを全く異なる UI やエクスペリエンスを持つセクションに分割するのに便利です。各ルートレイアウトには `<html>` タグと `<body>` タグを追加する必要がある。
+複数の[ルートレイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#ルートレイアウト-必須)を作成するには、トップレベルの`layout.js`ファイルを削除し、各ルートグループの中に`layout.js`ファイルを追加します。これは、アプリケーションを全く異なる UI やエクスペリエンスを持つセクションに分割するのに便利です。各ルートレイアウトには `<html>` タグと `<body>` タグを追加する必要があります。
 
 ![Route Groups with Multiple Root Layouts](../../assets/route-group-multiple-root-layouts.svg)
 

@@ -5,7 +5,7 @@ related:
   title: Next Steps
   description: Learn how to use modals with Intercepted and Parallel Routes.
   links:
-    - app/building-your-application/routing/parallel-routes
+    - app-router/building-your-application/routing/parallel-routes
 ---
 
 Intercepting Routes は現在のページのコンテキストを維持したまま、現在のレイアウト内でルートをロードできます。このルーティングパラダイムは異なるルートを表示するために特定のルートを「インターセプト」したいときに便利です。
@@ -25,11 +25,11 @@ Intercepting Routes は現在のページのコンテキストを維持したま
 下記を使うことができます。
 
 - `(.)` は **同じレベル** の Segment とマッチします。
-- `(..)`は \*\*1 つうえのレベルの Segment とマッチします。
-- `(..)(..)` は \*\*2 つうえの階層にある Segment にマッチします。
+- `(..)`は **1** つうえのレベルの Segment とマッチします。
+- `(..)(..)` は **2** つうえのレベルの Segment にマッチします。
 - `(...)` は **ルート** `app` ディレクトリの Segment にマッチします。
 
-例えば、`(..)photo` ディレクトリを作成することで、`feed` Segment の中から `photo` Segment をインターセプトできる。
+例えば、`(..)photo` ディレクトリを作成することで、`feed` Segment の中から `photo` Segment をインターセプトできます。
 ![Intercepting routes folder structure](../../assets/intercepted-routes-files.svg)
 
 > `(..)`の規約は、ファイルシステムではなく、\_ルートセグメントに基づいていることに注意してください。
@@ -47,8 +47,10 @@ Intercepting Routes は[Parallel Routes](/docs/app-router/building-your-applicat
 - 後方ナビゲーションで、前のルートに移動せずに**モーダルを閉じる。**
 - **前方ナビゲーションでモーダルを再開する。**
 
-> 上の例では、`@modal`は*slot*であり、*segment*ではないので、`photo` セグメントへのパスは `(...)` matcher を使うことができる。つまり、`photo` のルートは 2 つうえの*file-system* レベルにあるにもかかわらず、1 つうえの*segment* レベルにしかない。
+![Reopen the modal on forwards navigation](../../assets/intercepted-routes-modal-example.svg)
+
+> 上の例では、`@modal`は*slot*であり、*segment*ではないので、`photo` セグメントへのパスは `(..)` matcher を使うことができます。つまり、`photo` のルートは 2 つうえの*file-system* レベルにあるにもかかわらず、1 つうえの*segment* レベルにしかない。
 
 他の例としては、`/login` 専用ページを持ちながら、トップナビゲーションバーでログインモーダルを開いたり、サイドモーダルでショッピングカートを開いたりできます。
 
-Intercepted と Parallel Routes を使用したモーダルの [例を見る](https://github.com/vercel-labs/nextgram).
+Intercepted と Parallel Routes を使用したモーダルの [例を見る](https://github.com/vercel-labs/nextgram)。

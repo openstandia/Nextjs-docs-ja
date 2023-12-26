@@ -5,32 +5,31 @@ description: Learn how to handle form submissions and data mutations with Next.j
 
 フォームを使うと、Web アプリケーションでデータを作成したり更新したりできます。Next.js では、**Server Actions**を使用して、フォームの送信とデータの変更を処理する強力な方法を提供します。
 
+<details>
+  <summary>Examples</summary>
+
+- [Form with Loading & Error States](https://github.com/vercel/next.js/tree/canary/examples/next-forms)
+
+</details>
+
 ## Server Actions の仕組み
 
 Server Actions では、API エンドポイントを手動で作成する必要はありません。代わりに、コンポーネントから直接呼び出せる非同期のサーバー関数を定義します。
 
+> **🎥 Watch:** App Router でフォームとミューテーションについて詳しく学ぶ → [YouTube (10 分)](https://youtu.be/dDpZfOQBMaU?si=cJZHlUu_jFhCzHUg).
+
 Server Actions は、Server Components で定義することも、Client Components から呼び出すこともできます。Server Components でアクションを定義すると、JavaScript なしでフォームを機能させることができ、プログレッシブエンハンスメントを実現できます。
-
-Server Actions を使用するには`next.config.js`ファイルで Server Actions を有効にします：
-
-```js title="next.config.js"
-module.exports = {
-  experimental: {
-    serverActions: true,
-  },
-}
-```
 
 > **Good to know**:
 >
 > - Server Components から Server Actions を呼び出すフォームは、JavaScript なしで機能します
 > - Client Components から Server Actions を呼び出すフォームは、JavaScript がまだ読み込まれていない場合、送信をキューに入れます
-> - Server Actions は、使用するページやレイアウトのランタイムを継承します
+> - Server Actions は、使用するページやレイアウトの[ランタイム](/docs/app-router/building-your-application/rendering/edge-and-nodejs-runtimes)を継承します
 > - Server Actions は完全に静的なルートで動作します（ISR によるデータの再検証を含む）
 
 ## キャッシュデータの再検証
 
-Server Actions は、Next.js のキャッシュおよび再検証アーキテクチャに深く統合されています。フォームが送信されると、Server Actions はキャッシュされたデータを更新し、変更すべきキャッシュキーを再検証します。
+Server Actions は、Next.js の[キャッシュおよび再検証](/docs/app-router/building-your-application/caching)アーキテクチャに深く統合されています。フォームが送信されると、Server Actions はキャッシュされたデータを更新し、変更すべきキャッシュキーを再検証します。
 
 従来のアプリケーションのようにルートごとに 1 つのフォームに制限されるのではなく、Server Actions はルートごとに複数のアクションを持つことができます。さらに、ブラウザはフォーム送信時にリフレッシュする必要がありません。1 回のネットワークラウンドトリップで、Next.js は更新された UI と更新されたデータの両方を返すことができます。
 
@@ -58,8 +57,6 @@ export default function Page() {
 > **Good to know**: `<form action={create}>`は[FormData](https://developer.mozilla.org/docs/Web/API/FormData/FormData)データ型を取ります。上の例では、HTML[フォーム](https://developer.mozilla.org/docs/Web/HTML/Element/form)から送信された FormData はサーバアクション`create`でアクセス可能です。
 
 ### データの再検証
-
-<!-- TODO: Fix link -->
 
 Server Actions では、[Next.js のキャッシュ](/docs/app-router/building-your-application/caching)をオンデマンドで無効にできます。[`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)でルート Segment 全体を無効にできます：
 
@@ -127,20 +124,22 @@ export default async function submit(formData: FormData) {
 
 ### ロードの状態を表示する
 
-`useFormStatus`フックを使用して、サーバー上でフォームが送信されているときにロード状態を表示します。`useFormStatus`フックは、Server Action を使用する `form`要素の子要素としてのみ使用できます。
+[`useFormStatus`](https://ja.react.dev/reference/react-dom/hooks/useFormStatus)フックを使用して、サーバー上でフォームが送信されているときにロード状態を表示します。`useFormStatus`フックは、Server Action を使用する `form`要素の子要素としてのみ使用できます。
 
 例えば、次のような送信ボタンです：
 
 ```tsx title="app/submit-button.tsx"
 'use client'
 
-import { experimental_useFormStatus as useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom'
 
 export function SubmitButton() {
   const { pending } = useFormStatus()
 
   return (
-    <button disabled={pending}>{pending ? 'Submitting...' : 'Submit'}</button>
+    <button type="submit" aria-disabled={pending}>
+      Add
+    </button>
   )
 }
 ```
@@ -160,21 +159,14 @@ export default async function Home() {
 }
 ```
 
-<details>  
-  <summary>例</summary>  
-  <div>
-    <a href="https://github.com/vercel/next.js/tree/canary/examples/next-forms">Form with Loading & Error States</a>
-  </div>  
-</details>
-
 ### エラーハンドリング
 
-Server Action は[シリアライズ可能なオブジェクト](https://developer.mozilla.org/docs/Glossary/Serialization)を返すこともできます。例えば、Server Action は新規アイテムの作成時のエラーを処理できます：
+Server Actions は[シリアライズ可能なオブジェクト](https://developer.mozilla.org/docs/Glossary/Serialization)を返すこともできます。例えば、Server Action は新規アイテムの作成時のエラーを処理できます：
 
 ```ts title="app/actions.ts"
 'use server'
 
-export async function create(prevState: any, formData: FormData) {
+export async function createTodo(prevState: any, formData: FormData) {
   try {
     await createItem(formData.get('todo'))
     return revalidatePath('/')
@@ -189,8 +181,7 @@ export async function create(prevState: any, formData: FormData) {
 ```tsx title="app/add-form.tsx"
 'use client'
 
-import { experimental_useFormState as useFormState } from 'react-dom'
-import { experimental_useFormStatus as useFormStatus } from 'react-dom'
+import { useFormState, useFormStatus } from 'react-dom'
 import { createTodo } from '@/app/actions'
 
 const initialState = {
@@ -223,21 +214,14 @@ export function AddForm() {
 }
 ```
 
-<details>  
-  <summary>例</summary>  
-  <div>
-    <a href="https://github.com/vercel/next.js/tree/canary/examples/next-forms">Form with Loading & Error States</a>
-  </div>  
-</details>
-
 ### 楽観的な更新
 
-`UseOptimistic`を使用すると、応答を待つのではなく、Server Action が終了する前に UI を楽観的に更新します：
+[`UseOptimistic`](https://ja.react.dev/reference/react/useOptimistic)を使用すると、応答を待つのではなく、Server Action が終了する前に UI を楽観的に更新します：
 
 ```tsx title="app/page.tsx"
 'use client'
 
-import { experimental_useOptimistic as useOptimistic } from 'react'
+import { useOptimistic } from 'react'
 import { send } from './actions'
 
 type Message = {

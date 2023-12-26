@@ -4,6 +4,8 @@ description: API Reference for manifest.json file.
 sidebar_position: 2
 ---
 
+ブラウザに Web アプリケーションの情報を提供するために、`app` ディレクトリのルートに [Web Manifest Specification](https://developer.mozilla.org/ja/docs/Web/Manifest) に一致する`manifest.(json|webmanifest)` ファイルを追加または生成します。
+
 ## 静的なマニフェストファイル
 
 ```json title="app/manifest.json | app/manifest.webmanifest"
@@ -44,7 +46,5 @@ export default function manifest(): MetadataRoute.Manifest {
 ```
 
 ### マニフェストオブジェクト
-
-<!-- TODO: Fix link -->
 
 マニフェストオブジェクトには、新しい Web 標準のために更新される可能性のあるオプションの広範なリストが含まれています。現在のすべてのオプションに関する情報は、[TypeScript](/docs/app-router/building-your-application/configuring/typescript#typescript-plugin)を使用している場合はコードエディタで`MetadataRoute.Manifest`型を参照するか、[MDN ドキュメント](https://developer.mozilla.org/en-US/docs/Web/Manifest)を参照してください。

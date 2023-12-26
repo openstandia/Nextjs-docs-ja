@@ -43,8 +43,6 @@ export function register() {
 }
 ```
 
-<!-- TODO: Fix link -->
-
 > **Good to know**
 >
 > - `instrumentation`ファイルはプロジェクトのルートに置く必要があり、`app`や`pages`ディレクトリの中には置かないでください。`src`フォルダを使用している場合は、`src`の中に`pages`、`app`と同じ階層にファイルを置いてください
