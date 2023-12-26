@@ -6,9 +6,11 @@ This is a project to translate the official documentation of Next.js into Japane
 
 Translated Site: https://github.com/vercel/next.js
 
+## Hosting Site
+
 ## Contributing
 
-xxxx
+When contributing to this repository, please first read the translation guide.
 
 ## Building Translated Next.js Documentation
 
@@ -39,3 +41,7 @@ npm run start
 ```
 
 You can then view the documentation by accessing http://localhost:3000
+
+## License
+
+- [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)
