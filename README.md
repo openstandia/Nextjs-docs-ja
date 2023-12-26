@@ -4,7 +4,7 @@
 
 This is a project to translate the official documentation of Next.js into Japanese.
 
-Translated Site: https://github.com/vercel/next.js
+Translated Site: https://nextjs.org/docs
 
 ## Hosting Site
 
