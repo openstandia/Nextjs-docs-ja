@@ -14,18 +14,18 @@ Next.js の文脈では、ランタイムとは、実行中のコードが利用
 
 ランタイムを選択する際には多くの考慮するべき点があります。この表は、主な違いを一目で確認できます。違いについてより詳しく分析したい場合は、以下のセクションをチェックしてください。
 
-|                                                                                                                                                     | Node   | Serverless | Edge             |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | :----- | :--------- | :--------------- |
-| [Cold Boot](https://vercel.com/docs/concepts/get-started/compute#cold-and-hot-boots?utm_source=next-site&utm_medium=docs&utm_campaign=next-website) | /      | ~250ms     | Instant          |
-| [HTTP Streaming](/docs/app-router/building-your-application/routing/loading-ui-and-streaming)                                                       | Yes    | Yes        | Yes              |
-| IO                                                                                                                                                  | All    | All        | `fetch`          |
-| スケーラビリティ                                                                                                                                    | /      | High       | Highest          |
-| セキュリティ                                                                                                                                        | Normal | High       | High             |
-| レイテンシー                                                                                                                                        | Normal | Low        | Lowest           |
-| npm パッケージ                                                                                                                                      | All    | All        | A smaller subset |
-| [静的レンダリング](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)                               | Yes    | Yes        | No               |
-| [動的レンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)                                         | Yes    | Yes        | Yes              |
-| [`fetch`によるデータの再検証](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating#データの再検証)            | Yes    | Yes        | Yes              |
+|                                                                                                                                          | Node   | Serverless | Edge             |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | :----- | :--------- | :--------------- |
+| Cold Boot | /      | Normal     | Low          |
+| [HTTP Streaming](/docs/app-router/building-your-application/routing/loading-ui-and-streaming)                                            | Yes    | Yes        | Yes              |
+| IO                                                                                                                                       | All    | All        | `fetch`          |
+| スケーラビリティ                                                                                                                         | /      | High       | Highest          |
+| セキュリティ                                                                                                                             | Normal | High       | High             |
+| レイテンシー                                                                                                                             | Normal | Low        | Lowest           |
+| npm パッケージ                                                                                                                           | All    | All        | A smaller subset |
+| [静的レンダリング](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)                    | Yes    | Yes        | No               |
+| [動的レンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)                              | Yes    | Yes        | Yes              |
+| [`fetch`によるデータの再検証](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating#データの再検証) | Yes    | Yes        | Yes              |
 
 ### Edge Runtime
 

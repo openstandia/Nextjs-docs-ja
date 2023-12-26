@@ -3,9 +3,9 @@ title: Error Handling
 description: Handle runtime errors by automatically wrapping route segments and their nested children in a React Error Boundary.
 ---
 
-`error.js`ファイル規約によって、[入れ子になったルート](/docs/app-router/building-your-application/routing#ネストされたルート)の実行時エラーを優雅に処理できる。
+`error.js`ファイル規約によって、[入れ子になったルート](/docs/app-router/building-your-application/routing#ネストされたルート)の実行時エラーを優雅に処理できます。
 
-- ルート Segment とそのネストした子ルートを[React Error Boundary](https://ja.react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)で自動的にラップします。
+- ルート Segment とそのネストした子ルートを [React Error Boundary](https://ja.react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary) で自動的にラップします。
 - ファイルシステム階層を使用して粒度を調整し、特定の Segment に合わせたエラー UI を作成します。
 - アプリの残りの機能を維持したまま、影響を受ける Segment にエラーを隔離する。
 - ページ全体をリロードすることなくエラーからの回復を試みる機能を追加する。
@@ -14,7 +14,7 @@ description: Handle runtime errors by automatically wrapping route segments and 
 
 ![error.js special file](../../assets/error-special-file.svg)
 
-```tsx filename="app/dashboard/error.tsx" switcher
+```tsx title="app/dashboard/error.tsx" switcher
 'use client' // Error components must be Client Components
 
 import { useEffect } from 'react'
@@ -51,9 +51,9 @@ export default function Error({
 
 ![How error.js works](../../assets/error-overview.svg)
 
-- `error.js` は自動的に [React Error Boundary](https://ja.react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary) を作成し、ネストした子 Segment または `page.js` コンポーネントを **ラッピング** する。
-- `error.js`ファイルからエクスポートされた React コンポーネントは、**fallback**コンポーネントとして使用される。
-- エラー境界内でエラーがスローされた場合、エラーは **コンテインメント** され、フォールバックコンポーネントは **レンダリング** される。
+- `error.js` は自動的に [React Error Boundary](https://ja.react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary) を作成し、ネストした子 Segment または `page.js` コンポーネントを **ラッピング** します。
+- `error.js`ファイルからエクスポートされた React コンポーネントは、**fallback**コンポーネントとして使用されます。
+- エラー境界内でエラーがスローされた場合、エラーは **コンテインメント** され、フォールバックコンポーネントは **レンダリング** されます。
 - フォールバックエラーコンポーネントがアクティブな場合、エラー境界より**上の**レイアウトは**その状態を維持**し、**インタラクティブな状態を維持**し、エラーコンポーネントはエラーから回復するための機能を表示できます。
 
 ### エラーからの回復
@@ -62,7 +62,7 @@ export default function Error({
 
 エラーコンポーネントは `reset()` 関数を使用して、エラーからの回復を試みるようユーザーに促すことができます。実行されると、この関数はエラー境界の内容の再描画を試みます。成功した場合、フォールバックエラーコンポーネントは再レンダリングの結果で置き換えられます。
 
-```tsx filename="app/dashboard/error.tsx" switcher
+```tsx title="app/dashboard/error.tsx" switcher
 'use client'
 
 export default function Error({
@@ -72,19 +72,6 @@ export default function Error({
   error: Error
   reset: () => void
 }) {
-  return (
-    <div>
-      <h2>Something went wrong!</h2>
-      <button onClick={() => reset()}>Try again</button>
-    </div>
-  )
-}
-```
-
-```jsx filename="app/dashboard/error.js" switcher
-'use client'
-
-export default function Error({ error, reset }) {
   return (
     <div>
       <h2>Something went wrong!</h2>
@@ -123,11 +110,11 @@ export default function Error({ error, reset }) {
 
 ルートの `error.js` とは異なり、`global-error.js` のエラー境界はアプリケーション全体を包み込みます。このため、`global-error.js` は独自の `<html>` タグと `<body>` タグを定義しなければならないことに注意する必要があります。
 
-`global-error.js`はもっとも粒度の小さいエラー UI であり、アプリケーション全体のエラー処理を行う "catch-all "と考えることができる。ルートコンポーネントは一般的にあまり動的ではなく、他の `error.js` 境界がほとんどのエラーをキャッチするため、頻繁にトリガーされることはないでしょう。
+`global-error.js`はもっとも粒度の小さいエラー UI であり、アプリケーション全体のエラー処理を行う "catch-all "と考えることができます。ルートコンポーネントは一般的にあまり動的ではなく、他の `error.js` 境界がほとんどのエラーをキャッチするため、頻繁にトリガーされることはないでしょう。
 
 `global-error.js`が定義されている場合でも、フォールバックコンポーネントがルートレイアウト内でレンダリングされるルート`error.js`を定義することを推奨します。
 
-```tsx filename="app/global-error.tsx" switcher
+```tsx title="app/global-error.tsx" switcher
 'use client'
 
 export default function GlobalError({

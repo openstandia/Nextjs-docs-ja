@@ -113,8 +113,6 @@ export default function Page() {
 
 ルートが[動的にレンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)される場合、`useSearchParams`は Client Component の初回サーバーレンダリング時にサーバー上で利用可能になります。
 
-<!-- TODO: Fix link -->
-
 > **Good to know**: [`動的ルートsegmentの設定オプション`](/docs/app-router/api-reference/file-conventions/route-segment-config#dynamic)を`force-dynamic`に設定することで、dynamic rendering を強制することができます。
 
 例：
@@ -157,13 +155,9 @@ export default function Page() {
 
 #### Pages
 
-<!-- TODO: Fix link -->
-
 [Pages](/docs/app-router/api-reference/file-conventions/page)（Server Components）でクエリパラメータにアクセスするには、[`searchParams`](/docs/app-router/api-reference/file-conventions/page#searchparams任意)プロップを使用します。
 
 #### Layouts
-
-<!-- TODO: Fix link -->
 
 Pages とは異なり、[Layouts](/docs/app-router/api-reference/file-conventions/layout)（Server Components）は`searchParams`プロップを**受け取りません**。これは、共有レイアウトが[ナビゲーション中に再レンダリングされない](/docs/app-router/building-your-application/routing#部分レンダリング)ため、ナビゲーション間で古い`searchParams`が表示される可能性があるためです。[詳しい説明](/docs/app-router/api-reference/file-conventions/layout#レイアウトはsearchparamsを受け取らない)を見る。
 
@@ -172,8 +166,6 @@ Pages とは異なり、[Layouts](/docs/app-router/api-reference/file-convention
 ## 例
 
 ### `searchParams`の更新
-
-<!-- TODO: Fix link -->
 
 新しい`searchParams`を設定するには、[`useRouter`](/docs/app-router/api-reference/functions/use-router)または[`Link`](/docs/app-router/api-reference/components/link)を使用します。ナビゲーションが実行された後、現在の[page.js](/docs/app-router/api-reference/file-conventions/page)は更新された[`searchParams` プロップ](/docs/app-router/api-reference/file-conventions/page#searchparams任意)を受け取ります。
 

@@ -13,23 +13,13 @@ Next.js には、この問題を解決するための **Draft Mode** という�
 
 次に、`next/headers` から `draftMode` をインポートし、`enable()` メソッドを呼び出します。
 
-```ts filename="app/api/draft/route.ts" switcher
+```ts title="app/api/draft/route.ts" switcher
 // ドラフトモードを有効にするルートハンドラ
-import { draftMode } from "next/headers";
+import { draftMode } from 'next/headers'
 
 export async function GET(request: Request) {
-  draftMode().enable();
-  return new Response("Draft mode is enabled");
-}
-```
-
-```js filename="app/api/draft/route.js" switcher
-// ドラフトモードを有効にするルートハンドラ
-import { draftMode } from "next/headers";
-
-export async function GET(request) {
-  draftMode().enable();
-  return new Response("Draft mode is enabled");
+  draftMode().enable()
+  return new Response('Draft mode is enabled')
 }
 ```
 
@@ -47,7 +37,7 @@ export async function GET(request) {
 
 **次に**、ヘッドレス CMS がカスタムドラフト URL を設定できる場合は、次のようにドラフト URL を指定します。ここでは、ルートハンドラが `app/api/draft/route.ts` にあると仮定しています。
 
-```bash filename="Terminal"
+```bash title="Terminal"
 https://<your-site>/api/draft?secret=<token>&slug=<path>
 ```
 
@@ -63,73 +53,38 @@ https://<your-site>/api/draft?secret=<token>&slug=<path>
 - `draftMode.enable()` を呼び出してクッキーを設定します。
 - 次に、ブラウザを `slug` で指定されたパスにリダイレクトします。
 
-```ts filename="app/api/draft/route.ts" switcher
+```ts title="app/api/draft/route.ts" switcher
 // シークレットとスラッグを持つルートハンドラ
-import { draftMode } from "next/headers";
-import { redirect } from "next/navigation";
+import { draftMode } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 export async function GET(request: Request) {
   // クエリ文字列パラメータを解析
-  const { searchParams } = new URL(request.url);
-  const secret = searchParams.get("secret");
-  const slug = searchParams.get("slug");
+  const { searchParams } = new URL(request.url)
+  const secret = searchParams.get('secret')
+  const slug = searchParams.get('slug')
 
   // シークレットと次のパラメータを確認します
   // このシークレットはこのルートハンドラと CMS のみが知っているべきです
-  if (secret !== "MY_SECRET_TOKEN" || !slug) {
-    return new Response("Invalid token", { status: 401 });
+  if (secret !== 'MY_SECRET_TOKEN' || !slug) {
+    return new Response('Invalid token', { status: 401 })
   }
 
   // 提供された `slug` が存在するかどうかを確認するためにヘッドレス CMS にアクセスします
   // getPostBySlug は必要なフェッチロジックをヘッドレス CMS に実装することができるでしょう
-  const post = await getPostBySlug(slug);
+  const post = await getPostBySlug(slug)
 
   // スラッグが存在しない場合、ドラフトモードが有効にならないようにします
   if (!post) {
-    return new Response("Invalid slug", { status: 401 });
+    return new Response('Invalid slug', { status: 401 })
   }
 
   // クッキーを設定して Draft Mode を有効にします
-  draftMode().enable();
+  draftMode().enable()
 
   // 取得した投稿のパスにリダイレクトします
   // searchParams.slug にリダイレクトしないように注意してください。それはオープンリダイレクトの脆弱性につながる可能性があります
-  redirect(post.slug);
-}
-```
-
-```js filename="app/api/draft/route.js" switcher
-// シークレットとスラッグを持つルートハンドラ
-import { draftMode } from "next/headers";
-import { redirect } from "next/navigation";
-
-export async function GET(request) {
-  // クエリ文字列パラメータを解析
-  const { searchParams } = new URL(request.url);
-  const secret = searchParams.get("secret");
-  const slug = searchParams.get("slug");
-
-  // シークレットと次のパラメータを確認します
-  // このシークレットはこのルートハンドラと CMS のみが知っているべきです
-  if (secret !== "MY_SECRET_TOKEN" || !slug) {
-    return new Response("Invalid token", { status: 401 });
-  }
-
-  // 提供された `slug` が存在するかどうかを確認するためにヘッドレス CMS にアクセスします
-  // getPostBySlug は必要なフェッチロジックをヘッドレス CMS に実装することができるでしょう
-  const post = await getPostBySlug(slug);
-
-  // スラッグが存在しない場合、ドラフトモードが有効にならないようにします
-  if (!post) {
-    return new Response("Invalid slug", { status: 401 });
-  }
-
-  // クッキーを設定して Draft Mode を有効にします
-  draftMode().enable();
-
-  // 取得した投稿のパスにリダイレクトします
-  // searchParams.slug にリダイレクトしないように注意してください。それはオープンリダイレクトの脆弱性につながる可能性があります
-  redirect(post.slug);
+  redirect(post.slug)
 }
 ```
 
@@ -143,59 +98,31 @@ export async function GET(request) {
 
 さらに、`isEnabled` の値は `true` になります。
 
-```tsx filename="app/page.tsx" switcher
+```tsx title="app/page.tsx" switcher
 // データを取得するページ
-import { draftMode } from "next/headers";
+import { draftMode } from 'next/headers'
 
 async function getData() {
-  const { isEnabled } = draftMode();
+  const { isEnabled } = draftMode()
 
   const url = isEnabled
-    ? "https://draft.example.com"
-    : "https://production.example.com";
+    ? 'https://draft.example.com'
+    : 'https://production.example.com'
 
-  const res = await fetch(url);
+  const res = await fetch(url)
 
-  return res.json();
+  return res.json()
 }
 
 export default async function Page() {
-  const { title, desc } = await getData();
+  const { title, desc } = await getData()
 
   return (
     <main>
       <h1>{title}</h1>
       <p>{desc}</p>
     </main>
-  );
-}
-```
-
-```jsx filename="app/page.js" switcher
-// データを取得するページ
-import { draftMode } from "next/headers";
-
-async function getData() {
-  const { isEnabled } = draftMode();
-
-  const url = isEnabled
-    ? "https://draft.example.com"
-    : "https://production.example.com";
-
-  const res = await fetch(url);
-
-  return res.json();
-}
-
-export default async function Page() {
-  const { title, desc } = await getData();
-
-  return (
-    <main>
-      <h1>{title}</h1>
-      <p>{desc}</p>
-    </main>
-  );
+  )
 }
 ```
 
@@ -203,7 +130,7 @@ export default async function Page() {
 
 ヘッドレス CMS にこのドラフト URL を設定するか、手動でアクセスして、ドラフトを確認できるはずです。
 
-```bash filename="Terminal"
+```bash title="Terminal"
 https://<your-site>/api/draft?secret=<token>&slug=<path>
 ```
 
@@ -215,21 +142,12 @@ https://<your-site>/api/draft?secret=<token>&slug=<path>
 
 Draft Mode クッキーを手動で消去するには、`draftMode().disable()` を呼び出すルートハンドラを作成します：
 
-```ts filename="app/api/disable-draft/route.ts" switcher
-import { draftMode } from "next/headers";
+```ts title="app/api/disable-draft/route.ts" switcher
+import { draftMode } from 'next/headers'
 
 export async function GET(request: Request) {
-  draftMode().disable();
-  return new Response("Draft mode is disabled");
-}
-```
-
-```js filename="app/api/disable-draft/route.js" switcher
-import { draftMode } from "next/headers";
-
-export async function GET(request) {
-  draftMode().disable();
-  return new Response("Draft mode is disabled");
+  draftMode().disable()
+  return new Response('Draft mode is disabled')
 }
 ```
 
@@ -241,4 +159,4 @@ export async function GET(request) {
 
 これにより、バイパスクッキーを推測することはできなくなります。
 
-> **重要な情報**: HTTP 上で Draft Mode をローカルでテストするには、ブラウザでサードパーティのクッキーとローカルストレージへのアクセスを許可する必要があります。
+> **Good to know**: HTTP 上で Draft Mode をローカルでテストするには、ブラウザでサードパーティのクッキーとローカルストレージへのアクセスを許可する必要があります。

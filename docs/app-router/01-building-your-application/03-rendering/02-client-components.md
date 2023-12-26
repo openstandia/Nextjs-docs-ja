@@ -97,6 +97,6 @@ Next.js では Client Components のレンダリングは、リクエストが�
 
 <!-- textlint-disable -->
 
-Client Components と Server Components および Server Actions を組み合わせて、Client Components 内でネストしたコードをサーバー上に保持できます。詳細は[構成パターン](/docs/app-router/building-your-application/rendering/composition-patterns)を参照してください。
+Client Components と Server Components および [Server Actions](/docs/app-router/building-your-application/data-fetching/forms-and-mutations) を組み合わせて、Client Components 内でネストしたコードをサーバー上に保持できます。詳細は[構成パターン](/docs/app-router/building-your-application/rendering/composition-patterns)を参照してください。
 
 <!-- textlint-enable -->

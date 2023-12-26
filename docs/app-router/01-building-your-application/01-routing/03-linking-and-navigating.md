@@ -1,9 +1,11 @@
 ---
 title: リンクとナビゲート
 description: Learn how navigation works in Next.js, and how to use the Link Component and `useRouter` hook.
+related:
+  links:
+    - app-router/building-your-application/caching
+    - app-router/building-your-application/configuring/typescript
 ---
-
-Next.js の Router は[サーバー中心ルーティング](/docs/app-router/building-your-application/routing#server-centric-routing-with-client-side-navigation)と[クライアントサイドナビゲーション](#ナビゲーションの仕組み)を使用しています。また[インスタントロード状態](/docs/app-router/building-your-application/routing/loading-ui-and-streaming)と[同時レンダリング](https://ja.react.dev/reference/react/startTransition)をサポートしています。これはナビゲーションがクライアントサイドの状態を維持し、高価な再レンダリングを避け、中断可能で、競合状態を引き起こさないことを意味します。
 
 ルート間のナビゲーションには 2 つの方法があります：
 
@@ -18,7 +20,7 @@ Next.js の Router は[サーバー中心ルーティング](/docs/app-router/bu
 
 `<Link>` を使うには、`next/link` からインポートし、`href` プロパティをコンポーネントに渡します。
 
-```tsx filename="app/page.tsx" switcher
+```tsx title="app/page.tsx" switcher
 import Link from 'next/link'
 
 export default function Page() {
@@ -34,7 +36,7 @@ export default function Page() {
 
 [動的セグメント](/docs/app-router/building-your-application/routing/dynamic-routes)にリンクするとき、リンクのリストを生成するために[テンプレートリテラルと補間](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)を使うことができます。例えば、ブログ記事のリストを生成するには、次のようにします。
 
-```jsx filename="app/blog/PostList.jsx"
+```jsx title="app/blog/PostList.jsx"
 import Link from 'next/link'
 
 export default function PostList({ posts }) {
@@ -54,7 +56,7 @@ export default function PostList({ posts }) {
 
 リンクがアクティブかどうかを判断するには、[`usePathname()`](/docs/app-router/api-reference/functions/use-pathname)を使うことができます。例えば、アクティブなリンクにクラスを追加するには、現在の `pathname` がリンクの `href` と一致するかどうかをチェックします：
 
-```jsx filename="app/ui/Navigation.jsx"
+```jsx title="app/ui/Navigation.jsx"
 'use client'
 
 import { usePathname } from 'next/navigation'
@@ -85,14 +87,39 @@ export function Navigation({ navLinks }) {
 
 ### `ID` へのスクロール
 
+Next.js App Router のデフォルトの動作は、新しいルートの先頭までスクロールするか、前後方向のナビゲーションのためにスクロール位置を維持します。
+
+ナビゲーションで特定の `ID` にスクロールしたい場合は、URL に`#`ハッシュリンクを付加するか、`href` prop にハッシュリンクを渡します。これは、`<Link>`が`<a>`要素にレンダリングされるので可能です。
+
 `<Link>`のデフォルトの動作は、[変更されたルートセグメントの先頭にスクロールする](#フォーカスおよびスクロールの管理)です。`href` に `id` が定義されている場合、通常の `<a>` タグと同様に、特定の `id` までスクロールします。
 
 ルート Segment の先頭までスクロールしないようにするには、`scroll={false}` を設定して `href` にハッシュ化された `id` を追加します：
 
 ```jsx
-<Link href="/#hashid" scroll={false}>
-  Scroll to specific id.
+<Link href="/dashboard#settings">Settings</Link>
+
+// Output
+<a href="/dashboard#settings">Settings</a>
+```
+
+### スクロールの復元を無効にする
+
+Next.js App Router のデフォルトの動作は、新しいルートの先頭にスクロールするか、前後方向のナビゲーションのスクロール位置を維持します。この動作を無効にしたい場合は、`<Link>`コンポーネントに `scroll={false}`を渡すか、`router.push()`または `router.replace()`に `scroll: false` を渡します。
+
+```jsx
+// next/link
+<Link href="/dashboard" scroll={false}>
+  Dashboard
 </Link>
+```
+
+```jsx
+// useRouter
+import { useRouter } from 'next/navigation'
+
+const router = useRouter()
+
+router.push('/dashboard', { scroll: false })
 ```
 
 ## `useRouter()` Hook
@@ -101,7 +128,7 @@ export function Navigation({ navLinks }) {
 
 `useRouter` を使用するには、`next/navigation` からインポートし、Client Component 内でフックを呼び出します：
 
-```jsx filename="app/page.jsx"
+```jsx title="app/page.jsx"
 'use client'
 
 import { useRouter } from 'next/navigation'
@@ -117,66 +144,58 @@ export default function Page() {
 }
 ```
 
-`useRouter` は `push()` や `refresh()` などのメソッドを提供する。詳細は[API リファレンス](/docs/app-router/api-reference/functions/use-router)を参照してください。
+useRouter メソッドの全リストは[API リファレンス](/docs/app-router/api-reference/functions/use-router)を参照してください。
 
 > **推奨:** `useRouter`を使用する特別な要件がない限り、ルート間を移動するには`<Link>`コンポーネントを使用してください。
 
 ## ナビゲーションの仕組み
 
-- ルート遷移は `<Link>` を使うか、`router.push()` を呼び出すことで開始されます。
-- Router はブラウザのアドレスバーの URL を更新します。
-- Router は[クライアントサイドキャッシュ](#レンダリングされた-server-component-のクライアント側キャッシュ)から変更されていない Segment(共有レイアウトなど）を再利用することで、不要な作業を回避します。これは[部分レンダリング](/docs/app-router/building-your-application/routing#partial-rendering)とも呼ばれます。
-- [ソフトナビゲーションの条件](#ソフトナビゲーション)が満たされていれば、Router は新しい Segment をサーバーではなくキャッシュから取得します。そうでない場合、Router は[ハードナビゲーション](#ハードナビゲーション)を実行し、サーバーから Server Component のペイロードをフェッチします。
-- 作成された場合、ペイロードがフェッチされている間、サーバーから[loading UI](/docs/app-router/building-your-application/routing/loading-ui-and-streaming)が表示されます。
-- Router はキャッシュされた、もしくは新しいペイロードを使用して、クライアント上で新しい Segment をレンダリングします。
+App Router は、ルーティングとナビゲーションのハイブリッド・アプローチを採用しています。サーバー上では、アプリケーションコードは自動的にルートセグメントによってコード分割されます。そしてクライアントでは、Next.js がルートセグメントを[プリフェッチ](#1-プリフェッチ)して[キャッシング](#2-キャッシング)します。つまり、ユーザーが新しいルートに移動しても、ブラウザはページをリロードせず、変更されたルートセグメントだけが再レンダリングされます。
 
-### レンダリングされた Server Component のクライアント側キャッシュ
+### 1. プリフェッチ
 
-> **Good to know:**このクライアント側キャッシュは、サーバー側の[Next.js HTTP キャッシュ](/docs/app-router/building-your-application/data-fetching#caching-data)とは異なります。
+プリフェッチはルートが訪問される前にバックグラウンドでプリロードする方法です。
 
-新しい Router には、Server Component の**レンダリング結果**（ペイロード）を保存する**インメモリクライアントサイドキャッシュ**があります。キャッシュはルート Segment によって分割され、任意のレベルで無効化でき、同時レンダリング間の一貫性を保証します。
+Next.js でルートがプリフェッチされる方法は 2 つあります：
 
-ユーザーがアプリをナビゲートすると、Router は以前にフェッチした Segment のペイロード**と** [プリフェッチ](#プリフェッチ) Segment をキャッシュに保存します。
+- `<Link>`コンポーネント: ルートは、ユーザのビューポートに表示されるようになると、自動的にプリフェッチされます。プリフェッチは、ページが最初にロードされたときや、スクロールによって表示されたときに行われます。
+- `router.prefetch()`: `useRouter` Hook はプログラムでルートをプリフェッチするために使うことができます。
 
-つまり、特定のケースでは、Router はサーバーに新たにリクエストする代わりにキャッシュを再利用できます。これにより、不必要にデータを再フェッチしたりコンポーネントを再レンダリングしたりすることがなくなり、パフォーマンスが向上します。
+`<Link>`のプリフェッチ動作は、静的ルートと動的ルートで異なります：
 
-### プリフェッチ
+- [静的ルート](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト): `prefetch` のデフォルトは `true` です。ルート全体がプリフェッチされ、キャッシュされます。
+- [動的ルート](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング): `prefetch` のデフォルトは自動です。最初の `loading.js` ファイルまでの共有レイアウトのみがプリフェッチされ、`30` 秒間キャッシュされます。これは動的なルート全体をフェッチするコストを削減し、ユーザーへの視覚的なフィードバックを改善するために[ロード状態を即座に表示できる](/docs/app-router/building-your-application/routing/loading-ui-and-streaming#インスタントロード状態)ことを意味します。
 
-プリフェッチはルートが訪問される前にバックグラウンドでプリロードする方法です。プリフェッチされたルートのレンダリング結果は Router のクライアントサイドキャッシュに追加されます。これにより、プリフェッチされたルートへのナビゲートがほぼ瞬時になります。
+`prefetch` prop を`false`に設定することで、プリフェッチを無効にすることができます。
 
-デフォルトでは、ルートは `<Link>` コンポーネントを使用しているときにビューポートに表示されるようになるとプリフェッチされます。これはページが最初にロードされたときか、スクロールによって起こります。また[`useRouter()`フック](/docs/app-router/api-reference/functions/use-router#userouter)の`prefetch`メソッドを使用して、ルーティングをプログラムでプリフェッチすることもできます。
-
-**静的ルートと動的ルート**：
-
-- ルートが静的な場合、ルート Segment のすべての Server Component のペイロードはプリフェッチされます。
-- ルートが動的な場合、最初の共有レイアウトから最初の `loading.js` ファイルまでのペイロードがプリフェッチされます。これはルート全体を動的にプリフェッチするコストを削減し、動的なルートに対して[instant loading states](/docs/app-router/building-your-application/routing/loading-ui-and-streaming#インスタントロード状態)を可能にします。
+詳細は`<Link>` [API リファレンス](/docs/app-router/api-reference/components/link)を参照。
 
 > **Good to know:**
 >
-> - プリフェッチは本番環境でのみ有効です。
-> - プリフェッチは `<Link>` に `prefetch={false}` を渡すことで無効にできます。
+> - プリフェッチは開発では有効ではなく、本番でのみ有効です。
 
-### ソフト・ナビゲーション
+### 2. キャッシング
 
-ナビゲーションの際、変更された Segment のキャッシュは再利用され（存在する場合）、サーバーへの新たなデータ要求は行われない。
+Next.js には、[ルーターキャッシュ](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating)と呼ばれるインメモリーのクライアントサイドキャッシュがあります。ユーザーがアプリ内を移動すると、[プリフェッチ](#1-プリフェッチ)されたルートセグメントと到達したルートの React Server Component Payload がキャッシュに保存されます。
 
-#### ソフトナビゲーションの条件
+つまり、ナビゲーションの際、サーバーに新たなリクエストをするのではなく、キャッシュを可能な限り再利用し、リクエストとデータ転送の回数を減らすことでパフォーマンスを向上させます。
 
-ナビゲート先のルートが[**prefetched**](#プリフェッチ)されており、[動的セグメント](/docs/app-router/building-your-application/routing/dynamic-routes) **を含まないか、または**現在のルートと同じ動的パラメータを持つ場合、Next.js はソフトナビゲーションを使用します。
+ルーターキャッシュの仕組みと設定方法については、[こちら](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating#データのキャッシュ)をご覧ください。
 
-たとえば、動的な `[team]` Segment を含む次のルートを考えてみましょう： `/dashboard/[team]/*.` `dashboard/[team]/*` 以下のキャッシュされた Segment は `[team]` パラメータが変更されたときのみ無効になります。
+### 3. 部分レンダリング
 
-- `dashboard/team-red/*`から`/dashboard/team-red/*`への移動はソフトナビゲーションになります。
-- `dashboard/team-red/*`から`/dashboard/team-blue/*`への移動はハードナビゲーションになります。
+部分レンダリングとは、ナビゲーションで変更されたルートセグメントのみがクライアントで再レンダリングされ、共有セグメントは保存されることを意味します。
 
-### ハードナビゲーション
+たとえば、`/dashboard/settings` と `/dashboard/analytics` という 2 つのルート間をナビゲートする場合、`settings` と `analytics` ページがレンダリングされ、共有された `dashboard` のレイアウトは保持されます。
 
-ナビゲーションの際、キャッシュは無効化され、サーバーはデータを再取得し、変更された Segment を再レンダリングする。
+![Dashboard Partial Rendering](../../assets/partial-rendering.svg)
 
-### バック/フォワード・ナビゲーション
+部分レンダリングがなければ、ナビゲーションのたびにページ全体がサーバー上で再レンダリングされることになります。変更されたセグメントのみをレンダリングすることで、転送されるデータ量と実行時間が削減され、パフォーマンスの向上につながります。
 
-バック/フォワード・ナビゲーション（[popstate event](https://developer.mozilla.org/en-US/docs/Web/API/Window/popstate_event)）はソフト・ナビゲーション動作です。つまり、クライアント側のキャッシュが再利用され、ナビゲーションはほぼ瞬時に行われます。
+### 4. ソフト・ナビゲーション
 
-### フォーカスおよびスクロールの管理
+デフォルトでは、ブラウザはページ間でハードナビゲーションを実行します。これは、ブラウザがページをリロードし、アプリの `useState` フックなどの React の状態と、ユーザーのスクロール位置やフォーカスされた要素などのブラウザの状態をリセットすることを意味します。しかし Next.js では、アプリルーターはソフトナビゲーションを使用します。つまり、React とブラウザの状態を保持したまま、React は変更されたセグメントだけをレンダリングし、ページ全体をリロードすることはありません。
 
-デフォルトでは、Next.js はフォーカスを設定し、ナビゲーションで変更された Segment をスクロールして表示します。
+### 5. バック/フォワード・ナビゲーション
+
+デフォルトでは、Next.js は前後方向のナビゲーションのスクロール位置を維持し、[ルーターキャッシュ](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating#データのキャッシュ)のルートセグメントを再利用します。

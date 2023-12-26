@@ -15,14 +15,14 @@ Next.js 13 の App Router では、[ページ](#ページ)、[共有レイアウ
 
 ![page.js special file](../../assets/page-special-file.svg)
 
-```tsx filename="app/page.tsx" switcher
+```tsx title="app/page.tsx" switcher
 // `app/page.tsx` is the UI for the `/` URL
 export default function Page() {
   return <h1>Hello, Home page!</h1>
 }
 ```
 
-```tsx filename="app/dashboard/page.tsx" switcher
+```tsx title="app/dashboard/page.tsx" switcher
 // `app/dashboard/page.tsx` is the UI for the `/dashboard` URL
 export default function Page() {
   return <h1>Hello, Dashboard Page!</h1>
@@ -44,7 +44,7 @@ export default function Page() {
 
 ![layout.js special file](../../assets/layout-special-file.svg)
 
-```tsx filename="app/dashboard/layout.tsx" switcher
+```tsx title="app/dashboard/layout.tsx" switcher
 export default function DashboardLayout({
   children, // will be a page or nested layout
 }: {
@@ -78,7 +78,7 @@ export default function DashboardLayout({
 
 ルートレイアウトは `app` ディレクトリのトップレベルで定義され、すべてのルートに適用されます。このレイアウトによってサーバーから返される最初の HTML を修正できます。
 
-```tsx filename="app/layout.tsx" switcher
+```tsx title="app/layout.tsx" switcher
 export default function RootLayout({
   children,
 }: {
@@ -108,7 +108,7 @@ export default function RootLayout({
 
 ![Nested Layout](../../assets/nested-layout.svg)
 
-```tsx filename="app/dashboard/layout.tsx" switcher
+```tsx title="app/dashboard/layout.tsx" switcher
 export default function DashboardLayout({
   children,
 }: {
@@ -117,6 +117,10 @@ export default function DashboardLayout({
   return <section>{children}</section>
 }
 ```
+
+> **Good to know:**
+>
+> - ルートレイアウトだけが`<html>`タグと`<body>`タグを含むことができます。
 
 上記の 2 つのレイアウトを組み合わせるとすると、ルートレイアウト（`app/layout.js`）はダッシュボードレイアウト（`app/dashboard/layout.js`）をラップし、ルート Segment は `app/dashboard/*` 内でラップされます。
 
@@ -132,17 +136,14 @@ export default function DashboardLayout({
 
 そのような特定の動作が必要な場合があり、テンプレートはレイアウトよりも適切なオプションです。例えば
 
-- CSS やアニメーションライブラリを使った入退場アニメーション。
 - `useEffect`に依存する機能（ページビューのロギングなど）や `useState`に依存する機能（ページごとのフィードバックフォームなど）。
 - デフォルトのフレームワークの動作を変更する。例えば、レイアウト内のサスペンスバウンダリは、レイアウトが最初に読み込まれたときのみフォールバックを表示し、ページを切り替えたときはフォールバックを表示しません。テンプレートの場合、フォールバックはナビゲーションごとに表示されます。
 
-> **推奨：** Template を使用する特別な理由がない限り、Layouts を使用することを推奨します。
-
-テンプレートは `template.js` ファイルからデフォルトの React コンポーネントをエクスポートすることで定義できる。コンポーネントは `children` プロパティを受け取る必要があり、これはネストされた Segment になります。
+テンプレートは `template.js` ファイルからデフォルトの React コンポーネントをエクスポートすることで定義できます。コンポーネントは `children` プロパティを受け取る必要があり、これはネストされた Segment になります。
 
 ![template.js special file](../../assets/template-special-file.svg)
 
-```tsx filename="app/template.tsx" switcher
+```tsx title="app/template.tsx" switcher
 export default function Template({ children }: { children: React.ReactNode }) {
   return <div>{children}</div>
 }
@@ -150,7 +151,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
 
 レイアウトとテンプレートを持つルート Segment のレンダリング出力はこのようになります。
 
-```jsx filename="Output"
+```jsx title="Output"
 <Layout>
   {/* Note that the template is given a unique key. */}
   <Template key={routeParam}>{children}</Template>
@@ -163,7 +164,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
 
 メタデータは[layout.js](/docs/app-router/api-reference/functions/generate-metadata#the-metadata-object)内の[`metadata` object](/docs/app-router/api-reference/functions/generate-metadata#the-metadata-object)または[`generateMetadata`関数](/docs/app-router/api-reference/functions/generate-metadata#generatemetadata-function)をエクスポートすることで定義できます。 [`layout.js`](/docs/app-router/api-reference/file-conventions/layout)または[`page.js`](/docs/app-router/api-reference/file-conventions/page)ファイルに記述します。
 
-```tsx filename="app/page.tsx" switcher
+```tsx title="app/page.tsx" switcher
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {

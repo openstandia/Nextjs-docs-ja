@@ -5,8 +5,8 @@ related:
   title: Next Steps
   description: For more information on what to do next, we recommend the following sections
   links:
-    - app/building-your-application/routing/linking-and-navigating
-    - app/api-reference/functions/generate-static-params
+    - app-router/building-your-application/routing/linking-and-navigating
+    - app-router/api-reference/functions/generate-static-params
 ---
 
 前もって正確な Segment 名がわからず、動的なデータからルートを作成したい場合、リクエスト時に入力される動的 Segment を使うか、ビルド時に[prerendered](#static-パラメーターの生成)を使うことができます。
@@ -21,7 +21,7 @@ related:
 
 例えば、ブログは次のようなルート `app/blog/[slug]/page.js` を含むことができます。
 
-```tsx filename="app/blog/[slug]/page.js"
+```tsx title="app/blog/[slug]/page.js"
 export default function Page({ params }) {
   return <div>My Post</div>
 }
@@ -35,13 +35,13 @@ export default function Page({ params }) {
 
 Segment のパラメータを生成する方法については、[generateStaticParams()](#static-パラメーターの生成)のページを参照してください。
 
-**Note:** ダイナミック Segment は `pages` ディレクトリの [Dynamic Routes](/docs/app-router/building-your-application/routing/dynamic-routes) と同じです。
+> **Good to know:** ダイナミック Segment は `pages` ディレクトリの [Dynamic Routes](/docs/app-router/building-your-application/routing/dynamic-routes) と同じです。
 
 ## Static パラメーターの生成
 
 `generateStaticParams`関数は[動的なルートセグメント](/docs/app-router/building-your-application/routing/dynamic-routes)と組み合わせて使うことで、リクエスト時にオンデマンドでルートを生成する代わりに、ビルド時に[**静的に生成**](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)できます。
 
-```tsx filename="app/blog/[slug]/page.tsx" switcher
+```tsx title="app/blog/[slug]/page.tsx" switcher
 export async function generateStaticParams() {
   const posts = await fetch('https://.../posts').then((res) => res.json())
 
@@ -96,7 +96,7 @@ export async function generateStaticParams() {
 
 TypeScript を使用する場合、設定したルート Segment に応じて `params` の型を追加できます。
 
-```tsx filename="app/blog/[slug]/page.tsx" switcher
+```tsx title="app/blog/[slug]/page.tsx" switcher
 export default function Page({ params }: { params: { slug: string } }) {
   return <h1>My Page</h1>
 }
@@ -108,4 +108,4 @@ export default function Page({ params }: { params: { slug: string } }) {
 | `app/shop/[...slug]/page.js`        | `{ slug: string[] }`                     |
 | `app/[categoryId]/[itemId]/page.js` | `{ categoryId: string, itemId: string }` |
 
-> **Note**: これは将来的には[TypeScript プラグイン](/docs/app-router/building-your-application/configuring/typescript#typescript-plugin)によって自動的に行われるようになるかもしれない。
+> **Good to know:** これは将来的には[TypeScript プラグイン](/docs/app-router/building-your-application/configuring/typescript#typescript-plugin)によって自動的に行われるようになるかもしれません。

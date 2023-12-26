@@ -4,7 +4,7 @@ description: Learn how you can use React Server Components to render parts of yo
 related:
   description: Learn how Next.js caches data and the result of static rendering.
   links:
-    - app/building-your-application/caching
+    - app-router/building-your-application/caching
 ---
 
 React Server Components を使用すると、サーバー上でレンダリングされ、オプションでキャッシュされる UI を記述できます。Next.js では、レンダリング作業がルート Segment によってさらに分割され、ストリーミングと部分レンダリングが可能になります：
@@ -83,9 +83,7 @@ React Server Components を使用すると、サーバー上でレンダリン�
 > ほとんどのウェブサイトでは、ルートはすべてが静的または、すべてが動的なものではなく、入り混じっています。例えば、一定期間ごとに再検証されるキャッシュされた商品データを使用する e コマースページがありますが、同時にキャッシュされていないパーソナライズされた顧客データもあります。
 >
 > Next.js では、キャッシュされたデータとキャッシュされていないデータの両方を持つルートを動的にレンダリングできます。これは、RSC ペイロードとデータが別々にキャッシュされるためです。これにより、リクエスト時にすべてのデータをフェッチすることによるパフォーマンスへの影響を心配することなく、動的レンダリングを選択できます。
-
-<!-- TODO: Fix link -->
-
+>
 > [フルルートキャッシュ](/docs/app-router/building-your-application/caching#full-route-cache)と[データキャッシュ](/docs/app-router/building-your-application/caching#data-cache)の詳細については、こちらをご覧ください。
 
 #### 動的レンダリングへの切り替え

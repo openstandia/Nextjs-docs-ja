@@ -18,7 +18,7 @@ description: Learn how to fetch data in your Next.js application.
 
 Next.js はネイティブの[`fetch` Web API](https://developer.mozilla.org/docs/Web/API/Fetch_API)を拡張し、サーバー上の各 fetch リクエストに対する[キャッシュ](#データのキャッシュ)と[再検証](#データの再検証)の動作を設定できるようになりました。React は`fetch`を拡張して、React コンポーネントツリーのレンダリング中にフェッチリクエストを自動的に[メモ](/docs/app-router/building-your-application/data-fetching/patterns#必要な場所でデータをフェッチする)します。
 
-`async/await`を使用した[Server Components](https://github.com/acdlite/rfcs/blob/first-class-promises/text/0000-first-class-support-for-promises.md)、[Route ハンドラ](/docs/app-router/building-your-application/routing/route-handlers)および[Server Actions](/docs/app-router/building-your-application/data-fetching/forms-and-mutations)で`fetch`を使用できます。
+`async/await`を使用した Server Components、[Route ハンドラ](/docs/app-router/building-your-application/routing/route-handlers)および[Server Actions](/docs/app-router/building-your-application/data-fetching/forms-and-mutations)で`fetch`を使用できます。
 
 例：
 
@@ -53,8 +53,6 @@ export default async function Page() {
 
 キャッシュはデータを保存するので、リクエストのたびにデータソースから再フェッチする必要はありません。
 
-<!-- TODO: Fix Link -->
-
 デフォルトでは、Next.js は`fetch`で返された値をサーバー上の[データ・キャッシュ](/docs/app-router/building-your-application/caching)に自動的にキャッシュします。つまり、データはビルド時またはリクエスト時に`fetch`され、キャッシュされて各データリクエストで再利用されます。
 
 ```js
@@ -65,10 +63,9 @@ fetch('https://...', { cache: 'force-cache' })
 `POST`メソッドを使用する`fetch`リクエストも自動的にキャッシュされます。`POST`メソッドを使う[Route ハンドラ](/docs/app-router/building-your-application/routing/route-handlers)の内部でない限り、キャッシュされません。
 
 > データ・キャッシュとは何ですか？
+>
 > データ・キャッシュは永続的な[HTTP キャッシュ](https://developer.mozilla.org/docs/Web/HTTP/Caching)です。プラットフォームによっては、キャッシュを自動的に拡張し、[複数のリージョンで共有する](https://vercel.com/docs/infrastructure/data-cache)ことができます。
-
-<!-- TODO: Fix Link -->
-
+>
 > データ・キャッシュの詳細については、[こちら](/docs/app-router/building-your-application/caching#data-cache)を参照してください。
 
 ### データの再検証
@@ -96,13 +93,11 @@ export const revalidate = 3600 // １時間ごとに再検証
 
 静的にレンダリングされたルートに複数の`fetch`リクエストがあり、それぞれに異なる再検証頻度が設定されている場合。もっとも低い時間がすべてのリクエストに使用されます。動的にレンダリングされるルートの場合、各`fetch`リクエストは個別に再検証されます。
 
-<!-- TODO: Fix link -->
-
 時間ベースの再検証の詳細については、[こちら](/docs/app-router/building-your-application/caching#time-based-revalidation)を参照してください。
 
 #### オンデマンドの再検証
 
-データは、ルート Handler または Server Action 内のパス（[`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)）またはキャッシュタグ（[`revalidateTag`](/docs/app-router/api-reference/functions/revalidateTag)）によってオンデマンドで再検証できます。
+データは、[Route Handler](/docs/app-router/building-your-application/routing/route-handlers) または [Server Actions](/docs/app-router/building-your-application/data-fetching/forms-and-mutations) 内のパス（[`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)）またはキャッシュタグ（[`revalidateTag`](/docs/app-router/api-reference/functions/revalidateTag)）によってオンデマンドで再検証できます。
 
 Next.js には、ルート間の`fetch`リクエストを無効にするためのキャッシュタグシステムがあります。
 
@@ -119,55 +114,17 @@ export default async function Page() {
 }
 ```
 
-ルートハンドラを使用する場合は、Next.js アプリケーションだけが知っているシークレット・トークンを作成する必要があります。このシークレット・トークンは、不正な再検証を防ぐために使用されます。たとえば、次のような URL 構造でルートにアクセスできます（手動または Webhook で）：
+その後、Server Action で `revalidateTag` を呼び出すことで、`collection` でタグ付けされたこのフェッチ・コールを再検証できます：
 
-```txt title="URL"
-https://<your-site.com>/api/revalidate?tag=collection&secret=<token>
-```
+```ts title="app/actions.ts"
+'use server'
 
-```ts title="app/api/revalidate/route.ts"
-import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 
-// 例: webhook `your-website.com/api/revalidate?tag=collection&secret=<token>`
-export async function POST(request: NextRequest) {
-  const secret = request.nextUrl.searchParams.get('secret')
-  const tag = request.nextUrl.searchParams.get('tag')
-
-  if (secret !== process.env.MY_SECRET_TOKEN) {
-    return NextResponse.json({ message: 'Invalid secret' }, { status: 401 })
-  }
-
-  if (!tag) {
-    return NextResponse.json({ message: 'Missing tag param' }, { status: 400 })
-  }
-
-  revalidateTag(tag)
-
-  return NextResponse.json({ revalidated: true, now: Date.now() })
+export default async function action() {
+  revalidateTag('collection')
 }
 ```
-
-あるいは、[`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)を使用して、パスに関連するすべてのデータの再検証もできます。
-
-```ts title="app/api/revalidate/route.ts"
-import { NextRequest, NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
-
-export async function POST(request: NextRequest) {
-  const path = request.nextUrl.searchParams.get('path')
-
-  if (!path) {
-    return NextResponse.json({ message: 'Missing path param' }, { status: 400 })
-  }
-
-  revalidatePath(path)
-
-  return NextResponse.json({ revalidated: true, now: Date.now() })
-}
-```
-
-<!-- TODO: Fix link -->
 
 オンデマンドの再検証の詳細については、[こちら](/docs/app-router/building-your-application/caching#on-demand-revalidation)を参照してください。
 
@@ -191,7 +148,7 @@ export async function POST(request: NextRequest) {
 
 個々の`fetch`リクエストに対してキャッシュを行わないようにするには、`fetch`のキャッシュ・オプションを`'no-store'`に設定します。これにより、リクエストごとに動的にデータがフェッチされます。
 
-```ts title="layout.js / page.js"
+```ts title="layout.js | page.js"
 fetch('https://...', { cache: 'no-store' })
 ```
 
@@ -199,16 +156,9 @@ fetch('https://...', { cache: 'no-store' })
 
 #### 複数の`fetch`リクエスト
 
-ルート Segment（Layout や Page など）に複数の`fetch`リクエストがある場合、Segment 設定オプションを使用して Segment 内のすべてのリクエストのキャッシュ動作を設定できます。
+ルート Segment（Layout や Page など）に複数の`fetch`リクエストがある場合、[Segment 設定オプション](/docs/app-router/api-reference/file-conventions/route-segment-config)を使用して Segment 内のすべてのリクエストのキャッシュ動作を設定できます。
 
-たとえば、`const dynamic = 'force-dynamic'`を使用すると、リクエスト時にすべてのデータがフェッチされ、Segment が動的にレンダリングされます。
-
-```ts title="layout.js / page.js"
-// Add
-export const dynamic = 'force-dynamic'
-```
-
-Segment 設定のオプションは豊富にあり、ルート Segment の静的・動的な挙動を細かく制御できます。詳しくは[API リファレンス](/docs/app-router/api-reference/file-conventions/route-segment-config)を参照してください。
+しかし、各取り込みリクエストのキャッシュ動作を個別に設定することをお勧めします。これにより、キャッシュ動作をより細かく制御することができます。
 
 ## サードパーティライブラリを使用したサーバー上でのデータフェッチ
 
@@ -220,21 +170,17 @@ Segment 設定のオプションは豊富にあり、ルート Segment の静的
 
 データがキャッシュされるかどうかは、ルート Segment が静的にレンダリングされるか動的にレンダリングされるかに依存します。Segment が静的な場合（デフォルト）、リクエストの出力はキャッシュされ、ルート Segment の一部として再検証されます。Segment が動的な場合、リクエストの出力はキャッシュされず、Segment がレンダリングされる際、リクエストごとに再フェッチされます。
 
-> **Good to know**:
-> Next.js は、個々のサードパーティリクエストのキャッシュと再検証の動作を設定するための API、`unstable_cache`を開発中です。
+Experience 版の[unstable_cache API](/docs/app-router/api-reference/functions/unstable_cache)を使うこともできます。
 
 ### 例
 
 下の例では
 
-- `revalidate`オプションは`3600`に設定されています。つまり、データはキャッシュされ、最大で 1 時間ごとに再検証されます
-<!-- TODO: Fix link -->
 - React の`cache`関数は、データのリクエストを[メモ](/docs/app-router/building-your-application/caching#request-memoization)するために使用されます
+- `revalidate`オプションは `layout.ts` と `page.ts` のセグメントで`3600`に設定されています。つまり、データはキャッシュされ、最大で 1 時間ごとに再検証されます
 
-```ts title="utils/get-item.ts"
+```ts title="app/utils.ts"
 import { cache } from 'react'
-
-export const revalidate = 3600 // 最大で1時間ごとに再検証
 
 export const getItem = cache(async (id: string) => {
   const item = await db.item.findUnique({ id })
@@ -244,8 +190,10 @@ export const getItem = cache(async (id: string) => {
 
 `getItem`関数は 2 回呼び出されますが、データベースへの問い合わせは 1 回だけです。
 
-```ts title="app/item/layout.tsx"
+```ts title="app/item/[id]/layout.tsx"
 import { getItem } from '@/utils/get-item'
+
+export const revalidate = 3600 // revalidate the data at most every hour
 
 export default async function Layout({
   params: { id },
@@ -260,6 +208,8 @@ export default async function Layout({
 ```ts title="app/item/[id]/page.tsx"
 import { getItem } from '@/utils/get-item'
 
+export const revalidate = 3600 // revalidate the data at most every hour
+
 export default async function Page({
   params: { id },
 }: {
@@ -272,11 +222,11 @@ export default async function Page({
 
 ## ルートハンドラを介したクライアント上でのデータフェッチ
 
-Client Components でデータを取得する必要がある場合、クライアントからルートハンドラを呼び出すことができます。ルートハンドラはサーバー上で実行され、クライアントにデータを返します。これは、API トークンのような機密情報をクライアントへ公開したくない場合に便利です。
+Client Components でデータを取得する必要がある場合、クライアントから[ルートハンドラ](/docs/app-router/building-your-application/routing/route-handlers)を呼び出すことができます。ルートハンドラはサーバー上で実行され、クライアントにデータを返します。これは、API トークンのような機密情報をクライアントへ公開したくない場合に便利です。
 
 例については[ルート・ハンドラのドキュメント](/docs/app-router/building-your-application/routing/route-handlers)を参照してください。
 
-> Server Components とルートハンドラ
+> **Server Components とルートハンドラ**
 >
 > Server Components はサーバー上でレンダリングされるため、データを取得するために Server Component からルートハンドラを呼び出す必要はありません。代わりに、Server Component 内で直接データを取得できます。
 

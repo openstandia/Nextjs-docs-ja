@@ -13,3 +13,9 @@ const nextConfig = {
 
 module.exports = nextConfig
 ```
+
+## バージョン履歴
+
+| Version   | Changes                                |
+| :-------- | :------------------------------------- |
+| `v13.0.0` | `transpilePackages` が追加されました。 |

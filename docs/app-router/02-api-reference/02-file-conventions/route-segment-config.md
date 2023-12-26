@@ -16,7 +16,7 @@ Route Segment オプションは、以下の変数を直接エクスポートす
 | [`preferredRegion`](#preferredregion) | <code>'auto' &#124; 'global' &#124; 'home' &#124; string &#124; string[]</code>                                                                              | `'auto'`                       |
 | [`maxDuration`](#maxduration)         | `number`                                                                                                                                                     | デプロイプラットフォームによる |
 
-```tsx title="layout.tsx / page.tsx / route.ts"
+```tsx title="layout.tsx | page.tsx | route.ts"
 export const dynamic = 'auto'
 export const dynamicParams = true
 export const revalidate = false
@@ -46,10 +46,7 @@ export const dynamic = 'auto'
 > **Good to know**: `app`ディレクトリは、`pages`ディレクトリのページレベルでの`getServerSideProps`と`getStaticProps`の全てか無かの二項対立モデルよりも、フェッチリクエストレベルでのきめ細かいキャッシュ制御を優先します。`dynamic`オプションは便宜上`pages`ディレクトリのモデルに戻る方法であり、よりシンプルな移行手段を提供します。
 
 - **`auto`**（デフォルト）：デフォルトのオプションでは、コンポーネントの動的な動作を妨げることなく、可能な限りキャッシュします
-- **`force-dynamic`**： `fetch`リクエストのキャッシュをすべて無効にし、常に再検証することで、レイアウトやページの動的レンダリングとキャッシュなしのデータフェッチを強制します。このオプションは以下と同じです
-  - `pages`ディレクトリにおける`getServerSideProps()`
-  - レイアウトまたはページ内のすべての`fetch()`リクエストのオプションを`{ cache: 'no-store', next：{ revalidate: 0 } }`にする
-  - Segment 設定を`export const fetchCache = 'force-no-store'`にする
+- **`force-dynamic`**： [動的なレンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)を強制します。その結果、リクエスト時にそれぞれのユーザーに対してルートがレンダリングされます。このオプションは`pages`ディレクトリにおける`getServerSideProps()` と同等です。
 - **`error`**：静的レンダリングを強制し、[動的関数](/docs/app-router/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions)やキャッシュされていないデータを使用しているコンポーネントがある場合、エラーを発生させてレイアウトやページのデータをキャッシュします。このオプションは以下と同じです
   - `pages`ディレクトリにおける`getStaticProps()`
   - レイアウトまたはページ内のすべての`fetch()`リクエストのオプションを`{ cache: 'force-cache' }`にする
@@ -72,7 +69,7 @@ export const dynamic = 'auto'
 
 [`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params)で生成されなかった動的な Segment にアクセスしたときの動作を制御します。
 
-```tsx title="layout.tsx / page.tsx"
+```tsx title="layout.tsx | page.tsx"
 export const dynamicParams = true // true | false,
 ```
 
@@ -89,7 +86,7 @@ export const dynamicParams = true // true | false,
 
 レイアウトまたはページのデフォルトの再検証時間を設定します。このオプションは、個々の`fetch`リクエストによって設定された`revalidate`値は上書きしません。
 
-```tsx title="layout.tsx / page.tsx/ route.ts"
+```tsx title="layout.tsx | page.tsx | route.ts"
 export const revalidate = false
 // false | 'force-cache' | 0 | number
 ```
@@ -193,7 +190,5 @@ export const maxDuration = 5
 `generateStaticParams`関数を[動的なルート Segment](/docs/app-router/building-your-application/routing/dynamic-routes)と組み合わせることで、リクエスト時に生成されるのではなく、ビルド時に静的に生成されるルート Segment のパラメータのリストを定義できます。
 
 <!-- textlint-enable -->
-
-<!-- TODO: Fix link -->
 
 詳細は[API リファレンス](/docs/app-router/api-reference/functions/generate-static-params)を参照してください。

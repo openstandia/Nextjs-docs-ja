@@ -25,19 +25,13 @@ Server Components、[ルートハンドラ](/docs/app-router/building-your-appli
 
 ツリー内の複数のコンポーネントで同じデータ（現在のユーザーなど）を使用する必要がある場合、グローバルにデータをフェッチしたり、コンポーネント間で prop を転送したりする必要はありません。代わりに、同じデータに対して複数のリクエストを行うことによるパフォーマンスへの影響を心配することなく、データを必要とするコンポーネントで`fetch`または React `cache`を使用できます。
 
-<!-- TODO: Fix link -->
-
 これが可能なのは、fetch リクエストが自動的にメモ化されるからです。リクエストの[メモ化](/docs/app-router/building-your-application/caching#request-memoization)の詳細についてはこちらを参照してください。
 
 ## Streaming
 
 Streaming と[Suspense](https://ja.react.dev/reference/react/Suspense)は React の機能で、UI のレンダリングユニットを徐々にレンダリングし、クライアントへインクリメンタルにストリーミングできます。
 
-<!-- textlint-disable -->
-
 Server Components と[ネストされたレイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts)を使用すると、特にデータを必要としないページの部分を即座にレンダリングし、データをフェッチしているページの部分については[ロードの状態](/docs/app-router/building-your-application/routing/loading-ui-and-streaming)を表示できます。つまり、ユーザーはページ全体の読み込みを待たずに、ページの操作を開始できます。
-
-<!-- textlint-enable -->
 
 ![Streamingによるサーバーレンダリング](../../assets/server-rendering-with-streaming.svg)
 
@@ -54,20 +48,11 @@ React コンポーネント内でデータをフェッチする場合、パラ�
 
 ### シーケンシャルなデータフェッチ
 
-<!-- TODO: Fix link -->
-<!-- textlint-disable -->
-
 ネストされたコンポーネントがあり、各コンポーネントがそれ自身のデータをフェッチする場合、それらのデータ要求が異なるのであれば、データフェッチは順次行われます（同じデータに対する要求は自動的に[メモ](/docs/app-router/building-your-application/caching#request-memoization)されるため、これは当てはまりません）。
-
-<!-- textlint-enable -->
 
 例えば、`Playlists`コンポーネントは、`Artist`コンポーネントがデータのフェッチを終了した後にのみデータのフェッチを開始します：
 
-:::info 訳註
-下記コード上では`Page`が`Artist`コンポーネントに該当する
-:::
-
-```tsx title="app/artist/page.tsx"
+```tsx title="app/artist/[username]/page.tsx"
 // ...
 
 async function Playlists({ artistID }: { artistID: string }) {
@@ -212,7 +197,7 @@ export const getItem = cache(async (id: string) => {
 
 このアプローチでは、データを積極的にフェッチし、レスポンスをキャッシュし、このデータフェッチが[サーバー上だけで行われる](/docs/app-router/building-your-application/rendering/composition-patterns#サーバー専用のコードをクライアント環境に持ち込まない)ことを保証できます。
 
-`utils/get-item`エクスポートは、アイテムのデータがフェッチされるタイミングを制御するために、Laytou、Page、
+`utils/get-item`エクスポートは、アイテムのデータがフェッチされるタイミングを制御するために、Layout、Page、
 または他のコンポーネントによって使用されます。
 
 > **Good to know**:

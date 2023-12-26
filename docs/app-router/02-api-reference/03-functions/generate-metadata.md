@@ -6,8 +6,8 @@ related:
   title: Next Steps
   description: View all the Metadata API options.
   links:
-    - app/api-reference/file-conventions/metadata
-    - app/building-your-application/optimizing/metadata
+    - app-router/api-reference/file-conventions/metadata
+    - app-router/building-your-application/optimizing/metadata
 ---
 
 :::caution

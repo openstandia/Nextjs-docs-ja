@@ -26,17 +26,16 @@ export default function myImageLoader({ src, width, quality }) {
 
 ## ローダーの設定例
 
-- [ローダーの設定例](#ローダーの設定例)
-  - [Akamai](#akamai)
-  - [Cloudinary](#cloudinary)
-  - [Cloudflare](#cloudflare)
-  - [Contentful](#contentful)
-  - [Fastly](#fastly)
-  - [Gumlet](#gumlet)
-  - [ImageEngine](#imageengine)
-  - [Imgix](#imgix)
-  - [Thumbor](#thumbor)
-  - [Supabase](#supabase)
+- [Akamai](#akamai)
+- [Cloudinary](#cloudinary)
+- [Cloudflare](#cloudflare)
+- [Contentful](#contentful)
+- [Fastly](#fastly)
+- [Gumlet](#gumlet)
+- [ImageEngine](#imageengine)
+- [Imgix](#imgix)
+- [Thumbor](#thumbor)
+- [Supabase](#supabase)
 
 ### Akamai
 

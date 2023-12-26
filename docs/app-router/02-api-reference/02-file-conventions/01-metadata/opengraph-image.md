@@ -88,12 +88,7 @@ About Acme
 > **Good to know**
 >
 > - デフォルトでは、生成されたアイコンは、[動的関数](/docs/app-router/building-your-application/rendering/server-components#動的関数)またはキャッシュされていないデータを使用しない限り、[静的に最適化](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)されます（ビルド時に生成され、キャッシュされます）
-
-<!-- TODO: Fix link -->
-
 > - [`generateImageMetadata`](/docs/app-router/api-reference/functions/generate-image-metadata)を使用して、同じファイルに複数のアイコンを生成できます
-
-<!-- TODO: Fix link -->
 
 画像を生成するもっとも簡単な方法は、`next/server`の[ImageResponse API](/docs/app-router/api-reference/functions/image-response)を使用することです。
 
@@ -219,7 +214,7 @@ export const size = { width: 1200, height: 630 }
 export default function Image() {}
 ```
 
-```html filename="<head>の出力"
+```html title="<head>の出力"
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 ```
@@ -237,8 +232,6 @@ export default function Image() {}
 ```
 
 #### Route Segment の設定
-
-<!-- Todo: Fix link -->
 
 `opengraph-image`と`twitter-image`は、ページやレイアウトと同じ[ルート Segment の設定オプション](/docs/app-router/api-reference/file-conventions/route-segment-config)を使用できる、特殊な[ルートハンドラ](/docs/app-router/building-your-application/routing/route-handlers)です。
 
@@ -264,7 +257,7 @@ export default function Image() {}
 > **Good to know**:
 > デフォルトでは、生成された画像は[静的に最適化](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)されます。個々の`fetch`[オプション](/docs/app-router/api-reference/functions/fetch)やルートセグメント[オプション](/docs/app-router/api-reference/file-conventions/route-segment-config#revalidate)を設定することで、この挙動を変更できます。
 
-```tsx filename="app/posts/[slug]/opengraph-image.tsx" switcher
+```tsx title="app/posts/[slug]/opengraph-image.tsx" switcher
 import { ImageResponse } from 'next/server'
 
 export const runtime = 'edge'
@@ -304,7 +297,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
 }
 ```
 
-```jsx filename="app/posts/[slug]/opengraph-image.js" switcher
+```jsx title="app/posts/[slug]/opengraph-image.js" switcher
 import { ImageResponse } from 'next/server'
 
 export const runtime = 'edge'

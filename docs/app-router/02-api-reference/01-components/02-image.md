@@ -3,14 +3,14 @@ title: <Image>
 description: Optimize Images in your Next.js Application using the built-in `next/image` Component.
 ---
 
-<details>  
-  <summary>例</summary>  
+<details>
+  <summary>例</summary>
   <div>
     <a href="https://github.com/vercel/next.js/tree/canary/examples/image-component">Image Component</a>
-  </div>  
+  </div>
 </details>
 
-この API リファレンスは、Image コンポーネントで利用可能な props や設定オプションの使い方を理解するのに役立ちます。機能や使い方については、 [Image コンポーネント](/docs/app-router/building-your-application/optimizing/images)のページを参照してください。
+この API リファレンスは、Image コンポーネントで利用可能な [props](#props) や[設定オプション](#設定オプション)の使い方を理解するのに役立ちます。機能や使い方については、 [Image コンポーネント](/docs/app-router/building-your-application/optimizing/images)のページを参照してください。
 
 ```js title="app/page.js"
 import Image from 'next/image'
@@ -44,7 +44,7 @@ Image コンポーネントで使用可能な主な Props は以下のとおり�
 | [`priority`](#priority)                   | `priority={true}`                   | Boolean         | -        |
 | [`placeholder`](#placeholder)             | `placeholder="blur"`                | String          | -        |
 | [`style`](#style)                         | `style={{objectFit: "contain"}}`    | Object          | -        |
-| [`onLoadingComplete`](#onloadingcomplete) | `onLoadingComplete={img => done()}` | Function        | -        |
+| [`onLoadingComplete`](#onloadingcomplete) | `onLoadingComplete={img => done()}` | Function        | 非推奨   |
 | [`onLoad`](#onload)                       | `onLoad={event => done()}`          | Function        | -        |
 | [`onError`](#onerror)                     | `onError(event => fail()}`          | Function        | -        |
 | [`loading`](#loading)                     | `loading="lazy"`                    | String          | -        |
@@ -139,8 +139,6 @@ export default function Page() {
   )
 }
 ```
-
-<!-- TODO: Fix link -->
 
 > **Good to know**： `loader`のような関数を受け付ける prop を使用する場合、提供された関数をシリアライズするために[Client Components](/docs/app-router/building-your-application/rendering/client-components)を使用する必要があります。
 
@@ -276,8 +274,6 @@ export default function ProfileImage() {
 画像が完全に読み込まれ、[プレースホルダ](#placeholder)が削除されると呼び出されるコールバック関数です。
 
 コールバック関数は基礎となる`<img>`要素への参照を引数にとり呼び出されます。
-
-<!-- TODO: Fix link -->
 
 > **Good to know**：`onLoadingComplete`のような関数を受け付ける props を使用する場合、引数に渡される関数をシリアライズするために[Client Components](/docs/app-router/building-your-application/rendering/client-components)を使用する必要があります。
 
@@ -420,7 +416,7 @@ module.exports = {
 
 ### `domains`
 
-> **注意**： 悪意のあるユーザからアプリケーションを保護するために、`domain`ではなく厳密な`remotePatterns`を設定することをお勧めします。ドメインから提供されるすべてのコンテンツを所有する場合にのみ、`domain`を使用してください。
+> **注意**： 悪意のあるユーザからアプリケーションを保護するために、`domain`ではなく厳密な[`remotePatterns`](#remotepatterns)を設定することをお勧めします。ドメインから提供されるすべてのコンテンツを所有する場合にのみ、`domain`を使用してください。
 
 [`remotePatterns`](#remotepatterns)と同様に、`domains`を使って外部の画像として許可されるホスト名のリストを指定できます。
 
@@ -468,8 +464,6 @@ export default function myImageLoader({ src, width, quality }) {
 例：
 
 - [カスタムのローダー設定](/docs/app-router/api-reference/next-config-js/images#ローダーの設定例)
-
-<!-- TODO: Fix link -->
 
 > **Good to know**：関数を受け付けるイメージローダーのファイルをカスタマイズするには、[Client Component](/docs/app-router/building-your-application/rendering/client-components)を使用して提供された関数をシリアライズする必要があります。
 
@@ -780,10 +774,9 @@ const ThemeImage = (props: Props) => {
 
 ## バージョン履歴
 
-<!-- TODO: Fix link -->
-
 | Version    | Changes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | :--------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v14.0.0`  | `onLoadingComplete` prop と `domains` 設定が非推奨になりました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `v13.4.14` | `placeholder` prop が`data:/image...`に対応。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `v13.2.0`  | `contentDispositionType`設定が追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `v13.0.6`  | `ref` prop が追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |

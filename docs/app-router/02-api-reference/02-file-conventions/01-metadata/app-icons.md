@@ -80,8 +80,6 @@ Next.js はファイルを評価し、アプリの`<head>`要素に適切なタ�
 | `icon`       | `.js`, `.ts`, `.tsx`     |
 | `apple-icon` | `.js`, `.ts`, `.tsx`     |
 
-<!-- TODO: Fix link -->
-
 アイコンを生成するもっとも簡単な方法は、`next/server`の[ImageResponse API](/docs/app-router/api-reference/functions/image-response)を使用することです。
 
 ```tsx title="app/icon.tsx"
@@ -134,9 +132,6 @@ export default function Icon() {
 > **Good to know**:
 >
 > - デフォルトでは、生成されたアイコンは、[動的関数](/docs/app-router/building-your-application/rendering/server-components#動的関数)またはキャッシュされていないデータを使用しない限り、[静的に最適化](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)されます（ビルド時に生成され、キャッシュされます）
-
-<!-- TODO: Fix link -->
-
 > - [`generateImageMetadata`](/docs/app-router/api-reference/functions/generate-image-metadata)を使用して、同じファイルに複数のアイコンを生成できます
 > - `favicon`アイコンは生成できません。代わりに[icon](#icon)または[favicon.ico](#favicon)ファイルを使用してください
 
@@ -201,8 +196,6 @@ export default function Icon() {}
 ```
 
 ### Route Segment の設定
-
-<!-- Todo: Fix link -->
 
 `icon`と`apple-icon`は、ページやレイアウトと同じ[ルート Segment の設定オプション](/docs/app-router/api-reference/file-conventions/route-segment-config)を使用できる、特殊な[ルートハンドラ](/docs/app-router/building-your-application/routing/route-handlers)です。
 
