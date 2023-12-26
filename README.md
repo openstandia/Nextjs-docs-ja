@@ -10,7 +10,7 @@ Translated Site: https://github.com/vercel/next.js
 
 ## Contributing
 
-When contributing to this repository, please first read the translation guide.
+When contributing to this repository, please first read the [translation guide](https://github.com/openstandia/Nextjs-docs-ja/blob/main/Contributing.md).
 
 ## Building Translated Next.js Documentation
 
