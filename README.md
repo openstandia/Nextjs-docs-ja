@@ -8,6 +8,10 @@ Translated Site: https://github.com/vercel/next.js
 
 ## Hosting Site
 
+Hosted at the following URL.
+
+https://ja.next-community-docs.dev/docs/app-router
+
 ## Contributing
 
 When contributing to this repository, please first read the [translation guide](https://github.com/openstandia/Nextjs-docs-ja/blob/main/Contributing.md).
@@ -30,7 +34,6 @@ cd Nextjs-docs-ja
 Second, install dependencies:
 
 ```
-cd documents
 npm install
 ```
 
@@ -51,3 +54,9 @@ You can then view the documentation by accessing http://localhost:3000
 The copyright of this project belongs to Nomura Research Institute, Ltd.
 
 ## Security Policy
+
+- [Disclaimer](https://www.nri.com/en/site/notice)
+- [Terms of Use](https://www.nri.com/en/site/right)
+- [Personal Data Protection Statement](https://www.nri.com/en/site/security)
+- [Privacy Policy](https://www.nri.com/en/site/privacy)
+- [Declaration of Information Security Measures](https://www.nri.com/en/site/security_declare)
