@@ -21,7 +21,7 @@ const config = {
   title: 'Next.js Docs',
   tagline:
     "Use the new App Router with Next.js and React's latest features, including Layouts, Server Components, Suspense, and more.",
-  url: 'https://example.com', // TODO: GitHubに変更
+  url: 'https://ja.next-community-docs.dev/',
   baseUrl: process.env.BASE_URL || '/',
   staticDirectories: ['public', 'static'],
   onBrokenLinks: 'throw',
@@ -36,7 +36,7 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/openstandia/Nextjs-docs-ja',
+          editUrl: 'https://github.com/openstandia/Nextjs-docs-ja/blob/main',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -70,7 +70,7 @@ const config = {
           },
           {
             href: 'https://github.com/openstandia/Nextjs-docs-ja',
-            label: 'GitHub', // TODO: GitHubに変更
+            label: 'GitHub',
             position: 'right',
           },
         ],
@@ -151,7 +151,7 @@ const config = {
         { name: 'twitter:card', content: 'summary_large_image' },
         {
           name: 'twitter:image',
-          content: 'xxx/nextjs-docs-ja/img/logo.svg',
+          content: 'https://ja.next-community-docs.dev/img/logo.svg',
         },
         { name: 'twitter:title', content: 'Next.js Docs' },
         {
@@ -162,7 +162,7 @@ const config = {
         { property: 'og:site_name', content: 'Next.js Docs' },
         {
           property: 'og:image',
-          content: 'xxx/nextjs-docs-ja/img/logo.svg',
+          content: 'https://ja.next-community-docs.dev/img/logo.svg',
         },
       ],
     }),
