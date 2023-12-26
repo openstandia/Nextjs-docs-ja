@@ -3,7 +3,19 @@ title: <Script>
 description: Optimize third-party scripts in your Next.js application using the built-in `next/script` Component.
 ---
 
-この API リファレンスは、Script コンポーネントで使用できる[props](#props)の使い方を理解するのに役立ちます。機能と使用方法については、スクリプトの最適化ページを参照してください。
+この API リファレンスは、Script コンポーネントで使用できる[props](#props)の使い方を理解するのに役立ちます。機能と使用方法については、[スクリプトの最適化ページ](/docs/app-router/building-your-application/optimizing/scripts)を参照してください。
+
+```tsx title="app/dashboard/page.tsx"
+import Script from 'next/script'
+
+export default function Dashboard() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" />
+    </>
+  )
+}
+```
 
 ## Props
 
@@ -24,8 +36,6 @@ Script コンポーネントで使用可能な props の概要は以下のとお
 ### `src`
 
 外部スクリプトの URL を指定するパス文字列。これは、絶対外部 URL または内部パスのいずれかになります。インライン・スクリプトを使用しない限り、`src`プロパティは必須です。
-
----
 
 ## 任意の Props
 

@@ -13,9 +13,6 @@ description: Learn how to use instrumentation to run code at server startup in y
 >
 > - この機能は**実験的**なものです。この機能を使用するには、`next.config.js`で`experimental.instrumentationHook = true;`と定義して、明示的にオプトインする必要があります
 > - `instrumentation`ファイルは、`app`や`pages`ディレクトリではなく、プロジェクトのルートに置く必要があります。`src`フォルダを使用している場合は、`src`の中に`pages`と`app`と一緒にファイルを置きます
-
-<!-- TODO: Fix link -->
-
 > - [`pageExtensions`設定オプション](/docs/app-router/api-reference/next-config-js/pageExtensions)を使用して接尾子を追加する場合は、`instrumentation`のファイル名もそれに合わせて更新する必要があります
 > - 基本的な使用例として[with-opentelemetry](https://github.com/vercel/next.js/tree/canary/examples/with-opentelemetry)が用意されています
 

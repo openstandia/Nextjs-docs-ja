@@ -4,14 +4,6 @@ description: Enable fast client-side navigation with the built-in `next/link` co
 sidebar_position: 3
 ---
 
-<details>
-  <summary>例</summary>
-
-- [Hello World](https://github.com/vercel/next.js/tree/canary/examples/hello-world)
-- [Link にアクティブなときの className を指定する](https://github.com/vercel/next.js/tree/canary/examples/active-class-name)
-
-</details>
-
 `<Link>`は、HTML の`<a>`要素を拡張して、ルート間の[プリフェッチ](/docs/app-router/building-your-application/routing/linking-and-navigating#プリフェッチ)とクライアントサイドのナビゲーションを提供する React コンポーネントです。Next.js でルート間をナビゲートする主要な方法です。
 
 ```tsx title="app/page.tsx"
@@ -170,8 +162,6 @@ export default function Page() {
 ```
 
 ## バージョン履歴
-
-<!-- TODO: Fix link -->
 
 | Version   | Changes                                                                                                                                                                                         |
 | :-------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

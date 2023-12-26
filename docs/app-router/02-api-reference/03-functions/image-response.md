@@ -8,7 +8,7 @@ description: API Reference for the ImageResponse constructor.
 `ImageResponse` で利用可能なオプションは以下のとおりです：
 
 ```tsx
-import { ImageResponse } from 'next/server'
+import { ImageResponse } from 'next/og'
 
 new ImageResponse(
   element: ReactElement,
@@ -38,7 +38,8 @@ new ImageResponse(
 
 ## バージョン履歴
 
-| バージョン | 変更内容                                                |
-| ---------- | ------------------------------------------------------- |
-| `v13.3.0`  | `ImageResponse` を `next/server` からインポート可能に。 |
-| `v13.0.0`  | `ImageResponse` は `@vercel/og` で追加されました。      |
+| バージョン | 変更内容                                                           |
+| ---------- | ------------------------------------------------------------------ |
+| `v14.0.0`  | `ImageResponse` は `next/server` から `next/og` に移動されました。 |
+| `v13.3.0`  | `ImageResponse` を `next/server` からインポート可能に。            |
+| `v13.0.0`  | `ImageResponse` は `@vercel/og` で追加されました。                 |

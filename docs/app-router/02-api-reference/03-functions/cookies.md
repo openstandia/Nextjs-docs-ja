@@ -5,7 +5,7 @@ related:
   title: Next Steps
   description: For more information on what to do next, we recommend the following sections
   links:
-    - app/building-your-application/data-fetching/server-actions
+    - app-router/building-your-application/data-fetching/server-actions
 ---
 
 :::caution

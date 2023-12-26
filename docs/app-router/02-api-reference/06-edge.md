@@ -124,8 +124,6 @@ Next.js Edge ランタイムは標準的な Web API をベースにしており�
 
 ## 環境変数
 
-<!-- TODO: Fix link -->
-
 `process.env`を使えば、`next dev`と`next build`両方から[環境変数](/docs/app-router/building-your-application/configuring/environment-variables)にアクセスできます。
 
 ## サポートしていない API

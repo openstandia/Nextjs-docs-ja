@@ -33,8 +33,6 @@ export async function OPTIONS(request: Request) {}
 
 ### `request` （任意）
 
-<!-- TODO: Fix link -->
-
 リクエストオブジェクトは[NextRequest](/docs/app-router/api-reference/functions/next-request)オブジェクトで、Web [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) API を拡張したものです。`NextRequest`は、`cookies`や拡張され解析された URL オブジェクト`nextUrl`に簡単にアクセスできるなど、送られてくるリクエストをさらにコントロールできるようにします。
 
 ### `context` （任意）
@@ -54,8 +52,6 @@ export async function GET(request, context: { params }) {
 | `app/blog/[...slug]/route.js`    | `/blog/1/2`    | `{ slug: ['1', '2'] }`    |
 
 ## NextResponse
-
-<!-- TODO: Fix link -->
 
 ルートハンドラは`NextResponse`オブジェクトを返すことで Web レスポンス API を拡張できます。これにより cookies、headers、redirect、rewrite を簡単に設定できるようになります。[API リファレンスを見る](/docs/app-router/api-reference/functions/next-response)。
 

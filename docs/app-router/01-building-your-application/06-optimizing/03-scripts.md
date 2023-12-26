@@ -6,7 +6,7 @@ related:
   title: API Reference
   description: Learn more about the next/script API.
   links:
-    - app/api-reference/components/script
+    - app-router/api-reference/components/script
 ---
 
 ### レイアウト・スクリプト
@@ -70,8 +70,6 @@ export default function RootLayout({
 - `lazyOnload`：ブラウザのアイドル時間中にスクリプトをロードする
 - `worker`：（実験的機能）スクリプトを Web Worker で読み込む
 
-<!-- TODO: Fix link -->
-
 各ストラテジーの詳細や使用例については、[`next/script`](/docs/app-router/api-reference/components/script#strategy) API リファレンス ドキュメントを参照してください。
 
 ### スクリプトを Web Worker にオフロードする（実験的な機能）
@@ -82,7 +80,7 @@ export default function RootLayout({
 
 このストラテジーはまだ実験的なもので、`next.config.js`で`nextScriptWorkers`フラグが有効になっている場合のみ使用できます：
 
-```js title="next.confit.js"
+```js title="next.config.js"
 module.exports = {
   experimental: {
     nextScriptWorkers: true,
@@ -145,7 +143,7 @@ Web Worker でサードパーティのスクリプトをロードする場合、
 - `onReady`：スクリプトの読み込みが完了した後、コンポーネントがマウントされるたびにコードを実行する
 - `onError`：スクリプトのロードに失敗した場合、コードを実行する
 
-これらのハンドラは、`next/script`がインポートされ、`"use client"`がコードの最初の行に定義されている Client Component で使用される場合にのみ機能します：
+これらのハンドラは、`next/script`がインポートされ、`"use client"`がコードの最初の行に定義されている [Client Component](/docs/app-router/building-your-application/rendering/client-components) で使用される場合にのみ機能します：
 
 ```tsx title="app/page.tsx"
 'use client'
@@ -165,8 +163,6 @@ export default function Page() {
   )
 }
 ```
-
-<!-- TODO: Fix link -->
 
 各イベントハンドラの詳細と表示例については、[`next/script`](/docs/app-router/api-reference/components/script#onload)API リファレンスを参照してください。
 
@@ -194,7 +190,5 @@ export default function Page() {
 ## API リファレンス
 
 next/script API についてもっと知りたい場合は以下を参照してください。
-
-<!-- TODO: Fix link -->
 
 /docs/app-router/api-reference/components/script

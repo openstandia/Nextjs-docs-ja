@@ -44,8 +44,6 @@ export default function Page() {
 - `query`オブジェクトは削除され、[`useSearchParams()`](/docs/app-router/api-reference/functions/use-search-params) に置き換えられました。
 - `router.events`は置き換えられました。[以下を参照](#router-events)。
 
-<!-- TODO: Fix link -->
-
 [完全な移行ガイドを見る](/docs/app-router/building-your-application/upgrading/app-router-migration).
 
 ## 例
@@ -95,8 +93,6 @@ export default function Layout({ children }) {
   )
 }
 ```
-
-<!-- TODO: Fix link -->
 
 > **Good to know**: `<NavigationEvents>`は[`サスペンス`境界(Suspense boundary)](/docs/app-router/building-your-application/routing/loading-ui-and-streaming#example)でラップされます。静的レンダリング中に`useSearchParams()`を実行すると、最も近い`サスペンス`境界(Suspense boundary)までクライアント側でレンダリングを引き起こすためです。[詳細はこちら](/docs/app-router/api-reference/functions/use-search-params)。
 

@@ -24,6 +24,65 @@ npx @next/codemod <transform> <path>
 
 ## Next.js Codemods
 
+### 14.0
+
+#### `ImageResponse` インポートの移行
+
+##### `next-og-import`
+
+```bash title="Terminal"
+npx @next/codemod@latest next-og-import .
+```
+
+この codemod は、[ダイナミック OG イメージ生成](/docs/app-router/building-your-application/optimizing/metadata#dynamic-image-generation)を使用するために、トランスフォームのインポートを `next/server` から `next/og` に移動します。
+
+例：
+
+```js
+import { ImageResponse } from 'next/server'
+```
+
+上記の文は以下のように変換されます：
+
+```js
+import { ImageResponse } from 'next/og'
+```
+
+#### Use viewport export
+
+##### `metadata-to-viewport-export`
+
+```bash title="Terminal"
+npx @next/codemod@latest metadata-to-viewport-export .
+```
+
+この codemod は、特定のビューポートのメタデータを `viewport` のエクスポートに移行します。
+
+例：
+
+```js
+export const metadata = {
+  title: 'My App',
+  themeColor: 'dark',
+  viewport: {
+    width: 1,
+  },
+}
+```
+
+上記の文は以下のように変換されます：
+
+```js
+export const metadata = {
+  title: 'My App',
+}
+
+export const viewport = {
+  width: 1,
+  themeColor: 'dark',
+}
+```
+
 ### 13.2
 
 #### ビルトインの Font を使用する

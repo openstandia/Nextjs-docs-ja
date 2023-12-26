@@ -36,6 +36,4 @@ https://cdn.mydomain.com/_next/static/chunks/4b9b41aaa062cbbfeff4add70f256968c51
 
 `assetPrefix`は`_next/static`へのリクエストをカバーしますが、次のパスには影響しません：
 
-<!-- TODO: Fix link -->
-
 - [public](/docs/app-router/building-your-application/optimizing/static-assets)フォルダ内のファイル； これらのアセットを CDN で提供したい場合は、自分で接頭辞を導入する必要があります

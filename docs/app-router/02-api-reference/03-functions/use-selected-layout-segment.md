@@ -19,8 +19,6 @@ export default function ExampleClientComponent() {
 }
 ```
 
-<!-- TODO: Fix link -->
-
 > **Good to know**:
 >
 > - `useSelectedLayoutSegment`は[Client Component](/docs/app-router/building-your-application/rendering/client-components)のフックであり、レイアウトはデフォルトで[Server Components](/docs/app-router/building-your-application/rendering/server-components)であるため、`useSelectedLayoutSegment`は通常、レイアウトにインポートされた Client Component から呼び出されます。

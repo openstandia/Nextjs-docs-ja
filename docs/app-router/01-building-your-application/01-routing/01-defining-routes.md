@@ -4,7 +4,7 @@ description: Learn how to create your first route in Next.js.
 related:
   description: Learn more about creating pages and layouts.
   links:
-    - app/building-your-application/routing/pages-and-layouts
+    - app-router/building-your-application/routing/pages-and-layouts
 ---
 
 > [ルーティングの基本](/docs/app-router/building-your-application/routing)のページを先に読むことをおすすめします。
@@ -33,7 +33,7 @@ Next.js では、**フォルダ**を使ってルートを定義する、ファ�
 
 例えば、最初のページを作成するには、`app`ディレクトリ内に`page.js`ファイルを追加し、React コンポーネントをエクスポートします：
 
-```tsx filename="app/page.tsx" switcher
+```tsx title="app/page.tsx" switcher
 export default function Page() {
   return <h1>Hello, Next.js!</h1>
 }

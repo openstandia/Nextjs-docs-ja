@@ -6,10 +6,8 @@ related:
   title: API Reference
   description: Learn more about the next/font API.
   links:
-    - app/api-reference/components/font
+    - app-router/api-reference/components/font
 ---
-
-<!-- TODO: Fix link -->
 
 [`next/font`](/docs/app-router/api-reference/components/font)は、フォント（カスタムフォントを含む）を自動的に最適化し、プライバシーとパフォーマンスを向上させるために外部ネットワーク要求を削除します。
 
@@ -86,8 +84,6 @@ const roboto = Roboto({
 
 ### サブセットの指定
 
-<!-- TODO: Fix link -->
-
 Google Fonts は自動的に[サブセットされます](https://fonts.google.com/knowledge/glossary/subsetting)。これにより、フォントファイルのサイズが小さくなり、パフォーマンスが向上します。どのサブセットをプリロードするかを定義する必要があります。[`preload`](/docs/app-router/api-reference/components/font#preload)が`true`のときにサブセットを指定しないと、警告が表示されます。
 
 これは、関数呼び出しに追加することで実行できます：
@@ -95,8 +91,6 @@ Google Fonts は自動的に[サブセットされます](https://fonts.google.c
 ```tsx title="app.layout.tsx"
 const inter = Inter({ subsets: ['latin'] })
 ```
-
-<!-- TODO: Fix link -->
 
 詳細については[Font API リファレンス](/docs/app-router/api-reference/components/font)を参照してください。
 
@@ -147,8 +141,6 @@ export default function Page() {
 ```
 
 上の例では`Inter`はグローバルに適用され、`Roboto Mono`は必要に応じてインポートして適用できます。
-
-<!-- TODO: Fix link -->
 
 他のアプローチは、[CSS 変数](/docs/app-router/api-reference/components/font#variable)を作成し、お好みの CSS ソリューションで使用できます：
 
@@ -253,13 +245,9 @@ const roboto = localFont({
 })
 ```
 
-<!-- TODO: Fix link -->
-
 詳細については、[Font API リファレンス](/docs/app-router/api-reference/components/font)を参照してください。
 
 ## Tailwind CSS と使用する
-
-<!-- TODO: Fix link -->
 
 `next/font`は、[CSS 変数](/docs/app-router/api-reference/components/font#css-変数)を通して[Tailwind CSS](https://tailwindcss.com/)とあわせて使用できます。
 
@@ -293,8 +281,6 @@ export default function RootLayout({
 }
 ```
 
-<!-- TODO: Fix link -->
-
 最後に、CSS 変数を[Tailwind CSS の設定ファイル](/docs/app-router/building-your-application/styling/tailwind-css#configuring-tailwind)に追加します：
 
 ```tsx title="tailwind.config.js"
@@ -323,8 +309,6 @@ module.exports = {
 
 サイトのページでフォント関数が呼び出されたとき、そのフォントはグローバルに利用はできず、すべてのルートにプリロードされるわけではありません。フォントが使用されるファイルのタイプに基づいて、関連するルートにのみプリロードされます：
 
-<!-- TODO: Fix link -->
-
 - [固有のページ](/docs/app-router/building-your-application/routing/pages-and-layouts#ページ)であれば、そのページの固有のルートにプリロードされます
 - [レイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#レイアウト)の場合、レイアウトによってラップされたすべてのルートにプリロードされます
 - [ルートレイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#ルートレイアウト-必須)の場合、すべてのルートにプリロードされます
@@ -340,7 +324,5 @@ localFont または Google フォント関数を呼び出すたびに、その�
 ## API リファレンス
 
 next/font API についてもっと知りたい場合は以下を参照してください。
-
-<!-- TODO: Fix link -->
 
 /docs/app-router/api-reference/components/font

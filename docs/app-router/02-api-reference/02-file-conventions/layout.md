@@ -103,15 +103,16 @@ app
 
 <!-- textlint-disable -->
 
-- 代わりに、最新の`searchParams`によりクライアント上の再レンダリングされる Client Component 内で、ページの`searchParams` prop、または Client Component の`useSearchParams`フックを使用します
+- 代わりに、最新の `searchParams` によりクライアント上の再レンダリングされる Client Component 内で、ページの [`searchParams`](/docs/app-router/api-reference/file-conventions/page#searchparams任意) prop、または Client Component の [`useSearchParams`](/docs/app-router/api-reference/functions/use-search-params) フックを使用します
 <!-- textlint-enable -->
 
 ### ルート・レイアウト
 
 - `app` ディレクトリにはルートの`app/layout.js`が含まれていなければなりません
 - ルート・レイアウトには`<html>`タグと`<body>`タグを定義しなければなりません
-  <!-- TODO: Fix link -->
+
   - ルート・レイアウトに`<title>`や`<meta>`のような`<head>`タグを手動で追加すべきではありません。その代わりに、`<head>`要素のストリーミングや重複除去といった高度な要件を自動的に処理する[Metadata API](/docs/app-router/api-reference/functions/generate-metadata)を使うべきです
+
 - [ルートグループ](/docs/app-router/building-your-application/routing/route-groups)を使用して、複数のルート・レイアウトを作成できます
   - **複数のルート・レイアウトにまたがって**ナビゲートすると、（クライアントサイド・ナビゲーションとは対照的に）**フルページ・ロード**が発生します。例えば、`app/(shop)/layout.js`を使用している`/cart`から、`app/(marketing)/layout.js`を使用している`/blog`に移動すると、全ページがロードされます。これは複数のルート・レイアウトに**のみ**適用されます。
 

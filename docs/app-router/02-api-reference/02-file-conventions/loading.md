@@ -20,3 +20,9 @@ export default function Loading() {
 > **Good to know**:
 >
 > - ローディング UI をデザインしている間、[React Developer Tools](https://ja.react.dev/learn/react-developer-tools)を使って Suspense バウンダリに手動で切り替えると便利です。
+
+## バージョン履歴
+
+| Version   | Changes         |
+| --------- | --------------- |
+| `v13.0.0` | `loading`の導入 |

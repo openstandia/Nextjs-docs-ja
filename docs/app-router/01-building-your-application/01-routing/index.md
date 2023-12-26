@@ -40,7 +40,7 @@ App Router は `app` という名前の新しいディレクトリで動作す�
 
 デフォルトでは、`app`内のコンポーネントは[React Server Components](/docs/app-router/building-your-application/rendering/server-components)です。これはパフォーマンスの最適化であり、簡単に採用できます。また[Client Components](/docs/app-router/building-your-application/rendering/client-components) を使用できます。
 
-> **推奨**： Server Components を初めて使う場合は、[Server and Client Components](/docs/app-router/getting-started/react-essentials) ページをチェックしてください。
+> **推奨**： Server Components を初めて使う場合は、[Server](/docs/app-router/building-your-application/rendering/server-components) ページをチェックしてください。
 
 ## フォルダーとファイルの役割
 
