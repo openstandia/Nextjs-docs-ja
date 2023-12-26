@@ -45,3 +45,9 @@ You can then view the documentation by accessing http://localhost:3000
 ## License
 
 - [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/deed.ja)
+
+## Copyright
+
+The copyright of this project belongs to Nomura Research Institute, Ltd.
+
+## Security Policy
