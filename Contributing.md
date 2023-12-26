@@ -1,6 +1,6 @@
 # Next.js 公式ドキュメント 日本語翻訳プロジェクト
 
-本プロジェクトは [Next.js 公式ドキュメント](https://nextjs.org/docs)の翻訳プロジェクトです。静的サイトツールの [docusaurus](https://docusaurus.io/) を用いて作成されています。
+本プロジェクトは [Next.js 公式ドキュメント](https://nextjs.org/docs)の翻訳プロジェクトです。静的サイトツールの [Docusaurus](https://docusaurus.io/) を用いて作成されています。
 
 ## 翻訳手順について
 
@@ -27,7 +27,7 @@
    git checkout feature/#1-initial
    ```
 
-3. [Next.js 公式ドキュメント](https://nextjs.org/docs)から翻訳するドキュメントを選定し本プロジェクトに該当するファイルを編集します。
+3. [Next.js 公式ドキュメント](https://nextjs.org/docs)から翻訳するドキュメントを選定し、本プロジェクトに該当するファイルを編集します。
    - 公式ドキュメントのソースコードは [vercel/next.js](https://github.com/vercel/next.js/tree/canary/docs) を参考にしてください。
    - ドキュメントに挿入する画像（SVG）については `docs/assets` 以下から取得してください。公式にて新しく追加されたページ等で、画像が見つからない場合は [Issue](https://github.com/openstandia/Nextjs-docs-ja/issues) に詳細を記載してください。
 4. 翻訳が完了次第、リポジトリに push します。コミットメッセージはできるだけ理解しやすいものとしてください。
@@ -39,7 +39,7 @@
    ```
 
 5. 2.で作成したブランチ名から `main` ブランチに向かって [Pull Request](https://github.com/openstandia/Nextjs-docs-ja/pulls) を作成します。
-   - Pull Request と 1.で作成した Issue を適切に紐づけてください。
+   - 内容に `Closes #<Issue番号>`を含めることで Pull Request と 1.で作成した Issue を適切に紐づけてください。
 6. プロジェクト管理者によってレビューが行われるため、指摘を受けた場合は適切に対応します。問題なければ承認され、[ホスティングサイト](https://ja.next-community-docs.dev/docs/app-router)に自動で反映されます。
    - **Pull Request の承認はプロジェクト管理者が行うため、翻訳者が勝手に承認しないでください。**
 
