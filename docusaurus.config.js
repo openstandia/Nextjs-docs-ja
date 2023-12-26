@@ -154,6 +154,7 @@ const config = {
           content: 'https://ja.next-community-docs.dev/img/logo.svg',
         },
         { name: 'twitter:title', content: 'Next.js Docs' },
+        { name: 'twitter:site', content: '@sw__high' },
         {
           name: 'twitter:description',
           content:
