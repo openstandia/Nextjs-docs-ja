@@ -46,3 +46,7 @@
 ## 翻訳時の注意点
 
 TBD...
+
+## お問い合わせ
+
+質問がある場合は、[unijs-nextjs@nri.co.jp](mailto:unijs-nextjs@nri.co.jp) までお問い合わせください。
