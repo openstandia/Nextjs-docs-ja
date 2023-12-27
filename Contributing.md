@@ -24,7 +24,7 @@
    ```bash
    git clone https://github.com/openstandia/Nextjs-docs-ja.git
    cd Nextjs-docs-ja
-   git checkout feature/#1-initial
+   git checkout -b feature/#1-initial
    ```
 
 3. [Next.js 公式ドキュメント](https://nextjs.org/docs)から翻訳するドキュメントを選定し、本プロジェクトに該当するファイルを編集します。
