@@ -1,6 +1,6 @@
 ---
 title: App Router
-description: Next.js App Router 日本語翻訳プロジェクト
+description: Layouts、Server Components、Suspenseなど、Next.js と React の最新機能を備えた新しい App Router をご利用ください。
 ---
 
 :::caution

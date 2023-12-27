@@ -18,7 +18,7 @@ const configureGtag = () => {
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Next.js Docs',
+  title: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
   tagline: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
   url: 'https://ja.next-community-docs.dev/',
   baseUrl: process.env.BASE_URL || '/',
@@ -152,12 +152,18 @@ const config = {
           name: 'twitter:image',
           content: 'https://ja.next-community-docs.dev/img/logo.png',
         },
-        { name: 'twitter:title', content: 'Next.js Docs' },
+        {
+          name: 'twitter:title',
+          content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
+        },
         {
           name: 'twitter:description',
           content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
         },
-        { property: 'og:site_name', content: 'Next.js Docs' },
+        {
+          property: 'og:site_name',
+          content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
+        },
         {
           property: 'og:image',
           content: 'https://ja.next-community-docs.dev/img/logo.png',
