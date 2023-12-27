@@ -1,6 +1,6 @@
 ---
 title: App Router
-description: Use the new App Router with Next.js' and React's latest features, including Layouts, Server Components, Suspense, and more.
+description: Next.js App Router 日本語翻訳プロジェクト
 ---
 
 :::caution

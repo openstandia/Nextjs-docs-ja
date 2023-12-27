@@ -19,8 +19,7 @@ const configureGtag = () => {
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Next.js Docs',
-  tagline:
-    "Use the new App Router with Next.js and React's latest features, including Layouts, Server Components, Suspense, and more.",
+  tagline: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
   url: 'https://ja.next-community-docs.dev/',
   baseUrl: process.env.BASE_URL || '/',
   staticDirectories: ['public', 'static'],
@@ -156,8 +155,7 @@ const config = {
         { name: 'twitter:title', content: 'Next.js Docs' },
         {
           name: 'twitter:description',
-          content:
-            "Use the new App Router with Next.js and React's latest features, including Layouts, Server Components, Suspense, and more.",
+          content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
         },
         { property: 'og:site_name', content: 'Next.js Docs' },
         {
