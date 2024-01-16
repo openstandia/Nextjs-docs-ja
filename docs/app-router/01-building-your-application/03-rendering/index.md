@@ -70,6 +70,6 @@ React では、クライアントとサーバーのネットワーク境界を�
 このコンセプトは、同じコンポーネントツリー内で[クライアントとサーバーのコンポーネントをどのように混在させる](/docs/app-router/building-your-application/rendering/composition-patterns)ことができるかを見れば、より明確になるでしょう。
 
 - [Server Components](/docs/app-router/building-your-application/rendering/server-components): React Server Components を使用して、アプリケーションの一部をサーバー上でレンダリングする方法を紹介します
-- [Client Components](/docs/app-router/building-your-application/rendering/server-components): Client Components を使用して、アプリケーションの一部をクライアントにレンダリングする方法を紹介します
-- [構成パターン](/docs/app-router/building-your-application/rendering/server-components)： Server Components と Client Components の推奨使用パターン
-- [Edge / Node.js ランタイム](/docs/app-router/building-your-application/rendering/server-components)：Next.js の切り替え可能なランタイム（Edge と Node.js）について紹介します
+- [Client Components](/docs/app-router/building-your-application/rendering/client-components): Client Components を使用して、アプリケーションの一部をクライアントにレンダリングする方法を紹介します
+- [構成パターン](/docs/app-router/building-your-application/rendering/composition-patterns)： Server Components と Client Components の推奨使用パターン
+- [Edge / Node.js ランタイム](/docs/app-router/building-your-application/rendering/edge-and-nodejs-runtimes)：Next.js の切り替え可能なランタイム（Edge と Node.js）について紹介します
