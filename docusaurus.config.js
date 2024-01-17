@@ -145,7 +145,7 @@ const config = {
         {
           name: 'keywords',
           content:
-            'next, Next, nextjs, Nextjs, next.js, Next.js, react, React, App Router',
+            'next, Next, nextjs, Nextjs, next.js, Next.js, react, React, App Router, 日本語, 和訳, 翻訳, ドキュメント',
         },
         { name: 'twitter:card', content: 'summary_large_image' },
         {
