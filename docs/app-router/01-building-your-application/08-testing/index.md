@@ -1,5 +1,5 @@
 ---
-title: テスト 🚧
+title: テスト
 description: 'Next.jsと、よく使われる4つのテストツール（Cypress、Playwright、Vitest、Jest）のセットアップ方法を学びます。'
 ---
 
