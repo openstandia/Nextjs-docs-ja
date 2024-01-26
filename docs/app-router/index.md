@@ -4,7 +4,7 @@ description: Layouts、Server Components、Suspenseなど、Next.js と React �
 ---
 
 :::caution
-本ドキュメントは[公式ドキュメント](https://nextjs.org/docs)の [v14.0.3](https://github.com/vercel/next.js/tree/v14.0.3/docs) の断面を翻訳したものです。
+本ドキュメントは[公式ドキュメント](https://nextjs.org/docs)の [v14.0.3](https://github.com/vercel/next.js/tree/v14.0.3/docs) の断面を翻訳したものです。Next.js の公式 X アカウントにも[ポスト](https://twitter.com/nextjs/status/1746921179879735677)頂きました。
 
 [公式ドキュメント](https://nextjs.org/docs)のアップデートに追随して適宜更新しますが、最新情報が反映できていない可能性があります。
 
