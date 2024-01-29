@@ -177,64 +177,58 @@ export const dynamic = 'force-dynamic'
 
 ## Full Route Cache
 
-> **Related terms**:
+> **関連用語**:
 >
-> You may see the terms **Automatic Static Optimization**, **Static Site Generation**, or **Static Rendering** being used interchangeably to refer to the process of rendering and caching routes of your application at build time.
+> **Automatic Static Optimization（自動静的最適化）**、**Static Site Generation（静的サイト生成）**、または **Static Rendering（静的レンダリング）**という用語は、ビルド時にアプリケーションのルートをレンダリングおよびキャッシュするプロセスを指すために、互換的に使用されることがあります。
 
-Next.js automatically renders and caches routes at build time. This is an optimization that allows you to serve the cached route instead of rendering on the server for every request, resulting in faster page loads.
+Next.js はビルド時にルートを自動的にレンダリングしてキャッシュします。これは、リクエストごとにサーバーでレンダリングする代わりに、キャッシュされたルートを提供できるようにする最適化で、ページロードの高速化をもたらします。
 
-To understand how the Full Route Cache works, it's helpful to look at how React handles rendering, and how Next.js caches the result:
+Full Route Cache がどのように機能するのかを理解するには、React がどのようにレンダリングを処理し、Next.js がどのように結果をキャッシュするのかを見るのが役に立ちます：
 
-### 1. React Rendering on the Server
+### 1. サーバー上での React レンダリング
 
-On the server, Next.js uses React's APIs to orchestrate rendering. The rendering work is split into chunks: by individual routes segments and Suspense boundaries.
+サーバー上では、Next.js は React の API を使ってレンダリングを管理します。レンダリング作業は、個々の Route Segment と Suspense 境界に分割されます。
 
-Each chunk is rendered in two steps:
+各チャンクは 2 つのステップでレンダリングされます：
 
-1. React renders Server Components into a special data format, optimized for streaming, called the **React Server Component Payload**.
-2. Next.js uses the React Server Component Payload and Client Component JavaScript instructions to render **HTML** on the server.
+1. React は、Server Component を、React Server Component Payload と呼ばれる、ストリーミング用に最適化された特殊なデータ形式としてレンダリングします
+2. Next.js は、React Server Component Payload と Client Component の JavaScript を使用して、サーバー上で HTML をレンダリングします
 
-This means we don't have to wait for everything to render before caching the work or sending a response. Instead, we can stream a response as work is completed.
+つまり、作業をキャッシュしたりレスポンスを送信したりする前に、すべてがレンダリングされるのを待つ代わりに、作業が完了した時点でレスポンスをストリームできます。
 
-> **What is the React Server Component Payload?**
+> **React Server Component Payload とは？**
 >
-> The React Server Component Payload is a compact binary representation of the rendered React Server Components tree. It's used by React on the client to update the browser's DOM. The React Server Component Payload contains:
+> React Server Component Payload は、レンダリングされた React Server Components ツリーのコンパクトなバイナリ表現です。これは、ブラウザの DOM を更新するために、クライアントの React によって使用されます。React Server Component Payload には以下が含まれます：
 >
-> - The rendered result of Server Components
-> - Placeholders for where Client Components should be rendered and references to their JavaScript files
-> - Any props passed from a Server Component to a Client Component
+> - Server Components のレンダリング結果
+> - Client Components がレンダリングされる場所のプレースホルダと、その JavaScript ファイルへの参照
+> - Server Components から Client Components に渡されるすべての Props
 >
-> To learn more, see the [Server Components](/docs/app/building-your-application/rendering/server-components) documentation.
+> 詳しくは、[Server Components](/docs/app-router/building-your-application/rendering)のドキュメントを参照してください。
 
-### 2. Next.js Caching on the Server (Full Route Cache)
+### 2. サーバー上での Next.js によるキャッシュ（Full Route Cache）
 
-<Image
-  alt="Default behavior of the Full Route Cache, showing how the React Server Component Payload and HTML are cached on the server for statically rendered routes."
-  srcLight="/docs/light/full-route-cache.png"
-  srcDark="/docs/dark/full-route-cache.png"
-  width="1600"
-  height="888"
-/>
+![Full Route Cacheのデフォルトの動作。静的にレンダリングされたルートに対して、React Server Component PayloadとHTMLがどのようにサーバーにキャッシュされるかを示しています](../../assets/full-route-cache.avif)
 
-The default behavior of Next.js is to cache the rendered result (React Server Component Payload and HTML) of a route on the server. This applies to statically rendered routes at build time, or during revalidation.
+Next.js のデフォルトの動作は、ルートのレンダリング結果（React Server Component Payload と HTML）をサーバーにキャッシュすることです。これは、ビルド時や再検証時に静的にレンダリングされたルートに適用されます。
 
-### 3. React Hydration and Reconciliation on the Client
+### 3. クライアント上での React による Hydration と 差分検出処理（Reconciliation）
 
-At request time, on the client:
+リクエスト時に、クライアント上では以下のことが行われます：
 
-1. The HTML is used to immediately show a fast non-interactive initial preview of the Client and Server Components.
-2. The React Server Components Payload is used to reconcile the Client and rendered Server Component trees, and update the DOM.
-3. The JavaScript instructions are used to [hydrate](https://react.dev/reference/react-dom/client/hydrateRoot) Client Components and make the application interactive.
+1. HTML は、Client Components と Server Components の高速で非インタラクティブな初期プレビューを表示するために使用される
+2. React Server Component Payload は、Client Component の差分検出処理とレンダリングされた Server Components のツリーを調整し、DOM を更新するために使用される
+3. JavaScript の処理は、Client Components を[ハイドレート](https://react.dev/reference/react-dom/client/hydrateRoot)し、アプリケーションをインタラクティブにするために使用される
 
-### 4. Next.js Caching on the Client (Router Cache)
+### 4. クライアントでの Next.js によるキャッシュ（Router Cache）
 
-The React Server Component Payload is stored in the client-side [Router Cache](#router-cache) - a separate in-memory cache, split by individual route segment. This Router Cache is used to improve the navigation experience by storing previously visited routes and prefetching future routes.
+React Server Component Payload は、クライアントサイドの[Router Cache](#router-cache)（個々の Route Segment ごとに分割された個別のメモリ内キャッシュ）に保存されます。この Router Cache は、以前に訪問したルートを保存し、将来のルートをプリフェッチすることで、ナビゲーション体験を向上させるために使用されます。
 
-### 5. Subsequent Navigations
+### 5. その後のナビゲーション
 
-On subsequent navigations or during prefetching, Next.js will check if the React Server Components Payload is stored in the Router Cache. If so, it will skip sending a new request to the server.
+その後のナビゲーションの際やプリフェッチの際に、Next.js は React Server Components Payload が Router Cache に保存されているかどうかを確認します。キャッシュされていれば、サーバーへの新しいリクエストの送信をスキップします。
 
-If the route segments are not in the cache, Next.js will fetch the React Server Components Payload from the server, and populate the Router Cache on the client.
+Route Segment がキャッシュにない場合、Next.js はサーバーから React Server Components Payload を取得し、クライアントの Router Cache に入力します。
 
 ### Static and Dynamic Rendering
 
