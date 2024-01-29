@@ -8,8 +8,8 @@ description: エンドツーエンド（E2E）とコンポーネントテスト�
 
 > **Warning:**
 >
-> - **コンポーネントテスト**では、[Next.js バージョン 14](https://github.com/cypress-io/cypress/issues/28185) と`非同期` Server Components をサポートしていません。これらの問題は現在追跡中です。現時点では、コンポーネントテストは Next.js バージョン 13 で動作し、`非同期` Server Components の E2E テストを推奨します。
-> - Cypress は現在、`moduleResolution: "bundler"` の [TypeScript バージョン 5](https://github.com/cypress-io/cypress/issues/27731) をサポートしていません。この問題は現在追跡中です。
+> - **コンポーネントテスト**では、[Next.js バージョン 14](https://github.com/cypress-io/cypress/issues/28185) と `Async` Server Components をサポートしていません。これらの問題は現在追跡中です。現時点では、コンポーネントテストは Next.js バージョン 13 で動作し、`Async` Server Components の E2E テストを推奨します。
+> - Cypress は現在、[TypeScript バージョン 5](https://github.com/cypress-io/cypress/issues/27731) の `moduleResolution: "bundler"` をサポートしていません。この問題は現在追跡中です。
 
 ## クイックスタート
 
@@ -127,7 +127,7 @@ describe('Navigation', () => {
 
 ### E2E テストを実行する
 
-Cypress は、アプリケーションをナビゲートするユーザーをシミュレートします。これには、Next.js サーバーが動作している必要があります。アプリケーションの動作をより忠実に再現するために、実運用コードに対してテストを実行することをお勧めします。
+Cypress は、アプリケーションをナビゲートするユーザーをシミュレートします。これには、Next.js サーバーが動作している必要があります。アプリケーションの動作をより忠実に再現するために、プロダクションコードに対してテストを実行することをお勧めします。
 
 `npm run build && npm run start` を実行して Next.js アプリケーションをビルドし、別のターミナルウィンドウで `npm run cypress:open` を実行して Cypress を起動し、E2E テストスイートを実行します。
 
@@ -192,7 +192,7 @@ describe('<Page />', () => {
 
 > **Good to know**:
 >
-> - Cypress は現在、`非同期` Server Components のコンポーネントテストをサポートしていません。E2E テストを使用することをお勧めします。
+> - Cypress は現在、`Async` Server Components のコンポーネントテストをサポートしていません。E2E テストを使用することをお勧めします。
 > - コンポーネントテストは Next.js サーバーを必要としないため、サーバーが利用可能であることに依存する`<Image />`のような機能は、そのままでは機能しない可能性があります。
 
 ### コンポーネントテストの実行する
