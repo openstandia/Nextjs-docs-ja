@@ -6,7 +6,7 @@ description: ユニットテストとスナップショットテストのため�
 
 Jest と React Testing Library は、**ユニットテスト**や**スナップショットテスト**によく使われます。このガイドでは、Next.js で Jest をセットアップし、最初のテストを書く方法を紹介します。
 
-> **Good to know:** `Async` Server Components は React エコシステムにとって新しいものなので、Jest は現在サポートしていません。同期 Server Components と Client Components の**ユニットテスト**を実行することはできますが、`非同期`コンポーネントの **E2E テスト**を使用することをお勧めします。
+> **Good to know:** `Async` Server Components は React エコシステムにとって新しいものなので、Jest は現在サポートしていません。同期 Server Components と Client Components の**ユニットテスト**を実行することはできますが、`Async` Components の**E2E テスト**を使用することをお勧めします。
 
 ## クイックスタート
 
