@@ -83,7 +83,7 @@ async function create(data) {
 }
 ```
 
-## Deleting cookies
+## cookie を削除する
 
 > **Good to know**: cookie を削除できるのは、[Server Action](/docs/app-router/building-your-application/data-fetching/forms-and-mutations) または [Route Handler](/docs/app-router/building-your-application/routing/route-handlers) だけです。
 
@@ -150,7 +150,7 @@ async function delete(data) {
 
 > **Good to know**: 削除できるのは、`.set()` が呼び出されたのと同じドメインに属する cookie だけです。さらに、削除したい cookie と同じプロトコル(HTTP または HTTPS)でコードを実行しなければなりません。
 
-## Version History
+## バージョン履歴
 
 | Version   | Changes                      |
 | --------- | ---------------------------- |
