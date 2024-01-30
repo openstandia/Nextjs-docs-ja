@@ -228,243 +228,230 @@ React Server Component Payload は、クライアントサイドの[Router Cache
 
 その後のナビゲーションの際やプリフェッチの際に、Next.js は React Server Components Payload が Router Cache に保存されているかどうかを確認します。キャッシュされていれば、サーバーへの新しいリクエストの送信をスキップします。
 
-Route Segment がキャッシュにない場合、Next.js はサーバーから React Server Components Payload を取得し、クライアントの Router Cache に入力します。
+Route Segment がキャッシュにない場合、サーバーから React Server Components Payload を取得し、クライアントの Router Cache に入力します。
 
-### Static and Dynamic Rendering
+### 静的、動的なレンダリング
 
-Whether a route is cached or not at build time depends on whether it's statically or dynamically rendered. Static routes are cached by default, whereas dynamic routes are rendered at request time, and not cached.
+ビルド時にルートがキャッシュされるかどうかは、静的にレンダリングされるか動的にレンダリングされるかに依存します。静的ルートはデフォルトでキャッシュされますが、動的ルートはリクエスト時にレンダリングされ、キャッシュされません。
 
-This diagram shows the difference between statically and dynamically rendered routes, with cached and uncached data:
+この図は静的にレンダリングされるルートと動的にレンダリングされるルートの違いを、キャッシュされるデータとキャッシュされないデータで表しています：
 
-<Image
-  alt="How static and dynamic rendering affects the Full Route Cache. Static routes are cached at build time or after data revalidation, whereas dynamic routes are never cached"
-  srcLight="/docs/light/static-and-dynamic-routes.png"
-  srcDark="/docs/dark/static-and-dynamic-routes.png"
-  width="1600"
-  height="1314"
-/>
+![静的レンダリングと動的レンダリングがFull Route Cacheに与える影響。静的ルートはビルド時またはデータの再検証後にキャッシュされますが、動的ルートはキャッシュされません](../../assets/static-and-dynamic-routes.avif)
 
-Learn more about [static and dynamic rendering](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies).
+詳細は[静的レンダリングと動的レンダリングの詳細](/docs/app-router/building-your-application/rendering/server-components#server-rendering-strategies)を参照してください。
 
-### Duration
+### 期間
 
-By default, the Full Route Cache is persistent. This means that the render output is cached across user requests.
+デフォルトでは、Full Route Cache は永続的です。これは、レンダリング出力がユーザーリクエストにまたがってキャッシュされることを意味します。
 
-### Invalidation
+### キャッシュを無効にする
 
-There are two ways you can invalidate the Full Route Cache:
+Full Route Cache を無効にする方法は 2 つあります：
 
-- **[Revalidating Data](/docs/app/building-your-application/caching#revalidating)**: Revalidating the [Data Cache](#data-cache), will in turn invalidate the Router Cache by re-rendering components on the server and caching the new render output.
-- **Redeploying**: Unlike the Data Cache, which persists across deployments, the Full Route Cache is cleared on new deployments.
+- [データの再検証](#再検証)：データキャッシュを再有効化すると、サーバー上でコンポーネントを再レンダリングし、新しいレンダー出力をキャッシュすることで、Router Cache が無効になります
+- **再デプロイ**：デプロイメントをまたいで持続するデータキャッシュとは異なり、Full Route Cache は新しいデプロイメントでクリアされます
 
-### Opting out
+### オプトアウト
 
-You can opt out of the Full Route Cache, or in other words, dynamically render components for every incoming request, by:
+Full Route Cache をオプトアウトする、つまり、受信リクエストごとにコンポーネントを動的にレンダリングするには、次のようにします：
 
-- **Using a [Dynamic Function](#dynamic-functions)**: This will opt the route out from the Full Route Cache and dynamically render it at request time. The Data Cache can still be used.
-- **Using the `dynamic = 'force-dynamic'` or `revalidate = 0` route segment config options**: This will skip the Full Route Cache and the Data Cache. Meaning components will be rendered and data fetched on every incoming request to the server. The Router Cache will still apply as it's a client-side cache.
-- **Opting out of the [Data Cache](#data-cache)**: If a route has a `fetch` request that is not cached, this will opt the route out of the Full Route Cache. The data for the specific `fetch` request will be fetched for every incoming request. Other `fetch` requests that do not opt out of caching will still be cached in the Data Cache. This allows for a hybrid of cached and uncached data.
+- **[動的関数](#動的関数)**を使用する：Full Route Cache からルートを除外し、リクエスト時に動的にレンダリングします。Data Cache は引き続き使用できます
+- **Route Segment 設定オプション `dynamic = 'force-dynamic'` または `revalidate = 0`を使用する**：これは Full Route Cache と Data Cache をスキップします。つまり、コンポーネントはレンダリングされ、サーバーへのリクエストごとにデータが取得されます。Router Cache はクライアント側のキャッシュなので、まだ適用されます
+- **[Data Cache](#data-cache)のオプトアウト**：ルートにキャッシュされない`fetch`リクエストがある場合、これは Full Route Cache からルートを除外します。特定の`fetch`リクエストのデータは、受信するリクエストごとにフェッチされます。キャッシュをオプトアウトしない他の`fetch`リクエストは、Data Cache にキャッシュされます。これにより、キャッシュされたデータとキャッシュされていないデータのハイブリッドが可能になります
 
 ## Router Cache
 
-> **Related Terms:**
+> **関連用語：**
 >
-> You may see the Router Cache being referred to as **Client-side Cache** or **Prefetch Cache**. While **Prefetch Cache** refers to the prefetched route segments, **Client-side Cache** refers to the whole Router cache, which includes both visited and prefetched segments.
-> This cache specifically applies to Next.js and Server Components, and is different to the browser's [bfcache](https://web.dev/bfcache/), though it has a similar result.
+> Router Cache が**クライアントサイドキャッシュ**や**プリフェッチキャッシュ**と呼ばれるのを目にすることがあるかもしれません。**プリフェッチキャッシュ**がプリフェッチされたルートセグメントを指すのに対し、**クライアントサイドキャッシュ**は訪問済みセグメントとプリフェッチされたセグメントの両方を含むルーターキャッシュ全体を指します。このキャッシュは特に Next.js とサーバーコンポーネントに適用され、ブラウザの[bfcache](https://web.dev/bfcache/)とは異なります。
 
-Next.js has an in-memory client-side cache that stores the React Server Component Payload, split by individual route segments, for the duration of a user session. This is called the Router Cache.
+Next.js には、React Server Component Payload を個々の Route Segment に分割して、セッションの間保存するインメモリのクライアントサイドキャッシュがあります。これは Router Cache と呼ばれます。
 
-**How the Router Cache Works**
+**Router Cache の仕組み**
 
-<Image
-  alt="How the Router cache works for static and dynamic routes, showing MISS and HIT for initial and subsequent navigations."
-  srcLight="/docs/light/router-cache.png"
-  srcDark="/docs/dark/router-cache.png"
-  width="1600"
-  height="1375"
-/>
+![Router Cacheが静的ルートと動的ルートでどのように機能するか](../../assets/router-cache.avif)
 
-As a user navigates between routes, Next.js caches visited route segments and [prefetches](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching) the routes the user is likely to navigate to (based on `<Link>` components in their viewport).
+ユーザーがルート間を移動すると、訪問した Route Segment をキャッシュし、（ビューポート内の`<Link>`コンポーネントに基づいて）ユーザーが移動しそうなルートを[プリフェッチ](/docs/app-router/building-your-application/routing/#2-prefetching)します。
 
-This results in an improved navigation experience for the user:
+その結果、ユーザーのナビゲーション体験が向上します：
 
-- Instant backward/forward navigation because visited routes are cached and fast navigation to new routes because of prefetching and [partial rendering](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering).
-- No full-page reload between navigations, and React state and browser state are preserved.
+- 訪問したルートがキャッシュされるため、すぐに戻る/進むナビゲーションができ、プリフェッチと[部分レンダリング](/docs/app/building-your-application/routing/linking-and-navigting#4-partial-rendering)により、新しいルートへのナビゲーションが高速になります
+- ナビゲーションの間に全ページをリロードする必要がなく、React の状態とブラウザの状態が保持されます
 
-> **Difference between the Router Cache and Full Route Cache**:
+> **Router Cache と Full Route Cache の違い**：
 >
-> The Router Cache temporarily stores the React Server Component Payload in the browser for the duration of a user session, whereas the Full Route Cache persistently stores the React Server Component Payload and HTML on the server across multiple user requests.
+> Router Cache は、ユーザーセッションの間、React Server Component Payload をブラウザに一時的に保存するのに対し、Full Route Cache は、複数のユーザーリクエストにわたって React Server Component Payload と HTML をサーバーに永続的に保存します。
 >
-> While the Full Route Cache only caches statically rendered routes, the Router Cache applies to both statically and dynamically rendered routes.
+> Full Route Cache が静的にレンダリングされたルートのみをキャッシュするのに対し、Router Cache は静的にレンダリングされたルートと動的にレンダリングされたルートの両方に適用されます。
 
-### Duration
+### 期間
 
-The cache is stored in the browser's temporary memory. Two factors determine how long the router cache lasts:
+キャッシュはブラウザの一時メモリに保存されます。Router Cache の持続時間は 2 つの要因によって決まります：
 
-- **Session**: The cache persists across navigation. However, it's cleared on page refresh.
-- **Automatic Invalidation Period**: The cache of an individual segment is automatically invalidated after a specific time. The duration depends on whether the route is [statically](/docs/app/building-your-application/rendering/server-components#static-rendering-default) or [dynamically](/docs/app/building-your-application/rendering/server-components#dynamic-rendering) rendered:
-  - **Dynamically Rendered**: 30 seconds
-  - **Statically Rendered**: 5 minutes
+- **セッション**：キャッシュはナビゲーションの間持続します。ただし、ページ更新時にクリアされます
+- **自動無効期間**：個々の Segment のキャッシュは特定の時間が経過すると自動的に無効になります。期間はルートが[静的](/docs/app-router/building-your-application/rendering/server-components#static-rendering-default)にレンダリングされるか、[動的](/docs/app-router/building-your-application/rendering/server-components#dynamic-rendering)にレンダリングされるかに依存します：
+  - **動的なレンダリング**：30 秒
+  - **静的なレンダリング**：5 分
 
-While a page refresh will clear **all** cached segments, the automatic invalidation period only affects the individual segment from the time it was last accessed or created.
+ページを更新すると、キャッシュされた Segment は**すべて**消去されますが、自動無効化期間は、最後にアクセスまたは作成された時点から個々の Segment にのみ影響します。
 
-By adding `prefetch={true}` or calling `router.prefetch` for a dynamically rendered route, you can opt into caching for 5 minutes.
+`prefetch={true}` を追加するか、動的にレンダリングされるルートに対して `router.prefetch` をコールすることで、5 分間のキャッシュを選択できます。
 
-### Invalidation
+### キャッシュを無効にする
 
-There are two ways you can invalidate the Router Cache:
+Router Cache を無効にする方法は 2 つあります：
 
-- In a **Server Action**:
-  - Revalidating data on-demand by path with ([`revalidatePath`](/docs/app/api-reference/functions/revalidatePath)) or by cache tag with ([`revalidateTag`](/docs/app/api-reference/functions/revalidateTag))
-  - Using [`cookies.set`](/docs/app/api-reference/functions/cookies#cookiessetname-value-options) or [`cookies.delete`](/docs/app/api-reference/functions/cookies#deleting-cookies) invalidates the Router Cache to prevent routes that use cookies from becoming stale (e.g. authentication).
-- Calling [`router.refresh`](/docs/app/api-reference/functions/use-router) will invalidate the Router Cache and make a new request to the server for the current route.
+- **Server Action**で：
+  - [`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)によるパス、または[`revalidateTag`](/docs/app-router/api-reference/functions/revalidateTag)によるタグで、データをオンデマンドで再検証します
+  - [`cookies.set`](/docs/app-router/api-reference/functions/cookies#cookiessetname-value-options)または[`cookies.delete`](/docs/app-router/api-reference/functions/cookies#deleting-cookies)を使用すると、Router Cache が無効になり、cookie を使用するルートが古くなるのを防ぎます（認証など）
+- [`router.refresh`](/docs/app-router/api-reference/functions/use-router)は Router Cache を無効にし、現在のルートに対してサーバーに新しいリクエストを行います
 
-### Opting out
+### オプトアウト
 
-It's not possible to opt out of the Router Cache. However, you can invalidate it by calling [`router.refresh`](/docs/app/api-reference/functions/use-router), [`revalidatePath`](/docs/app/api-reference/functions/revalidatePath), or [`revalidateTag`](/docs/app/api-reference/functions/revalidateTag) (see above). This will clear the cache and make a new request to the server, ensuring the latest data is shown.
+Router Cache は無効にできません。[`router.refresh`](/docs/app-router/api-reference/functions/use-router)、[`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)、または[`revalidateTag`](/docs/app/api-reference/functions/revalidateTag)（上記参照）を呼び出すことで、キャッシュを無効にします。これによりキャッシュがクリアされ、サーバーへの新しいリクエストが行われ、最新のデータが表示されるようになります。
 
-You can also opt out of **prefetching** by setting the `prefetch` prop of the `<Link>` component to `false`. However, this will still temporarily store the route segments for 30s to allow instant navigation between nested segments, such as tab bars, or back and forward navigation. Visited routes will still be cached.
+`<Link>`コンポーネントの `prefetch` prop を `false` に設定することで、**プリフェッチ**を無効にできます。しかし、タブバーや戻る/進むナビゲーションのようなネストされた Segment 間の即時ナビゲーションを可能にするため、Route Segment は 30 秒間一時的に保存されます。訪問されたルートは依然としてキャッシュされます。
 
-## Cache Interactions
+## キャッシュ・インタラクション
 
-When configuring the different caching mechanisms, it's important to understand how they interact with each other:
+異なるキャッシング・メカニズムを設定する場合、それらが互いにどのように影響しあうかを理解することが重要です：
 
-### Data Cache and Full Route Cache
+### Data Cache と Full Route Cache
 
-- Revalidating or opting out of the Data Cache **will** invalidate the Full Route Cache, as the render output depends on data.
-- Invalidating or opting out of the Full Route Cache **does not** affect the Data Cache. You can dynamically render a route that has both cached and uncached data. This is useful when most of your page uses cached data, but you have a few components that rely on data that needs to be fetched at request time. You can dynamically render without worrying about the performance impact of re-fetching all the data.
+- レンダリング出力がデータに依存するため、Data Cache を無効化またはオプトアウトすると、Full Route Cache が無効に**なります**
+- Full Route Cache の無効化またはオプトアウトは、Data Cache には影響**しません**。キャッシュされたデータとキャッシュされていないデータの両方を持つルートを動的にレンダリングできます。これは、ページの大部分がキャッシュされたデータを使用しているが、リクエスト時にフェッチする必要があるデータに依存しているコンポーネントがいくつかある場合に便利です。すべてのデータを再フェッチすることによるパフォーマンスへの影響を気にすることなく、動的にレンダリングできます
 
-### Data Cache and Client-side Router cache
+### Data Cache と クライアントサイドの Router Cache
 
-- Revalidating the Data Cache in a [Route Handler](/docs/app/building-your-application/routing/route-handlers) **will not** immediately invalidate the Router Cache as the Route Handler isn't tied to a specific route. This means Router Cache will continue to serve the previous payload until a hard refresh, or the automatic invalidation period has elapsed.
-- To immediately invalidate the Data Cache and Router cache, you can use [`revalidatePath`](#revalidatepath) or [`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag) in a [Server Action](/docs/app/building-your-application/data-fetching/server-actions-and-mutations).
+- [Route Handler](/docs/app-router/building-your-application/routing/route-handlers)の Data Cache を再有効化しても、Route Handler は特定のルートに結びついていないので、Router Cache はすぐには無効化**されません**。つまり、Router Cache はハードリフレッシュされるか、自動無効化期間が経過するまで、以前のペイロードを提供し続けます
+- Data Cache と Router Cache を直ちに無効にするには、[Serer Action](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutation) で [`revalidatePath`](#revalidatepath) または [`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag) を使用します
 
-## APIs
+## API
 
-The following table provides an overview of how different Next.js APIs affect caching:
+次の表は、さまざまな Next.js API がキャッシュに与える影響の概要を示しています：
 
-| API                                                                     | Router Cache               | Full Route Cache      | Data Cache            | React Cache |
-| ----------------------------------------------------------------------- | -------------------------- | --------------------- | --------------------- | ----------- |
-| [`<Link prefetch>`](#link)                                              | Cache                      |                       |                       |             |
-| [`router.prefetch`](#routerprefetch)                                    | Cache                      |                       |                       |             |
-| [`router.refresh`](#routerrefresh)                                      | Revalidate                 |                       |                       |             |
-| [`fetch`](#fetch)                                                       |                            |                       | Cache                 | Cache       |
-| [`fetch` `options.cache`](#fetch-optionscache)                          |                            |                       | Cache or Opt out      |             |
-| [`fetch` `options.next.revalidate`](#fetch-optionsnextrevalidate)       |                            | Revalidate            | Revalidate            |             |
-| [`fetch` `options.next.tags`](#fetch-optionsnexttags-and-revalidatetag) |                            | Cache                 | Cache                 |             |
-| [`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag)             | Revalidate (Server Action) | Revalidate            | Revalidate            |             |
-| [`revalidatePath`](#revalidatepath)                                     | Revalidate (Server Action) | Revalidate            | Revalidate            |             |
-| [`const revalidate`](#segment-config-options)                           |                            | Revalidate or Opt out | Revalidate or Opt out |             |
-| [`const dynamic`](#segment-config-options)                              |                            | Cache or Opt out      | Cache or Opt out      |             |
-| [`cookies`](#cookies)                                                   | Revalidate (Server Action) | Opt out               |                       |             |
-| [`headers`, `searchParams`](#dynamic-functions)                         |                            | Opt out               |                       |             |
-| [`generateStaticParams`](#generatestaticparams)                         |                            | Cache                 |                       |             |
-| [`React.cache`](#react-cache-function)                                  |                            |                       |                       | Cache       |
-| [`unstable_cache`](/docs/app/api-reference/functions/unstable_cache)    |                            |                       |                       |             |
+| API                                                                         | Router Cache               | Full Route Cache      | Data Cache            | React Cache |
+| --------------------------------------------------------------------------- | -------------------------- | --------------------- | --------------------- | ----------- |
+| [`<Link prefetch>`](#link)                                                  | Cache                      |                       |                       |             |
+| [`router.prefetch`](#routerprefetch)                                        | Cache                      |                       |                       |             |
+| [`router.refresh`](#routerrefresh)                                          | Revalidate                 |                       |                       |             |
+| [`fetch`](#fetch)                                                           |                            |                       | Cache                 | Cache       |
+| [`fetch` `options.cache`](#fetch-optionscache)                              |                            |                       | Cache or Opt out      |             |
+| [`fetch` `options.next.revalidate`](#fetch-optionsnextrevalidate)           |                            | Revalidate            | Revalidate            |             |
+| [`fetch` `options.next.tags`](#fetch-optionsnexttags-and-revalidatetag)     |                            | Cache                 | Cache                 |             |
+| [`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag)                 | Revalidate (Server Action) | Revalidate            | Revalidate            |             |
+| [`revalidatePath`](#revalidatepath)                                         | Revalidate (Server Action) | Revalidate            | Revalidate            |             |
+| [`const revalidate`](#segment-config-options)                               |                            | Revalidate or Opt out | Revalidate or Opt out |             |
+| [`const dynamic`](#segment-config-options)                                  |                            | Cache or Opt out      | Cache or Opt out      |             |
+| [`cookies`](#cookies)                                                       | Revalidate (Server Action) | Opt out               |                       |             |
+| [`headers`, `searchParams`](#dynamic-functions)                             |                            | Opt out               |                       |             |
+| [`generateStaticParams`](#generatestaticparams)                             |                            | Cache                 |                       |             |
+| [`React.cache`](#react-cache-function)                                      |                            |                       |                       | Cache       |
+| [`unstable_cache`](/docs/app-router/api-reference/functions/unstable_cache) |                            |                       |                       |             |
 
 ### `<Link>`
 
-By default, the `<Link>` component automatically prefetches routes from the Full Route Cache and adds the React Server Component Payload to the Router Cache.
+デフォルトでは`<Link>`コンポーネントは自動的に Full Route Cache からルートをプリフェッチし、React Server Component Payload を Router Cache に追加します。
 
-To disable prefetching, you can set the `prefetch` prop to `false`. But this will not skip the cache permanently, the route segment will still be cached client-side when the user visits the route.
+プリフェッチを無効にするには、`prefetch` prop を`false`に設定します。しかし、これは永久にキャッシュをスキップするわけではなく、ユーザーがルートにアクセスしたとき Route Segment はクライアントサイドでキャッシュされます。
 
-Learn more about the [`<Link>` component](/docs/app/api-reference/components/link).
+`<Link>` コンポーネントの詳細は[こちら](/docs/app-router/api-reference/components/link)を参照してください。
 
 ### `router.prefetch`
 
-The `prefetch` option of the `useRouter` hook can be used to manually prefetch a route. This adds the React Server Component Payload to the Router Cache.
+`useRouter` hook の `prefetch` オプションを使うと、ルートを手動でプリフェッチできます。これにより、React Server Component Payload が Router Cache に追加されます。
 
-See the [`useRouter` hook](/docs/app/api-reference/functions/use-router) API reference.
+`useRouter` hook の詳細は[API リファレンス](/docs/app-router/api-reference/functions/use-router) を参照ください。
 
 ### `router.refresh`
 
-The `refresh` option of the `useRouter` hook can be used to manually refresh a route. This completely clears the Router Cache, and makes a new request to the server for the current route. `refresh` does not affect the Data or Full Route Cache.
+`useRouter` hook の`refresh`オプションを使うと、ルートを手動で更新できます。これは Router Cache を完全にクリアし、現在のルートに対してサーバーへ新しいリクエストを行います。
 
-The rendered result will be reconciled on the client while preserving React state and browser state.
+レンダリング結果は、React の状態とブラウザの状態を保持したまま、クライアント上で調整されます。
 
-See the [`useRouter` hook](/docs/app/api-reference/functions/use-router) API reference.
+`useRouter` hook の詳細は[API リファレンス](/docs/app-router/api-reference/functions/use-router)を参照してください。
 
 ### `fetch`
 
-Data returned from `fetch` is automatically cached in the Data Cache.
+`fetch`から返されたデータは、自動的に Data Cache にキャッシュされる。
 
 ```jsx
-// Cached by default. `force-cache` is the default option and can be omitted.
+// デフォルトでキャッシュされる。`force-cache` はデフォルトのオプションであり、省略可能。
 fetch(`https://...`, { cache: 'force-cache' })
 ```
 
-See the [`fetch` API Reference](/docs/app/api-reference/functions/fetch) for more options.
+その他のオプションは [`fetch` API リファレンス](/docs/app-router/api-reference/functions/fetch) を参照してください。
 
 ### `fetch options.cache`
 
-You can opt out individual `fetch` requests of data caching by setting the `cache` option to `no-store`:
+キャッシュ・オプションを`no-store`に設定することで、個々の`fetch`リクエストに対してデータのキャッシュを行わないようにできます：
 
 ```jsx
-// Opt out of caching
+// キャッシュをオプトアウトする
 fetch(`https://...`, { cache: 'no-store' })
 ```
 
-Since the render output depends on data, using `cache: 'no-store'` will also skip the Full Route Cache for the route where the `fetch` request is used. That is, the route will be dynamically rendered every request, but you can still have other cached data requests in the same route.
+レンダリング出力はデータに依存するので、`cache: 'no-store'` を使用すると、`fetch`リクエストが使用されるルートの Full Route Cache もスキップされます。つまり、ルートはリクエストごとに動的にレンダリングされますが、同じルート内に他のキャッシュされたデータリクエストを持つことができます。
 
-See the [`fetch` API Reference](/docs/app/api-reference/functions/fetch) for more options.
+その他のオプションは [fetch API リファレンス](/docs/app-router/api-reference/functions/fetch) を参照ください。
 
 ### `fetch options.next.revalidate`
 
-You can use the `next.revalidate` option of `fetch` to set the revalidation period (in seconds) of an individual `fetch` request. This will revalidate the Data Cache, which in turn will revalidate the Full Route Cache. Fresh data will be fetched, and components will be re-rendered on the server.
+`fetch`の`next.revalidate`オプションを使用すると、個々の`fetch`リクエストの再検証期間（秒）を設定できます。これにより Data Cache が再検証され、Full Route Cache も再検証されます。新しいデータがフェッチされ、コンポーネントがサーバー上で再レンダリングされます。
 
 ```jsx
-// Revalidate at most after 1 hour
+// 最大1時間後に再検証する
 fetch(`https://...`, { next: { revalidate: 3600 } })
 ```
 
-See the [`fetch` API reference](/docs/app/api-reference/functions/fetch) for more options.
+その他のオプションは [fetch API リファレンス](/docs/app-router/api-reference/functions/fetch) を参照ください。
 
-### `fetch options.next.tags` and `revalidateTag`
+### `fetch options.next.tags` と `revalidateTag`
 
-Next.js has a cache tagging system for fine-grained data caching and revalidation.
+Next.js には、きめ細かなデータのキャッシュと再検証のためにキャッシュのタグ付けの仕組みがあります。
 
-1. When using `fetch` or [`unstable_cache`](/docs/app/api-reference/functions/unstable_cache), you have the option to tag cache entries with one or more tags.
-2. Then, you can call `revalidateTag` to purge the cache entries associated with that tag.
+1. `fetch`または[`unstable_cache`](/docs/app-router/api-reference/functions/unstable_cache)を使用する場合、キャッシュのエントリに 1 つ以上のタグを付けるオプションがあります
+2. その後、`revalidateTag`を呼び出して、そのタグに関連するキャッシュ・エントリーをパージできます
 
-For example, you can set a tag when fetching data:
+例えば、データ取得時にタグを設定できます：
 
 ```jsx
-// Cache data with a tag
+// タグをつけてデータをキャッシュする
 fetch(`https://...`, { next: { tags: ['a', 'b', 'c'] } })
 ```
 
-Then, call `revalidateTag` with a tag to purge the cache entry:
+次に、タグを指定して`revalidateTag`を呼び出し、キャッシュ・エントリーをパージします：
 
 ```jsx
-// Revalidate entries with a specific tag
+// タグを指定してキャッシュ・エントリーを再検証する
 revalidateTag('a')
 ```
 
-There are two places you can use `revalidateTag`, depending on what you're trying to achieve:
+何を行いたいかによって `revalidateTag`を使用できる場所は 2 つあります：
 
-1. [Route Handlers](/docs/app/building-your-application/routing/route-handlers) - to revalidate data in response of a third party event (e.g. webhook). This will not invalidate the Router Cache immediately as the Router Handler isn't tied to a specific route.
-2. [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations) - to revalidate data after a user action (e.g. form submission). This will invalidate the Router Cache for the associated route.
+1. [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers) - サードパーティのイベント（webhook など）に応答してデータを再検証します。Route Handlers は特定のルートに紐づいていないので、Router Cache をすぐに無効にはできません
+2. [Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) - ユーザーのアクション（フォーム送信など）の後にデータを再検証します。これは関連するルートの Router Cache を無効にします
 
 ### `revalidatePath`
 
-`revalidatePath` allows you manually revalidate data **and** re-render the route segments below a specific path in a single operation. Calling the `revalidatePath` method revalidates the Data Cache, which in turn invalidates the Full Route Cache.
+`revalidatePath`を使用すると、1 回の操作でデータを手動で再検証し、**さらに**特定のパス以下の Route Segment を再レンダリングできます。`revalidatePath` メソッドを呼び出すと、Data Cache が再検証され、Full Route Cache が無効になります。
 
 ```jsx
 revalidatePath('/')
 ```
 
-There are two places you can use `revalidatePath`, depending on what you're trying to achieve:
+何を行いたいかによって `revalidatePath`を使用できる場所は 2 つあります：
 
-1. [Route Handlers](/docs/app/building-your-application/routing/route-handlers) - to revalidate data in response to a third party event (e.g. webhook).
-2. [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations) - to revalidate data after a user interaction (e.g. form submission, clicking a button).
+1. [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers) - サードパーティのイベント（例：webhook）に応答してデータを再検証します
+2. [Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) - ユーザーとの対話（フォームの送信やボタンのクリックなど）の後にデータを再検証します
 
-See the [`revalidatePath` API reference](/docs/app/api-reference/functions/revalidatePath) for more information.
+詳細は [`revalidatePath` API リファレンス](/docs/app-router/api-reference/functions/revalidatePath)を参照してください。
 
 > **`revalidatePath`** vs. **`router.refresh`**:
 >
-> Calling `router.refresh` will clear the Router cache, and re-render route segments on the server without invalidating the Data Cache or the Full Route Cache.
+> `router.refresh`を呼び出すと、Router Cache がクリアされ、Data Cache や Full Route Cache を無効にすることなく、サーバー上の Route Segment が再レンダリングされます。
 >
-> The difference is that `revalidatePath` purges the Data Cache and Full Route Cache, whereas `router.refresh()` does not change the Data Cache and Full Route Cache, as it is a client-side API.
+> `revalidatePath`が Data Cache と Full Route Cache を消去するのに対し、`router.refresh()`はクライアント側の API であるため、Data Cache と Full Route Cache を変更しないという違いがあります。
 
 ### Dynamic Functions
 
