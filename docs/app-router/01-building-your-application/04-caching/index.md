@@ -308,7 +308,7 @@ Router Cache を無効にする方法は 2 つあります：
 
 ### オプトアウト
 
-Router Cache は無効にできません。[`router.refresh`](/docs/app-router/api-reference/functions/use-router)、[`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)、または[`revalidateTag`](/docs/app/api-reference/functions/revalidateTag)（上記参照）を呼び出すことで、キャッシュを無効にします。これによりキャッシュがクリアされ、サーバーへの新しいリクエストが行われ、最新のデータが表示されるようになります。
+Router Cache は無効にできません。[`router.refresh`](/docs/app-router/api-reference/functions/use-router)、[`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)、または[`revalidateTag`](/docs/app-router/api-reference/functions/revalidateTag)（上記参照）を呼び出すことで、キャッシュを無効にします。これによりキャッシュがクリアされ、サーバーへの新しいリクエストが行われ、最新のデータが表示されるようになります。
 
 `<Link>`コンポーネントの `prefetch` prop を `false` に設定することで、**プリフェッチ**を無効にできます。しかし、タブバーや戻る/進むナビゲーションのようなネストされた Segment 間の即時ナビゲーションを可能にするため、Route Segment は 30 秒間一時的に保存されます。訪問されたルートは依然としてキャッシュされます。
 
@@ -455,54 +455,44 @@ revalidatePath('/')
 
 ### Dynamic Functions
 
-Dynamic functions like `cookies` and `headers`, and the `searchParams` prop in Pages depend on runtime incoming request information. Using them will opt a route out of the Full Route Cache, in other words, the route will be dynamically rendered.
+`cookies`や`headers`、Pages の`searchParams` prop などの動的な関数は、実行時に入力されるリクエスト情報に依存します。これらを使用すると、Full Route Cache からルートが除外され、言い換えると、ルートは動的にレンダリングされます。
 
 #### `cookies`
 
-Using `cookies.set` or `cookies.delete` in a Server Action invalidates the Router Cache to prevent routes that use cookies from becoming stale (e.g. to reflect authentication changes).
+Server Actions で `cookies.set` または `cookies.delete`を使用すると、Router Cache が無効になり、`cookies`を使用するルートが古くなるのを防ぎます（認証の変更を反映するためなど）。
 
-See the [`cookies`](/docs/app/api-reference/functions/cookies) API reference.
+[`cookies` API リファレンス](/docs/app-router/api-reference/functions/cookies)を参照してください。
 
 ### Segment Config Options
 
-The Route Segment Config options can be used to override the route segment defaults or when you're not able to use the `fetch` API (e.g. database client or 3rd party libraries).
+Route Segment Config オプションは、Route Segment のデフォルトを上書きしたり、`fetch` API を使用できない場合（データベースクライアントやサードパーティライブラリなど）に使用できます。
 
-The following Route Segment Config options will opt out of the Data Cache and Full Route Cache:
+以下の Route Segment Config オプションは、Data Cache と Full Route Cache を無効にします：
 
 - `const dynamic = 'force-dynamic'`
 - `const revalidate = 0`
 
-See the [Route Segment Config](/docs/app/api-reference/file-conventions/route-segment-config) documentation for more options.
+その他のオプションについては、[Route Segment Config のドキュメント](/docs/app-router/api-reference/file-conventions/route-segment-config)を参照してください。
 
 ### `generateStaticParams`
 
-For [dynamic segments](/docs/app/building-your-application/routing/dynamic-routes) (e.g. `app/blog/[slug]/page.js`), paths provided by `generateStaticParams` are cached in the Full Route Cache at build time. At request time, Next.js will also cache paths that weren't known at build time the first time they're visited.
+[動的なセグメント](/docs/app-router/building-your-application/routing/dynamic-routes)（例：`app/blog/[slug]/page.js`）の場合、`generateStaticParams`によって提供されたパスは、ビルド時に Full Route Cache にキャッシュされます。リクエスト時に、Next.js はビルド時にわからなかったパスも、最初にアクセスされたときにキャッシュします。
 
-You can disable caching at request time by using `export const dynamicParams = false` option in a route segment. When this config option is used, only paths provided by `generateStaticParams` will be served, and other routes will 404 or match (in the case of [catch-all routes](/docs/app/building-your-application/routing/dynamic-routes#catch-all-segments)).
+Route Segment で`export const dynamicParams = false`オプションを使うことで、リクエスト時のキャッシュを無効にできます。この設定オプションが使われるとき、`generateStaticParams`によって提供されるパスだけが提供され、ほかのルートは 404 もしくはマッチします（[catch-all ルート](/docs/app-router/building-your-application/routing/dynamic-routes#catch-all-segments)の場合）。
 
-See the [`generateStaticParams` API reference](/docs/app/api-reference/functions/generate-static-params).
+詳細は[`generateStaticParams` API リファレンス](/docs/app-router/api-reference/functions/generate-static-params)を参照してください。
 
-### React `cache` function
+### React `cache` 関数
 
-The React `cache` function allows you to memoize the return value of a function, allowing you to call the same function multiple times while only executing it once.
+React の`cache`関数を使えば、関数の戻り値をメモ化できるので、同じ関数を複数回呼び出しても実行は 1 回で済みます。
 
-Since `fetch` requests are automatically memoized, you do not need to wrap it in React `cache`. However, you can use `cache` to manually memoize data requests for use cases when the `fetch` API is not suitable. For example, some database clients, CMS clients, or GraphQL clients.
+`fetch` リクエストは自動的にメモ化されるので、React `cache`でラップする必要はありません。しかし、`fetch` API が適していないユースケースのために、キャッシュを使ってデータリクエストを手動でメモ化できます。例えば、データベースクライアント、CMS クライアント、GraphQL クライアントなどです。
 
-```tsx filename="utils/get-item.ts" switcher
+```tsx title="utils/get-item.ts"
 import { cache } from 'react'
 import db from '@/lib/db'
 
 export const getItem = cache(async (id: string) => {
-  const item = await db.item.findUnique({ id })
-  return item
-})
-```
-
-```jsx filename="utils/get-item.js" switcher
-import { cache } from 'react'
-import db from '@/lib/db'
-
-export const getItem = cache(async (id) => {
   const item = await db.item.findUnique({ id })
   return item
 })
