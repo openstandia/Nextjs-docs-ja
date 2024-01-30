@@ -79,7 +79,7 @@ fetch(`https://...`, { next: { tags: ['collection'] } })
 
 リソースのキャッシュタグを設定します。その後、[revalidateTag](/docs/app-router/api-reference/functions/revalidateTag) を使用してオンデマンドでデータを再検証できます。カスタムタグの最大長は 256 文字です。
 
-## Version History
+## バージョン履歴
 
 | Version   | Changes                    |
 | --------- | -------------------------- |
