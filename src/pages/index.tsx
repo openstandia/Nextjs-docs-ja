@@ -1,7 +1,7 @@
-import React from "react";
-import { Redirect } from "@docusaurus/router";
-import useBaseUrl from "@docusaurus/useBaseUrl";
+import React from 'react'
+import { Redirect } from '@docusaurus/router'
+import useBaseUrl from '@docusaurus/useBaseUrl'
 
 export default function Home(): JSX.Element {
-  return <Redirect to={useBaseUrl("/docs/app-router")} />;
+  return <Redirect to={useBaseUrl('/docs/app-router')} />
 }
