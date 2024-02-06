@@ -1,5 +1,5 @@
 ---
-title: 静的エクスポート 🚧
+title: バンドル分析 🚧
 description: ''
 ---
 
