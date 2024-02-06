@@ -1,7 +1,6 @@
 ---
-title: template.js 🚧
-description: API Reference for the template.js file.
-sidebar_position: 10
+title: 動画最適化 🚧
+description: ''
 ---
 
 :::caution

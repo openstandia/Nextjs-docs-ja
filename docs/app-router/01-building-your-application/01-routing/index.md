@@ -1,5 +1,5 @@
 ---
-title: Routing
+title: ルーティング
 nav_title: ルーティングの基本
 description: Learn the fundamentals of routing for front-end applications.
 ---

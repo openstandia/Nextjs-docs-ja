@@ -1,7 +1,6 @@
 ---
-title: template.js 🚧
-description: API Reference for the template.js file.
-sidebar_position: 10
+title: Custom Next.js Cache Handler 🚧
+description: ''
 ---
 
 :::caution

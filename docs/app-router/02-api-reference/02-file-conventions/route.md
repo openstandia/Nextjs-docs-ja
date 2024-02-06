@@ -1,7 +1,7 @@
 ---
 title: route.js
 description: API reference for the route.js special file.
-sidebar_position: 7
+sidebar_position: 8
 ---
 
 ルートハンドラを使用すると、Web リクエスト API とレスポンス API を使用して、指定したルートに対するカスタムリクエストハンドラを作成できます。
