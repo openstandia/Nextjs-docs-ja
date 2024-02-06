@@ -1,7 +1,7 @@
 ---
 title: loading.js
 description: API reference for the loading.js  file.
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 **loading**ファイルは、[Suspense](/docs/app-router/building-your-application/routing/loading-ui-and-streaming)上に構築されたインスタント・ローディングの状態を作り出すことができます。

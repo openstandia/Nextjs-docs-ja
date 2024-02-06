@@ -1,7 +1,7 @@
 ---
-title: template.js 🚧
-description: API Reference for the template.js file.
-sidebar_position: 10
+title: instrumentation.js 🚧
+description: ''
+sidebar_position: 3
 ---
 
 :::caution
