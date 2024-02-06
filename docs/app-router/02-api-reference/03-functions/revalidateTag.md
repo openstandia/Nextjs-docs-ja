@@ -3,13 +3,11 @@ title: revalidateTag
 description: revalidateTag 関数のAPI Reference
 ---
 
-`revalidateTag` allows you to purge [cached data](/docs/app/building-your-application/caching) on-demand for a specific cache tag.
-
 `revalidateTag` を使用すると、特定のキャッシュ・タグの[キャッシュ・データ](/docs/app-router/building-your-application/caching)をオンデマンドで消去できます。
 
 > **Good to know**:
 >
-> - `revalidateTag` is available in both [Node.js and Edge runtimes](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes).
+> - `revalidateTag` は [Node.js と Edge runtimes](/docs/app-router/building-your-application/rendering/edge-and-nodejs-runtimes)で使用できる
 > - `ravalidateTag` は、パスが次に訪問されたときにのみキャッシュを無効にします。つまり、動的な Route Segment で`revalidateTag`を呼び出しても、すぐに多くの再検証が一度に行われるわけではなく、無効化はパスが次に訪問されたときにのみ行われる
 
 ## Parameters
