@@ -3,14 +3,14 @@ title: revalidatePath
 description: revalidatePath 関数の API リファレンス
 ---
 
-`revalidatePath` allows you to purge [cached data](/docs/app/building-your-application/caching) on-demand for a specific path.
+`revalidatePath`を使用すると、特定のパスに対する[キャッシュ・データ](/docs/app-router/building-your-application/caching)をオンデマンドで消去できます。
 
 > **Good to know**:
 >
-> - `revalidatePath` is available in both [Node.js and Edge runtimes](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes).
-> - `revalidatePath` only invalidates the cache when the included path is next visited. This means calling `revalidatePath` with a dynamic route segment will not immediately trigger many revalidations at once. The invalidation only happens when the path is next visited.
-> - Currently, `revalidatePath` invalidates all the routes in the [client-side Router Cache](/docs/app/building-your-application/caching#router-cache). This behavior is temporary and will be updated in the future to apply only to the specific path.
-> - Using `revalidatePath` invalidates **only the specific path** in the [server-side Route Cache](/docs/app/building-your-application/caching#full-route-cache).
+> - `revalidatePath` は [Node.js と Edge runtimes](/docs/app-router/building-your-application/rendering/edge-and-nodejs-runtimes)で使用できる
+> - `revalidatePath` は、パスが次に訪問されたときにのみキャッシュを無効にする。つまり、動的な Route Segment で`revalidatePath`を呼び出しても、すぐに複数の再検証が一度に行われるわけではなく、無効化はパスが次に訪問されたときにのみ行われる
+> - 現在、`revalidatePath` は[クライアントサイドの Router Cache](/docs/app-router/building-your-application/caching#router-cache)内のすべてのルートを無効にする。この動作は一時的なもので、将来的には特定のパスにのみ適用されるように更新される予定
+> - `revalidatePath` を使用すると、[サーバーサイドの Full Route Cache](/docs/app-router/building-your-application/caching#full-route-cache)の特定のパスだけが無効になる
 
 ## Parameters
 
@@ -18,25 +18,25 @@ description: revalidatePath 関数の API リファレンス
 revalidatePath(path: string, type?: 'page' | 'layout'): void;
 ```
 
-- `path`: Either a string representing the filesystem path associated with the data you want to revalidate (for example, `/product/[slug]/page`), or the literal route segment (for example, `/product/123`). Must be less than 1024 characters.
 - `type`: (optional) `'page'` or `'layout'` string to change the type of path to revalidate. If `path` contains a dynamic segment (for example, `/product/[slug]/page`), this parameter is required.
+- `type`：（オプション）文字列`'page'` または `'layout'` で、再検証するパスのタイプを変更する。パスが動的な Segment (たとえば `/product/[slug]/page`) を含む場合は、このパラメータが必須となる
 
 ## Returns
 
-`revalidatePath` does not return any value.
+`revalidatePath` は値を返しません。
 
-## Examples
+## 例
 
-### Revalidating A Specific URL
+### 特定のURLを再検証する
 
 ```ts
 import { revalidatePath } from 'next/cache'
 revalidatePath('/blog/post-1')
 ```
 
-This will revalidate one specific URL on the next page visit.
+この例は、次のページ訪問時に特定のURLを再検証します。
 
-### Revalidating A Page Path
+### ページのパスを再検証する
 
 ```ts
 import { revalidatePath } from 'next/cache'
@@ -45,20 +45,20 @@ revalidatePath('/blog/[slug]', 'page')
 revalidatePath('/(main)/post/[slug]', 'page')
 ```
 
-This will revalidate any URL that matches the provided `page` file on the next page visit. This will _not_ invalidate pages beneath the specific page. For example, `/blog/[slug]` won't invalidate `/blog/[slug]/[author]`.
+次のページ訪問時に、指定された`page` ファイルにマッチするすべてのURLを再検証します。特定のページの下のページは無効に_なりません_。例えば、`/blog/[slug]` は `/blog/[slug]/[author]`を無効にしません。
 
-### Revalidating A Layout Path
+### レイアウトのパスを再検証する
 
 ```ts
 import { revalidatePath } from 'next/cache'
 revalidatePath('/blog/[slug]', 'layout')
-// or with route groups
+// またはルート・グループ
 revalidatePath('/(main)/post/[slug]', 'layout')
 ```
 
-This will revalidate any URL that matches the provided `layout` file on the next page visit. This will cause pages beneath with the same layout to revalidate on the next visit. For example, in the above case, `/blog/[slug]/[another]` would also revalidate on the next visit.
+次のページ訪問時に、指定された `layout` ファイルにマッチするURLを再検証します。これにより、同じレイアウトの下にあるページが次の訪問時に再検証されます。例えば、上記の場合、`/blog/[slug]/[another]`も次の訪問時に再検証されます。
 
-### Revalidating All Data
+### すべてのデータを再検証する
 
 ```ts
 import { revalidatePath } from 'next/cache'
@@ -66,11 +66,11 @@ import { revalidatePath } from 'next/cache'
 revalidatePath('/', 'layout')
 ```
 
-This will purge the Client-side Router Cache, and revalidate the Data Cache on the next page visit.
+クライアント側のRouter Cacheが削除され、次のページ訪問時にData Cacheが再検証されます。
 
 ### Server Action
 
-```ts filename="app/actions.ts" switcher
+```ts title="app/actions.ts"
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -83,30 +83,11 @@ export default async function submit() {
 
 ### Route Handler
 
-```ts filename="app/api/revalidate/route.ts" switcher
+```ts title="app/api/revalidate/route.ts"
 import { revalidatePath } from 'next/cache'
 import { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  const path = request.nextUrl.searchParams.get('path')
-
-  if (path) {
-    revalidatePath(path)
-    return Response.json({ revalidated: true, now: Date.now() })
-  }
-
-  return Response.json({
-    revalidated: false,
-    now: Date.now(),
-    message: 'Missing path to revalidate',
-  })
-}
-```
-
-```js filename="app/api/revalidate/route.js" switcher
-import { revalidatePath } from 'next/cache'
-
-export async function GET(request) {
   const path = request.nextUrl.searchParams.get('path')
 
   if (path) {
