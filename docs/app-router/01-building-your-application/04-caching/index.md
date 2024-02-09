@@ -68,12 +68,12 @@ const item = await getItem() // cache HIT
 
 > **Good to know**:
 >
-> - リクエストのメモ化は Next.js の機能ではなく、React のものだが、他のキャッシュ機構とどのように相互作用するかを示すために、ドキュメントに含めている
-> - メモ化は `fetch` リクエストの `GET` メソッドにのみ適用される
-> - メモ化は React Component ツリーにのみ適用される:
->   - `generateMetadata`、`generateStaticParams`、Layouts、Pages、その他の Server Component の `fetch` リクエストに適用される
->   - Route Handlers は React Component ツリーの一部ではないので、`fetch`リクエストには適用されない
-> - `fetch` を使用しない場合（データベースクライアント、CMS クライアント、GraphQL クライアントなど）には、[React `cache` function](#react-cache-関数) を使用して関数をメモすることができる
+> - リクエストのメモ化は Next.js の機能ではなく、React のものだが、他のキャッシュ機構とどのように相互作用するかを示すために、ドキュメントに含めています。
+> - メモ化は `fetch` リクエストの `GET` メソッドにのみ適用されます。
+> - メモ化は React Component ツリーにのみ適用されます:
+>   - `generateMetadata`、`generateStaticParams`、Layouts、Pages、その他の Server Component の `fetch` リクエストに適用されます。
+>   - Route Handlers は React Component ツリーの一部ではないので、`fetch`リクエストには適用されません。
+> - `fetch` を使用しない場合（データベースクライアント、CMS クライアント、GraphQL クライアントなど）には、[React `cache` function](#react-cache-関数) を使用して関数をメモすることができます。
 
 ### キャッシュ期間
 
