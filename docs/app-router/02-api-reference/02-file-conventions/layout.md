@@ -1,7 +1,7 @@
 ---
 title: layout.js
 description: API reference for the layout.js file.
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 レイアウトとは、ルート間で共有される UI です。

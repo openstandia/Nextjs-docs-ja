@@ -71,11 +71,11 @@ npm install next@latest react@latest react-dom@latest
 - `start`: `next start`を実行して、Next.js の本番サーバーを起動します
 - `lint`: `next lint`を実行して、Next.js ビルトインの ESLint を設定します
 
-## ディレクトリの作成
+### ディレクトリの作成
 
 Next.js はファイルシステムによるルーティングを使用します。つまり、ファイルをどのように構成するかによって、アプリケーションのルートが決まります。
 
-## `app` ディレクトリ
+#### `app` ディレクトリ
 
 新しいアプリケーションには、[App Router](/docs/app-router) の使用をお勧めします。この Router は、React の最新機能を使うことができ、コミュニティからのフィードバックに基づいて [Pages Router](https://nextjs.org/docs/pages) を進化させたものです。
 
@@ -111,7 +111,7 @@ export default function Page() {
 
 [App Router](/docs/app-router/building-your-application/routing/defining-routes)の使い方についてはこちらをご覧ください。
 
-## `pages`ディレクトリ（任意）
+#### `pages`ディレクトリ（任意）
 
 App Router の代わりに Pages Router を使いたい場合は、プロジェクトのルートに`pages/`ディレクトリを作成します。
 
@@ -155,7 +155,7 @@ Pages Router の使い方については[こちら](https://nextjs.org/docs/page
 
 > **Good to know:** 同じプロジェクトで両方のルーターを使うことはできますが、`app`のルートは`pages`よりも優先されます。混乱を避けるため、新しいプロジェクトでは 1 つのルーターだけを使うことをお勧めします。
 
-## `public`フォルダ（任意）
+#### `public`フォルダ（任意）
 
 画像やフォントなどの静的アセットを保存するために、オプションで`public`フォルダを作成きます。`public`ディレクトリ内のファイルは、ベース URL (`/`) で始まるコードから参照できます。
 
