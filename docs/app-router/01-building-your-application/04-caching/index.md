@@ -324,7 +324,7 @@ Next.js では、React Server Component Payload を個々の Route Segment に�
 キャッシュはブラウザの一時メモリに保存されます。Router Cache の持続時間は 2 つの要因によって決まります:
 
 - **セッション**: キャッシュはナビゲーションの間持続します。ただし、ページ更新時にクリアされます。
-- **自動無効期間**: 個々の Segment のキャッシュは特定の時間が経過すると自動的に無効になります。期間はルートが[静的](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)にレンダリングされるか、[動的](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)にレンダリングされるかに依存します:
+- **自動無効期間**: 個々の Segment のキャッシュは特定の時間が経過すると自動的に無効になります。期間はルートが[静的](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)にレンダリングされるか、[動的](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)にレンダリングされるかに依存します。
 
 ページを更新すると、キャッシュされた Segment は**すべて**消去されますが、自動無効化期間は、最後にアクセスまたは作成された時点から個々の Segment にのみ影響します。
 
