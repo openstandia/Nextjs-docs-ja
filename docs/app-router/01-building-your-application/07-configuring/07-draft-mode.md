@@ -13,7 +13,7 @@ Next.js には、この問題を解決するための **Draft Mode** という�
 
 次に、`next/headers` から `draftMode` をインポートし、`enable()` メソッドを呼び出します。
 
-```ts title="app/api/draft/route.ts" switcher
+```ts title="app/api/draft/route.ts"
 // ドラフトモードを有効にするルートハンドラ
 import { draftMode } from 'next/headers'
 
@@ -53,7 +53,7 @@ https://<your-site>/api/draft?secret=<token>&slug=<path>
 - `draftMode.enable()` を呼び出してクッキーを設定します。
 - 次に、ブラウザを `slug` で指定されたパスにリダイレクトします。
 
-```ts title="app/api/draft/route.ts" switcher
+```ts title="app/api/draft/route.ts"
 // シークレットとスラッグを持つルートハンドラ
 import { draftMode } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -98,7 +98,7 @@ export async function GET(request: Request) {
 
 さらに、`isEnabled` の値は `true` になります。
 
-```tsx title="app/page.tsx" switcher
+```tsx title="app/page.tsx"
 // データを取得するページ
 import { draftMode } from 'next/headers'
 
@@ -142,7 +142,7 @@ https://<your-site>/api/draft?secret=<token>&slug=<path>
 
 Draft Mode クッキーを手動で消去するには、`draftMode().disable()` を呼び出すルートハンドラを作成します：
 
-```ts title="app/api/disable-draft/route.ts" switcher
+```ts title="app/api/disable-draft/route.ts"
 import { draftMode } from 'next/headers'
 
 export async function GET(request: Request) {

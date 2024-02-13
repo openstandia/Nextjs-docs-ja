@@ -15,14 +15,14 @@ Next.js 13 の App Router では、[ページ](#ページ)、[共有レイアウ
 
 ![page.js special file](../../assets/page-special-file.svg)
 
-```tsx title="app/page.tsx" switcher
+```tsx title="app/page.tsx"
 // `app/page.tsx` is the UI for the `/` URL
 export default function Page() {
   return <h1>Hello, Home page!</h1>
 }
 ```
 
-```tsx title="app/dashboard/page.tsx" switcher
+```tsx title="app/dashboard/page.tsx"
 // `app/dashboard/page.tsx` is the UI for the `/dashboard` URL
 export default function Page() {
   return <h1>Hello, Dashboard Page!</h1>
@@ -44,7 +44,7 @@ export default function Page() {
 
 ![layout.js special file](../../assets/layout-special-file.svg)
 
-```tsx title="app/dashboard/layout.tsx" switcher
+```tsx title="app/dashboard/layout.tsx"
 export default function DashboardLayout({
   children, // will be a page or nested layout
 }: {
@@ -78,7 +78,7 @@ export default function DashboardLayout({
 
 ルートレイアウトは `app` ディレクトリのトップレベルで定義され、すべてのルートに適用されます。このレイアウトによってサーバーから返される最初の HTML を修正できます。
 
-```tsx title="app/layout.tsx" switcher
+```tsx title="app/layout.tsx"
 export default function RootLayout({
   children,
 }: {
@@ -108,7 +108,7 @@ export default function RootLayout({
 
 ![Nested Layout](../../assets/nested-layout.svg)
 
-```tsx title="app/dashboard/layout.tsx" switcher
+```tsx title="app/dashboard/layout.tsx"
 export default function DashboardLayout({
   children,
 }: {
@@ -143,7 +143,7 @@ export default function DashboardLayout({
 
 ![template.js special file](../../assets/template-special-file.svg)
 
-```tsx title="app/template.tsx" switcher
+```tsx title="app/template.tsx"
 export default function Template({ children }: { children: React.ReactNode }) {
   return <div>{children}</div>
 }
@@ -164,7 +164,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
 
 メタデータは[layout.js](/docs/app-router/api-reference/functions/generate-metadata#the-metadata-object)内の[`metadata` object](/docs/app-router/api-reference/functions/generate-metadata#the-metadata-object)または[`generateMetadata`関数](/docs/app-router/api-reference/functions/generate-metadata#generatemetadata-function)をエクスポートすることで定義できます。 [`layout.js`](/docs/app-router/api-reference/file-conventions/layout)または[`page.js`](/docs/app-router/api-reference/file-conventions/page)ファイルに記述します。
 
-```tsx title="app/page.tsx" switcher
+```tsx title="app/page.tsx"
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
