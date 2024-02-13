@@ -7,10 +7,10 @@ description: revalidatePath 関数の API リファレンス
 
 > **Good to know**:
 >
-> - `revalidatePath` は [Node.js と Edge runtimes](/docs/app-router/building-your-application/rendering/edge-and-nodejs-runtimes)で使用できる
-> - `revalidatePath` は、パスが次に訪問されたときにのみキャッシュを無効にする。つまり、動的な Route Segment で`revalidatePath`を呼び出しても、すぐに複数の再検証が一度に行われるわけではなく、無効化はパスが次に訪問されたときにのみ行われる
-> - 現在、`revalidatePath` は[クライアントサイドの Router Cache](/docs/app-router/building-your-application/caching#router-cache)内のすべてのルートを無効にする。この動作は一時的なもので、将来的には特定のパスにのみ適用されるように更新される予定
-> - `revalidatePath` を使用すると、[サーバーサイドの Full Route Cache](/docs/app-router/building-your-application/caching#full-route-cache)の特定のパスだけが無効になる
+> - `revalidatePath` は [Node.js と Edge runtimes](/docs/app-router/building-your-application/rendering/edge-and-nodejs-runtimes)で使用できます。
+> - `revalidatePath` は、パスが次に訪問されたときにのみキャッシュを無効にする。つまり、動的な Route Segment で`revalidatePath`を呼び出しても、すぐに複数の再検証が一度に行われるわけではなく、無効化はパスが次に訪問されたときにのみ行われます。
+> - 現在、`revalidatePath` は[クライアントサイドの Router Cache](/docs/app-router/building-your-application/caching#router-cache)内のすべてのルートを無効にする。この動作は一時的なもので、将来的には特定のパスにのみ適用されるように更新される予定です。
+> - `revalidatePath` を使用すると、[サーバーサイドの Full Route Cache](/docs/app-router/building-your-application/caching#full-route-cache)の特定のパスだけが無効になります。
 
 ## Parameters
 
@@ -45,7 +45,7 @@ revalidatePath('/blog/[slug]', 'page')
 revalidatePath('/(main)/post/[slug]', 'page')
 ```
 
-次のページ訪問時に、指定された`page` ファイルにマッチするすべてのURLを再検証します。特定のページの下のページは無効に_なりません_。例えば、`/blog/[slug]` は `/blog/[slug]/[author]`を無効にしません。
+次のページ訪問時に、指定された`page` ファイルにマッチするすべてのURLを再検証します。特定のページの下のページは無効に*なりません*。例えば、`/blog/[slug]` は `/blog/[slug]/[author]`を無効にしません。
 
 ### レイアウトのパスを再検証する
 
