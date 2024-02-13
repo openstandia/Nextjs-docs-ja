@@ -18,8 +18,11 @@ description: revalidatePath 関数の API リファレンス
 revalidatePath(path: string, type?: 'page' | 'layout'): void;
 ```
 
-- `type`: (optional) `'page'` or `'layout'` string to change the type of path to revalidate. If `path` contains a dynamic segment (for example, `/product/[slug]/page`), this parameter is required.
-- `type`：（オプション）文字列`'page'` または `'layout'` で、再検証するパスのタイプを変更する。パスが動的な Segment (たとえば `/product/[slug]/page`) を含む場合は、このパラメータが必須となる
+<!-- textlint-disable -->
+
+- `path`: 再検証したいデータに関連するファイルシステムのパスを表す文字列 (例: `/product/[slug]/page`)、またはリテラルRoute Segment (例: `/product/123`)です。1024 文字未満でなければなりません。
+<!-- textlint-enable -->
+- `type`:（オプション）文字列`'page'` または `'layout'` で、再検証するパスのタイプを変更する。パスが動的な Segment (たとえば `/product/[slug]/page`) を含む場合は、このパラメータが必須となります。
 
 ## Returns
 
