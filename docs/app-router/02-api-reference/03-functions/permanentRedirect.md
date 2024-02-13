@@ -31,7 +31,7 @@ permanentRedirect(path, type)
 
 <!-- TODO: fix link to Server Actions -->
 
-デフォルトでは、`permanentRedirect`は[Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations)で`push`（ブラウザの履歴スタックに新たなエントリを追加する）を使用し、それ以外では`replace`（ブラウザの履歴スタックの現在のURLを置き換える）を使用します。`type`パラメータを指定することで、この動作を上書きできます。
+デフォルトでは、`permanentRedirect`は[Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で`push`（ブラウザの履歴スタックに新たなエントリを追加する）を使用し、それ以外では`replace`（ブラウザの履歴スタックの現在のURLを置き換える）を使用します。`type`パラメータを指定することで、この動作を上書きできます。
 
 <!-- textlint-enable -->
 
