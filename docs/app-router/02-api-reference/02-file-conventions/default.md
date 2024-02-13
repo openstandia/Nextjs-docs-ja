@@ -5,6 +5,7 @@ related:
   title: Parallel Routesの詳細を学ぶ
   links:
     - app-router/building-your-application/routing/parallel-routes
+sidebar_position: 1
 ---
 
 `default.js` ファイルは、Next.jsが全ページロード後、[スロット](/docs/app-router/building-your-application/routing/parallel-routes#slots)のアクティブな状態を復元できない場合、[Parallel Routes](/docs/app-router/building-your-application/routing/parallel-routes)内でフォールバックをレンダリングするために使用されます。
@@ -29,7 +30,7 @@ related:
 
 ### `params`（任意）
 
-Route Segmentからスロットのサブページまでの [動的ルートパラメータ](/docs/app-router/building-your-application/routing/dynamic-routes) を含むオブジェクトです。例：
+Route Segmentからスロットのサブページまでの [動的ルートパラメータ](/docs/app-router/building-your-application/routing/dynamic-routes) を含むオブジェクトです。例:
 
 | 例                                         | URL          | `params`                            |
 | ------------------------------------------ | ------------ | ----------------------------------- |
