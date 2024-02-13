@@ -1,6 +1,9 @@
 ---
 title: permanentRedirect 🚧
-description: ''
+description: API Reference for the permanentRedirect function.
+related:
+  links:
+    - app/api-reference/functions/redirect
 ---
 
 :::caution
