@@ -110,7 +110,7 @@ setupFilesAfterEnv: ['<rootDir>/jest.setup.ts']
 
 次に、`jest.setup.ts` の中に、以下の import を追加します：
 
-```ts title="jest.setup.ts" switcher
+```ts title="jest.setup.ts"
 import '@testing-library/jest-dom'
 ```
 
