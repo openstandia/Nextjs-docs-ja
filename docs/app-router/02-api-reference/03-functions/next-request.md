@@ -90,12 +90,12 @@ request.nextUrl.searchParams
 
 以下のオプションが利用可能です:
 
-| プロパティ     | 型                      | 説明                                                                                                                 |
-| -------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `basePath`     | `string`                | URL の[ベースパス](/docs/app-router/api-reference/next-config-js/basePath)                                           |
-| `buildId`      | `string` \| `undefined` | Next.jsアプリケーションのビルド識別子。[カスタマイズ](/docs/app-router/api-reference/next-config-js/generateBuildId) |
-| `pathname`     | `string`                | URL のパス名                                                                                                         |
-| `searchParams` | `Object`                | URL の検索パラメータ                                                                                                 |
+| プロパティ     | 型                      | 説明                                                                                                                                     |
+| -------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `basePath`     | `string`                | URL の[ベースパス](/docs/app-router/api-reference/next-config-js/basePath)                                                               |
+| `buildId`      | `string` \| `undefined` | Next.jsアプリケーションのビルド識別子。[カスタマイズ](/docs/app-router/api-reference/next-config-js/generateBuildId)することができます。 |
+| `pathname`     | `string`                | URL のパス名                                                                                                                             |
+| `searchParams` | `Object`                | URL の検索パラメータ                                                                                                                     |
 
 > **注意:** ページルーターの国際化プロパティは、アプリルーターでの使用はできません。[アプリルーターによる国際化](/docs/app-router/building-your-application/routing/internationalization)について詳しく学ぶ。
 
