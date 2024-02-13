@@ -13,7 +13,11 @@ Next.jsは、Reactアプリケーションを構築するためのTypeScriptフ�
 
 ## 新規プロジェクト
 
-`create-next-app` は現在、デフォルトでTypeScriptと提供されます。
+<!-- eslint-disable -->
+
+`create-next-app` は現在、デフォルトで TypeScript で提供されます。
+
+<!-- eslint-enable -->
 
 ```bash title="Terminal"
 npx create-next-app@latest
@@ -117,7 +121,7 @@ function Card<T extends string>({ href }: { href: Route<T> | URL }) {
 Next.jsのApp Routerは、**強化された型の安全性**を持っています。これには以下の要素が含まれます。
 
 1. **フェッチ関数とページ間におけるデータのシリアライぜーションが必要ない**: コンポーネント、レイアウト、およびサーバー上のページで直接`fetch`できます。このデータはデータを文字列に変換してクライアント側のReactで使用する必要がありません。代わりに、`app`はデフォルトでServer Componentsを使用するため、`Date`、`Map`、`Set`などの値を追加の手順なしで使用できます。以前は、サーバーとクライアントの間の境界を手動でNext.js固有の型で型付けする必要がありました。
-2. **コンポーネント間のデータフローの合理化**：`_app`の削除に伴い、ルートのレイアウトが優先されるようになり、コンポーネントとページ間のデータフローを視覚化することがより簡単になりました。以前は、個々の`pages`と`_app`間でデータをやり取りする際に型付けは難しく、混乱を招くバグが発生する可能性もありました。App Routerの[共有データフェッチ](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating)により、この問題は解消されました。
+2. **コンポーネント間のデータフローの合理化**: `_app`の削除に伴い、ルートのレイアウトが優先されるようになり、コンポーネントとページ間のデータフローを視覚化することがより簡単になりました。以前は、個々の`pages`と`_app`間でデータをやり取りする際に型付けは難しく、混乱を招くバグが発生する可能性もありました。App Routerの[共有データフェッチ](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating)により、この問題は解消されました。
 
 Next.jsの[データフェッチ](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating)は、データベースやコンテンツプロバイダの選択についての指示を与えずに、可能な限りエンドツーエンドの型の安全性を提供します。
 
@@ -206,7 +210,7 @@ module.exports = {
 
 ## カスタムの型定義
 
-カスタムの型を宣言する必要がある場合、`next-env.d.ts`を変更することが誘惑されるかもしれません。しかし、このファイルは自動生成されるため、行った変更は上書きされてしまいます。代わりに、新しいファイルを作成し、`new-types.d.ts`とし、`tsconfig.json`で参照するようにしてください。
+カスタムの型を宣言する必要がある場合、`next-env.d.ts`を変更したくなるかもしれません。しかし、このファイルは自動生成されるため、行った変更は上書きされてしまいます。代わりに、新しいファイルを作成し、`new-types.d.ts`とし、`tsconfig.json`で参照するようにしてください。
 
 ```json title="tsconfig.json"
 {
@@ -225,7 +229,7 @@ module.exports = {
 }
 ```
 
-## バージョンの変更
+## バージョン履歴
 
 | バージョン | 変更点                                                                                                                                                  |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
