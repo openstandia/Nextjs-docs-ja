@@ -159,7 +159,7 @@ fetch('https://...', { next: { revalidate: 3600 } })
 
 #### オンデマンドの再検証
 
-データは、パス（[`revalidatePath`](#revalidatepath)）またはキャッシュタグ（[`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag)）によってオンデマンドで再検証できます。
+データは、パス（[`revalidatePath`](#revalidatepath)）またはキャッシュタグ（[`revalidateTag`](#fetch-optionsnexttags-と-revalidatetag)）によってオンデマンドで再検証できます。
 
 **オンデマンドの再検証の仕組み**
 
