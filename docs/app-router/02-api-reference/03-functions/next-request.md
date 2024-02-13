@@ -88,7 +88,7 @@ request.nextUrl.pathname
 request.nextUrl.searchParams
 ```
 
-以下のオプションが利用可能です：
+以下のオプションが利用可能です:
 
 | プロパティ     | 型                      | 説明                                                                                                                 |
 | -------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -97,13 +97,13 @@ request.nextUrl.searchParams
 | `pathname`     | `string`                | URL のパス名                                                                                                         |
 | `searchParams` | `Object`                | URL の検索パラメータ                                                                                                 |
 
-> **注意：** ページルーターの国際化プロパティは、アプリルーターでの使用はできません。[アプリルーターによる国際化](/docs/app-router/building-your-application/routing/internationalization)について詳しく学ぶ。
+> **注意:** ページルーターの国際化プロパティは、アプリルーターでの使用はできません。[アプリルーターによる国際化](/docs/app-router/building-your-application/routing/internationalization)について詳しく学ぶ。
 
 ## `ip`
 
 `ip` プロパティはリクエストのIPアドレスを含む文字列です。この値はオプションで、あなたのホスティングプラットフォームによって提供されることもあります。
 
-> **知っておきましょう：** [Vercel](https://vercel.com/docs/frameworks/nextjs?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)では、この値がデフォルトで供給されます。他のプラットフォームでは、[`X-Forwarded-For`](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Forwarded-For) ヘッダーで IP アドレスを指定します。
+> **Good to know:** [Vercel](https://vercel.com/docs/frameworks/nextjs?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)では、この値がデフォルトで供給されます。他のプラットフォームでは、[`X-Forwarded-For`](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Forwarded-For) ヘッダーで IP アドレスを指定します。
 
 ```ts
 // Vercel によって提供されます
@@ -116,7 +116,7 @@ request.headers.get('X-Forwarded-For')
 
 `geo` プロパティはリクエストの地理情報を含むオブジェクトです。この値はオプションで、あなたのホスティングプラットフォームによって提供されることもあります。
 
-> **知っておきましょう：** [Vercel](https://vercel.com/docs/frameworks/nextjs?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)では、この値がデフォルトで供給されます。他のプラットフォームでは、 [`X-Forwarded-For`](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Forwarded-For) ヘッダーで IP アドレスを指定し、[サードパーティのサービス](https://ip-api.com/) を使用して地理情報を取得します。
+> **Good to know:** [Vercel](https://vercel.com/docs/frameworks/nextjs?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)では、この値がデフォルトで供給されます。他のプラットフォームでは、 [`X-Forwarded-For`](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Forwarded-For) ヘッダーで IP アドレスを指定し、[サードパーティのサービス](https://ip-api.com/) を使用して地理情報を取得します。
 
 ```ts
 // Vercel によって提供されます
