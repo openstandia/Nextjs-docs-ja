@@ -16,7 +16,7 @@ description: revalidateTag 関数の API リファレンス
 revalidateTag(tag: string): void;
 ```
 
-- `tag`： 再検証したいデータに関連付けられたキャッシュ・タグを表す文字列。256文字以下
+- `tag`： 再検証したいデータに関連付けられたキャッシュ・タグを表す文字列。256文字以下でなければなりません。
 
 You can add tags to `fetch` as follows:
 以下のように`fetch`にタグをつけることができます：
