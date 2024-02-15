@@ -141,7 +141,7 @@ export default function DashboardLayout({
 
 テンプレートは `template.js` ファイルからデフォルトの React コンポーネントをエクスポートすることで定義できます。コンポーネントは `children` プロパティを受け取る必要があり、これはネストされた Segment になります。
 
-![template.js special file](../../assets/template-special-file.svg)
+![template.js special file](../../assets/template-special-file.avif)
 
 ```tsx title="app/template.tsx"
 export default function Template({ children }: { children: React.ReactNode }) {
