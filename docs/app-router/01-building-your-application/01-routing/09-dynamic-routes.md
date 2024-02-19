@@ -41,7 +41,7 @@ Segment のパラメータを生成する方法については、[generateStatic
 
 `generateStaticParams`関数は[動的なルートセグメント](/docs/app-router/building-your-application/routing/dynamic-routes)と組み合わせて使うことで、リクエスト時にオンデマンドでルートを生成する代わりに、ビルド時に[**静的に生成**](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)できます。
 
-```tsx title="app/blog/[slug]/page.tsx" switcher
+```tsx title="app/blog/[slug]/page.tsx"
 export async function generateStaticParams() {
   const posts = await fetch('https://.../posts').then((res) => res.json())
 
@@ -96,7 +96,7 @@ export async function generateStaticParams() {
 
 TypeScript を使用する場合、設定したルート Segment に応じて `params` の型を追加できます。
 
-```tsx title="app/blog/[slug]/page.tsx" switcher
+```tsx title="app/blog/[slug]/page.tsx"
 export default function Page({ params }: { params: { slug: string } }) {
   return <h1>My Page</h1>
 }

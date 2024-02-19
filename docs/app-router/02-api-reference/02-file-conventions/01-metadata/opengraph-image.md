@@ -257,7 +257,7 @@ export default function Image() {}
 > **Good to know**:
 > デフォルトでは、生成された画像は[静的に最適化](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)されます。個々の`fetch`[オプション](/docs/app-router/api-reference/functions/fetch)やルートセグメント[オプション](/docs/app-router/api-reference/file-conventions/route-segment-config#revalidate)を設定することで、この挙動を変更できます。
 
-```tsx title="app/posts/[slug]/opengraph-image.tsx" switcher
+```tsx title="app/posts/[slug]/opengraph-image.tsx"
 import { ImageResponse } from 'next/server'
 
 export const runtime = 'edge'
@@ -270,46 +270,6 @@ export const size = {
 export const contentType = 'image/png'
 
 export default async function Image({ params }: { params: { slug: string } }) {
-  const post = await fetch(`https://.../posts/${params.slug}`).then((res) =>
-    res.json()
-  )
-
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          fontSize: 48,
-          background: 'white',
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {post.title}
-      </div>
-    ),
-    {
-      ...size,
-    }
-  )
-}
-```
-
-```jsx title="app/posts/[slug]/opengraph-image.js" switcher
-import { ImageResponse } from 'next/server'
-
-export const runtime = 'edge'
-
-export const alt = 'About Acme'
-export const size = {
-  width: 1200,
-  height: 630,
-}
-export const contentType = 'image/png'
-
-export default async function Image({ params }) {
   const post = await fetch(`https://.../posts/${params.slug}`).then((res) =>
     res.json()
   )
