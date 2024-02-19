@@ -241,7 +241,7 @@ export const metadata: Metadata = {
 >
 > - `layout.js`
 >
->   - `title` (string) および `title.default` は、子セグメント (独自のタイトルを定義していない) のデフォルトのタイトルを定義します。最も近い親セグメントに `title.template` が存在する場合は、それを補強します。
+>   - `title` (string) および `title.default` は、子セグメント (独自のタイトルを定義していない) のデフォルトのタイトルを定義します。`title.template` が存在する場合、最も近い親セグメントから補強します。
 >   - `title.absolute` は、子セグメントのデフォルトのタイトルを定義します。親セグメントの `title.template` は無視されます。
 >   - `title.template` は、子セグメント用の新しいタイトルテンプレートを定義します。
 >
@@ -301,7 +301,7 @@ export const metadata = {
 `metadataBase` は、完全修飾 URL を必要とする `metadata` フィールドのベース URL プレフィックスを設定する便利なオプションです。
 
 - `metadataBase` は、**現在のルートセグメント以下** で定義された URL ベースの `metadata` フィールドです。絶対 URL の代わりに **相対パス** を使用できるようにします。
-- フィールドの相対パスは、`metadataBase` と組み合わされて完全修飾URLを形成する。
+- フィールドの相対パスは、`metadataBase` と組み合わされて完全修飾URLを形成します。
 - 設定されていない場合、`metadataBase` には **自動的**に[デフォルト値](#default-value)が入力されます。
 
 ```jsx title="layout.js | page.js"
@@ -540,7 +540,7 @@ export const metadata = {
 />
 ```
 
-> **Good to know**: `msapplication-_` メタタグは、Microsoft Edge の Chromium ビルドではサポートされなくなったため、不要になりました。
+> **Good to know**: `msapplication-*` メタタグは、Microsoft Edge の Chromium ビルドではサポートされなくなったため、不要になりました。
 
 ### `themeColor`
 
@@ -828,7 +828,7 @@ export const metadata = {
 ### `other`
 
 すべてのメタデータオプションは、ビルトインサポートでカバーされているはずです。しかし、あなたのサイトに固有のカスタムメタデータタグや、
-リリースされたばかりの新しいメタデータタグがあるかもしれません。**他の** オプションを使って、カスタムメタデータタグをレンダリングすることができます。
+リリースされたばかりの新しいメタデータタグがあるかもしれません。**other** オプションを使って、カスタムメタデータタグをレンダリングすることができます。
 
 ```jsx title="layout.js | page.js"
 export const metadata = {
