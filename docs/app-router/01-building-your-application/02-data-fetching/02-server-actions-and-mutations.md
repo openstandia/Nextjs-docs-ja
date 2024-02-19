@@ -75,7 +75,7 @@ export default function ClientComponent({ updateItem }) {
 
 ## Behavior
 
-- Server Actionsは[`<form>`要素](/docs/app-router/ocs/app/building-your-application/data-fetching/server-actions-and-mutations#フォーム)の`action`属性を使用して呼び出すことができます。
+- Server Actionsは[`<form>`要素](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations#フォーム)の`action`属性を使用して呼び出すことができます。
 
   - サーバーコンポーネントはデフォルトでプログレッシブエンハンスメントをサポートしており、JavaScriptがまだロードされていないか無効になっていてもフォームは送信されます。
   - クライアントコンポーネントでは、JavaScriptがまだロードされていない場合、Server Actionsを呼び出すフォームは送信がキューイングされ、クライアントのハイドレーションが優先されます。
