@@ -104,7 +104,7 @@ function HomePage() {
 export default HomePage
 ```
 
-動的検索はインライン化され **ない** ことに注意:
+動的検索はインライン化され **ない** ことに注意してください:
 
 ```js
 // これはインライン化されません。
@@ -121,7 +121,7 @@ setupAnalyticsService(env.NEXT_PUBLIC_ANALYTICS_ID)
 Next.jsは、ビルド時と実行時の両方の環境変数をサポートできます。
 
 **デフォルトでは、環境変数はサーバーでのみ利用可能です。** 環境変数をブラウザに公開するには、その前に `NEXT_PUBLIC_` を付けなければなりません。
-しかし、これらの公開環境変数は次回のビルド時に JavaScript バンドルにインライン化されます。
+しかし、これらの公開環境変数は `next build` 時に JavaScript バンドルにインライン化されます。
 
 実行時の環境変数を読み取るには、`getServerSideProps` を使用するか、[App Routerを段階的に採用する](/docs/app-router/building-your-application/upgrading/app-router-migration)ことを推奨します。
 App Routerを使えば、動的レンダリング中にサーバ上の環境変数を安全に読み取ることができます。
@@ -142,7 +142,7 @@ export default function Component() {
 **Good to know:**
 
 - [register 関数](/docs/app-router/building-your-application/optimizing/instrumentation)を使えば、サーバー起動時にコードを実行できます。
-- [runtimeConfig](https://nextjs.org/docs/pages/api-reference/next-config-js/runtime-configuration) オプションは、スタンドアロン出力モードでは動作しないため、使用は推奨しません。代わりに、App Routerを[段階的に採用する](/docs/app-router/building-your-application/upgrading/app-router-migration)ことを推奨する。
+- スタンドアロン出力モードでは動作しないため、[runtimeConfig](https://nextjs.org/docs/pages/api-reference/next-config-js/runtime-configuration) オプションの使用は推奨しません。代わりに、App Routerを[段階的に採用する](/docs/app-router/building-your-application/upgrading/app-router-migration)ことを推奨します。
 
 ## デフォルトの環境変数
 
@@ -183,7 +183,7 @@ Next.jsは、テスト環境で `.env.development` や `.env.production` から�
 `.env.local` は読み込まれません。テストは誰にとっても同じ結果をもたらすことを期待しているからです。
 `.env.local`（はデフォルトの設定を上書きするためのものです）を無視することで、すべてのテスト実行で同じデフォルトの環境変数が使用されます。
 
-> **Good to know**: `.env*.local` は `.gitignore` によって無視されることを意図しているので、`.env.test.local` はリポジトリに含めるべきではありません。
+> **Good to know**: デフォルトの環境変数と同様に、`.env*.local` は `.gitignore` によって無視されることを意図しているため `.env.test.local` はリポジトリに含めるべきではありません。
 
 ユニットテストの実行中に、`@next/env` パッケージの `loadEnvConfig` 関数を活用することで、Next.jsと同じように環境変数をロードすることができます。
 
@@ -199,7 +199,7 @@ export default async () => {
 
 ## 環境変数のロード順序
 
-環境変数は以下の場所から順に検索され、変数が見つかった時点で停止する。
+環境変数は以下の場所から順に検索され、変数が見つかった時点で停止します。
 
 1. `process.env`
 1. `.env.$(NODE_ENV).local`
