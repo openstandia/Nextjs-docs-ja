@@ -169,7 +169,7 @@ export function middleware(request: NextRequest) {
 
 リクエストヘッダとレスポンスヘッダは `NextResponse` API を使って設定できます（*request*ヘッダの設定は Next.js v13.0.0 から）
 
-```ts title="middleware.ts" switcher
+```ts title="middleware.ts"
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -198,7 +198,7 @@ export function middleware(request: NextRequest) {
 
 `Response`インスタンスまたは `NextResponse` インスタンスを返すことで、Middleware から直接レスポンスを返すことができます。（これは[Next.js v13.1.0](https://nextjs.org/blog/next-13-1#nextjs-advanced-middleware)から利用できます）
 
-```ts title="middleware.ts" switcher
+```ts title="middleware.ts"
 import { NextRequest } from 'next/server'
 import { isAuthenticated } from '@lib/auth'
 
