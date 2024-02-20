@@ -1,7 +1,7 @@
 ---
 title: Route Segment Config
 description: Learn about how to configure options for Next.js route segments.
-sidebar_position: 8
+sidebar_position: 9
 ---
 
 Route Segment オプションは、以下の変数を直接エクスポートすることで、[ページ](/docs/app-router/building-your-application/routing/pages-and-layouts)、[レイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts)、または [ルートハンドラ](/docs/app-router/building-your-application/routing/route-handlers) の動作を設定できます。

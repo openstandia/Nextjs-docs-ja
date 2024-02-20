@@ -110,7 +110,7 @@ setupFilesAfterEnv: ['<rootDir>/jest.setup.ts']
 
 次に、`jest.setup.ts` の中に、以下の import を追加します：
 
-```ts title="jest.setup.ts" switcher
+```ts title="jest.setup.ts"
 import '@testing-library/jest-dom'
 ```
 
@@ -122,7 +122,7 @@ import '@testing-library/jest-dom'
 
 最後に、`package.json` ファイルに Jest `test` スクリプトを追加します：
 
-```json filename="package.json" highlight={6-7}
+```json title="package.json" highlight={6-7}
 {
   "scripts": {
     "dev": "next dev",
