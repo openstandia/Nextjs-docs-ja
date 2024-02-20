@@ -16,7 +16,7 @@ title: サードパーティ ライブラリ
 npm install @next/third-parties@latest next@latest
 ```
 
-`@next/third-parties` は現在開発中の **実験的** ライブラリです。より多くのサードパーティとの統合の追加に取り組んでいる間は、
+`@next/third-parties` は現在開発中の **実験的** ライブラリです。サードパーティとの統合の追加に取り組んでいる間は、
 **最新** または **カナリア** フラグでインストールすることをお勧めします。
 
 ## Google サードパーティ
@@ -28,8 +28,6 @@ Google がサポートするすべてのサードパーティライブラリは�
 `GoogleTagManager` コンポーネントを使うと、 [Google Tag Manager](https://developers.google.com/tag-platform/tag-manager) コンテナをページにインスタンス化することができます。
 デフォルトでは、ページ上でハイドレーションが発生した後に元のインラインスクリプトを取得します。
 
-To load Google Tag Manager for all routes, include the component directly in your root layout and
-pass in your GTM container ID:
 すべてのルートに対して Google Tag Manager をロードするには、コンポーネントをルートレイアウトに直接インクルードし、GTM コンテナ ID を渡します:
 
 ```tsx title="app/layout.tsx"
@@ -82,7 +80,7 @@ export function EventButton() {
 }
 ```
 
-関数に渡すことができるさまざまな変数やイベントについては、タグマネージャの[開発者向けドキュメント](https://developers.google.com/tag-platform/tag-manager/datalayer)を参照してください。
+関数に渡すことができるさまざまな変数やイベントについては、Tag Manager の[開発者向けドキュメント](https://developers.google.com/tag-platform/tag-manager/datalayer)を参照してください。
 
 #### オプション
 
