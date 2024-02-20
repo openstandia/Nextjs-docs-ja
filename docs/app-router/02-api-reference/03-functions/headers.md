@@ -22,7 +22,7 @@ export default function Page() {
 
 > **Good to know:**
 >
-> - `headers()`は**[動的関数](/docs/app-router/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions)**で、事前に返り値を知ることはできません。これをレイアウトまたはページで使用すると、ルートがリクエスト時に**[動的レンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)**に切り替わります。
+> - `headers()`は**[動的関数](/docs/app-router/building-your-application/rendering/server-components#動的関数)**で、事前に返り値を知ることはできません。これをレイアウトまたはページで使用すると、ルートがリクエスト時に**[動的レンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)**に切り替わります。
 
 ### API リファレンス
 
