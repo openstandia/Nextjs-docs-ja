@@ -7,7 +7,7 @@ description: Next.jsアプリケーションにリライト機能を追加しま
 
 リライトはURLプロキシとして機能し、目的のパスをマスクすることで、ユーザーがサイト上の場所を変更していないように見せます。対照的に、[リダイレクト](/docs/app-router/api-reference/next-config-js/redirects)は新しいページに再ルーティングし、URLの変更を表示します。
 
-リライトを使用するには、`next.config.js`内の`rewrites`キーを使用します：
+リライトを使用するには、`next.config.js`内の`rewrites`キーを使用します:
 
 ```js title="next.config.js"
 module.exports = {
@@ -24,7 +24,7 @@ module.exports = {
 
 リライトはクライアントサイドのルーティングに適用され、上記の例では`<Link href="/about">`にリライトが適用されます。
 
-`rewrites`は非同期関数で、`source`と`destination`プロパティを持つオブジェクトを配列、またはオブジェクトの配列（以下を参照）を返すことを期待しています：
+`rewrites`は非同期関数で、`source`と`destination`プロパティを持つオブジェクトを配列、またはオブジェクトの配列（以下を参照）を返すことを期待しています:
 
 - `source`: `String` - 受信したリクエストパスのパターンです。
 - `destination`: `String`はルーティング先のパスです。
