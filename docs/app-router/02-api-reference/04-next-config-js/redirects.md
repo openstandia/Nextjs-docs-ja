@@ -104,14 +104,14 @@ module.exports = {
 }
 ```
 
-The following characters `(`, `)`, `{`, `}`, `:`, `*`, `+`, `?` are used for regex path matching, so when used in the `source` as non-special values they must be escaped by adding `\\` before them:
+`(`, `)`, `{`, `}`, `:`, `*`, `+`, `?` は正規表現パスマッチングに使用されるため、 `source` 内で非特殊値として使用される場合は、それらの文字の前に `\\`を追加してエスケープする必要があります:
 
 ```js title="next.config.js"
 module.exports = {
   async redirects() {
     return [
       {
-        // this will match `/english(default)/something` being requested
+        // これは `/english(default)/something` にマッチします
         source: '/english\\(default\\)/:slug',
         destination: '/en-us/:slug',
         permanent: false,
@@ -123,20 +123,20 @@ module.exports = {
 
 ## ヘッダー、クッキー、クエリーのマッチング
 
-To only match a redirect when header, cookie, or query values also match the `has` field or don't match the `missing` field can be used. Both the `source` and all `has` items must match and all `missing` items must not match for the redirect to be applied.
+ヘッダ、クッキー、クエリの値が `has` フィールドにもマッチするとき、あるいは `missing` フィールドにマッチしないときにのみ、リダイレクトをマッチさせるために使うことができます。
+リダイレクトを適用するためには、`source` とすべての `has` 項目がマッチし、すべての `missing` 項目がマッチしなければなりません。
 
-`has` and `missing` items can have the following fields:
+`has` と `missing` には以下のフィールドがあります:
 
-- `type`: `String` - must be either `header`, `cookie`, `host`, or `query`.
-- `key`: `String` - the key from the selected type to match against.
-- `value`: `String` or `undefined` - the value to check for, if undefined any value will match. A regex like string can be used to capture a specific part of the value, e.g. if the value `first-(?<paramName>.*)` is used for `first-second` then `second` will be usable in the destination with `:paramName`.
+- `type`: `String` - `header`、`cookie`、`host`、`query` のいずれかでなければなりません。
+- `key`: `String` - 選択した型のキーと照合します。
+- `value`: `String` or `undefined` - チェックする値です。undefinedの場合、任意の値がマッチします。 正規表現のような文字列を使用して、値の特定の部分を捕捉することができます。例えば、値として `first-(?<paramName>.*)` を使用し、`first-second` であれば、`:paramName` として destination で `second` を使用することができます。
 
 ```js title="next.config.js"
 module.exports = {
   async redirects() {
     return [
-      // if the header `x-redirect-me` is present,
-      // this redirect will be applied
+      // ヘッダ `x-redirect-me` が存在する場合、このリダイレクトが適用されます。
       {
         source: '/:path((?!another-page$).*)',
         has: [
@@ -148,8 +148,7 @@ module.exports = {
         permanent: false,
         destination: '/another-page',
       },
-      // if the header `x-dont-redirect` is present,
-      // this redirect will NOT be applied
+      // ヘッダ `x-dont-redirect` が存在する場合、このリダイレクトは適用されません。
       {
         source: '/:path((?!another-page$).*)',
         missing: [
@@ -161,17 +160,16 @@ module.exports = {
         permanent: false,
         destination: '/another-page',
       },
-      // if the source, query, and cookie are matched,
-      // this redirect will be applied
+      //
+      // source、query、cookie が一致した場合、このリダイレクトが適用されます。
       {
         source: '/specific/:path*',
         has: [
           {
             type: 'query',
             key: 'page',
-            // the page value will not be available in the
-            // destination since value is provided and doesn't
-            // use a named capture group e.g. (?<page>home)
+            // 値が提供され名前付きキャプチャグループを使用しないため、
+            // ページの値は destination で使用できません。例: (?<page>home)
             value: 'home',
           },
           {
@@ -183,8 +181,7 @@ module.exports = {
         permanent: false,
         destination: '/another/:path*',
       },
-      // if the header `x-authorized` is present and
-      // contains a matching value, this redirect will be applied
+      // ヘッダ `x-authorized` が存在し、マッチする値が含まれていれば、このリダイレクトが適用されます。
       {
         source: '/',
         has: [
@@ -197,8 +194,7 @@ module.exports = {
         permanent: false,
         destination: '/home?authorized=:authorized',
       },
-      // if the host is `example.com`,
-      // this redirect will be applied
+      // ホストが `example.com` の場合、このリダイレクトが適用されます。
       {
         source: '/:path((?!another-page$).*)',
         has: [
@@ -217,7 +213,7 @@ module.exports = {
 
 ### basePathをサポートするリダイレクト
 
-When leveraging [`basePath` support](/docs/app-router/api-reference/next-config-js/basePath) with redirects each `source` and `destination` is automatically prefixed with the `basePath` unless you add `basePath: false` to the redirect:
+リダイレクトに `basePath: false` を追加しない限り、リダイレクトで [basePath サポート](/docs/app-router/api-reference/next-config-js/basePath)を利用する場合、それぞれの `source` と `destination` には自動的に `basePath` が先頭に付きます:
 
 ```js title="next.config.js"
 module.exports = {
@@ -226,12 +222,12 @@ module.exports = {
   async redirects() {
     return [
       {
-        source: '/with-basePath', // automatically becomes /docs/with-basePath
-        destination: '/another', // automatically becomes /docs/another
+        source: '/with-basePath', // 自動的に /docs/with-basePath になります
+        destination: '/another', // 自動的に /docs/another になります
         permanent: false,
       },
       {
-        // does not add /docs since basePath: false is set
+        // basePath: falseが設定されているので、/docsは追加されません。
         source: '/without-basePath',
         destination: 'https://example.com',
         basePath: false,
@@ -244,7 +240,7 @@ module.exports = {
 
 ### 国際化をサポートするリダイレクト
 
-When leveraging [`i18n` support](/docs/app-router/building-your-application/routing/internationalization) with redirects each `source` and `destination` is automatically prefixed to handle the configured `locales` unless you add `locale: false` to the redirect. If `locale: false` is used you must prefix the `source` and `destination` with a locale for it to be matched correctly.
+リダイレクトで[国際化サポート](/docs/app-router/building-your-application/routing/internationalization)を使用する場合は、 `locale: false` をリダイレクトに追加しない限り、設定されているロケールに対応するように `source` と `destination` が自動的にプレフィックスされます。`locale: false` を使用する場合は、`source` と `destination` にロケールのプレフィックスをつけなければ正しくマッチしません。
 
 ```js title="next.config.js"
 module.exports = {
@@ -256,25 +252,25 @@ module.exports = {
   async redirects() {
     return [
       {
-        source: '/with-locale', // automatically handles all locales
-        destination: '/another', // automatically passes the locale on
+        source: '/with-locale', // すべてのロケールを自動的に処理します
+        destination: '/another', // 自動的にロケールが渡されます
         permanent: false,
       },
       {
-        // does not handle locales automatically since locale: false is set
+        // locale:falseが設定されているので、ロケールは自動的に処理されません
         source: '/nl/with-locale-manual',
         destination: '/nl/another',
         locale: false,
         permanent: false,
       },
       {
-        // this matches '/' since `en` is the defaultLocale
+        // `en` がデフォルトのロケールのため、`/`　にマッチします
         source: '/en',
         destination: '/en/another',
         locale: false,
         permanent: false,
       },
-      // it's possible to match all locales even when locale: false is set
+      // locale:falseが設定されていても、すべてのロケールにマッチさせることができます
       {
         source: '/:locale/page',
         destination: '/en/newpage',
@@ -282,8 +278,7 @@ module.exports = {
         locale: false,
       },
       {
-        // this gets converted to /(en|fr|de)/(.*) so will not match the top-level
-        // `/` or `/fr` routes like /:path* would
+        // これは /(en|fr|de)/(.*) に変換されるため、/:path* のようにトップレベルの `/` や `/fr` ルートにはマッチしません。
         source: '/(.*)',
         destination: '/another',
         permanent: false,
@@ -293,12 +288,14 @@ module.exports = {
 }
 ```
 
-In some rare cases, you might need to assign a custom status code for older HTTP Clients to properly redirect. In these cases, you can use the `statusCode` property instead of the `permanent` property, but not both. To to ensure IE11 compatibility, a `Refresh` header is automatically added for the 308 status code.
+まれに、古い HTTP クライアントが適切にリダイレクトするために、カスタムステータスコードを割り当てる必要がある場合があります。
+このような場合、`permanent` プロパティの代わりに `statusCode` プロパティを使用することができますが、両方を使用することはできません。
+IE11 との互換性を確保するために、308 ステータスコードに対して `Refresh` ヘッダが自動的に追加されます。
 
 ## その他のリダイレクト
 
-- Inside [API Routes](/docs/pages/building-your-application/routing/api-routes) and [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers), you can redirect based on the incoming request.
-- Inside [`getStaticProps`](/docs/pages/building-your-application/data-fetching/get-static-props) and [`getServerSideProps`](/docs/pages/building-your-application/data-fetching/get-server-side-props), you can redirect specific pages at request-time.
+- [API Routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) と [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers) の内部では、送られてくるリクエストに基づいてリダイレクトすることができます。
+- [`getStaticProps`](https://nextjs.org/docs/pages/building-your-application/data-fetching/get-static-props) と [`getServerSideProps`](https://nextjs.org/docs/pages/building-your-application/data-fetching/get-server-side-props) の内部では、リクエスト時に特定のページをリダイレクトできます。
 
 ## バージョン履歴
 
