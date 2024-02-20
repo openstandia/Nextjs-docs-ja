@@ -1,5 +1,5 @@
 ---
-title: Contribution Guide 🚧
+title: Redirecting 🚧
 description: ''
 ---
 

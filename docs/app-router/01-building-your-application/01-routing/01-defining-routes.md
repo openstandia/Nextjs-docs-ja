@@ -33,7 +33,7 @@ Next.js では、**フォルダ**を使ってルートを定義する、ファ�
 
 例えば、最初のページを作成するには、`app`ディレクトリ内に`page.js`ファイルを追加し、React コンポーネントをエクスポートします：
 
-```tsx title="app/page.tsx" switcher
+```tsx title="app/page.tsx"
 export default function Page() {
   return <h1>Hello, Next.js!</h1>
 }

@@ -1,6 +1,7 @@
 ---
-title: Server Actions 🚧
+title: instrumentation.js 🚧
 description: ''
+sidebar_position: 3
 ---
 
 :::caution

@@ -18,7 +18,7 @@ Route Handlers を使うと、Web [Request](https://developer.mozilla.org/en-US/
 
 ルートハンドラは`app`ディレクトリ内の[`route.js|ts`ファイル](/docs/app-router/api-reference/file-conventions/route)で定義されます。
 
-```ts title="app/api/route.ts" switcher
+```ts title="app/api/route.ts"
 export const dynamic = 'force-dynamic' // defaults to auto
 export async function GET(request: Request) {}
 ```
@@ -40,7 +40,7 @@ export async function GET(request: Request) {}
 
 `Response` オブジェクトで `GET` メソッドを使用する場合、Route ハンドラはデフォルトでキャッシュされます。
 
-```ts title="app/items/route.ts" switcher
+```ts title="app/items/route.ts"
 export async function GET() {
   const res = await fetch('https://data.mongodb-api.com/...', {
     headers: {
@@ -67,7 +67,7 @@ export async function GET() {
 
 例えば
 
-```ts title="app/products/api/route.ts" switcher
+```ts title="app/products/api/route.ts"
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
 
 同様に、`POST`メソッドは Route Handler を動的に評価します。
 
-```ts title="app/items/route.ts" switcher
+```ts title="app/items/route.ts"
 export async function POST() {
   const res = await fetch('https://data.mongodb-api.com/...', {
     method: 'POST',
@@ -137,7 +137,7 @@ export async function POST(request) {}
 
 [静的データの再検証](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating)フェッチは、[`next.revalidate`](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating#データの再検証)オプションを使って行うことができます：
 
-```ts title="app/items/route.ts" switcher
+```ts title="app/items/route.ts"
 export async function GET() {
   const res = await fetch('https://data.mongodb-api.com/...', {
     next: { revalidate: 60 }, // Revalidate every 60 seconds
@@ -164,7 +164,7 @@ export const revalidate = 60
 
 この `cookies` インスタンスは読み取り専用です。クッキーを設定するには、[`Set-Cookie`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie) ヘッダを使用して新しい `Response` を返す必要があります。
 
-```ts title="app/api/route.ts" switcher
+```ts title="app/api/route.ts"
 import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
@@ -180,7 +180,7 @@ export async function GET(request: Request) {
 
 あるいは、クッキーを読むために、基礎となる Web API の上で抽象化を使うこともできます（[`NextRequest`](/docs/app-router/api-reference/functions/next-request)）：
 
-```ts title="app/api/route.ts" switcher
+```ts title="app/api/route.ts"
 import { type NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
 
 この `headers` インスタンスは読み取り専用です。ヘッダを設定するには、新しい `headers` を持つ新しい `Response` を返す必要があります。
 
-```ts title="app/api/route.ts" switcher
+```ts title="app/api/route.ts"
 import { headers } from 'next/headers'
 
 export async function GET(request: Request) {
@@ -210,7 +210,7 @@ export async function GET(request: Request) {
 
 あるいは、ヘッダーを読み込むために、基礎となる Web API の上で抽象化を使用することもできます（[`NextRequest`](/docs/app-router/api-reference/functions/next-request)）。
 
-```ts title="app/api/route.ts" switcher
+```ts title="app/api/route.ts"
 import { type NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -220,7 +220,7 @@ export async function GET(request: NextRequest) {
 
 ### Redirects
 
-```ts title="app/api/route.ts" switcher
+```ts title="app/api/route.ts"
 import { redirect } from 'next/navigation'
 
 export async function GET(request: Request) {
@@ -234,7 +234,7 @@ export async function GET(request: Request) {
 
 ルートハンドラは[Dynamic Segments](/docs/app-router/building-your-application/routing/dynamic-routes)を使って、動的なデータからリクエストハンドラを作成できます。
 
-```ts title="app/items/[slug]/route.ts" switcher
+```ts title="app/items/[slug]/route.ts"
 export async function GET(
   request: Request,
   { params }: { params: { slug: string } }
@@ -253,7 +253,7 @@ export async function GET(
 
 Route Handler に渡されるリクエストオブジェクトは `NextRequest` インスタンスで、クエリパラメータをより簡単に扱うためのメソッドなど、[いくつかの便利なメソッド](/docs/app-router/api-reference/functions/next-request#nexturl)が追加されています。
 
-```ts title="app/api/search/route.ts" switcher
+```ts title="app/api/search/route.ts"
 import { type NextRequest } from 'next/server'
 
 export function GET(request: NextRequest) {
@@ -267,7 +267,7 @@ export function GET(request: NextRequest) {
 
 ストリーミングは、OpenAI のような大規模言語モデル（LLM）と組み合わせて、AI が生成するコンテンツによく使用されます。AI SDK の詳細は[こちら](https://sdk.vercel.ai/docs)。
 
-```ts title="app/api/chat/route.ts" switcher
+```ts title="app/api/chat/route.ts"
 import OpenAI from 'openai'
 import { OpenAIStream, StreamingTextResponse } from 'ai'
 
@@ -293,7 +293,7 @@ export async function POST(req: Request) {
 
 これらの抽象化は、ストリームを作成するために Web API を使用します。また、基礎となる Web API を直接使用することもできます。
 
-```ts title="app/api/route.ts" switcher
+```ts title="app/api/route.ts"
 // https://developer.mozilla.org/docs/Web/API/ReadableStream#convert_async_iterator_to_stream
 function iteratorToStream(iterator: any) {
   return new ReadableStream({
@@ -337,7 +337,7 @@ export async function GET() {
 
 標準の Web API メソッドを使ってリクエストボディを読むことができます。
 
-```ts title="app/items/route.ts" switcher
+```ts title="app/items/route.ts"
 export async function POST(request: Request) {
   const res = await request.json()
   return Response.json({ res })
@@ -348,7 +348,7 @@ export async function POST(request: Request) {
 
 `FormData` を読み込むには、`request.formData()`関数を使用します：
 
-```ts title="app/items/route.ts" switcher
+```ts title="app/items/route.ts"
 export async function POST(request: Request) {
   const formData = await request.formData()
   const name = formData.get('name')
@@ -363,7 +363,7 @@ export async function POST(request: Request) {
 
 標準的な Web API メソッドを使用して、`Response` に CORS ヘッダを設定できます。
 
-```ts title="app/api/route.ts" switcher
+```ts title="app/api/route.ts"
 export const dynamic = 'force-dynamic' // defaults to force-static
 
 export async function GET(request: Request) {
@@ -392,7 +392,7 @@ export const runtime = 'edge' // 'nodejs' is the default
 
 非 UI コンテンツを返すために Route ハンドラを使うことができます。[`sitemap.xml`](/docs/app-router/api-reference/file-conventions/metadata/sitemap#サイトマップを生成する), [`robots.txt`](/docs/app-router/api-reference/file-conventions/metadata/robots#robotsファイルを生成する), [`app icons`](/docs/app-router/api-reference/file-conventions/metadata/app-icons#アイコンを生成するコードを使用するjststsx), と [`open graph images`](/docs/app-router/api-reference/file-conventions/metadata/opengraph-image) はすべてビルトインサポートです。
 
-```ts title="app/rss.xml/route.ts" switcher
+```ts title="app/rss.xml/route.ts"
 export const dynamic = 'force-dynamic' // defaults to force-static
 
 export async function GET() {
@@ -413,7 +413,7 @@ export async function GET() {
 
 ルートハンドラは、ページやレイアウトと同じ[ルートセグメントの設定](/docs/app-router/api-reference/file-conventions/route-segment-config)を使用します。
 
-```ts title="app/items/route.ts" switcher
+```ts title="app/items/route.ts"
 export const dynamic = 'auto'
 export const dynamicParams = true
 export const revalidate = false

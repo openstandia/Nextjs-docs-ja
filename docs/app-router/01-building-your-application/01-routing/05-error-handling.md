@@ -14,7 +14,7 @@ description: Handle runtime errors by automatically wrapping route segments and 
 
 ![error.js special file](../../assets/error-special-file.svg)
 
-```tsx title="app/dashboard/error.tsx" switcher
+```tsx title="app/dashboard/error.tsx"
 'use client' // Error components must be Client Components
 
 import { useEffect } from 'react'
@@ -62,7 +62,7 @@ export default function Error({
 
 エラーコンポーネントは `reset()` 関数を使用して、エラーからの回復を試みるようユーザーに促すことができます。実行されると、この関数はエラー境界の内容の再描画を試みます。成功した場合、フォールバックエラーコンポーネントは再レンダリングの結果で置き換えられます。
 
-```tsx title="app/dashboard/error.tsx" switcher
+```tsx title="app/dashboard/error.tsx"
 'use client'
 
 export default function Error({
@@ -114,7 +114,7 @@ export default function Error({
 
 `global-error.js`が定義されている場合でも、フォールバックコンポーネントがルートレイアウト内でレンダリングされるルート`error.js`を定義することを推奨します。
 
-```tsx title="app/global-error.tsx" switcher
+```tsx title="app/global-error.tsx"
 'use client'
 
 export default function GlobalError({

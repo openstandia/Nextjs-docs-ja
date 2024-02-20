@@ -1,5 +1,5 @@
 ---
-title: permanentRedirect 🚧
+title: Custom Next.js Cache Handler 🚧
 description: ''
 ---
 

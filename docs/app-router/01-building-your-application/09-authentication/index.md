@@ -1,5 +1,5 @@
 ---
-title: Next.js Community 🚧
+title: 認証 🚧
 description: ''
 ---
 
