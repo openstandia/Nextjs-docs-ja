@@ -15,7 +15,7 @@ description: Built on top of Suspense, Loading UI allows you to create a fallbac
 
 ![loading.js special file](../../assets/loading-special-file.svg)
 
-```tsx title="app/dashboard/loading.tsx" switcher
+```tsx title="app/dashboard/loading.tsx"
 export default function Loading() {
   // You can add any UI inside Loading, including a Skeleton.
   return <LoadingSkeleton />
@@ -76,7 +76,7 @@ React と Next.js による SSR は、非インタラクティブなページを
 
 `<Suspense>`は、非同期アクション（例：データ取得）を実行するコンポーネントをラップし、実行中はフォールバック UI（例：スケルトン、スピナー）を表示し、アクションが完了したらコンポーネントを入れ替えます。
 
-```tsx title="app/dashboard/page.tsx" switcher
+```tsx title="app/dashboard/page.tsx"
 import { Suspense } from 'react'
 import { PostFeed, Weather } from './Components'
 

@@ -29,7 +29,7 @@ Parallel Routes を使用すると、1 つまたは複数のページを同じ�
 
 上記のフォルダ構造は、`app/layout.js`のコンポーネントが`@analytics`と`@team`スロットのプロップを受け入れ、`children`プロップと並行してレンダリングできることを意味します。
 
-```tsx title="app/layout.tsx" switcher
+```tsx title="app/layout.tsx"
 export default function Layout(props: {
   children: React.ReactNode
   analytics: React.ReactNode
@@ -75,7 +75,7 @@ Next.js が現在の URL からスロットのアクティブ状態を回復で�
 
 [`useSelectedLayoutSegment`](/docs/app-router/api-reference/functions/use-selected-layout-segment)と[`useSelectedLayoutSegments`](/docs/app-router/api-reference/functions/use-selected-layout-segments)はどちらも `parallelRoutesKey` を受け取り、そのスロット内でアクティブなルート Segment を読み込むことができます。
 
-```tsx title="app/layout.tsx" switcher
+```tsx title="app/layout.tsx"
 'use client'
 import { useSelectedLayoutSegment } from 'next/navigation'
 
@@ -104,7 +104,7 @@ export default async function Layout(props: {
 
 `@authModal`スロットは`<Modal>`コンポーネントをレンダリングします。
 
-```tsx title="app/layout.tsx" switcher
+```tsx title="app/layout.tsx"
 export default async function Layout(props: {
   // ...
   auth: React.ReactNode
@@ -118,7 +118,7 @@ export default async function Layout(props: {
 }
 ```
 
-```tsx title="app/@auth/login/page.tsx" switcher
+```tsx title="app/@auth/login/page.tsx"
 import { Modal } from 'components/modal'
 
 export default function Login() {
@@ -133,7 +133,7 @@ export default function Login() {
 
 アクティブでないときにモーダルのコンテンツがレンダリングされないようにするには、`null` を返す `default.js` ファイルを作成します。
 
-```tsx title="app/@auth/login/default.tsx" switcher
+```tsx title="app/@auth/login/default.tsx"
 export default function Default() {
   return null
 }
@@ -143,7 +143,7 @@ export default function Default() {
 
 モーダルがクライアントのナビゲーションによって開始された場合、例えば `<Link href="/login">` を使用した場合、`router.back()` を呼び出すか、`Link` コンポーネントを使用することでモーダルを解除できます。
 
-```tsx title="app/@auth/login/page.tsx" highlight="5" switcher
+```tsx title="app/@auth/login/page.tsx" highlight="5"
 'use client'
 import { useRouter } from 'next/navigation'
 import { Modal } from 'components/modal'
@@ -178,7 +178,7 @@ export default function CatchAll() {
 
 並列ルーティングは条件付きルーティングを実装するために使用できます。例えば、認証状態に応じて `@dashboard` または `@login` ルートをレンダリングできます。
 
-```tsx title="app/layout.tsx" switcher
+```tsx title="app/layout.tsx"
 import { getUser } from '@/lib/auth'
 
 export default function Layout({

@@ -59,7 +59,7 @@ export default function Layout({ children }) {
 
 `name`プロパティを使って、これらのメトリクスの結果をすべて扱うことができます。
 
-```tsx title="app/components/web-vitals.tsx" switcher
+```tsx title="app/components/web-vitals.tsx"
 'use client'
 
 import { useReportWebVitals } from 'next/web-vitals'

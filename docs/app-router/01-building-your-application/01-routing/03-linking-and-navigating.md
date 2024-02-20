@@ -159,7 +159,7 @@ Next.js では、ネイティブの [`window.history.pushState`](https://develop
 
 ブラウザの履歴スタックに新しいエントリーを追加するために使用します。ユーザーは前の状態に戻ることができます。例えば、商品リストをソートする場合などです:
 
-```tsx fileName="app/ui/sort-products.tsx"
+```tsx title="app/ui/sort-products.tsx"
 'use client'
 
 import { useSearchParams } from 'next/navigation'
@@ -186,7 +186,7 @@ export default function SortProducts() {
 
 ブラウザの履歴スタックの現在のエントリを置き換えるために使用します。ユーザーは前の状態に戻ることはできません。例えば、アプリケーションのロケールを切り替える場合などです:
 
-```tsx fileName="app/ui/locale-switcher.tsx"
+```tsx title="app/ui/locale-switcher.tsx"
 'use client'
 
 import { usePathname } from 'next/navigation'
