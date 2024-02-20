@@ -147,8 +147,6 @@ module.exports = {
 }
 ```
 
-The following characters `(`, `)`, `{`, `}`, `:`, `*`, `+`, `?` are used for regex path matching, so when used in the `source` as non-special values they must be escaped by adding `\\` before them:
-
 `(`, `)`, `{`, `}`, `:`, `*`, `+`, `?` は正規表現パスマッチングに使用されるため、`source` 内で非特殊値として使用される場合は、それらの文字の前に `\\` を追加してエスケープする必要があります:
 
 ```js title="next.config.js"
