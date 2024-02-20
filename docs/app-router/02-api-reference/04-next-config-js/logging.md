@@ -1,5 +1,5 @@
 ---
-title: ロギング
+title: logging
 description: 開発モードで Next.js を実行する際のデータフェッチのログ出力設定方法
 ---
 
