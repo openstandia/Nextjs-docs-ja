@@ -11,13 +11,12 @@ related:
 
 Next.js には メタデータ API があり、アプリケーションのメタデータ（HTML `head`要素内の`meta`タグや`link`タグなど）を定義して、SEOやウェブ共有性を向上させることができます。
 
-There are two ways you can add metadata to your application:
 アプリケーションにメタデータを追加する方法は2つあります:
 
 - **設定ベースメタデータ**: [静的なメタデータオブジェクト](/docs/app-router/api-reference/functions/generate-metadata#metadata-object)または動的な [generateMetadata 関数](/docs/app-router/api-reference/functions/generate-metadata#generatemetadata-function)を `layout.js` または `page.js` ファイルにエクスポートします。
 - **ファイルベースのメタデータ**: ルートセグメントに静的または動的に生成された特殊ファイルを追加します。
 
-この両方のオプションを使用すると、Next.js はページの関連する `<head>` 要素を自動的に生成します。
+これらのオプションを使用すると、Next.js はページの関連する `<head>` 要素を自動的に生成します。
 また、[`ImageResponse`](/docs/app-router/api-reference/functions/image-response) コンストラクタを使って動的な OG 画像を作成することもできます。
 
 ## 静的メタデータ
@@ -156,7 +155,7 @@ export const metadata = {
 - `app/layout.js` の `title` は、`app/blog/page.js` の `title` に **置き換えられます**。
 - `app/layout.js` の `openGraph` フィールドはすべて `app/blog/page.js` で**置き換えられます**。なぜなら、`app/blog/page.js` は `openGraph` メタデータを設定するためです。`openGraph.description` がないことに注意してください。
 
-ネストしたフィールドをセグメント間で共有し、他のフィールドは上書きしたい場合は、別の変数に取り出します:
+ネストしたフィールドをセグメント間で共有し、一部のフィールドは上書きしたい場合は、別の変数に取り出します:
 
 ```jsx title="app/shared-metadata.js"
 export const openGraphImage = { images: ['http://...'] }
