@@ -600,7 +600,9 @@ export default function Page() {
 
 ただし、これを実現するには、キャプチャされた変数がアクションが呼び出されるときにクライアントに送信され、その後サーバーに戻る必要があります。機密データがクライアントに公開されるのを防ぐために、Next.jsはクローズドオーバーされた変数を自動的に暗号化します。Next.jsアプリケーションがビルドされるたびに、各アクションごとに新しいプライベートキーが生成されます。これにより、アクションは特定のビルドに対してのみ呼び出すことができます。
 
-> **Good to know**: 機密の値がクライアントで公開されるのを防ぐために、暗号化だけに依存することはお勧めしません。その代わりに、[Reactのtaint API](https://nextjs.org/docs/app/building-your-application/data-fetching/patterns#preventing-sensitive-data-from-being-exposed-to-the-client)を使用して、特定のデータがクライアントに送信されないよう積極的に防止するべきです。
+<!-- TODO: fix link -->
+
+> **Good to know**: 機密の値がクライアントで公開されるのを防ぐために、暗号化だけに依存することはお勧めしません。その代わりに、[Reactのtaint API](/docs/app-router/building-your-application/data-fetching/patterns#preventing-sensitive-data-from-being-exposed-to-the-client)を使用して、特定のデータがクライアントに送信されないよう積極的に防止するべきです。
 
 ### 暗号化キーの上書き（高度な設定）
 
