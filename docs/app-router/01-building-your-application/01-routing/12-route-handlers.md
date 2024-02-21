@@ -102,7 +102,7 @@ export async function POST() {
 }
 ```
 
-> **Good to know:** API Routes のように、Route Handlers はフォームの送信を処理するようなケースに使うことができます。React と深く統合された、[フォームとミューテーション](/docs/app-router/building-your-application/data-fetching/forms-and-mutations)を処理するための新しい抽象化に取り組んでいます。
+> **Good to know:** API Routes のように、Route Handlers はフォームの送信を処理するようなケースに使うことができます。React と深く統合された、[Server Actionsとミューテーション](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations#フォーム)を処理するための新しい抽象化に取り組んでいます。
 
 ### Route 解決
 
