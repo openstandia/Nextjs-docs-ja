@@ -1,23 +1,23 @@
 ---
 title: Server Actionsとミューテーション
-description: Learn how to handle form submissions and data mutations with Next.js.
+description: Next.jsでフォームの送信とデータの変更をどのように処理するかを学習します。
 related:
-  description: Learn how to configure Server Actions in Next.js
+  description: Next.jsでServer Actionsを設定する方法を学習します。
   links:
     - app-router/api-reference/next-config-js/serverActions
 ---
 
-Server Actionsはサーバー上で実行される**非同期関数**です。これは、Next.jsアプリケーションでフォームの送信とデータの変更を処理するために、サーバー及びクライアントコンポーネントで使用することができます。
+Server Actionsはサーバー上で実行される**非同期関数**です。これは、Next.jsアプリケーションでフォームの送信とデータの変更を処理するために、Server Components及びClient Componentsで使用することができます。
 
 > **🎥 Watch:** App Router でフォームとミューテーションについて詳しく学ぶ → [YouTube (10 分)](https://youtu.be/dDpZfOQBMaU?si=cJZHlUu_jFhCzHUg).
 
 ## 規約
 
-Server ActionはReactの`["use server"](https://react.dev/reference/react/use-server)`ディレクティブを使用して定義できます。*非同期*関数の先頭にディレクティブを配置して、その関数をServer Actionとしてマークするか、または別のファイルの先頭に配置して、そのファイルのすべてのエクスポートをServer Actionしてマークすることができます。
+Server ActionはReactの[`"use server"`](https://ja.react.dev/reference/react/use-server)ディレクティブを使用して定義できます。*非同期*関数の先頭にディレクティブを配置して、その関数をServer Actionとしてマークするか、または別のファイルの先頭に配置して、そのファイルのすべてのエクスポートをServer Actionしてマークすることができます。
 
-### サーバーコンポーネント
+### Server Components
 
-サーバーコンポーネントでは、インライン関数レベルもしくはモジュールレベルで`"use server"`ディレクティブを使用できます。Server Actionをインラインにするには、関数本体の先頭に`"use server"`ディレクティブを追加します:
+Server Componentsでは、インライン関数レベルもしくはモジュールレベルで`"use server"`ディレクティブを使用できます。Server Actionをインラインにするには、関数本体の先頭に`"use server"`ディレクティブを追加します:
 
 ```tsx title="app/page.tsx"
 // Server Component
@@ -35,11 +35,11 @@ export default function Page() {
 }
 ```
 
-### クライアントコンポーネント
+### Client Components
 
-クライアントコンポーネントでは、モジュールレベルで`"use server"`ディレクティブを使用しているアクションのみをインポートできます。
+Client Componentsでは、モジュールレベルで`"use server"`ディレクティブを使用しているアクションのみをインポートできます。
 
-クライアントコンポーネントでServer Actionを呼び出すには、新しいファイルを作成し、そのファイルの先頭に`"use server"`ディレクティブを追加します。ファイル内の全ての関数は、クライアントコンポーネントとサーバーコンポーネントの両方で再利用できるServer Actionとしてマークされます:
+Client ComponentでServer Actionを呼び出すには、新しいファイルを作成し、そのファイルの先頭に`"use server"`ディレクティブを追加します。ファイル内の全ての関数は、Client ComponentsとServer Componentsの両方で再利用できるServer Actionとしてマークされます:
 
 ```ts title="app/actions.ts"
 'use server'
@@ -59,7 +59,7 @@ export function Button() {
 }
 ```
 
-また、Server Actionをpropとしてクライアントコンポーネントに渡すこともできます:
+また、Server ActionをpropとしてClient Componentに渡すこともできます:
 
 ```tsx
 <ClientComponent updateItem={updateItem} />
@@ -77,8 +77,8 @@ export default function ClientComponent({ updateItem }) {
 
 - Server Actionsは[`<form>`要素](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations#フォーム)の`action`属性を使用して呼び出すことができます。
 
-  - サーバーコンポーネントはデフォルトでプログレッシブエンハンスメントをサポートしており、JavaScriptがまだロードされていないか無効になっていてもフォームは送信されます。
-  - クライアントコンポーネントでは、JavaScriptがまだロードされていない場合、Server Actionsを呼び出すフォームは送信がキューイングされ、クライアントのハイドレーションが優先されます。
+  - Server Componentsはデフォルトでプログレッシブエンハンスメントをサポートしており、JavaScriptがまだロードされていないか無効になっていてもフォームは送信されます。
+  - Client Componentsでは、JavaScriptがまだロードされていない場合、Server Actionsを呼び出すフォームは送信がキューイングされ、クライアントのハイドレーションが優先されます。
   - ハイドレーション後、ブラウザはフォームの送信時にリフレッシュされません。
 
 - Server Actionsは`<form>`に限定されず、イベントハンドラ、`useEffect`、サードパーティのライブラリ、および`<button>`などの他のフォーム要素から呼び出すことができます。
@@ -87,7 +87,7 @@ export default function ClientComponent({ updateItem }) {
 
 - 舞台裏では、アクションは`POST`メソッドを使用しており、`POST`メソッドのみがServer Actionsを呼び出すことができます。
 
-- Server Actionsの引数および戻り値は、Reactによってシリアライズ可能である必要があります。[シリアライズ可能な引数および値](https://react.dev/reference/react/use-server#serializable-parameters-and-return-values)のリストについては、Reactのドキュメントを参照してください。
+- Server Actionsの引数および戻り値は、Reactによってシリアライズ可能である必要があります。[シリアライズ可能な引数と返り値 ](https://ja.react.dev/reference/react/use-server#serializable-parameters-and-return-values)のリストについては、Reactのドキュメントを参照してください。
 
 - Server Actionsは関数です。これは、それらをアプリケーション内のどこでも再利用できることを意味します。
 
@@ -126,13 +126,13 @@ export default function Page() {
 >
 > - 例:[Form with Loading & Error States](https://github.com/vercel/next.js/tree/canary/examples/next-forms)
 > - 多くのフィールドを持つフォームを操作する場合は、JavaScriptの[`Object.fromEntries()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/fromEntries)メソッドと[`entries()`](https://developer.mozilla.org/en-US/docs/Web/API/FormData/entries)メソッドの使用を検討すると良いでしょう。例えば、次のようになります: `const rawFormData = Object.fromEntries(formData.entries())`
-> - 詳細については、[Reactの`<form>`のドキュメント](https://react.dev/reference/react-dom/components/form#handle-form-submission-with-a-server-action)を参照してください。
+> - 詳細については、[Reactの`<form>`のドキュメント](https://ja.react.dev/reference/react-dom/components/form#handle-form-submission-with-a-server-action)を参照してください。
 
 #### 追加の引数の渡し方
 
 JavaScriptの`bind`メソッドを使用して、Server Actionに追加の引数を渡すことができます。
 
-```tsx title="app/client-component.tsx"
+```tsx title="app/client-component.tsx" highlight={6}
 'use client'
 
 import { updateUser } from './actions'
@@ -162,14 +162,14 @@ export async function updateUser(userId, formData) {
 > **Good to know**:
 >
 > - 別の方法として、フォーム内の隠し入力フィールドとして引数を渡すことがあります（例: `<input type="hidden" name="userId" value={userId} />`）。ただし、この値は生成されたHTMLの一部となり、エンコードされません。
-> - `.bind`はサーバーコンポーネントとクライアントコンポーネントの両方で機能します。また、プログレッシブエンハンスメントもサポートしています。
+> - `.bind`はServer ComponentsとClient Componentsの両方で機能します。また、プログレッシブエンハンスメントもサポートしています。
 
 #### 保留中の状態
 
-フォームが送信されている間に保留中の状態を表示するために、Reactの[`useFormStatus`](https://react.dev/reference/react-dom/hooks/useFormStatus)フックを使用することができます。
+フォームが送信されている間に保留中の状態を表示するために、Reactの[`useFormStatus`](https://ja.react.dev/reference/react-dom/hooks/useFormStatus)フックを使用することができます。
 
 - `useFormStatus`は特定の`<form>`に対するステータスを返すため、**`<form>`要素の子として定義する必要があります**。
-- `useFormStatus`はReactフックであるため、クライアントコンポーネント内で使用する必要があります。
+- `useFormStatus`はReactフックであるため、Client Component内で使用する必要があります。
 
 ```tsx title="app/submit-button.tsx"
 'use client'
@@ -237,10 +237,10 @@ export default async function createUser(formData: FormData) {
 }
 ```
 
-サーバーでフィールドが検証されたら、アクション内でシリアライズ可能なオブジェクトを返し、Reactの[`useFormState`](https://react.dev/reference/react-dom/hooks/useFormState)フックを使用してユーザーにメッセージを表示できます。
+サーバーでフィールドが検証されたら、アクション内でシリアライズ可能なオブジェクトを返し、Reactの[`useFormState`](https://ja.react.dev/reference/react-dom/hooks/useFormState)フックを使用してユーザーにメッセージを表示できます。
 
 - `useFormState`にアクションを渡すことで、アクションの関数シグネチャが変更され、最初の引数として新しい`prevState`または`initialState`パラメータを受け取ります。
-- `useFormState`はReactのフックであるため、クライアントコンポーネント内で使用する必要があります。
+- `useFormState`はReactのフックであるため、Client Component内で使用する必要があります。
 
 ```ts title="app/actions.ts"
 'use server'
@@ -288,7 +288,7 @@ export function Signup() {
 
 #### 楽観的な更新
 
-サーバーアクションの完了を待つのではなく、UIを楽観的に更新するために、Reactの[`useOptimistic`](https://react.dev/reference/react/useOptimistic)フックを使用することができます:
+Server Actionの完了を待つのではなく、UIを楽観的に更新するために、Reactの[`useOptimistic`](https://ja.react.dev/reference/react/useOptimistic)フックを使用することができます:
 
 ```tsx title="app/page.tsx"
 'use client'
@@ -333,7 +333,7 @@ export function Thread({ messages }: { messages: Message[] }) {
 
 `<form>`内のネストされた要素（例：`<button>`、`<input type="submit">`、および`<input type="image">`）でServer Actionを呼び出すことができます。これらの要素は`formAction` propまたは[イベントハンドラ](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations#イベントハンドラ)を受け入れます。
 
-これは、フォーム内で複数のServer Actionsを呼び出したい場合に便利です。たとえば、投稿の下書きを保存するための`<button>`要素を作成し、それに加えて公開するための`<button>`要素を作成できます。詳細については、[Reactの`<form>`ドキュメント](https://react.dev/reference/react-dom/components/form#handling-multiple-submission-types)を参照してください。
+これは、フォーム内で複数のServer Actionsを呼び出したい場合に便利です。たとえば、投稿の下書きを保存するための`<button>`要素を作成し、それに加えて公開するための`<button>`要素を作成できます。詳細については、[Reactの`<form>`ドキュメント](https://ja.react.dev/reference/react-dom/components/form#handling-multiple-submission-types)を参照してください。
 
 #### プログラムによるフォームの送信
 
@@ -396,7 +396,7 @@ export default function LikeButton({ initialLikes }: { initialLikes: number }) {
 }
 ```
 
-ユーザーエクスペリエンスを向上させるために、Server Actionがサーバー上で実行を終える前にUIを更新したり、保留中の状態を表示するために、[`useOptimistic`](https://react.dev/reference/react/useOptimistic)や[`useTransition`](https://react.dev/reference/react/useTransition)などの他のReactのAPIを使用することをお勧めします。
+ユーザーエクスペリエンスを向上させるために、Server Actionがサーバー上で実行を終える前にUIを更新したり、保留中の状態を表示するために、[`useOptimistic`](https://ja.react.dev/reference/react/useOptimistic)や[`useTransition`](https://ja.react.dev/reference/react/useTransition)などの他のReactのAPIを使用することをお勧めします。
 
 フォーム要素には、例えばフォームフィールドの変更時に保存するための`onChange`など、イベントハンドラを追加することもできます:
 
@@ -424,7 +424,7 @@ export default function EditPost() {
 
 #### **useEffect**
 
-Reactの[`useEffect`](https://react.dev/reference/react/useEffect)フックを使用して、コンポーネントがマウントされたときや依存関係が変更されたときにServer Actionを呼び出すことができます。これは、グローバルなイベントに依存する変更や自動的にトリガーする必要がある変更に役立ちます。例えば、アプリケーションのショートカットのための`onKeyDown`、無限スクロールのためのIntersection Observerフック、またはコンポーネントがマウントされたときにビューカウントを更新する場合などが挙げられます:
+Reactの[`useEffect`](https://ja.react.dev/reference/react/useEffect)フックを使用して、コンポーネントがマウントされたときや依存関係が変更されたときにServer Actionを呼び出すことができます。これは、グローバルなイベントに依存する変更や自動的にトリガーする必要がある変更に役立ちます。例えば、アプリケーションのショートカットのための`onKeyDown`、無限スクロールのためのIntersection Observerフック、またはコンポーネントがマウントされたときにビューカウントを更新する場合などが挙げられます:
 
 ```tsx title="app/view-count.tsx"
 'use client'
@@ -448,7 +448,7 @@ export default function ViewCount({ initialViews }: { initialViews: number }) {
 }
 ```
 
-`useEffect`の[動作と注意事項](https://react.dev/reference/react/useEffect#caveats)を考慮することを忘れないでください。
+`useEffect`の[動作と注意点](https://ja.react.dev/reference/react/useEffect#caveats)を考慮することを忘れないでください。
 
 ### エラーハンドリング
 
@@ -637,10 +637,12 @@ module.exports = {
 
 [セキュリティとServer Actions](https://nextjs.org/blog/security-nextjs-server-components-actions)について詳しく学ぶ。
 
+## 追加リソース
+
 Server Actionsに関する詳細な情報は、次のReactドキュメントを参照してください:
 
-- [`"use server"`](https://react.dev/reference/react/use-server)
-- [`<form>`](https://react.dev/reference/react-dom/components/form)
-- [`useFormStatus`](https://react.dev/reference/react-dom/hooks/useFormStatus)
-- [`useFormState`](https://react.dev/reference/react-dom/hooks/useFormState)
-- [`useOptimistic`](https://react.dev/reference/react/useOptimistic)
+- [`"use server"`](https://ja.react.dev/reference/react/use-server)
+- [`<form>`](https://ja.react.dev/reference/react-dom/components/form)
+- [`useFormStatus`](https://ja.react.dev/reference/react-dom/hooks/useFormStatus)
+- [`useFormState`](https://ja.react.dev/reference/react-dom/hooks/useFormState)
+- [`useOptimistic`](https://ja.react.dev/reference/react/useOptimistic)
