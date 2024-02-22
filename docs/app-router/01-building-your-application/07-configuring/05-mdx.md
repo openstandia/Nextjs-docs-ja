@@ -170,7 +170,7 @@ Frontmatter は、ページについてのデータを保存するために使�
 - [remark-mdx-frontmatter](https://github.com/remcohaszing/remark-mdx-frontmatter)
 - [gray-matter](https://github.com/jonschlinkert/gray-matter)
 
-`@next/mdx`　を使用してページのメタデータにアクセスするためには、　`.mdx`　ファイル内からメタデータオブジェクトをエクスポートできます:
+`@next/mdx` を使用してページのメタデータにアクセスするためには、 `.mdx` ファイル内からメタデータオブジェクトをエクスポートできます:
 
 ```mdx
 export const metadata = {
