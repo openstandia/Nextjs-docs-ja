@@ -44,7 +44,7 @@ Next.js アプリケーションを本番環境に導入する前に、最高の
 
 ### UI とアクセシビリティ
 
-- **[フォームとバリデーション](/docs/app-router/building-your-application/data-fetching/forms-and-mutations#forms):** Server Actions を使用して、フォーム送信、サーバーサイドの検証、エラーハンドリングを行います。
+- **[Server Actionsとミューテーション](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations):** Server Actions を使用して、フォーム送信、サーバーサイドの検証、エラーハンドリングを行います。
 - **[フォントモジュール](/docs/app-router/building-your-application/optimizing/fonts):** フォントモジュールを使用すれば、フォントを最適化できます。フォントファイルを他の静的アセットと一緒に自動的にホストし、外部ネットワークへのリクエストを削除して、[レイアウトのずれ](https://web.dev/articles/cls)を軽減します。
 - **[`<Image>` コンポーネント](/docs/app-router/building-your-application/optimizing/images):** レイアウトのずれを防ぎ、WebP や AVIF のような最新のフォーマットで提供する Image コンポーネントを使用することで画像を自動的に最適化します。
 - **[`<Script>` コンポーネント](/docs/app-router/building-your-application/optimizing/scripts):** スクリプトを自動的に遅延させ、メインスレッドをブロックしないようにする Script コンポーネントを使用することでサードパーティのスクリプトを最適化します。
@@ -53,7 +53,7 @@ Next.js アプリケーションを本番環境に導入する前に、最高の
 ### セキュリティ
 
 - **[汚染](/docs/app-router/building-your-application/data-fetching/patterns#preventing-sensitive-data-from-being-exposed-to-the-client):** データオブジェクトや特定の値を汚染することで、センシティブなデータがクライアントに公開されるのを防ぐ。
-- **[Server Actions](/docs/app-router/building-your-application/data-fetching/forms-and-mutations#authentication-and-authorization):** ユーザーが Server Actions を呼び出す権限があることを確認します。推奨される[セキュリティ対策](https://nextjs.org/blog/security-nextjs-server-components-actions)を確認してください。
+- **[Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations#認証と認可):** ユーザーが Server Actions を呼び出す権限があることを確認します。推奨される[セキュリティ対策](https://nextjs.org/blog/security-nextjs-server-components-actions)を確認してください。
 - **[環境変数](/docs/app-router/building-your-application/configuring/environment-variables):** `.env.*`ファイルが `.gitignore` に追加され、パブリック変数だけが `NEXT_PUBLIC_`でプレフィックスされていることを確認してください。
 - **[Content Security Policy](/docs/app-router/building-your-application/configuring/content-security-policy):** クロスサイトスクリプティング、クリックジャッキング、その他のコードインジェクション攻撃などの様々なセキュリティ脅威からアプリケーションを保護するために、コンテンツセキュリティポリシーを追加することを検討してください。
 

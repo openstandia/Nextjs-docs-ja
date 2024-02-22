@@ -18,7 +18,7 @@ description: Learn how to fetch data in your Next.js application.
 
 Next.js はネイティブの[`fetch` Web API](https://developer.mozilla.org/docs/Web/API/Fetch_API)を拡張し、サーバー上の各 fetch リクエストに対する[キャッシュ](#データのキャッシュ)と[再検証](#データの再検証)の動作を設定できるようになりました。React は`fetch`を拡張して、React コンポーネントツリーのレンダリング中にフェッチリクエストを自動的に[メモ](/docs/app-router/building-your-application/data-fetching/patterns#必要な場所でデータをフェッチする)します。
 
-`async/await`を使用した Server Components、[Route ハンドラ](/docs/app-router/building-your-application/routing/route-handlers)および[Server Actions](/docs/app-router/building-your-application/data-fetching/forms-and-mutations)で`fetch`を使用できます。
+`async/await`を使用した Server Components、[Route ハンドラ](/docs/app-router/building-your-application/routing/route-handlers)および[Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations)で`fetch`を使用できます。
 
 例：
 
@@ -97,7 +97,7 @@ export const revalidate = 3600 // １時間ごとに再検証
 
 #### オンデマンドの再検証
 
-データは、[Route Handler](/docs/app-router/building-your-application/routing/route-handlers) または [Server Actions](/docs/app-router/building-your-application/data-fetching/forms-and-mutations) 内のパス（[`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)）またはキャッシュタグ（[`revalidateTag`](/docs/app-router/api-reference/functions/revalidateTag)）によってオンデマンドで再検証できます。
+データは、[Route Handler](/docs/app-router/building-your-application/routing/route-handlers) または [Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) 内のパス（[`revalidatePath`](/docs/app-router/api-reference/functions/revalidatePath)）またはキャッシュタグ（[`revalidateTag`](/docs/app-router/api-reference/functions/revalidateTag)）によってオンデマンドで再検証できます。
 
 Next.js には、ルート間の`fetch`リクエストを無効にするためのキャッシュタグシステムがあります。
 
