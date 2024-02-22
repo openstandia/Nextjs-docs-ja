@@ -17,7 +17,7 @@ React と Next.js でデータをフェッチするには、いくつかの推�
 - リージョンによっては、データ・フェッチはデータ・ソースの近くで行われ、待ち時間を短縮し、パフォーマンスを向上させることもできます
 - Server Components、ルートハンドラ、およびサーバーアクションを使用して、サーバー上でデータをフェッチできます
 
-Server Components、[ルートハンドラ](/docs/app-router/building-your-application/routing/route-handlers)、および[Server Actions](/docs/app-router/building-your-application/data-fetching/forms-and-mutations)を使用して、サーバー上でデータをフェッチできます。
+Server Components、[ルートハンドラ](/docs/app-router/building-your-application/routing/route-handlers)、および[Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations)を使用して、サーバー上でデータをフェッチできます。
 
 > **Good to know**：これはレイアウトにも当てはまり、親レイアウトとその子の間でデータを受け渡すことはできません。
 

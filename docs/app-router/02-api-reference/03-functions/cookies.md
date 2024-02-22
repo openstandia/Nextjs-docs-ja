@@ -8,7 +8,7 @@ related:
     - app-router/building-your-application/data-fetching/server-actions
 ---
 
-`cookies` 関数を使用すると、[Server Components](/docs/app-router/building-your-application/rendering/server-components) から HTTP 受信リクエストの Cookies を読み取ったり、[Server Action](/docs/app-router/building-your-application/data-fetching/forms-and-mutations) や [Route Handler](/docs/app-router/building-your-application/routing/route-handlers) の送信リクエストに Cookies を書き込むことができます。
+`cookies` 関数を使用すると、[Server Components](/docs/app-router/building-your-application/rendering/server-components) から HTTP 受信リクエストの Cookies を読み取ったり、[Server Action](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) や [Route Handler](/docs/app-router/building-your-application/routing/route-handlers) の送信リクエストに Cookies を書き込むことができます。
 
 > **Good to know**: `cookies()` は[**動的関数**](/docs/app-router/building-your-application/rendering/server-components#動的関数)で、その返される値は事前に知ることができません。レイアウトやページでこの関数を使用すると、リクエスト時に[**動的レンダリング**](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)へのルートが選択されます。
 
@@ -62,7 +62,7 @@ export default function Page() {
 
 cookie の名前、値、オプションを受け取り、送信リクエストに cookie を設定するメソッドです。
 
-> **Good to know**: HTTP ではストリーミング開始後に Cookie を設定できないため、[Server Action](/docs/app-router/building-your-application/data-fetching/forms-and-mutations) または [Route Handler](/docs/app-router/building-your-application/routing/route-handlers) で `.set()` を使用する必要があります。
+> **Good to know**: HTTP ではストリーミング開始後に Cookie を設定できないため、[Server Action](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) または [Route Handler](/docs/app-router/building-your-application/routing/route-handlers) で `.set()` を使用する必要があります。
 
 ```js title="app/actions.js"
 'use server'
@@ -85,7 +85,7 @@ async function create(data) {
 
 ## cookie を削除する
 
-> **Good to know**: cookie を削除できるのは、[Server Action](/docs/app-router/building-your-application/data-fetching/forms-and-mutations) または [Route Handler](/docs/app-router/building-your-application/routing/route-handlers) だけです。
+> **Good to know**: cookie を削除できるのは、[Server Action](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) または [Route Handler](/docs/app-router/building-your-application/routing/route-handlers) だけです。
 
 cookie を削除するにはいくつかのオプションがあります:
 
@@ -117,7 +117,7 @@ async function delete(data) {
 }
 ```
 
-> **Good to know**: `.set()` は、[Server Action](/docs/app-router/building-your-application/data-fetching/forms-and-mutations) または [Route Handler](/docs/app-router/building-your-application/routing/route-handlers)でのみ使用できます。
+> **Good to know**: `.set()` は、[Server Action](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) または [Route Handler](/docs/app-router/building-your-application/routing/route-handlers)でのみ使用できます。
 
 ### `cookies().set(name, value, { maxAge: 0 })`
 
