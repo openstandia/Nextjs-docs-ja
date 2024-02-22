@@ -40,7 +40,7 @@ npm install @next/mdx @mdx-js/loader @mdx-js/react @types/mdx
 
 アプリケーションのルート（`src/` または `app/` の親フォルダのいずれか）に `mdx-components.tsx` ファイルを作成します:
 
-> **Good to know**: `mdx-components.tsx` は App ルータと MDX を使うために必要であり、これがなければ動作しません。
+> **Good to know**: `mdx-components.tsx` は App Router と MDX を使うために必要であり、これがなければ動作しません。
 
 ```tsx title="mdx-components.tsx"
 import type { MDXComponents } from 'mdx/types'
@@ -122,7 +122,7 @@ export default async function RemoteMdxPage() {
 
 ## レイアウト
 
-MDX ページの間でレイアウトを共有するために、App Routerの[組み込みのレイアウトのサポート](/docs/app-router/building-your-application/routing/pages-and-layouts#layouts)を使用できます。
+MDX ページの間でレイアウトを共有するために、App Routerの[組み込みのレイアウトのサポート](/docs/app-router/building-your-application/routing/pages-and-layouts#レイアウト)を使用できます。
 
 ```tsx title="app/my-mdx-page/layout.tsx"
 export default function MdxLayout({ children }: { children: React.ReactNode }) {
@@ -161,3 +161,123 @@ const withMDX = createMDX({
 // MDX の設定と Next.js の設定をマージする
 export default withMDX(nextConfig)
 ```
+
+## Frontmatter
+
+Frontmatter は、ページについてのデータを保存するために使用できる YAML 形式のキー/バリューの組み合わせです。デフォルトでは、 `@next/mdx` は frontmatter をサポートしていませんが、MDX コンテンツに fronmatter を追加するための多くのライブラリがあります。例えば:
+
+- [remark-frontmatter](https://github.com/remarkjs/remark-frontmatter)
+- [remark-mdx-frontmatter](https://github.com/remcohaszing/remark-mdx-frontmatter)
+- [gray-matter](https://github.com/jonschlinkert/gray-matter)
+
+`@next/mdx`　を使用してページのメタデータにアクセスするためには、　`.mdx`　ファイル内からメタデータオブジェクトをエクスポートできます:
+
+```mdx
+export const metadata = {
+  author: 'John Doe',
+}
+
+# My MDX page
+```
+
+## カスタム要素
+
+Markdown を使用する楽しい面の1つは、それがネイティブの `HTML` エレメントにマッピングされ、素早く直感的に記述できることです:
+
+```md
+This is a list in markdown:
+
+- One
+- Two
+- Three
+```
+
+このテキストは次のような `HTML` を生成します:
+
+```html
+<p>This is a list in markdown:</p>
+
+<ul>
+  <li>One</li>
+  <li>Two</li>
+  <li>Three</li>
+</ul>
+```
+
+あなたのウェブサイトやアプリケーションのために独自の要素を用意したい場合、ショートコードを渡すことができます。ショートコードは `HTML` 要素に対応するカスタムコンポーネントです。
+
+そのためには、アプリケーションのルートにある `mdx-components.tsx` ファイルを開き、カスタム要素を追加します:
+
+```tsx title="mdx-components.tsx"
+import type { MDXComponents } from 'mdx/types'
+import Image, { ImageProps } from 'next/image'
+
+// このファイルでは、MDX ファイルで使用するカスタム React コンポーネントを指定できます。
+// React コンポーネントを自由にインポートして使用することができます。例えば、インラインスタイル、他のライブラリのコンポーネントなどです。
+
+export function useMDXComponents(components: MDXComponents): MDXComponents {
+  return {
+    // ビルトインコンポーネントをカスタマイズすることが可能です。例えば、スタイリングを追加する場合などです。
+    h1: ({ children }) => <h1 style={{ fontSize: '100px' }}>{children}</h1>,
+    img: (props) => (
+      <Image
+        sizes="100vw"
+        style={{ width: '100%', height: 'auto' }}
+        {...(props as ImageProps)}
+      />
+    ),
+    ...components,
+  }
+}
+```
+
+## さらに学ぶ: Markdown を HTML に変換するには？
+
+React は、Markdown をネイティブに理解できません。まず Markdown のプレーンテキストを HTML に変換する必要があります。そのために `remark` と `rehype` を使用します。
+
+`remark` は Markdown に関するツールのエコシステムです。`rehype` も同じですが、HTML 向けです。例えば、以下のコードスニペットは Markdown を HTML に変換します:
+
+```js
+import { unified } from 'unified'
+import remarkParse from 'remark-parse'
+import remarkRehype from 'remark-rehype'
+import rehypeSanitize from 'rehype-sanitize'
+import rehypeStringify from 'rehype-stringify'
+
+main()
+
+async function main() {
+  const file = await unified()
+    .use(remarkParse) // Markdown AST に変換
+    .use(remarkRehype) // HTML AST に変換
+    .use(rehypeSanitize) // HTML 入力のサニタイズ
+    .use(rehypeStringify) // AST をシリアライズした HTML に変換
+    .process('Hello, Next.js!')
+
+  console.log(String(file)) // <p>Hello, Next.js!</p>
+}
+```
+
+`remark` と `rehype` のエコシステムには、[シンタックス・ハイライト](https://github.com/atomiks/rehype-pretty-code)、[見出しリンク](https://github.com/rehypejs/rehype-autolink-headings)、[目次の生成](https://github.com/remarkjs/remark-toc)などのプラグインが含まれています。
+
+上記のように `@next/mdx` を使用する場合、`remark` や `rehype` を直接使用する必要はありません。それらはすでに処理されています。ここで説明しているのは、`@next/mdx` パッケージが内部で何をしているかをより深く理解するためです。
+
+## Rust ベースの MDX コンパイラの使用（実験的）
+
+Next.js は、Rust で書かれた新しい MDX コンパイラをサポートしています。このコンパイラはまだ実験段階であり、プロダクションでの使用はお勧めできません。新しいコンパイラを使用する場合、`next.config.js` を `withMDX` へ渡す際に設定が必要です:
+
+```js title="next.config.js"
+module.exports = withMDX({
+  experimental: {
+    mdxRs: true,
+  },
+})
+```
+
+## 関連情報
+
+- [MDX](https://mdxjs.com)
+- [`@next/mdx`](https://www.npmjs.com/package/@next/mdx)
+- [remark](https://github.com/remarkjs/remark)
+- [rehype](https://github.com/rehypejs/rehype)
+- [Markdoc](https://markdoc.dev/docs/nextjs)
