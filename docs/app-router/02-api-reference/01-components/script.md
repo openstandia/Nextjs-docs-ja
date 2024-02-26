@@ -1,6 +1,7 @@
 ---
 title: <Script>
 description: Optimize third-party scripts in your Next.js application using the built-in `next/script` Component.
+sidebar_position: 4
 ---
 
 この API リファレンスは、Script コンポーネントで使用できる[props](#props)の使い方を理解するのに役立ちます。機能と使用方法については、[スクリプトの最適化ページ](/docs/app-router/building-your-application/optimizing/scripts)を参照してください。
