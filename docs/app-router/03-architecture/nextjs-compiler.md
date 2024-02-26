@@ -277,7 +277,7 @@ module.exports = {
 
 ### SWC トレースプロファイリング
 
-SWC の内部変換トレースを Chromium の[トレースイベントフォーマット](SWCの内部変換トレースをクロムのトレースイベントフォーマットとして生成することができます。)として生成することができます。
+SWC の内部変換トレースを Chromium の[トレースイベントフォーマット]((https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview?mode=html#%21=)として生成することができます。
 
 ```js title="next.config.js"
 module.exports = {
