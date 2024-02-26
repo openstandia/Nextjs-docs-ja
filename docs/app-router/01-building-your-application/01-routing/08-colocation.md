@@ -41,7 +41,7 @@ related:
 
 これは、**プロジェクトファイル** を**安全に** `app`ディレクトリのルート Segment 内に配置できることを意味します。
 
-![A diagram showing colocated project files are not routable even when a segment contains a page.js or route.js file.](../../assets/project-organization-colocation.svg)
+![A diagram showing colocated project files are not routable even when a segment contains a page.js or route.js file.](../../assets/project-organization-colocation.avif)
 
 > **Good to know:**
 >
