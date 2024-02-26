@@ -10,7 +10,7 @@ description: Learn the fundamentals of routing for front-end applications.
 
 まず、ドキュメントのいたるところで、これらの用語が使われています。簡単なリファレンスです。
 
-![Terminology for Component Tree](../../assets/terminology-component-tree.svg)
+![Terminology for Component Tree](../../assets/terminology-component-tree.avif)
 
 - **Tree:** 階層構造を視覚化するための規約。例えば、親と子のコンポーネントを持つコンポーネントツリー、フォルダ構造など。
 <!-- textlint-disable -->
@@ -19,7 +19,7 @@ description: Learn the fundamentals of routing for front-end applications.
 - **Leaf:** URL パスの最後の Segment など、子ノードを持たない Subtree のノード。
 <!-- textlint-enable -->
 
-![Terminology for URL Anatomy](../../assets/terminology-url-anatomy.svg)
+![Terminology for URL Anatomy](../../assets/terminology-url-anatomy.avif)
 
 - **URL Segment:** スラッシュで区切られた URL パスの一部
 - **URL Path:** ドメインの後に来る URL の一部（Segment で構成される）
@@ -36,7 +36,7 @@ App Router は `app` という名前の新しいディレクトリで動作す�
 
 > **Good to know:** App Router は Pages Router よりも優先されます。ディレクトリをまたがるルーティングは同じ URL パスに解決されるべきではなく、競合を防ぐためにビルド時にエラーが発生します。
 
-![Next.js App Directory](../../assets/next-router-directories.svg)
+![Next.js App Directory](../../assets/next-router-directories.avif)
 
 デフォルトでは、`app`内のコンポーネントは[React Server Components](/docs/app-router/building-your-application/rendering/server-components)です。これはパフォーマンスの最適化であり、簡単に採用できます。また[Client Components](/docs/app-router/building-your-application/rendering/client-components) を使用できます。
 
@@ -53,7 +53,7 @@ Next.js はファイルシステムベースの Router を使います。
 
 ルートの各フォルダは **ルート Segment** を表します。各ルート Segment は**URL パス**の対応する**Segment**にマップされます。
 
-![How Route Segments Map to URL Segments](../../assets/route-segments-to-path-segments.svg)
+![How Route Segments Map to URL Segments](../../assets/route-segments-to-path-segments.avif)
 
 ## ネストされたルート
 
@@ -94,11 +94,11 @@ Next.js はネストされたルートで特定の動作をする UI を作る�
 - `not-found.js` (React error boundary)
 - `page.js` またはネストされた `layout.js`
 
-![Component Hierarchy for File Conventions](../../assets/file-conventions-component-hierarchy.svg)
+![Component Hierarchy for File Conventions](../../assets/file-conventions-component-hierarchy.avif)
 
 入れ子になったルートでは、Segment のコンポーネントは親 Segment のコンポーネントの**中に**入れ子となります。
 
-![Nested File Conventions Component Hierarchy](../../assets/nested-file-conventions-component-hierarchy.svg)
+![Nested File Conventions Component Hierarchy](../../assets/nested-file-conventions-component-hierarchy.avif)
 
 ## コロケーション
 
@@ -106,7 +106,7 @@ Next.js はネストされたルートで特定の動作をする UI を作る�
 
 これは、フォルダがルートを定義する一方で、`page.js` や `route.js` が返すコンテンツだけが公開アドレスになるからです。
 
-![An example folder structure with colocated files](../../assets/project-organization-colocation.svg)
+![An example folder structure with colocated files](../../assets/project-organization-colocation.avif)
 
 [プロジェクト編成とコロケーション](/docs/app-router/building-your-application/routing/colocation)についてもっと知る。
 

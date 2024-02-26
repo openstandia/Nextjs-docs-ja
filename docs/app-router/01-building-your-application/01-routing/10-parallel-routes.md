@@ -7,15 +7,15 @@ Parallel Routes を使用すると、1 つまたは複数のページを同じ�
 
 例えば、チームページと分析ページを同時にレンダリングできます。
 
-![Parallel Routes Diagram](../../assets/parallel-routes.svg)
+![Parallel Routes Diagram](../../assets/parallel-routes.avif)
 
 パラレル・ルーティングでは、各ルートに独立したエラーとロードの状態を定義できます。
 
-![Parallel routes enable custom error and loading states](../../assets/parallel-routes-cinematic-universe.svg)
+![Parallel routes enable custom error and loading states](../../assets/parallel-routes-cinematic-universe.avif)
 
 並列ルーティングでは、認証状態などの特定の条件に基づいてスロットを条件付きでレンダリングすることもできます。これにより、同じ URL 上で完全に分離されたコードが可能になります。
 
-![Conditional routes diagram](../../assets/conditional-routes-ui.svg)
+![Conditional routes diagram](../../assets/conditional-routes-ui.avif)
 
 ## 規約
 
@@ -25,7 +25,7 @@ Parallel Routes を使用すると、1 つまたは複数のページを同じ�
 
 例えば、`@analytics` と `@team` ファイル構造は 2 つの明示的なスロットを定義しています。
 
-![Parallel Routes File-system Structure](../../assets/parallel-routes-file-system.svg)
+![Parallel Routes File-system Structure](../../assets/parallel-routes-file-system.avif)
 
 上記のフォルダ構造は、`app/layout.js`のコンポーネントが`@analytics`と`@team`スロットのプロップを受け入れ、`children`プロップと並行してレンダリングできることを意味します。
 
@@ -59,7 +59,7 @@ Next.js が現在の URL からスロットのアクティブ状態を回復で�
 
 次のようなフォルダ構造を考えてみましょう。`team`スロットには`settings`ディレクトリがありますが、`@analytics`スロットにはありません。
 
-![Parallel Routes unmatched routes](../../assets/parallel-routes-unmatched-routes.svg)
+![Parallel Routes unmatched routes](../../assets/parallel-routes-unmatched-routes.avif)
 
 #### ナビゲーション
 
@@ -100,7 +100,7 @@ export default async function Layout(props: {
 
 パラレルルーティングはモーダルのレンダリングに使用できます。
 
-![Parallel Routes Diagram](../../assets/parallel-routes-auth-modal.svg)
+![Parallel Routes Diagram](../../assets/parallel-routes-auth-modal.avif)
 
 `@authModal`スロットは`<Modal>`コンポーネントをレンダリングします。
 
@@ -193,4 +193,4 @@ export default function Layout({
 }
 ```
 
-![Parallel routes authentication example](../../assets/conditional-routes-ui.svg)
+![Parallel routes authentication example](../../assets/conditional-routes-ui.avif)
