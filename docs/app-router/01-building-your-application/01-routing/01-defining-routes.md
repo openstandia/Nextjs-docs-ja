@@ -17,7 +17,7 @@ Next.js では、**フォルダ**を使ってルートを定義する、ファ�
 
 各フォルダは、**URL** Segment にマッピングされる[**ルート** セグメント](/docs/app-router/building-your-application/routing#ルート-segment)を表します。[入れ子になったルート](/docs/app-router/building-your-application/routing#ネストされたルート)を作成するには、フォルダ同士を入れ子にします。
 
-![Route segments to path segments](../../assets/route-segments-to-path-segments.svg)
+![Route segments to path segments](../../assets/route-segments-to-path-segments.avif)
 
 特殊な[`page.js`ファイル](/docs/app-router/building-your-application/routing/pages-and-layouts#ページ)はルート Segment を一般公開するために使われます。
 
