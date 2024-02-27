@@ -4,19 +4,19 @@ sidebar_label: App Router への移行
 description: 既存の Next.js アプリケーションを Pages Router から App Router にアップグレードする方法をご紹介します
 ---
 
-This guide will help you:
+このガイドは以下の状況において役立つでしょう:
 
-- [Update your Next.js application from version 12 to version 13](#nextjs-version)
+- [Next.js アプリケーションをバージョン 12 からバージョン 13 にアップデートする](#nextjs-version)
 - [Upgrade features that work in both the `pages` and the `app` directories](#upgrading-new-features)
 - [Incrementally migrate your existing application from `pages` to `app`](#migrating-from-pages-to-app)
 
-## Upgrading
+## アップグレード
 
-### Node.js Version
+### Node.js バージョン
 
 The minimum Node.js version is now **v18.17**. See the [Node.js documentation](https://nodejs.org/docs/latest-v18.x/api/) for more information.
 
-### Next.js Version
+### Next.js バージョン
 
 To update to Next.js version 13, run the following command using your preferred package manager:
 
@@ -24,7 +24,7 @@ To update to Next.js version 13, run the following command using your preferred 
 npm install next@latest react@latest react-dom@latest
 ```
 
-### ESLint Version
+### ESLint バージョン
 
 If you're using ESLint, you need to upgrade your ESLint version:
 
@@ -34,20 +34,20 @@ npm install -D eslint-config-next@latest
 
 > **Good to know**: You may need to restart the ESLint server in VS Code for the ESLint changes to take effect. Open the Command Palette (`cmd+shift+p` on Mac; `ctrl+shift+p` on Windows) and search for `ESLint: Restart ESLint Server`.
 
-## Next Steps
+## 次のステップ
 
 After you've updated, see the following sections for next steps:
 
 - [Upgrade new features](#upgrading-new-features): A guide to help you upgrade to new features such as the improved Image and Link Components.
 - [Migrate from the `pages` to `app` directory](#migrating-from-pages-to-app): A step-by-step guide to help you incrementally migrate from the `pages` to the `app` directory.
 
-## Upgrading New Features
+## 新機能のアップグレード
 
 Next.js 13 introduced the new [App Router](/docs/app-router/building-your-application/routing) with new features and conventions. The new Router is available in the `app` directory and co-exists with the `pages` directory.
 
 Upgrading to Next.js 13 does **not** require using the new [App Router](/docs/app-router/building-your-application/routing#the-app-router). You can continue using `pages` with new features that work in both directories, such as the updated [Image component](#image-component), [Link component](#link-component), [Script component](#script-component), and [Font optimization](#font-optimization).
 
-### `<Image/>` Component
+### `<Image/>` コンポーネント
 
 Next.js 12 introduced new improvements to the Image Component with a temporary import: `next/future/image`. These improvements included less client-side JavaScript, easier ways to extend and style images, better accessibility, and native browser lazy loading.
 
@@ -58,7 +58,7 @@ There are two codemods to help you migrate to the new Image Component:
 - [**`next-image-to-legacy-image` codemod**](/docs/app-router/building-your-application/upgrading/codemods#next-image-to-legacy-image): Safely and automatically renames `next/image` imports to `next/legacy/image`. Existing components will maintain the same behavior.
 - [**`next-image-experimental` codemod**](/docs/app-router/building-your-application/upgrading/codemods#next-image-experimental): Dangerously adds inline styles and removes unused props. This will change the behavior of existing components to match the new defaults. To use this codemod, you need to run the `next-image-to-legacy-image` codemod first.
 
-### `<Link>` Component
+### `<Link>` コンポーネント
 
 The [`<Link>` Component](/docs/app-router/building-your-application/routing/linking-and-navigating#link-component) no longer requires manually adding an `<a>` tag as a child. This behavior was added as an experimental option in [version 12.2](https://nextjs.org/blog/next-12-2) and is now the default. In Next.js 13, `<Link>` always renders `<a>` and allows you to forward props to the underlying tag.
 
@@ -80,7 +80,7 @@ import Link from 'next/link'
 
 To upgrade your links to Next.js 13, you can use the [`new-link` codemod](/docs/app-router/building-your-application/upgrading/codemods#new-link).
 
-### `<Script>` Component
+### `<Script>` コンポーネント
 
 The behavior of [`next/script`](/docs/app-router/api-reference/components/script) has been updated to support both `pages` and `app`, but some changes need to be made to ensure a smooth migration:
 
@@ -88,7 +88,7 @@ The behavior of [`next/script`](/docs/app-router/api-reference/components/script
 - The experimental `worker` strategy does not yet work in `app` and scripts denoted with this strategy will either have to be removed or modified to use a different strategy (e.g. `lazyOnload`).
 - `onLoad`, `onReady`, and `onError` handlers will not work in Server Components so make sure to move them to a [Client Component](/docs/app-router/building-your-application/rendering/server-components) or remove them altogether.
 
-### Font Optimization
+### フォント最適化
 
 Previously, Next.js helped you optimize fonts by [inlining font CSS](/docs/app-router/building-your-application/optimizing/fonts). Version 13 introduces the new [`next/font`](/docs/app-router/building-your-application/optimizing/fonts) module which gives you the ability to customize your font loading experience while still ensuring great performance and privacy. `next/font` is supported in both the `pages` and `app` directories.
 
@@ -96,7 +96,7 @@ While [inlining CSS](/docs/app-router/building-your-application/optimizing/fonts
 
 See the [Font Optimization](/docs/app-router/building-your-application/optimizing/fonts) page to learn how to use `next/font`.
 
-## Migrating from `pages` to `app`
+## `pages` から `app` への移行
 
 > **🎥 Watch:** Learn how to incrementally adopt the App Router → [YouTube (16 minutes)](https://www.youtube.com/watch?v=YQMSietiFm0).
 
@@ -117,7 +117,7 @@ We recommend reducing the combined complexity of these updates by breaking down 
 - `pages/404.js` has been replaced with the [`not-found.js`](/docs/app-router/api-reference/file-conventions/not-found) file.
 - `pages/api/*` API Routes have been replaced with the [`route.js`](/docs/app-router/api-reference/file-conventions/route) (Route Handler) special file.
 
-### Step 1: Creating the `app` directory
+### 手順 1: `app` ディレクトリの作成
 
 Update to the latest Next.js version (requires 13.4 or greater):
 
@@ -127,31 +127,17 @@ npm install next@latest
 
 Then, create a new `app` directory at the root of your project (or `src/` directory).
 
-### Step 2: Creating a Root Layout
+### 手順 2: ルートレイアウトの作成
 
 Create a new `app/layout.tsx` file inside the `app` directory. This is a [root layout](/docs/app-router/building-your-application/routing/pages-and-layouts#root-layout-required) that will apply to all routes inside `app`.
 
-```tsx title="app/layout.tsx" switcher
+```tsx title="app/layout.tsx"
 export default function RootLayout({
   // Layouts must accept a children prop.
   // This will be populated with nested layouts or pages
   children,
 }: {
   children: React.ReactNode
-}) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  )
-}
-```
-
-```jsx title="app/layout.js" switcher
-export default function RootLayout({
-  // Layouts must accept a children prop.
-  // This will be populated with nested layouts or pages
-  children,
 }) {
   return (
     <html lang="en">
@@ -168,7 +154,7 @@ export default function RootLayout({
 
 To manage `<head>` HTML elements, you can use the [built-in SEO support](/docs/app-router/building-your-application/optimizing/metadata):
 
-```tsx title="app/layout.tsx" switcher
+```tsx title="app/layout.tsx"
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -177,20 +163,13 @@ export const metadata: Metadata = {
 }
 ```
 
-```jsx title="app/layout.js" switcher
-export const metadata = {
-  title: 'Home',
-  description: 'Welcome to Next.js',
-}
-```
-
-#### Migrating `_document.js` and `_app.js`
+#### `_document.js` と `_app.js` の移行
 
 If you have an existing `_app` or `_document` file, you can copy the contents (e.g. global styles) to the root layout (`app/layout.tsx`). Styles in `app/layout.tsx` will _not_ apply to `pages/*`. You should keep `_app`/`_document` while migrating to prevent your `pages/*` routes from breaking. Once fully migrated, you can then safely delete them.
 
 If you are using any React Context providers, they will need to be moved to a [Client Component](/docs/app-router/building-your-application/rendering/client-components).
 
-#### Migrating the `getLayout()` pattern to Layouts (Optional)
+#### `getLayout()` パターンのレイアウトへの移行（任意）
 
 Next.js recommended adding a [property to Page components](/docs/pages/building-your-application/routing/pages-and-layouts#layout-pattern#per-page-layouts) to achieve per-page layouts in the `pages` directory. This pattern can be replaced with native support for [nested layouts](/docs/app-router/building-your-application/routing/pages-and-layouts#layouts) in the `app` directory.
 
@@ -263,27 +242,13 @@ Page.getLayout = function getLayout(page) {
 
 </details>
 
-### Step 3: Migrating `next/head`
+### 手順 3: `next/head` の移行
 
 In the `pages` directory, the `next/head` React component is used to manage `<head>` HTML elements such as `title` and `meta` . In the `app` directory, `next/head` is replaced with the new [built-in SEO support](/docs/app-router/building-your-application/optimizing/metadata).
 
 **Before:**
 
-```tsx title="pages/index.tsx" switcher
-import Head from 'next/head'
-
-export default function Page() {
-  return (
-    <>
-      <Head>
-        <title>My page title</title>
-      </Head>
-    </>
-  )
-}
-```
-
-```jsx title="pages/index.js" switcher
+```tsx title="pages/index.tsx"
 import Head from 'next/head'
 
 export default function Page() {
@@ -299,7 +264,7 @@ export default function Page() {
 
 **After:**
 
-```tsx title="app/page.tsx" switcher
+```tsx title="app/page.tsx"
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -311,19 +276,9 @@ export default function Page() {
 }
 ```
 
-```jsx title="app/page.js" switcher
-export const metadata = {
-  title: 'My Page Title',
-}
-
-export default function Page() {
-  return '...'
-}
-```
-
 [See all metadata options](/docs/app-router/api-reference/functions/generate-metadata).
 
-### Step 4: Migrating Pages
+### 手順 4: ページの移行
 
 - Pages in the [`app` directory](/docs/app-router/building-your-application/routing) are [Server Components](/docs/app-router/building-your-application/rendering/server-components) by default. This is different from the `pages` directory where pages are [Client Components](/docs/app-router/building-your-application/rendering/client-components).
 - [Data fetching](/docs/app-router/building-your-application/data-fetching) has changed in `app`. `getServerSideProps`, `getStaticProps` and `getInitialProps` have been replaced with a simpler API.
@@ -347,29 +302,12 @@ We recommend breaking down the migration of a page into two main steps:
   - Similar to the Pages Router, there is an [optimization step](/docs/app-router/building-your-application/rendering/client-components#full-page-load) to prerender Client Components to static HTML on the initial page load.
 - Move the default exported page component from `pages/index.js` to `app/home-page.tsx`.
 
-```tsx title="app/home-page.tsx" switcher
+```tsx title="app/home-page.tsx"
 'use client'
 
 // This is a Client Component (same as components in the `pages` directory)
 // It receives data as props, has access to state and effects, and is
 // prerendered on the server during the initial page load.
-export default function HomePage({ recentPosts }) {
-  return (
-    <div>
-      {recentPosts.map((post) => (
-        <div key={post.id}>{post.title}</div>
-      ))}
-    </div>
-  )
-}
-```
-
-```jsx title="app/home-page.js" switcher
-'use client'
-
-// This is a Client Component. It receives data as props and
-// has access to state and effects just like Page components
-// in the `pages` directory.
 export default function HomePage({ recentPosts }) {
   return (
     <div>
@@ -387,25 +325,7 @@ export default function HomePage({ recentPosts }) {
 - Import the `home-page.tsx` Client Component into the page.
 - If you were fetching data in `pages/index.js`, move the data fetching logic directly into the Server Component using the new [data fetching APIs](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating). See the [data fetching upgrade guide](#step-6-migrating-data-fetching-methods) for more details.
 
-  ```tsx title="app/page.tsx" switcher
-  // Import your Client Component
-  import HomePage from './home-page'
-
-  async function getPosts() {
-    const res = await fetch('https://...')
-    const posts = await res.json()
-    return posts
-  }
-
-  export default async function Page() {
-    // Fetch data directly in a Server Component
-    const recentPosts = await getPosts()
-    // Forward fetched data to your Client Component
-    return <HomePage recentPosts={recentPosts} />
-  }
-  ```
-
-  ```jsx title="app/page.js" switcher
+  ```tsx title="app/page.tsx"
   // Import your Client Component
   import HomePage from './home-page'
 
@@ -426,7 +346,7 @@ export default function HomePage({ recentPosts }) {
 - If your previous page used `useRouter`, you'll need to update to the new routing hooks. [Learn more](/docs/app-router/api-reference/functions/use-router).
 - Start your development server and visit [`http://localhost:3000`](http://localhost:3000). You should see your existing index route, now served through the app directory.
 
-### Step 5: Migrating Routing Hooks
+### 手順 5: ルーティングフックの移行
 
 A new router has been added to support the new behavior in the `app` directory.
 
@@ -439,21 +359,7 @@ In `app`, you should use the three new hooks imported from `next/navigation`: [`
 - You can use `useSearchParams` and `usePathname` together to listen to page changes. See the [Router Events](/docs/app-router/api-reference/functions/use-router#router-events) section for more details.
 - These new hooks are only supported in Client Components. They cannot be used in Server Components.
 
-```tsx title="app/example-client-component.tsx" switcher
-'use client'
-
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-
-export default function ExampleClientComponent() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  // ...
-}
-```
-
-```jsx title="app/example-client-component.js" switcher
+```tsx title="app/example-client-component.tsx"
 'use client'
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
@@ -477,11 +383,11 @@ In addition, the new `useRouter` hook has the following changes:
 
 [View the `useRouter()` API reference](/docs/app-router/api-reference/functions/use-router).
 
-### Step 6: Migrating Data Fetching Methods
+### 手順 6: データフェッチメソッドの移行
 
 The `pages` directory uses `getServerSideProps` and `getStaticProps` to fetch data for pages. Inside the `app` directory, these previous data fetching functions are replaced with a [simpler API](/docs/app-router/building-your-application/data-fetching) built on top of `fetch()` and `async` React Server Components.
 
-```tsx title="app/page.tsx" switcher
+```tsx title="app/page.tsx"
 export default async function Page() {
   // This request should be cached until manually invalidated.
   // Similar to `getStaticProps`.
@@ -502,28 +408,7 @@ export default async function Page() {
 }
 ```
 
-```jsx title="app/page.js" switcher
-export default async function Page() {
-  // This request should be cached until manually invalidated.
-  // Similar to `getStaticProps`.
-  // `force-cache` is the default and can be omitted.
-  const staticData = await fetch(`https://...`, { cache: 'force-cache' })
-
-  // This request should be refetched on every request.
-  // Similar to `getServerSideProps`.
-  const dynamicData = await fetch(`https://...`, { cache: 'no-store' })
-
-  // This request should be cached with a lifetime of 10 seconds.
-  // Similar to `getStaticProps` with the `revalidate` option.
-  const revalidatedData = await fetch(`https://...`, {
-    next: { revalidate: 10 },
-  })
-
-  return <div>...</div>
-}
-```
-
-#### Server-side Rendering (`getServerSideProps`)
+#### サーバーサイドレンダリング (`getServerSideProps`)
 
 In the `pages` directory, `getServerSideProps` is used to fetch data on the server and forward props to the default exported React component in the file. The initial HTML for the page is prerendered from the server, followed by "hydrating" the page in the browser (making it interactive).
 
@@ -552,7 +437,7 @@ In the `app` directory, we can colocate our data fetching inside our React compo
 
 By setting the `cache` option to `no-store`, we can indicate that the fetched data should [never be cached](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating). This is similar to `getServerSideProps` in the `pages` directory.
 
-```tsx title="app/dashboard/page.tsx" switcher
+```tsx title="app/dashboard/page.tsx"
 // `app` directory
 
 // This function can be named anything
@@ -576,31 +461,7 @@ export default async function Dashboard() {
 }
 ```
 
-```jsx title="app/dashboard/page.js" switcher
-// `app` directory
-
-// This function can be named anything
-async function getProjects() {
-  const res = await fetch(`https://...`, { cache: 'no-store' })
-  const projects = await res.json()
-
-  return projects
-}
-
-export default async function Dashboard() {
-  const projects = await getProjects()
-
-  return (
-    <ul>
-      {projects.map((project) => (
-        <li key={project.id}>{project.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-#### Accessing Request Object
+#### Request オブジェクトへのアクセス
 
 In the `pages` directory, you can retrieve request-based data based on the Node.js HTTP API.
 
@@ -626,7 +487,7 @@ The `app` directory exposes new read-only functions to retrieve request data:
 - [`headers()`](/docs/app-router/api-reference/functions/headers): Based on the Web Headers API, and can be used inside [Server Components](/docs/app-router/building-your-application/rendering/server-components) to retrieve request headers.
 - [`cookies()`](/docs/app-router/api-reference/functions/cookies): Based on the Web Cookies API, and can be used inside [Server Components](/docs/app-router/building-your-application/rendering/server-components) to retrieve cookies.
 
-```tsx title="app/page.tsx" switcher
+```tsx title="app/page.tsx"
 // `app` directory
 import { cookies, headers } from 'next/headers'
 
@@ -645,26 +506,7 @@ export default async function Page() {
 }
 ```
 
-```jsx title="app/page.js" switcher
-// `app` directory
-import { cookies, headers } from 'next/headers'
-
-async function getData() {
-  const authHeader = headers().get('authorization')
-
-  return '...'
-}
-
-export default async function Page() {
-  // You can use `cookies()` or `headers()` inside Server Components
-  // directly or in your data fetching function
-  const theme = cookies().get('theme')
-  const data = await getData()
-  return '...'
-}
-```
-
-#### Static Site Generation (`getStaticProps`)
+#### 静的サイトジェネレーション (`getStaticProps`)
 
 In the `pages` directory, the `getStaticProps` function is used to pre-render a page at build time. This function can be used to fetch data from an external API or directly from a database, and pass this data down to the entire page as it's being generated during the build.
 
@@ -703,7 +545,7 @@ export default async function Index() {
 }
 ```
 
-#### Dynamic paths (`getStaticPaths`)
+#### 動的パス (`getStaticPaths`)
 
 In the `pages` directory, the `getStaticPaths` function is used to define the dynamic paths that should be pre-rendered at build time.
 
@@ -759,7 +601,7 @@ Using the name `generateStaticParams` is more appropriate than `getStaticPaths` 
 
 ---
 
-#### Replacing `fallback`
+#### `fallback` の置換
 
 In the `pages` directory, the `fallback` property returned from `getStaticPaths` is used to define the behavior of a page that isn't pre-rendered at build time. This property can be set to `true` to show a fallback page while the page is being generated, `false` to show a 404 page, or `blocking` to generate the page at request time.
 
@@ -856,23 +698,19 @@ export default async function PostList() {
 }
 ```
 
-#### API Routes
+#### API ルート
 
 API Routes continue to work in the `pages/api` directory without any changes. However, they have been replaced by [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers) in the `app` directory.
 
 Route Handlers allow you to create custom request handlers for a given route using the Web [Request](https://developer.mozilla.org/docs/Web/API/Request) and [Response](https://developer.mozilla.org/docs/Web/API/Response) APIs.
 
-```ts title="app/api/route.ts" switcher
+```ts title="app/api/route.ts"
 export async function GET(request: Request) {}
-```
-
-```js title="app/api/route.js" switcher
-export async function GET(request) {}
 ```
 
 > **Good to know**: If you previously used API routes to call an external API from the client, you can now use [Server Components](/docs/app-router/building-your-application/rendering/server-components) instead to securely fetch data. Learn more about [data fetching](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating).
 
-### Step 7: Styling
+### 手順 7: スタイリング
 
 In the `pages` directory, global stylesheets are restricted to only `pages/_app.js`. With the `app` directory, this restriction has been lifted. Global styles can be added to any layout, page, or component.
 
