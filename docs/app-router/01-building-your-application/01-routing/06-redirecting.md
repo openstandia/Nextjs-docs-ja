@@ -48,7 +48,7 @@ export async function createPost(id: string) {
 >
 > - `redirect` はデフォルトで 307 (一時リダイレクト) ステータスコードを返します。Server Actions で使用されると、303 (他を参照)を返します。303 は、POSTリクエストの結果として成功ページへリダイレクトするときに一般的に使用されます。
 > - `redirect` は内部でエラーをスローするので、`try/catch` ブロックの外で呼び出すべきです。
-> - `redirect` は、レンダリングプロセス中に Client Components で呼び出すことができますが、イベントハンドラでは呼び出すことができません。代わりに [`useRouter` フック](#userouter-hook)を使用できます。
+> - `redirect` は、レンダリングプロセス中に Client Components で呼び出すことができますが、イベントハンドラでは呼び出すことができません。代わりに [`useRouter` フック](#userouter-フック)を使用できます。
 > - `redirect` は絶対 URL も受け入れ、外部リンクへのリダイレクトに使用できます。
 > - レンダリングプロセスの前にリダイレクトしたい場合は、[`next.config.js`](#nextconfigjs-内の-redirects) または [Middleware](#middleware-内の-nextresponseredirect) を使用してください。
 
@@ -301,7 +301,7 @@ export async function middleware(request: NextRequest) {
 }
 ```
 
-次に、 Route Handler 内で:
+次に、 Route Handler 内でで以下のように実装します:
 
 ```tsx title="app/redirects/route.ts"
 import { NextRequest, NextResponse } from 'next/server'
