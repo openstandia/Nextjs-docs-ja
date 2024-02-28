@@ -33,11 +33,11 @@ related:
 
 しかし、ルート構造はフォルダを通して定義されますが、`page.js` または `route.js` ファイルがルート Segment に追加されるまでは、ルートは**パブリックにアクセスできません**。
 
-![A diagram showing how a route is not publically accessible until a page.js or route.js file is added to a route segment.](../../assets/project-organization-not-routable.svg)
+![A diagram showing how a route is not publically accessible until a page.js or route.js file is added to a route segment.](../../assets/project-organization-not-routable.avif)
 
 またルートが公開されている場合でも、`page.js`または`route.js`が返す**コンテンツ**だけがクライアントに送信されます。
 
-![A diagram showing how page.js and route.js files make routes publically accessible.](../../assets/project-organization-routable.svg)
+![A diagram showing how page.js and route.js files make routes publically accessible.](../../assets/project-organization-routable.avif)
 
 これは、**プロジェクトファイル** を**安全に** `app`ディレクトリのルート Segment 内に配置できることを意味します。
 
@@ -58,7 +58,7 @@ Next.js には、プロジェクトの整理に役立ついくつかの機能が
 
 これは、そのフォルダがプライベートな実装の詳細であり、ルーティングシステムによって考慮されるべきではないことを示し、それによって **フォルダとそのすべてのサブフォルダ** をルーティングから除外します。
 
-![An example folder structure using private folders](../../assets/project-organization-private-folders.svg)
+![An example folder structure using private folders](../../assets/project-organization-private-folders.avif)
 
 `app`ディレクトリのファイルは[デフォルトで安全にコロケーションできる](#デフォルトで安全なコロケーション)ので、プライベートフォルダはコロケーションには必要ありません。しかし、次のような場合に役立ちます。
 
@@ -78,7 +78,7 @@ Next.js には、プロジェクトの整理に役立ついくつかの機能が
 ルートグループはフォルダを括弧で囲むことで作成できます： `(folderName)`
 これは、フォルダが整理のためのものであり、ルートの URL パスに**含まれるべきではない**ことを示します。
 
-![An example folder structure using route groups](../../assets/project-organization-route-groups.svg)
+![An example folder structure using route groups](../../assets/project-organization-route-groups.avif)
 
 ルートグループは次のことに役立ちます：
 
@@ -117,16 +117,16 @@ Next.js プロジェクトでファイルやフォルダを整理する方法に
 
 この方法では、すべてのアプリケーションコードを **プロジェクトのルート** にある共有フォルダに保存し、`app` ディレクトリは純粋にルーティングのためだけに使用します。
 
-![An example folder structure with project files outside of app](../../assets/project-organization-project-root.svg)
+![An example folder structure with project files outside of app](../../assets/project-organization-project-root.avif)
 
 ### `app` 内のトップレベルフォルダにプロジェクトファイルを格納する
 
 このストラテジーでは、すべてのアプリケーションコードを **`app` ディレクトリのルート** にある共有フォルダに格納します。
 
-![An example folder structure with project files inside app](../../assets/project-organization-app-root.svg)
+![An example folder structure with project files inside app](../../assets/project-organization-app-root.avif)
 
 ### 機能やルートごとにプロジェクトファイルを分割する
 
 この戦略では、グローバルに共有されるアプリケーションコードをルートディレクトリ `app` に保存し、より特定のアプリケーションコードを使用するルート Segment に **分割** します。
 
-![An example folder structure with project files split by feature or route](../../assets/project-organization-app-root-split.svg)
+![An example folder structure with project files split by feature or route](../../assets/project-organization-app-root-split.avif)
