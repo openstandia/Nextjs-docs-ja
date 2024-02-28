@@ -38,7 +38,7 @@ export default function Layout({
 ```
 
 <!-- textlint-disable -->
-しかし、スロットはルート Segment ではないので、URL 構造には影響しません。例えば、`/dashboard/@analytics/views` の場合、`@analytics` はスロットなので、URL は `/dashboard/views` になります。
+しかし、スロットは[ルート Segment](/docs/app-router/building-your-application/routing/#ルート-segment) ではないので、URL 構造には影響しません。例えば、`/dashboard/@analytics/views` の場合、`@analytics` はスロットなので、URL は `/dashboard/views` になります。
 <!-- textlint-enable -->
 
 > **Good to know:** `children` は暗黙のスロットで、フォルダにマッピングする必要はありません。つまり、`app/page.js` は `app/@children/page.js` と等価です。
