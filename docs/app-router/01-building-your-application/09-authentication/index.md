@@ -371,6 +371,7 @@ Next.js でクッキーベースのセッションとデータベースセッシ
 
 - [Auth0](https://auth0.com/docs/quickstart/webapp/nextjs/01-login)
 - [Clerk](https://clerk.com/docs/quickstarts/nextjs)
+- [Corbado](https://www.corbado.com/passkeys/next-js)
 - [Kinde](https://kinde.com/docs/developer-tools/nextjs-sdk)
 - [Lucia](https://lucia-auth.com/getting-started/nextjs-app)
 - [NextAuth.js](https://authjs.dev/guides/upgrade-to-v5)
