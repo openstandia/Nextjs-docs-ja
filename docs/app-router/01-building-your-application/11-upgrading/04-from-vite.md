@@ -18,7 +18,7 @@ Vite から Next.js に移行したくなる理由はいくつかあります:
 1. ブラウザは、あなたのコードが何らかのデータをロードするリクエストを送信できるようになる前に、React コードとあなたのアプリケーションバンドル全体がダウンロードされ、実行されるのを待つ必要があります。
 2. アプリケーションのコードは、新しい機能や依存関係を追加するたびに増えていきます。
 
-### コードの自動分割を行わない
+### 自動的なコード分割がない
 
 前述した読み込み時間の遅さという問題は、コード分割によってある程度解決することができます。
 しかし、手動でコード分割を行おうとすると、パフォーマンスが悪化することが多いです。
@@ -34,14 +34,14 @@ SPA におけるデータフェッチの一般的なパターンの 1 つは、�
 Next.js では、クライアントでのデータ取得がサポートされていますが、データ取得をサーバーに移行するオプションも用意されています。
 これは、クライアントとサーバーのウォーターフォールをなくすことができます。
 
-### 高速で意図的なロード状態
+### 迅速かつ意図的なローディング状態
 
 [React Suspense によるストリーミング](/docs/app-router/building-your-application/routing/loading-ui-and-streaming#サスペンスによるストリーミング)のビルトイン・サポートにより、
 ネットワークウォーターフォールを発生させることなく、UI のどの部分をどの順番で最初にロードするかについて、より意図的に行うことができます。
 
 これにより、読み込みが速く[レイアウトがずれる](https://vercel.com/blog/how-core-web-vitals-affect-seo)ことのないページを構築できます。
 
-### データフェッチ戦略を選択する
+### データフェッチ・ストラテジー
 
 Next.js では、ニーズに応じて、ページやコンポーネントごとにデータ取得方法を選択できます。
 ビルド時、サーバーでのリクエスト時、クライアントでのリクエスト時でのフェッチを決めることができます。
@@ -53,7 +53,7 @@ Next.js では、ニーズに応じて、ページやコンポーネントごと
 特に、ユーザが認証専用ページにアクセスしたときにログインページにリダイレクトすることで、認証されていないコンテンツがフラッシュ表示されるのを避けるのに便利です。
 Middleware は実験や[国際化](/docs/app-router/building-your-application/routing/internationalization)にも役立ちます。
 
-### 組み込みの最適化
+### ビルドインの最適化
 
 [画像](/docs/app-router/building-your-application/optimizing/images)、[フォント](/docs/app-router/building-your-application/optimizing/fonts)、[サードパーティのスクリプト](/docs/app-router/building-your-application/optimizing/scripts)は、しばしばアプリケーションのパフォーマンスに大きな影響を与えます。
 Next.js には、それらを自動的に最適化する組み込みコンポーネントが用意されています。
@@ -64,7 +64,7 @@ Next.js には、それらを自動的に最適化する組み込みコンポー
 まず最初に、既存のルーターを移行せずに、純粋なクライアントサイドアプリケーション（SPA）として維持します。
 こうすることで、移行プロセスで問題が発生する可能性を最小限に抑え、マージの競合を減らすことができます。
 
-### 手順 1: Next.js のインストール
+### ステップ 1: Next.js の依存関係のインストール
 
 最初にすべきこととして、依存関係として `next` をインストールします:
 
@@ -72,7 +72,7 @@ Next.js には、それらを自動的に最適化する組み込みコンポー
 npm install next@latest
 ```
 
-### 手順 2: Next.js 設定ファイルの作成
+### ステップ 2: Next.js の設定ファイルの作成
 
 プロジェクトのルートに `next.config.mjs` を作成します。
 このファイルには、[Next.js の設定オプション](/docs/app-router/api-reference/next-config-js)が保存されます。
@@ -89,7 +89,7 @@ export default nextConfig
 
 > **Good to know:** Next.js 設定ファイルには、`.js` または `.mjs` を使用できます。
 
-### 手順 3: TypeScript 設定の更新
+### ステップ 3: TypeScript 設定の更新
 
 TypeScript を使用している場合は、Next.js と互換性を持たせるために、`tsconfig.json` ファイルを以下のように変更する必要があります。
 TypeScript を使用していない場合は、この手順を省略できます。
@@ -137,7 +137,7 @@ TypeScript を使用していない場合は、この手順を省略できます
 
 TypeScript の設定については、[Next.js のドキュメント](/docs/app-router/building-your-application/configuring/typescript#typescriptプラグイン)を参照してください。
 
-### 手順 4: ルートレイアウトの作成
+### ステップ 4: ルートレイアウトの作成
 
 Next.js [App Router](/docs/app-router) アプリケーションには、[ルートレイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#ルートレイアウト-必須)ファイルを含める必要があります。
 これは、アプリケーション内のすべてのページをラップする [React Server Component](/docs/app-router/building-your-application/rendering/server-components) です。
@@ -260,7 +260,7 @@ export default function RootLayout({
 上記の変更により、`index.html` ですべてを宣言することから、Next.js のフレームワークに組み込まれた規約ベースのアプローチ（[メタデータ API](/docs/app-router/building-your-application/optimizing/metadata)）を使用することにシフトしました。
 このアプローチによって、ページの SEO とウェブ共有性をより簡単に向上させることができます。
 
-### 手順 5: エントリーポイントページの作成
+### ステップ 5: エントリーポイントページの作成
 
 Next.js では、`page.tsx` ファイルを作成してアプリケーションのエントリーポイントを宣言します。
 Vite でこのファイルに最も近いのは、`main.tsx` ファイルです。
@@ -336,7 +336,7 @@ export default function Page() {
 }
 ```
 
-### 手順 6: 静的画像インポートの更新
+### ステップ 6: 静的画像インポートの更新
 
 Next.js では、静的画像のインポート処理が Vite と若干異なります。
 Vite では、画像ファイルをインポートするとその公開 URL が文字列として返されます:
@@ -387,7 +387,7 @@ import logo from '../public/logo.png'
 > **注意:** TypeScript を使用している場合、`src` プロパティにアクセスする際に型エラーが発生する可能性があります。
 > 今のところは無視してかまいません。このガイドの終わりまでには修正されるでしょう。
 
-### 手順 7: 環境変数の移行
+### ステップ 7: 環境変数の移行
 
 Next.js は Vite と同様に `.env` [環境変数](/docs/app-router/building-your-application/configuring/environment-variables)をサポートしています。
 主な違いは、クライアントサイドで環境変数を公開するためのプレフィックスです。
@@ -425,7 +425,7 @@ export default nextConfig
 
 3. **`import.meta.env.BASE_URL` の使用法を `process.env.NEXT_PUBLIC_BASE_PATH` に更新する。**
 
-### 手順 8: `package.json` の Scripts の更新
+### ステップ 8: `package.json` のスクリプトの更新
 
 これで、もし Next.js への移行が成功していればアプリケーションを実行できるようになります。
 しかしその前に、`package.json`の `scripts` を Next.js 関連のコマンドで更新し、`.next` と `next-env.d.ts` を `.gitignore` に追加する必要があります:
@@ -452,7 +452,7 @@ dist
 
 > **例:** Next.js に移行した Vite アプリケーションの動作例については、[こちらのプルリクエスト](https://github.com/inngest/vite-to-nextjs/pull/1)をご覧ください。
 
-### 手順 9: クリーンアップ
+### ステップ 9: クリーンアップ
 
 これでコードベースから Vite 関連の成果物を一掃できます:
 
