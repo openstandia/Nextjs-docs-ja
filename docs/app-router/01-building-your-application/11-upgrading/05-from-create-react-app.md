@@ -5,11 +5,11 @@ description: 既存の Create React App で作成した React アプリケーシ
 
 このガイドでは、既存の Create React App サイトを Next.js に移行する方法について説明します。
 
-## なぜ乗り換えるのか？
+## なぜ移行するのか?
 
 Create React App から Next.js に切り替える理由はいくつかあります:
 
-### 初期ページの読み込み時間の遅さ
+### ページの初期読み込み時間が遅い
 
 Create React App は純粋にクライアントサイドの React を使用します。クライアントサイドのみのアプリケーション、別名シングルページアプリケーション（SPA）は、しばしば初期ページの読み込み時間が遅くなります。これにはいくつかの理由があります:
 
@@ -47,7 +47,7 @@ Next.js ではクライアントでのデータ取得もサポートされてい
 移行の目標は、できるだけ早く、Next.js アプリケーションとして動作させ、その後、Next.js の機能を段階的に採用することです。
 まず、既存の Router を移行せずに純粋なクライアントサイドアプリケーション（SPA）として維持することから始めます。これにより、移行プロセス中で問題に遭遇する可能性を最小限に抑え、マージコンフリクトを減らすことができます。
 
-### ステップ1: Next.js の依存関係のインストール
+### ステップ 1: Next.js の依存関係のインストール
 
 最初に行うべきことは、`next` を依存関係としてインストールすることです:
 
@@ -55,7 +55,7 @@ Next.js ではクライアントでのデータ取得もサポートされてい
 npm install next@latest
 ```
 
-### ステップ2: Next.js の設定ファイルの作成
+### ステップ 2: Next.js の設定ファイルの作成
 
 プロジェクトのルートに `next.config.mjs` を作成します。このファイルには、[Next.js の設定オプション](/docs/app-router/api-reference/next-config-js)が含まれます。
 
@@ -71,7 +71,7 @@ export default nextConfig
 
 > **Good to know:** Next.js の設定ファイルには、`.js` もしくは `.mjs` を使用できます。
 
-### ステップ3: TypeScript 設定の更新
+### ステップ 3: TypeScript 設定の更新
 
 TypeScript を使用している場合、`tsconfig.json` ファイルを次のように更新して、Next.js との互換性を確保します:
 
@@ -113,7 +113,7 @@ TypeScript を使用している場合、`tsconfig.json` ファイルを次の�
 
 TypeScript の設定についての詳細は、[Next.js のドキュメント](/docs/app-router/building-your-application/configuring/typescript#typescriptプラグイン)で見つけることができます。
 
-### ステップ4: ルートレイアウトの作成
+### ステップ 4: ルートレイアウトの作成
 
 Next.js の[App Router](/docs/app-router) アプリケーションには、アプリケーション内のすべてのページをラップする[ルートレイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#ルートレイアウト-必須)ファイルが含まれていなければなりません。このファイルは、`app` ディレクトリのトップレベルで定義されます。
 
@@ -137,6 +137,7 @@ export default function RootLayout({
 > **Good to know**: レイアウトファイルには `.js`, `.jsx`, `.tsx` の拡張子が使用できます。
 
 <!-- textlint-disable -->
+
 3. `index.html` ファイルの内容を先ほど作成した `<RootLayout>` コンポーネントにコピーし、`body.div#root` と `body.script` タグを `<div id="root">{children}</div>` に置き換えます:
 <!-- textlint-enable -->
 
@@ -189,6 +190,7 @@ export default function RootLayout({
 ```
 
 <!-- textlint-disable -->
+
 5. `favicon.ico`, `icon.png`, `robots.txt` などの[メタデータファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ) は、それらを `app` ディレクトリのトップレベルに配置する限り、アプリケーションの `<head>` タグに自動的に追加されます。[サポートされる全ファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ) を `app` ディレクトリに移動した後、それらの `<link>` タグを安全に削除できます:
 <!-- textlint-enable -->
 
@@ -266,7 +268,7 @@ export default function Page() {
 
 > **Good to know**: ページファイルには `.js`, `.jsx`, `.tsx` の拡張子が使用できます。
 
-このファイルは[Server Components](/docs/app-router/building-your-application/rendering/server-components)です。`next build`を実行すると、ファイルは静的アセットとして事前にレンダリングされます。動的なコードを_必要としません_。
+このファイルは[Server Components](/docs/app-router/building-your-application/rendering/server-components)です。`next build`を実行すると、ファイルは静的アセットとして事前にレンダリングされます。動的なコードを*必要としません*。
 
 このファイルは、グローバルCSSをインポートし、[`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params)に対して、`/`でのインデックスルートのみを生成することを伝えます。
 
