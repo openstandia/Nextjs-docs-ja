@@ -267,7 +267,8 @@ Page.getLayout = function getLayout(page) {
 
 ### ステップ 3: `next/head` の移行
 
-In the `pages` directory, the `next/head` React component is used to manage `<head>` HTML elements such as `title` and `meta` . In the `app` directory, `next/head` is replaced with the new [built-in SEO support](/docs/app-router/building-your-application/optimizing/metadata).
+`pages` ディレクトリでは、`next/head` のReact コンポーネントが、`title` や `meta` などの `<head>` HTML 要素を管理するために使用されます。
+`app` ディレクトリでは、`next/head` は新しい[組み込み SEO サポート](/docs/app-router/building-your-application/optimizing/metadata)に置き換えられます。
 
 **Before:**
 
@@ -299,38 +300,38 @@ export default function Page() {
 }
 ```
 
-[See all metadata options](/docs/app-router/api-reference/functions/generate-metadata).
+すべてのメタデータオプションは[こちら](/docs/app-router/api-reference/functions/generate-metadata)をご参照下さい。
 
 ### ステップ 4: ページの移行
 
-- Pages in the [`app` directory](/docs/app-router/building-your-application/routing) are [Server Components](/docs/app-router/building-your-application/rendering/server-components) by default. This is different from the `pages` directory where pages are [Client Components](/docs/app-router/building-your-application/rendering/client-components).
-- [Data fetching](/docs/app-router/building-your-application/data-fetching) has changed in `app`. `getServerSideProps`, `getStaticProps` and `getInitialProps` have been replaced with a simpler API.
-- The `app` directory uses nested folders to [define routes](/docs/app-router/building-your-application/routing/defining-routes) and a special `page.js` file to make a route segment publicly accessible.
-- | `pages` Directory | `app` Directory       | Route          |
-  | ----------------- | --------------------- | -------------- |
-  | `index.js`        | `page.js`             | `/`            |
-  | `about.js`        | `about/page.js`       | `/about`       |
-  | `blog/[slug].js`  | `blog/[slug]/page.js` | `/blog/post-1` |
+- [`app` ディレクトリ](/docs/app-router/building-your-application/routing)のページはデフォルトで [Server Components](/docs/app-router/building-your-application/rendering/server-components) です。これは、ページが [Client Components](/docs/app-router/building-your-application/rendering/client-components) である `pages` ディレクトリとは異なります。
+- `app` 内の[データフェッチ](/docs/app-router/building-your-application/data-fetching)方法は変更されました。`getServerSideProps`、`getStaticProps`、`getInitialProps`は、よりシンプルなAPIに置き換えられました。
+- `app` ディレクトリはネストされたフォルダを使用して[ルートを定義](/docs/app-router/building-your-application/routing/defining-routes)し、特別な `page.js` ファイルを使用してルートセグメントをパブリックアクセス可能にします。
+- | `pages` ディレクトリ | `app` ディレクトリ    | ルート         |
+  | -------------------- | --------------------- | -------------- |
+  | `index.js`           | `page.js`             | `/`            |
+  | `about.js`           | `about/page.js`       | `/about`       |
+  | `blog/[slug].js`     | `blog/[slug]/page.js` | `/blog/post-1` |
 
-We recommend breaking down the migration of a page into two main steps:
+ページの移行を大きく 2 つのステップに分けることをお勧めします:
 
-- Step 1: Move the default exported Page Component into a new Client Component.
-- Step 2: Import the new Client Component into a new `page.js` file inside the `app` directory.
+- ステップ 1: デフォルトでエクスポートされたページコンポーネントを新しい Client Component に移動します。
+- ステップ 2: 新しい Client Component を、`app` ディレクトリ内の新しい `page.js` ファイルにインポートします。
 
-> **Good to know**: This is the easiest migration path because it has the most comparable behavior to the `pages` directory.
+> **Good to know**: これは、`pages` ディレクトリと最も類似した動作をするため、最も簡単な移行手順です。
 
-**Step 1: Create a new Client Component**
+**Step 1: 新しい Client Component を作成する**
 
-- Create a new separate file inside the `app` directory (i.e. `app/home-page.tsx` or similar) that exports a Client Component. To define Client Components, add the `'use client'` directive to the top of the file (before any imports).
-  - Similar to the Pages Router, there is an [optimization step](/docs/app-router/building-your-application/rendering/client-components#full-page-load) to prerender Client Components to static HTML on the initial page load.
-- Move the default exported page component from `pages/index.js` to `app/home-page.tsx`.
+- `app` ディレクトリ内に、Client Component をエクスポートする新しい別 のファイル（`app/home-page.tsx` など）を作成します。Client Component を定義するには、`'use client'` ディレクティブをファイルの先頭（インポートの前）に追加します。
+  - Pages Router と同様に、最初のページロード時に Client Components を静的HTMLにプリレンダリングする[最適化ステップ](/docs/app-router/building-your-application/rendering/client-components#full-page-load)があります。
+- デフォルトのエクスポートされたページコンポーネントを `pages/index.js` から `app/home-page.tsx` に移動します。
 
 ```tsx title="app/home-page.tsx"
 'use client'
 
-// This is a Client Component (same as components in the `pages` directory)
-// It receives data as props, has access to state and effects, and is
-// prerendered on the server during the initial page load.
+// これは Client Component です（`pages`ディレクトリのコンポーネントと同じです）。
+// プロップとしてデータを受け取り、ステートとエフェクトにアクセスすることができます。
+// 最初のページロード時にサーバー上でプリレンダリングされます。
 export default function HomePage({ recentPosts }) {
   return (
     <div>
@@ -342,14 +343,14 @@ export default function HomePage({ recentPosts }) {
 }
 ```
 
-**Step 2: Create a new page**
+**Step 2: 新しいページを作成する**
 
-- Create a new `app/page.tsx` file inside the `app` directory. This is a Server Component by default.
-- Import the `home-page.tsx` Client Component into the page.
-- If you were fetching data in `pages/index.js`, move the data fetching logic directly into the Server Component using the new [data fetching APIs](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating). See the [data fetching upgrade guide](#step-6-migrating-data-fetching-methods) for more details.
+- `app` ディレクトリ内に新しい `app/page.tsx` ファイルを作成します。これはデフォルトでは Server Component です。
+- `home-page.tsx` Client Component をページにインポートします。
+- `pages/index.js` でデータを取得していた場合は、新しい[データ取得 API](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating) を使用して、データ取得ロジックを直接 Server Component に移動します。詳細については、[データ取得アップグレードガイド](#ステップ-6-データフェッチメソッドの移行)を参照してください。
 
   ```tsx title="app/page.tsx"
-  // Import your Client Component
+  // Client Component をインポートします
   import HomePage from './home-page'
 
   async function getPosts() {
@@ -359,28 +360,28 @@ export default function HomePage({ recentPosts }) {
   }
 
   export default async function Page() {
-    // Fetch data directly in a Server Component
+    // Server Component で直接データを取得します
     const recentPosts = await getPosts()
-    // Forward fetched data to your Client Component
+    // 取得したデータを Client Component に転送します
     return <HomePage recentPosts={recentPosts} />
   }
   ```
 
-- If your previous page used `useRouter`, you'll need to update to the new routing hooks. [Learn more](/docs/app-router/api-reference/functions/use-router).
-- Start your development server and visit [`http://localhost:3000`](http://localhost:3000). You should see your existing index route, now served through the app directory.
+- 以前のページで `useRouter` を使用していた場合は、新しいルーティングフックに更新する必要があります。詳細は[こちら](/docs/app-router/api-reference/functions/use-router)です。
+- 開発サーバーを起動し、[`http://localhost:3000`](http://localhost:3000)。既存の index ルートが、`app` ディレクトリを通して提供されているのが確認できるはずです。
 
 ### ステップ 5: ルーティングフックの移行
 
-A new router has been added to support the new behavior in the `app` directory.
+`app` ディレクトリの新しい動作をサポートするために、新しいルーターが追加されました。
 
-In `app`, you should use the three new hooks imported from `next/navigation`: [`useRouter()`](/docs/app-router/api-reference/functions/use-router), [`usePathname()`](/docs/app-router/api-reference/functions/use-pathname), and [`useSearchParams()`](/docs/app-router/api-reference/functions/use-search-params).
+アプリでは、`next/navigation` からインポートされた 3 つの新しいフック、[`useRouter()`](/docs/app-router/api-reference/functions/use-router)、[`usePathname()`](/docs/app-router/api-reference/functions/use-pathname)、[`useSearchParams()`](/docs/app-router/api-reference/functions/use-search-params) を使用する必要があります。
 
-- The new `useRouter` hook is imported from `next/navigation` and has different behavior to the `useRouter` hook in `pages` which is imported from `next/router`.
-  - The [`useRouter` hook imported from `next/router`](/docs/pages/api-reference/functions/use-router) is not supported in the `app` directory but can continue to be used in the `pages` directory.
-- The new `useRouter` does not return the `pathname` string. Use the separate `usePathname` hook instead.
-- The new `useRouter` does not return the `query` object. Use the separate `useSearchParams` hook instead.
-- You can use `useSearchParams` and `usePathname` together to listen to page changes. See the [Router Events](/docs/app-router/api-reference/functions/use-router#router-events) section for more details.
-- These new hooks are only supported in Client Components. They cannot be used in Server Components.
+- 新しい `useRouter` フックは `next/navigation` からインポートされ、`next/router` からインポートされる `pages` の `useRouter` フックとは動作が異なります。
+  - [`next/router` からインポートされた `useRouter`フック](/docs/pages/api-reference/functions/use-router)は、`app` ディレクトリではサポートされていませんが、`pages` ディレクトリでは引き続き使用できます。
+- 新しい `useRouter` は `pathname` 文字列を返しません。代わりに別の `usePathname` フックを使ってください。
+- 新しい `useRouter` は `query` オブジェクトを返しません。代わりに別の `useSearchParams` フックを使ってください。
+- `useSearchParams` と `usePathname` を一緒に使うことで、ページの変更を監視することができます。詳細は[ルーターイベント](/docs/app-router/api-reference/functions/use-router#router-events)のセクションを参照してください。
+- これらの新しいフックは、Client Components でのみサポートされています。Server Components では使用できません。
 
 ```tsx title="app/example-client-component.tsx"
 'use client'
@@ -396,33 +397,34 @@ export default function ExampleClientComponent() {
 }
 ```
 
-In addition, the new `useRouter` hook has the following changes:
+さらに、新しい `useRouter` フックには以下の変更があります:
 
-- `isFallback` has been removed because `fallback` has [been replaced](#replacing-fallback).
-- The `locale`, `locales`, `defaultLocales`, `domainLocales` values have been removed because built-in i18n Next.js features are no longer necessary in the `app` directory. [Learn more about i18n](/docs/app-router/building-your-application/routing/internationalization).
-- `basePath` has been removed. The alternative will not be part of `useRouter`. It has not yet been implemented.
-- `asPath` has been removed because the concept of `as` has been removed from the new router.
-- `isReady` has been removed because it is no longer necessary. During [static rendering](/docs/app-router/building-your-application/rendering/server-components#static-rendering-default), any component that uses the [`useSearchParams()`](/docs/app-router/api-reference/functions/use-search-params) hook will skip the prerendering step and instead be rendered on the client at runtime.
+- `fallback` が[置き換えられた](#fallback-の置換)ため、`isFallback` が削除されました。
+- i18n 組み込みの Next.js 機能が `app` ディレクトリで不要になったため、`locale`、`locales`、`defaultLocales`、`domainLocales` の値が削除されました。国際化については[こちら](/docs/app-router/building-your-application/routing/internationalization)をご覧ください。
+- `basePath` が削除されました。代替機能は `useRouter` の一部にはありません。新しいルーターではまだ実装されていません。
+- `asPath` は、新しいルーターから `as` の概念が削除されたため、削除されました。
+- `isReady` は不要になったため削除されました。[静的レンダリング](/docs/app-router/building-your-application/rendering/server-components#静的レンダリングデフォルト)の間、`useSearchParams()` フックを使用するコンポーネントは、プリレンダリングのステップをスキップし、代わりに実行時にクライアント上でレンダリングされます。
 
-[View the `useRouter()` API reference](/docs/app-router/api-reference/functions/use-router).
+[`useRouter()` API リファレンスを参照ください。](/docs/app-router/api-reference/functions/use-router)
 
 ### ステップ 6: データフェッチメソッドの移行
 
-The `pages` directory uses `getServerSideProps` and `getStaticProps` to fetch data for pages. Inside the `app` directory, these previous data fetching functions are replaced with a [simpler API](/docs/app-router/building-your-application/data-fetching) built on top of `fetch()` and `async` React Server Components.
+`pages` ディレクトリでは、`getServerSideProps` と `getStaticProps` を使用してページのデータを取得します。
+`app` ディレクトリの内部では、これらの以前のデータ取得関数は `fetch()` と非同期の React Server Components の上に構築されたより[シンプルな API](/docs/app-router/building-your-application/data-fetching) に置き換えられます。
 
 ```tsx title="app/page.tsx"
 export default async function Page() {
-  // This request should be cached until manually invalidated.
-  // Similar to `getStaticProps`.
-  // `force-cache` is the default and can be omitted.
+  // このリクエストは手動で無効にされるまでキャッシュされるべきです
+  // `getStaticProps` に似ています
+  // `force-cache` はデフォルトであり、省略可能です
   const staticData = await fetch(`https://...`, { cache: 'force-cache' })
 
-  // This request should be refetched on every request.
-  // Similar to `getServerSideProps`.
+  // このリクエストはリクエスト毎にリフェッチされるべきです
+  // `getServerSideProps` に似ています
   const dynamicData = await fetch(`https://...`, { cache: 'no-store' })
 
-  // This request should be cached with a lifetime of 10 seconds.
-  // Similar to `getStaticProps` with the `revalidate` option.
+  // このリクエストは 10 秒の有効期限でキャッシュされるべきです
+  // `getStaticProps` の `revalidate` オプションに似ています
   const revalidatedData = await fetch(`https://...`, {
     next: { revalidate: 10 },
   })
@@ -431,12 +433,13 @@ export default async function Page() {
 }
 ```
 
-#### サーバーサイドレンダリング (`getServerSideProps`)
+#### Server-side Rendering (`getServerSideProps`)
 
-In the `pages` directory, `getServerSideProps` is used to fetch data on the server and forward props to the default exported React component in the file. The initial HTML for the page is prerendered from the server, followed by "hydrating" the page in the browser (making it interactive).
+`pages` ディレクトリで、`getServerSideProps` はサーバ上のデータを取得し、ファイル内のデフォルトのエクスポートされた React コンポーネントに props を転送するために使用されます。
+ページの初期 HTML はサーバからプリレンダリングされ、ブラウザでページを "ハイドレート" します（インタラクティブにします）。
 
 ```jsx title="pages/dashboard.js"
-// `pages` directory
+// `pages` ディレクトリ
 
 export async function getServerSideProps() {
   const res = await fetch(`https://...`)
@@ -456,14 +459,16 @@ export default function Dashboard({ projects }) {
 }
 ```
 
-In the `app` directory, we can colocate our data fetching inside our React components using [Server Components](/docs/app-router/building-your-application/rendering/server-components). This allows us to send less JavaScript to the client, while maintaining the rendered HTML from the server.
+`app` ディレクトリでは、[Server Components](/docs/app-router/building-your-application/rendering/server-components) を使って React コンポーネント内にデータフェッチを配置することができます。
+これにより、サーバーからレンダリングされた HTML を維持しながら、クライアントへの JavaScript の送信を少なくすることができます。
 
-By setting the `cache` option to `no-store`, we can indicate that the fetched data should [never be cached](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating). This is similar to `getServerSideProps` in the `pages` directory.
+`cache` オプションを `no-store` に設定することで、取得したデータを[キャッシュしない](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating)ことを示すことができます。
+これは `pages` ディレクトリの `getServerSideProps` と同様です。
 
 ```tsx title="app/dashboard/page.tsx"
-// `app` directory
+// `app` ディレクトリ
 
-// This function can be named anything
+// この関数名は何でも問題ありません
 async function getProjects() {
   const res = await fetch(`https://...`, { cache: 'no-store' })
   const projects = await res.json()
@@ -486,12 +491,12 @@ export default async function Dashboard() {
 
 #### Request オブジェクトへのアクセス
 
-In the `pages` directory, you can retrieve request-based data based on the Node.js HTTP API.
+`pages` ディレクトリでは、Node.js HTTP API に基づいてリクエストベースのデータを取得できます。
 
-For example, you can retrieve the `req` object from `getServerSideProps` and use it to retrieve the request's cookies and headers.
+例えば、`getServerSideProps` から `req` オブジェクトを取得し、それを使用してリクエストのクッキーとヘッダを取得できます。
 
 ```jsx title="pages/index.js"
-// `pages` directory
+// `pages` ディレクトリ
 
 export async function getServerSideProps({ req, query }) {
   const authHeader = req.getHeaders()['authorization'];
@@ -505,13 +510,13 @@ export default function Page(props) {
 }
 ```
 
-The `app` directory exposes new read-only functions to retrieve request data:
+`app` ディレクトリは、リクエストデータを取得するための新しい読み取り専用関数を公開します:
 
-- [`headers()`](/docs/app-router/api-reference/functions/headers): Based on the Web Headers API, and can be used inside [Server Components](/docs/app-router/building-your-application/rendering/server-components) to retrieve request headers.
-- [`cookies()`](/docs/app-router/api-reference/functions/cookies): Based on the Web Cookies API, and can be used inside [Server Components](/docs/app-router/building-your-application/rendering/server-components) to retrieve cookies.
+- [`headers()`](/docs/app-router/api-reference/functions/headers): Web Headers API に基づき、 [Server Components](/docs/app-router/building-your-application/rendering/server-components) 内部でリクエストヘッダを取得するために使用することができます。
+- [`cookies()`](/docs/app-router/api-reference/functions/cookies): Web Cookies APIに基づき、[Server Components](/docs/app-router/building-your-application/rendering/server-components) 内部でクッキーを取得するために使用できます。
 
 ```tsx title="app/page.tsx"
-// `app` directory
+// `app` ディレクトリ
 import { cookies, headers } from 'next/headers'
 
 async function getData() {
@@ -521,20 +526,20 @@ async function getData() {
 }
 
 export default async function Page() {
-  // You can use `cookies()` or `headers()` inside Server Components
-  // directly or in your data fetching function
+  // Server Components 内で `cookies()` または `headers()` を直接使用するか、データ取得関数で使用することができます
   const theme = cookies().get('theme')
   const data = await getData()
   return '...'
 }
 ```
 
-#### 静的サイトジェネレーション (`getStaticProps`)
+#### Static Site Generation (`getStaticProps`)
 
-In the `pages` directory, the `getStaticProps` function is used to pre-render a page at build time. This function can be used to fetch data from an external API or directly from a database, and pass this data down to the entire page as it's being generated during the build.
+`pages` ディレクトリでは、`getStaticProps` 関数がビルド時にページをプリレンダリングするために使用されます。
+この関数は、外部 API やデータベースから直接データを取得し、ビルド時に生成されるページ全体にデータを渡すために使用できます。
 
 ```jsx title="pages/index.js"
-// `pages` directory
+// `pages` ディレクトリ
 
 export async function getStaticProps() {
   const res = await fetch(`https://...`)
@@ -548,12 +553,13 @@ export default function Index({ projects }) {
 }
 ```
 
-In the `app` directory, data fetching with [`fetch()`](/docs/app-router/api-reference/functions/fetch) will default to `cache: 'force-cache'`, which will cache the request data until manually invalidated. This is similar to `getStaticProps` in the `pages` directory.
+`app` ディレクトリでは、[`fetch()`](/docs/app-router/api-reference/functions/fetch)によるデータフェッチはデフォルトで `cache: 'force-cache'` となり、手動で無効にするまでリクエストデータをキャッシュします。
+これは `pages` ディレクトリの `getStaticProps` と同様です。
 
 ```jsx title="app/page.js"
-// `app` directory
+// `app` ディレクトリ
 
-// This function can be named anything
+// この関数名は何でも問題ありません
 async function getProjects() {
   const res = await fetch(`https://...`)
   const projects = await res.json()
@@ -570,10 +576,10 @@ export default async function Index() {
 
 #### 動的パス (`getStaticPaths`)
 
-In the `pages` directory, the `getStaticPaths` function is used to define the dynamic paths that should be pre-rendered at build time.
+`pages` ディレクトリでは、`getStaticPaths` 関数を使用して、ビルド時にプリレンダリングする動的パスを定義します。
 
 ```jsx title="pages/posts/[id].js"
-// `pages` directory
+// `pages` ディレクトリ
 import PostLayout from '@/components/post-layout'
 
 export async function getStaticPaths() {
@@ -594,12 +600,13 @@ export default function Post({ post }) {
 }
 ```
 
-In the `app` directory, `getStaticPaths` is replaced with [`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params).
+`app` ディレクトリでは、`getStaticPaths` が [`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params) に置き換えられています。
 
-[`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params) behaves similarly to `getStaticPaths`, but has a simplified API for returning route parameters and can be used inside [layouts](/docs/app-router/building-your-application/routing/pages-and-layouts). The return shape of `generateStaticParams` is an array of segments instead of an array of nested `param` objects or a string of resolved paths.
+[`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params) の動作は`getStaticPaths`と似ていますが、ルートパラメータを返す API が簡略化されており、[レイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts)内部で使用できます。
+`generateStaticParams` の戻り値は、ネストされた `param` オブジェクトの配列や解決されたパスの文字列ではなく、セグメントの配列です。
 
 ```jsx title="app/posts/[id]/page.js"
-// `app` directory
+// `app` ディレクトリ
 import PostLayout from '@/components/post-layout'
 
 export async function generateStaticParams() {
@@ -620,16 +627,19 @@ export default async function Post({ params }) {
 }
 ```
 
-Using the name `generateStaticParams` is more appropriate than `getStaticPaths` for the new model in the `app` directory. The `get` prefix is replaced with a more descriptive `generate`, which sits better alone now that `getStaticProps` and `getServerSideProps` are no longer necessary. The `Paths` suffix is replaced by `Params`, which is more appropriate for nested routing with multiple dynamic segments.
+`generateStaticParams` という名前は、`app` ディレクトリ内の新しいモデルに対して、`getStaticPaths`よりも適切です。
+`get` プレフィックスはより説明的な `generate` に置き換えられ、`getStaticProps` と `getServerSideProps` が不要になった今、単独でよりよく収まるようになりました。
+`Paths` サフィックスは `Params` に置き換えられ、複数の動的セグメントを持つネストされたルーティングにより適しています。
 
 ---
 
 #### `fallback` の置換
 
-In the `pages` directory, the `fallback` property returned from `getStaticPaths` is used to define the behavior of a page that isn't pre-rendered at build time. This property can be set to `true` to show a fallback page while the page is being generated, `false` to show a 404 page, or `blocking` to generate the page at request time.
+`pages` ディレクトリでは、`getStaticPaths` から返される `fallback` プロパティを使用して、ビルド時にプリレンダリングされないページの動作を定義します。
+このプロパティを `true` に設定するとページが生成されている間にフォールバックページが表示され、`false` に設定すると 404 ページが表示され、`blocking` に設定するとリクエスト時にページが生成されます。
 
 ```jsx title="pages/posts/[id].js"
-// `pages` directory
+// `pages` ディレクトリ
 
 export async function getStaticPaths() {
   return {
@@ -647,15 +657,16 @@ export default function Post({ post }) {
 }
 ```
 
-In the `app` directory the [`config.dynamicParams` property](/docs/app-router/api-reference/file-conventions/route-segment-config#dynamicparams) controls how params outside of [`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params) are handled:
+`app` ディレクトリの [`config.dynamicParams` プロパティ](/docs/app-router/api-reference/file-conventions/route-segment-config#dynamicparams)は、[`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params) 以外のパラメータがどのように処理されるかを制御します:
 
-- **`true`**: (default) Dynamic segments not included in `generateStaticParams` are generated on demand.
-- **`false`**: Dynamic segments not included in `generateStaticParams` will return a 404.
+- **`true`**: (デフォルト) `generateStaticParams` に含まれていない動的セグメントは、必要に応じて生成されます。
+- **`false`**: `generateStaticParams` に含まれていない動的セグメントは 404 を返します。
 
-This replaces the `fallback: true | false | 'blocking'` option of `getStaticPaths` in the `pages` directory. The `fallback: 'blocking'` option is not included in `dynamicParams` because the difference between `'blocking'` and `true` is negligible with streaming.
+これは `pages` ディレクトリの `getStaticPaths` の `fallback: true | false | 'blocking'` オプションを置き換えるものです。
+`fallback:'blocking'` オプションは `dynamicParams` には含まれません。 なぜなら、`'blocking'` と `true` の違いはストリーミングでは無視できるためです。
 
 ```jsx title="app/posts/[id]/page.js"
-// `app` directory
+// `app` ディレクトリ
 
 export const dynamicParams = true;
 
@@ -674,14 +685,15 @@ export default async function Post({ params }) {
 }
 ```
 
-With [`dynamicParams`](/docs/app-router/api-reference/file-conventions/route-segment-config#dynamicparams) set to `true` (the default), when a route segment is requested that hasn't been generated, it will be server-rendered and cached.
+[`dynamicParams`](/docs/app-router/api-reference/file-conventions/route-segment-config#dynamicparams)を `true` (デフォルト)に設定すると、
+生成されていないルートセグメントがリクエストされたとき、それはサーバーレンダリングされ、キャッシュされます。
 
 #### Incremental Static Regeneration (`getStaticProps` with `revalidate`)
 
-In the `pages` directory, the `getStaticProps` function allows you to add a `revalidate` field to automatically regenerate a page after a certain amount of time.
+`pages` ディレクトリでは、`getStaticProps` 関数で `revalidate` フィールドを追加し、一定時間後に自動的にページを再生成することができます。
 
 ```jsx title="pages/index.js"
-// `pages` directory
+// `pages` ディレクトリ
 
 export async function getStaticProps() {
   const res = await fetch(`https://.../posts`)
@@ -702,10 +714,10 @@ export default function Index({ posts }) {
 }
 ```
 
-In the `app` directory, data fetching with [`fetch()`](/docs/app-router/api-reference/functions/fetch) can use `revalidate`, which will cache the request for the specified amount of seconds.
+`app` ディレクトリでは、[`fetch()`](/docs/app-router/api-reference/functions/fetch) によるデータフェッチは `revalidate` を使うことができ、指定した秒数だけリクエストをキャッシュします。
 
 ```jsx title="app/page.js"
-// `app` directory
+// `app` ディレクトリ
 
 async function getPosts() {
   const res = await fetch(`https://.../posts`, { next: { revalidate: 60 } })
@@ -721,44 +733,48 @@ export default async function PostList() {
 }
 ```
 
-#### API ルート
+#### API Routes
 
-API Routes continue to work in the `pages/api` directory without any changes. However, they have been replaced by [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers) in the `app` directory.
+API Routes は、`pages/api` ディレクトリでは変更なく機能し続けます。
+しかし、これらは `app` ディレクトリの [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers) に置き換えられました。
 
-Route Handlers allow you to create custom request handlers for a given route using the Web [Request](https://developer.mozilla.org/docs/Web/API/Request) and [Response](https://developer.mozilla.org/docs/Web/API/Response) APIs.
+Route Handlers を使うと、Web [Request API](https://developer.mozilla.org/docs/Web/API/Request) と [Response API](https://developer.mozilla.org/docs/Web/API/Response) を使って、指定したルートにカスタムリクエストハンドラを作成できます。
 
 ```ts title="app/api/route.ts"
 export async function GET(request: Request) {}
 ```
 
-> **Good to know**: If you previously used API routes to call an external API from the client, you can now use [Server Components](/docs/app-router/building-your-application/rendering/server-components) instead to securely fetch data. Learn more about [data fetching](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating).
+> **Good to know**: これまで API Routes を使用してクライアントから外部 API を呼び出していた場合、
+> 代わりに [Server Components](/docs/app-router/building-your-application/rendering/server-components) を使用して安全にデータを取得できるようになりました。
+> データ取得の詳細については、[こちら](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating)をご覧ください。
 
 ### ステップ 7: スタイリング
 
-In the `pages` directory, global stylesheets are restricted to only `pages/_app.js`. With the `app` directory, this restriction has been lifted. Global styles can be added to any layout, page, or component.
+`pages` ディレクトリでは、グローバルスタイルシートは `pages/_app.js` のみに制限されていました。
+`app` ディレクトリでは、この制限が解除されました。グローバルスタイルはどのレイアウト、ページ、コンポーネントにも追加できます。
 
 - [CSS Modules](/docs/app-router/building-your-application/styling/css-modules)
 - [Tailwind CSS](/docs/app-router/building-your-application/styling/tailwind-css)
-- [Global Styles](/docs/app-router/building-your-application/styling/css-modules#global-styles)
+- [Global Styles](/docs/app-router/building-your-application/styling/css-modules#グローバルスタイル)
 - [CSS-in-JS](/docs/app-router/building-your-application/styling/css-in-js)
-- [External Stylesheets](/docs/app-router/building-your-application/styling/css-modules#external-stylesheets)
+- [External Stylesheets](/docs/app-router/building-your-application/styling/css-modules#外部スタイルシート)
 - [Sass](/docs/app-router/building-your-application/styling/sass)
 
 #### Tailwind CSS
 
-If you're using Tailwind CSS, you'll need to add the `app` directory to your `tailwind.config.js` file:
+Tailwind CSS を使用している場合は、`tailwind.config.js` ファイルに `app` ディレクトリを追加する必要があります:
 
 ```js title="tailwind.config.js"
 module.exports = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}', // <-- Add this line
+    './app/**/*.{js,ts,jsx,tsx,mdx}', // <-- この行を追加する
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
   ],
 }
 ```
 
-You'll also need to import your global styles in your `app/layout.js` file:
+また、`app/layout.js` ファイルでグローバルスタイルをインポートする必要があります:
 
 ```jsx title="app/layout.js"
 import '../styles/globals.css'
@@ -772,7 +788,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-Learn more about [styling with Tailwind CSS](/docs/app-router/building-your-application/styling/tailwind-css)
+[Tailwind CSSを使ったスタイリング](/docs/app-router/building-your-application/styling/tailwind-css)の詳細を学ぶ
 
 ## Codemods
 
