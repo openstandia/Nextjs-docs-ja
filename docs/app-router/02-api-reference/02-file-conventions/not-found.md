@@ -1,7 +1,7 @@
 ---
 title: not-found.js
 description: API reference for the not-found.js file.
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 **not-found**ファイルは、ルート Segment 内で[`notFound`](/docs/app-router/api-reference/functions/not-found)関数がスローされたときに UI をレンダリングするために使用されます。カスタム UI を提供すると同時に、Next.js はストリーミングされたレスポンスには`200` HTTP ステータスを返し、ストリーミングされていないレスポンスには`404` HTTP ステータスコードを返します。
