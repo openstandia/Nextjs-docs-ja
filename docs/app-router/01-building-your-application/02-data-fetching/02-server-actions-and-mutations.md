@@ -622,7 +622,7 @@ Server Actionsは裏では`POST`メソッドを使用し、`POST`メソッドの
 
 追加の保護として、Next.jsのServer Actionsは[Originヘッダー](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin)と[Hostヘッダー](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host)（または`X-Forwarded-Host`）を比較します。これらが一致しない場合、リクエストは中止されます。言い換えれば、Server Actionsはそれをホストするページと同じホストでのみ呼び出すことができます。
 
-リバースプロキシやマルチレイヤーのバックエンドアーキテクチャ（サーバーAPIがプロダクションドメインと異なる場合）を使用する大規模なアプリケーションの場合、[`serverActions.allowedOrigins`](/docs/app-router/api-reference/next-config-js/server-actions)オプションを使用して安全なオリジンのリストを指定することがお勧めです。このオプションは文字列の配列を受け入れます。
+リバースプロキシやマルチレイヤーのバックエンドアーキテクチャ（サーバーAPIがプロダクションドメインと異なる場合）を使用する大規模なアプリケーションの場合、[`serverActions.allowedOrigins`](/docs/app-router/api-reference/next-config-js/serverActions)オプションを使用して安全なオリジンのリストを指定することがお勧めです。このオプションは文字列の配列を受け入れます。
 
 ```js title="next.config.js"
 /** @type {import('next').NextConfig} */

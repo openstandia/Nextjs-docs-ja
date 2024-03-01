@@ -1,6 +1,7 @@
 ---
 title: <Image>
 description: Optimize Images in your Next.js Application using the built-in `next/image` Component.
+sidebar_position: 2
 ---
 
 <details>
