@@ -6,19 +6,19 @@ description: 既存の Next.js アプリケーションを Pages Router から A
 
 このガイドは以下の状況において役立つでしょう:
 
-- [Next.js アプリケーションをバージョン 12 からバージョン 13 にアップデートする](#nextjs-version)
-- [Upgrade features that work in both the `pages` and the `app` directories](#upgrading-new-features)
-- [Incrementally migrate your existing application from `pages` to `app`](#migrating-from-pages-to-app)
+- [Next.js アプリケーションをバージョン 12 からバージョン 13 にアップデート](#nextjs-バージョン)
+- [`pages` と `app` の両方のディレクトリで機能するアップグレード機能](#新機能のアップグレード)
+- [既存のアプリケーションを `pages` から`app` に段階的に移行](#pages-から-app-への移行)
 
 ## アップグレード
 
 ### Node.js バージョン
 
-The minimum Node.js version is now **v18.17**. See the [Node.js documentation](https://nodejs.org/docs/latest-v18.x/api/) for more information.
+Node.js の最小バージョンは **v18.17** になりました。詳しくは [Node.js のドキュメント](https://nodejs.org/docs/latest-v18.x/api/)をご覧ください。
 
 ### Next.js バージョン
 
-To update to Next.js version 13, run the following command using your preferred package manager:
+Next.js バージョン 13 にアップデートするには、お好みのパッケージマネージャを使用して次のコマンドを実行してください:
 
 ```bash title="Terminal"
 npm install next@latest react@latest react-dom@latest
@@ -26,75 +26,94 @@ npm install next@latest react@latest react-dom@latest
 
 ### ESLint バージョン
 
-If you're using ESLint, you need to upgrade your ESLint version:
+ESLint を使用している場合は、ESLint のバージョンをアップグレードする必要があります:
 
 ```bash title="Terminal"
 npm install -D eslint-config-next@latest
 ```
 
-> **Good to know**: You may need to restart the ESLint server in VS Code for the ESLint changes to take effect. Open the Command Palette (`cmd+shift+p` on Mac; `ctrl+shift+p` on Windows) and search for `ESLint: Restart ESLint Server`.
+> **Good to know**: ESLint の変更を有効にするために、VS Code で ESLint サーバを再起動する必要がある可能性があります。
+> コマンドパレット（Mac では `cmd+shift+p`、Windows では `ctrl+shift+p` ）を開き、`ESLint: Restart ESLint Server` を検索し、ESLint サーバを再起動します。
 
 ## 次のステップ
 
-After you've updated, see the following sections for next steps:
+アップデートが完了したら、次のステップをご覧ください:
 
-- [Upgrade new features](#upgrading-new-features): A guide to help you upgrade to new features such as the improved Image and Link Components.
-- [Migrate from the `pages` to `app` directory](#migrating-from-pages-to-app): A step-by-step guide to help you incrementally migrate from the `pages` to the `app` directory.
+- [新機能のアップグレード](#新機能のアップグレード): 改良された Image コンポーネントや Link コンポーネントなど、新機能へのアップグレードに役立つガイドです。
+- [`pages` から `app` ディレクトリに移行](#pages-から-app-への移行): `pages` から `app` ディレクトリへ段階的に移行するためのステップバイステップなガイドです。
 
 ## 新機能のアップグレード
 
-Next.js 13 introduced the new [App Router](/docs/app-router/building-your-application/routing) with new features and conventions. The new Router is available in the `app` directory and co-exists with the `pages` directory.
+Next.js 13 では、新しい機能と規約を備えた新しい [App Router](/docs/app-router/building-your-application/routing) が導入されました。
+新しいルーターは `app` ディレクトリとして利用でき、`pages` ディレクトリと共存します。
 
-Upgrading to Next.js 13 does **not** require using the new [App Router](/docs/app-router/building-your-application/routing#the-app-router). You can continue using `pages` with new features that work in both directories, such as the updated [Image component](#image-component), [Link component](#link-component), [Script component](#script-component), and [Font optimization](#font-optimization).
+Next.js 13 にアップグレードしても新しい [App Router](/docs/app-router/building-your-application/routing#app-router) を使う必要は **ありません**。
+更新された [Image コンポーネント](#image-コンポーネント)、[Link コンポーネント](#link-コンポーネント)、[Script コンポーネント](#script-コンポーネント)、[Font 最適化](#font-最適化)など、両方のディレクトリで動作する新機能を持つ `pages` を引き続き使用できます。
 
 ### `<Image/>` コンポーネント
 
-Next.js 12 introduced new improvements to the Image Component with a temporary import: `next/future/image`. These improvements included less client-side JavaScript, easier ways to extend and style images, better accessibility, and native browser lazy loading.
+Next.js 12 では、一時的なインポート（`next/future/image`）により、Image コンポーネントに新たな改良が加えられました。
+これらの改善点には、クライアントサイド JavaScript の削減、画像の拡張とスタイル設定の容易化、アクセシビリティの向上、ネイティブブラウザの遅延ロードなどが含まれます。
 
-In version 13, this new behavior is now the default for `next/image`.
+バージョン 13 では、この新しい動作が `next/image` のデフォルトになりました。
 
-There are two codemods to help you migrate to the new Image Component:
+新しい Image コンポーネントへの移行を支援する 2 つの Codemod があります:
 
-- [**`next-image-to-legacy-image` codemod**](/docs/app-router/building-your-application/upgrading/codemods#next-image-to-legacy-image): Safely and automatically renames `next/image` imports to `next/legacy/image`. Existing components will maintain the same behavior.
-- [**`next-image-experimental` codemod**](/docs/app-router/building-your-application/upgrading/codemods#next-image-experimental): Dangerously adds inline styles and removes unused props. This will change the behavior of existing components to match the new defaults. To use this codemod, you need to run the `next-image-to-legacy-image` codemod first.
+- [**`next-image-to-legacy-image` codemod**](/docs/app-router/building-your-application/upgrading/codemods#next-image-to-legacy-image): `next/image` インポートの名前を `next/legacy/image` 安全かつ自動的に変更します。既存のコンポーネントは同じ動作を維持します。
+- [**`next-image-experimental` codemod**](/docs/app-router/building-your-application/upgrading/codemods#next-image-experimental): 危険なインラインスタイルを追加し、未使用の prop を削除します。これにより、既存のコンポーネントの動作が新しいデフォルトに合わせて変更されます。この codemod を使用するには、まず `next-image-to-legacy-image` codemod を実行する必要があります。
 
 ### `<Link>` コンポーネント
 
 The [`<Link>` Component](/docs/app-router/building-your-application/routing/linking-and-navigating#link-component) no longer requires manually adding an `<a>` tag as a child. This behavior was added as an experimental option in [version 12.2](https://nextjs.org/blog/next-12-2) and is now the default. In Next.js 13, `<Link>` always renders `<a>` and allows you to forward props to the underlying tag.
 
-For example:
+[`<Link>` コンポーネント](/docs/app-router/building-your-application/routing/linking-and-navigating#link-コンポーネント)は、手動で `<a>` タグを子として追加する必要がなくなりました。
+この動作はバージョン 12.2 で実験的なオプションとして追加されたもので、現在はデフォルトになっています。
+Next.js 13 では、`<Link>` は常に `<a>` をレンダリングし、その下にあるタグに prop を転送することができます。
+
+例えば:
 
 ```jsx
 import Link from 'next/link'
 
-// Next.js 12: `<a>` has to be nested otherwise it's excluded
+// Next.js 12: `<a>` がネストされていない場合は除外されます。
 <Link href="/about">
   <a>About</a>
 </Link>
 
-// Next.js 13: `<Link>` always renders `<a>` under the hood
+// Next.js 13: `<Link>` は常に `<a>` を内部でレンダリングします。
 <Link href="/about">
   About
 </Link>
 ```
 
-To upgrade your links to Next.js 13, you can use the [`new-link` codemod](/docs/app-router/building-your-application/upgrading/codemods#new-link).
+リンクを Next.js 13 にアップグレードするには、[`new-link` codemod](/docs/app-router/building-your-application/upgrading/codemods#new-link) を使用します。
 
 ### `<Script>` コンポーネント
 
-The behavior of [`next/script`](/docs/app-router/api-reference/components/script) has been updated to support both `pages` and `app`, but some changes need to be made to ensure a smooth migration:
+[`next/script`](/docs/app-router/api-reference/components/script) の動作は、`pages` と `app` の両方をサポートするように更新されましたが、
+スムーズな移行を確実にするためにいくつかの変更が必要です:
 
-- Move any `beforeInteractive` scripts you previously included in `_document.js` to the root layout file (`app/layout.tsx`).
-- The experimental `worker` strategy does not yet work in `app` and scripts denoted with this strategy will either have to be removed or modified to use a different strategy (e.g. `lazyOnload`).
-- `onLoad`, `onReady`, and `onError` handlers will not work in Server Components so make sure to move them to a [Client Component](/docs/app-router/building-your-application/rendering/server-components) or remove them altogether.
+- 以前 `_document.js` に含めていた `beforeInteractive` スクリプトを、ルートレイアウトファイル（`app/layout.tsx`）に移動してください。
+- 実験的な `worker` ストラテジーはまだ `app` では動作しないため、このストラテジーで示されたスクリプトは削除するか、別のストラテジー（`lazyOnload` など）を使用するように修正する必要があります。
+- `onLoad`、`onReady`、`onError` ハンドラは Server Components では動作しませんので、必ず [Client Components](/docs/app-router/building-your-application/rendering/client-components) に移動するか、完全に削除してください。
 
-### フォント最適化
+### Font 最適化
 
-Previously, Next.js helped you optimize fonts by [inlining font CSS](/docs/app-router/building-your-application/optimizing/fonts). Version 13 introduces the new [`next/font`](/docs/app-router/building-your-application/optimizing/fonts) module which gives you the ability to customize your font loading experience while still ensuring great performance and privacy. `next/font` is supported in both the `pages` and `app` directories.
+Previously, Next.js helped you optimize fonts by [inlining font CSS](/docs/app-router/building-your-application/optimizing/fonts).
+Version 13 introduces the new [`next/font`](/docs/app-router/building-your-application/optimizing/fonts) module which gives you the ability to customize your font loading experience while still ensuring great performance and privacy. `next/font` is supported in both the `pages` and `app` directories.
 
 While [inlining CSS](/docs/app-router/building-your-application/optimizing/fonts) still works in `pages`, it does not work in `app`. You should use [`next/font`](/docs/app-router/building-your-application/optimizing/fonts) instead.
 
 See the [Font Optimization](/docs/app-router/building-your-application/optimizing/fonts) page to learn how to use `next/font`.
+
+以前の Next.js では、[Font CSS をインライン化する](/docs/app-router/building-your-application/optimizing/fonts) ことで Font の最適化をサポートしていました。
+バージョン 13 では、新しい [`next/font`](/docs/app-router/building-your-application/optimizing/fonts) モジュールが導入され、優れたパフォーマンスとプライバシーを確保しながら、Font の読み込み体験をカスタマイズできるようになりました。
+`next/font` は、`pages` と `app`の両方のディレクトリでサポートされています。
+
+[CSS のインライン化](/docs/app-router/building-your-application/optimizing/fonts)は `pages` ではまだ機能しますが、`app` では機能しません。
+代わりに `next/font` を使用してください。
+
+`next/font` の使用方法については、[Font 最適化](/docs/app-router/building-your-application/optimizing/fonts)ページを参照してください。
 
 ## `pages` から `app` への移行
 
@@ -117,24 +136,25 @@ We recommend reducing the combined complexity of these updates by breaking down 
 - `pages/404.js` has been replaced with the [`not-found.js`](/docs/app-router/api-reference/file-conventions/not-found) file.
 - `pages/api/*` API Routes have been replaced with the [`route.js`](/docs/app-router/api-reference/file-conventions/route) (Route Handler) special file.
 
-### 手順 1: `app` ディレクトリの作成
+### ステップ 1: `app` ディレクトリの作成
 
-Update to the latest Next.js version (requires 13.4 or greater):
+Next.js の最新バージョン（13.4以上が必要）にアップデートします:
 
 ```bash
 npm install next@latest
 ```
 
-Then, create a new `app` directory at the root of your project (or `src/` directory).
+次に、プロジェクトのルート（または `src/` ディレクトリ）に新しい `app` ディレクトリを作成します。
 
-### 手順 2: ルートレイアウトの作成
+### ステップ 2: ルートレイアウトの作成
 
-Create a new `app/layout.tsx` file inside the `app` directory. This is a [root layout](/docs/app-router/building-your-application/routing/pages-and-layouts#root-layout-required) that will apply to all routes inside `app`.
+`app` ディレクトリ内に新しい `app/layout.tsx` ファイルを作成します。
+これは、`app` 内のすべてのルートに適用される[ルートレイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#ルートレイアウト-必須)です。
 
 ```tsx title="app/layout.tsx"
 export default function RootLayout({
-  // Layouts must accept a children prop.
-  // This will be populated with nested layouts or pages
+  // Layouts は children prop を受け入れなければなりません
+  // これはネストされたレイアウトやページで構成されます
   children,
 }: {
   children: React.ReactNode
@@ -147,12 +167,12 @@ export default function RootLayout({
 }
 ```
 
-- The `app` directory **must** include a root layout.
-- The root layout must define `<html>`, and `<body>` tags since Next.js does not automatically create them
-- The root layout replaces the `pages/_app.tsx` and `pages/_document.tsx` files.
-- `.js`, `.jsx`, or `.tsx` extensions can be used for layout files.
+- `app` ディレクトリにはルートレイアウトを含める **必要があります**。
+- Next.js は `<html>` タグと `<body>` タグを自動的に作成しないため、ルートレイアウトには `<html>` タグと `<body>` タグを定義する必要があります。
+- ルートレイアウトは `pages/_app.tsx` と `pages/_document.tsx` ファイルを置き換えます。
+- レイアウトファイルには `.js`、`.jsx`、`.tsx` の拡張子を使用できます。
 
-To manage `<head>` HTML elements, you can use the [built-in SEO support](/docs/app-router/building-your-application/optimizing/metadata):
+`<head>` HTML 要素を管理するには、[組み込みの SEO サポート](/docs/app-router/building-your-application/optimizing/metadata)を使用できます:
 
 ```tsx title="app/layout.tsx"
 import { Metadata } from 'next'
@@ -165,16 +185,19 @@ export const metadata: Metadata = {
 
 #### `_document.js` と `_app.js` の移行
 
-If you have an existing `_app` or `_document` file, you can copy the contents (e.g. global styles) to the root layout (`app/layout.tsx`). Styles in `app/layout.tsx` will _not_ apply to `pages/*`. You should keep `_app`/`_document` while migrating to prevent your `pages/*` routes from breaking. Once fully migrated, you can then safely delete them.
+既存の `_app` または `_document` ファイルがある場合、その内容（グローバルスタイルなど）をルートレイアウト（`app/layout.tsx`）にコピーできます。
+`app/layout.tsx` のスタイルは、`pages/*` には適用 _されません_。`pages/*` のルートが壊れるのを防ぐため、移行中は`_app`/`_document` を維持する必要があります。
+完全に移行したら、安全に削除できます。
 
-If you are using any React Context providers, they will need to be moved to a [Client Component](/docs/app-router/building-your-application/rendering/client-components).
+React Context プロバイダーを使用している場合は、[Client Component](/docs/app-router/building-your-application/rendering/client-components) に移動する必要があります。
 
 #### `getLayout()` パターンのレイアウトへの移行（任意）
 
-Next.js recommended adding a [property to Page components](/docs/pages/building-your-application/routing/pages-and-layouts#layout-pattern#per-page-layouts) to achieve per-page layouts in the `pages` directory. This pattern can be replaced with native support for [nested layouts](/docs/app-router/building-your-application/routing/pages-and-layouts#layouts) in the `app` directory.
+Next.js では、`pages` ディレクトリでページごとのレイアウトを実現するために、[Page コンポーネントにプロパティ](https://nextjs.org/docs/pages/building-your-application/routing/pages-and-layouts#layout-pattern#per-page-layouts)を追加することを推奨しています。
+このパターンは、`app` ディレクトリの[ネストされたレイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#レイアウト)のネイティブサポートに置き換えることができます。
 
 <details>
-  <summary>See before and after example</summary>
+  <summary>before と after の例を見る</summary>
 
 **Before**
 
@@ -203,7 +226,7 @@ Page.getLayout = function getLayout(page) {
 
 **After**
 
-- Remove the `Page.getLayout` property from `pages/dashboard/index.js` and follow the [steps for migrating pages](#step-4-migrating-pages) to the `app` directory.
+- `pages/dashboard/index.js` から `Page.getLayout` プロパティを削除し、`app` ディレクトリに[ページを移行する手順](#ステップ-4-ページの移行)に従ってください。
 
   ```jsx title="app/dashboard/page.js"
   export default function Page() {
@@ -211,12 +234,12 @@ Page.getLayout = function getLayout(page) {
   }
   ```
 
-- Move the contents of `DashboardLayout` into a new [Client Component](/docs/app-router/building-your-application/rendering/client-components) to retain `pages` directory behavior.
+- `DashboardLayout` の内容を新しい [Client Component](/docs/app-router/building-your-application/rendering/client-components) に移動し、`pages` ディレクトリの動作を保持します。
 
   ```jsx title="app/dashboard/DashboardLayout.js"
-  'use client' // this directive should be at top of the file, before any imports.
+  'use client' // このディレクティブはファイルの一番上、インポートの前に置かなければなりません
 
-  // This is a Client Component
+  // これは Client Component です
   export default function DashboardLayout({ children }) {
     return (
       <div>
@@ -227,22 +250,22 @@ Page.getLayout = function getLayout(page) {
   }
   ```
 
-- Import the `DashboardLayout` into a new `layout.js` file inside the `app` directory.
+- `DashboardLayout` を `app` ディレクトリ内の新しい `layout.js` ファイルにインポートします。
 
   ```jsx title="app/dashboard/layout.js"
   import DashboardLayout from './DashboardLayout'
 
-  // This is a Server Component
+  // これは Server Component です
   export default function Layout({ children }) {
     return <DashboardLayout>{children}</DashboardLayout>
   }
   ```
 
-- You can incrementally move non-interactive parts of `DashboardLayout.js` (Client Component) into `layout.js` (Server Component) to reduce the amount of component JavaScript you send to the client.
+- `DashboardLayout.js`（Client Component）のインタラクティブでない部分を少しずつ `layout.js`（Server Component）に移動することで、クライアントに送信するコンポーネント JavaScript の量を減らすことができます。
 
 </details>
 
-### 手順 3: `next/head` の移行
+### ステップ 3: `next/head` の移行
 
 In the `pages` directory, the `next/head` React component is used to manage `<head>` HTML elements such as `title` and `meta` . In the `app` directory, `next/head` is replaced with the new [built-in SEO support](/docs/app-router/building-your-application/optimizing/metadata).
 
@@ -278,7 +301,7 @@ export default function Page() {
 
 [See all metadata options](/docs/app-router/api-reference/functions/generate-metadata).
 
-### 手順 4: ページの移行
+### ステップ 4: ページの移行
 
 - Pages in the [`app` directory](/docs/app-router/building-your-application/routing) are [Server Components](/docs/app-router/building-your-application/rendering/server-components) by default. This is different from the `pages` directory where pages are [Client Components](/docs/app-router/building-your-application/rendering/client-components).
 - [Data fetching](/docs/app-router/building-your-application/data-fetching) has changed in `app`. `getServerSideProps`, `getStaticProps` and `getInitialProps` have been replaced with a simpler API.
@@ -346,7 +369,7 @@ export default function HomePage({ recentPosts }) {
 - If your previous page used `useRouter`, you'll need to update to the new routing hooks. [Learn more](/docs/app-router/api-reference/functions/use-router).
 - Start your development server and visit [`http://localhost:3000`](http://localhost:3000). You should see your existing index route, now served through the app directory.
 
-### 手順 5: ルーティングフックの移行
+### ステップ 5: ルーティングフックの移行
 
 A new router has been added to support the new behavior in the `app` directory.
 
@@ -383,7 +406,7 @@ In addition, the new `useRouter` hook has the following changes:
 
 [View the `useRouter()` API reference](/docs/app-router/api-reference/functions/use-router).
 
-### 手順 6: データフェッチメソッドの移行
+### ステップ 6: データフェッチメソッドの移行
 
 The `pages` directory uses `getServerSideProps` and `getStaticProps` to fetch data for pages. Inside the `app` directory, these previous data fetching functions are replaced with a [simpler API](/docs/app-router/building-your-application/data-fetching) built on top of `fetch()` and `async` React Server Components.
 
@@ -710,7 +733,7 @@ export async function GET(request: Request) {}
 
 > **Good to know**: If you previously used API routes to call an external API from the client, you can now use [Server Components](/docs/app-router/building-your-application/rendering/server-components) instead to securely fetch data. Learn more about [data fetching](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating).
 
-### 手順 7: スタイリング
+### ステップ 7: スタイリング
 
 In the `pages` directory, global stylesheets are restricted to only `pages/_app.js`. With the `app` directory, this restriction has been lifted. Global styles can be added to any layout, page, or component.
 
@@ -753,4 +776,4 @@ Learn more about [styling with Tailwind CSS](/docs/app-router/building-your-appl
 
 ## Codemods
 
-Next.js provides Codemod transformations to help upgrade your codebase when a feature is deprecated. See [Codemods](/docs/app-router/building-your-application/upgrading/codemods) for more information.
+Next.js は、機能が非推奨になったときにコードベースをアップグレードするのに役立つ Codemod 変換を提供します。詳しくは [Codemods](/docs/app-router/building-your-application/upgrading/codemods) をご覧ください。
