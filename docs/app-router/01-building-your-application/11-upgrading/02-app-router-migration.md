@@ -377,7 +377,7 @@ export default function HomePage({ recentPosts }) {
 アプリでは、`next/navigation` からインポートされた 3 つの新しいフック、[`useRouter()`](/docs/app-router/api-reference/functions/use-router)、[`usePathname()`](/docs/app-router/api-reference/functions/use-pathname)、[`useSearchParams()`](/docs/app-router/api-reference/functions/use-search-params) を使用する必要があります。
 
 - 新しい `useRouter` フックは `next/navigation` からインポートされ、`next/router` からインポートされる `pages` の `useRouter` フックとは動作が異なります。
-  - [`next/router` からインポートされた `useRouter`フック](/docs/pages/api-reference/functions/use-router)は、`app` ディレクトリではサポートされていませんが、`pages` ディレクトリでは引き続き使用できます。
+  - [`next/router` からインポートされた `useRouter`フック](https://nextjs.org/docs/pages/api-reference/functions/use-router)は、`app` ディレクトリではサポートされていませんが、`pages` ディレクトリでは引き続き使用できます。
 - 新しい `useRouter` は `pathname` 文字列を返しません。代わりに別の `usePathname` フックを使ってください。
 - 新しい `useRouter` は `query` オブジェクトを返しません。代わりに別の `useSearchParams` フックを使ってください。
 - `useSearchParams` と `usePathname` を一緒に使うことで、ページの変更を監視することができます。詳細は[ルーターイベント](/docs/app-router/api-reference/functions/use-router#router-events)のセクションを参照してください。
