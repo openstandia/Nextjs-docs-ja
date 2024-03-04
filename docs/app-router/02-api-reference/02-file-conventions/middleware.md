@@ -5,6 +5,7 @@ related:
   title: ミドルウェアについてさらに学ぶ
   links:
     - app-router/building-your-application/routing/middleware
+sidebar_position: 6
 ---
 
 `middleware.js|ts` ファイルは [Middleware](/docs/app-router/building-your-application/routing/middleware) を記述し、リクエストが完了する前にサーバー上でコードを実行するために使用されます。次にリクエストに基づいて、リライト、リダイレクト、リクエストまたはレスポンスヘッダーの変更、または直接返信することにより、レスポンスを変更できます。
