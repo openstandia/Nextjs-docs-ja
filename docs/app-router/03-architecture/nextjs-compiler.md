@@ -3,11 +3,11 @@ title: Next.js コンパイラ
 description: Rust で書かれた Next.js コンパイラは Next.jsアプリケーションを変換し最小化します
 ---
 
-[SWC](https://swc.rs/) を使って Rust で書かれた Next.js コンパイラは、Next.js が JavaScript コードを変換し、最小化することを可能にします。
+[SWC](https://swc.rs/) を使って Rust で書かれた Next.jsコンパイラは、本番用に Next.js を JavaScriptコードに変換し、最小化することを可能にします。
 これは、個々のファイルのための Babel と、出力バンドルのミニ化のための Terser を置き換えるものです。
 
 Next.js コンパイラを使ったコンパイルは Babel の 17 倍速く、Next.js バージョン 12 からデフォルトで有効になっています。
-既存の Babel コンフィギュレーションがある場合、または[サポートされていない機能](#サポートされていない機能)を使用している場合、アプリケーションは Next.js コンパイラをオプトアウトし、引き続き Babel を使用します。
+既存の Babel 設定がある場合、または[サポートされていない機能](#サポートされていない機能)を使用している場合、アプリケーションは Next.js コンパイラをオプトアウトし、引き続き Babel を使用します。
 
 ## なぜ SWC なのか
 
@@ -20,7 +20,7 @@ SWC は、コード変換（組み込みまたはカスタム）を実行する�
 私たちが SWC を選んだ理由はいくつかあります:
 
 - **拡張性**: SWC は、ライブラリをフォークしたり、設計上の制約を回避したりすることなく、Next.js の内部で Crate として使用できます。
-- **パフォーマンス**: SWC に切り替えることで、Next.js の ファストリフレッシュを～3倍、ビルドを～5倍高速化することができました。
+- **パフォーマンス**: SWC に切り替えることで、Next.js の ファストリフレッシュを～3倍、ビルドを～5倍高速化することができ、まだ最適化の余地があります。
 - **WebAssembly**: Rust の WASM サポートは、あらゆるプラットフォームをサポートし、Next.js の開発をあらゆる場所で行うために不可欠です。
 - **コミュニティ**: Rust のコミュニティとエコシステムは素晴らしく、今も成長を続けています。
 
@@ -83,8 +83,8 @@ Next.js コンパイラはテストをトランスパイルし、Jest と Next.j
 - SWCを使った `transform` の自動セットアップ
 - `.env` (およびすべての variants ) を `process.env` にロード
 - テストの解決とトランスフォームから `node_modules` を無視
-- テスト解決から `.next` を無視
-- 実験的なSWCトランスフォームを有効にするフラグの `next.config.js` を読込
+- テストの解決から `.next` を無視
+- 実験的なSWCトランスフォームを有効にするフラグを `next.config.js` から読込
 
 まず、`npm install next@latest` で Next.js を最新バージョンにアップデートします。次に、`jest.config.js` ファイルを更新します:
 
@@ -127,7 +127,7 @@ module.exports = {
 
 JSX プロパティを削除できるようにします。これはテストによく使われます。`babel-plugin-react-remove-properties` に似ています。
 
-デフォルトの正規表現 `^data-test` にマッチするプロパティを削除します:
+デフォルトの正規表現 `^data-test` にマッチするプロパティを削除するには、以下のように設定します:
 
 ```js title="next.config.js"
 module.exports = {
@@ -142,8 +142,8 @@ module.exports = {
 ```js title="next.config.js"
 module.exports = {
   compiler: {
-    // ここで定義された正規表現は Rust で処理されるため、以下の構文とは異なります。
-    // JavaScriptの `RegExp`s とは構文が異なります。https://docs.rs/regex を参照してください。
+    // ここで定義された正規表現は Rust で処理されます。
+    // JavaScriptの `RegExp` とは構文が異なります。https://docs.rs/regex を参照してください。
     reactRemoveProperties: { properties: ['^data-custom$'] },
   },
 }
@@ -277,7 +277,7 @@ module.exports = {
 
 ### SWC トレースプロファイリング
 
-SWC の内部変換トレースを Chromium の[トレースイベントフォーマット]((https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview?mode=html#%21=)として生成することができます。
+SWC の内部変換トレースを Chromium の[トレースイベントフォーマット](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview?mode=html#%21=)として生成することができます。
 
 ```js title="next.config.js"
 module.exports = {
@@ -311,7 +311,7 @@ module.exports = {
 
 `swcPlugins` はプラグインを設定するためのタプルの配列を受け付けます。
 プラグインのタプルはプラグインへのパスとプラグイン設定のためのオブジェクトを含みます。
-プラグインへのパスは npm モジュールパッケージ名か、.wasm バイナリ自身への絶対パスです。
+プラグインへのパスは npm モジュールパッケージ名か、`.wasm` バイナリ自身への絶対パスです。
 
 ## サポートされていない機能
 
