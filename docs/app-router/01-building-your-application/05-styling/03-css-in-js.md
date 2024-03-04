@@ -8,6 +8,7 @@ description: Next.js で CSS-in-JS ライブラリを使用する
 > 現在 Next.js チームは React Server Components とストリーミングアーキテクチャをサポートする CSS と JavaScript アセットを扱うための上流の API について、React チームと協力して作業しています。
 
 `app` ディレクトリ内の Client Components で以下のライブラリがサポートされています（アルファベット順）:
+
 - [`chakra-ui`](https://chakra-ui.com/getting-started/nextjs-app-guide)
 - [`kuma-ui`](https://kuma-ui.com)
 - [`@mui/material`](https://mui.com/material-ui/guides/next-js-app-router/)
@@ -20,6 +21,7 @@ description: Next.js で CSS-in-JS ライブラリを使用する
 - [`vanilla-extract`](https://vanilla-extract.style)
 
 現在対応を進めているライブラリ:
+
 - [`emotion`](https://github.com/emotion-js/emotion/issues/2928)
 
 > Good to know: 様々な CSS-in-JS ライブラリを試し、React 18 の機能や `app` ディレクトリをサポートするライブラリについて、さらに多くの例を追加する予定です。
@@ -50,7 +52,7 @@ export default function StyledJsxRegistry({
 }: {
   children: React.ReactNode
 }) {
-	// lazy な初期状態で、一度だけスタイルシートを作成する
+  // lazy な初期状態で、一度だけスタイルシートを作成する
   // 参考: https://reactjs.org/docs/hooks-reference.html#lazy-initial-state
   const [jsxStyleRegistry] = useState(() => createStyleRegistry())
 
@@ -114,7 +116,7 @@ export default function StyledComponentsRegistry({
 }: {
   children: React.ReactNode
 }) {
-	// lazy な初期状態で、一度だけスタイルシートを作成する
+  // lazy な初期状態で、一度だけスタイルシートを作成する
   // 参考: https://reactjs.org/docs/hooks-reference.html#lazy-initial-state
   const [styledComponentsStyleSheet] = useState(() => new ServerStyleSheet())
 
@@ -161,4 +163,4 @@ export default function RootLayout({
 > - サーバーレンダリング中には、スタイルがグローバルレジストリに抽出され、HTML の `<head>` にフラッシュされます。これにより、スタイルルールがそれらを使用する可能性のあるあらゆるコンテンツの前に配置されることが保証されます。将来的には、スタイルをどこに注入するかを決定するために、React の今後の機能を使用することがあります。
 > - ストリーミング時には、各チャンクからのスタイルが収集され、既存のスタイルに追加されます。クライアントサイドのハイドレーションが完了すると、`styled-components` は通常どおりに引き継ぎ、さらなる動的スタイルを注入します。
 > - スタイルレジストリのために、ツリーの最上位に Client Component を特に使用するのは、この方法で CSS ルールを抽出するほうが効率的だからです。これにより、後続のサーバーレンダリング時にスタイルの再生成を回避し、Server Component のペイロードでそれらが送信されるのを防ぎます。
-> - styled-components のコンパイルで個々のプロパティを設定する必要がある高度なユースケースに対して、[Next.js styled-components API リファレンス](/docs/architecture/nextjs-compiler#styled-components) で詳しく学ぶことができます。
+> - styled-components のコンパイルで個々のプロパティを設定する必要がある高度なユースケースに対して、[Next.js styled-components API リファレンス](/docs/app-router/architecture/nextjs-compiler#styled-components) で詳しく学ぶことができます。
