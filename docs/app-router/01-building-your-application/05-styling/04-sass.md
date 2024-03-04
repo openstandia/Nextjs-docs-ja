@@ -13,7 +13,7 @@ npm install --save-dev sass
 
 > **Good to know**:
 >
-> Sass は2種類の異なる構文をサポートしており、それぞれが独自の拡張子を持っています。
+> Sass は[2種類の異なる構文](https://sass-lang.com/documentation/syntax)をサポートしており、それぞれが独自の拡張子を持っています。
 > `.scss` 拡張子では [SCSS構文](https://sass-lang.com/documentation/syntax#scss) を利用する必要があり、
 > 一方で `.sass` 拡張子では [インデント構文 ("Sass")](https://sass-lang.com/documentation/syntax#the-indented-syntax) を利用する必要があります。
 >
