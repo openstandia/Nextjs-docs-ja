@@ -1,6 +1,6 @@
 ---
 title: Middleware
-description: Learn how to use Middleware to run code before a request is completed.
+description: リクエストが完了する前に、Middleware を使用してコードを実行する方法を学びましょう。
 ---
 
 Middleware を使うと、リクエストが完了する前にコードを実行できます。そして、送られてきたリクエストに基づいて、レスポンスを書き換えたり、リダイレクトしたり、リクエストやレスポンスのヘッダーを変更したり、直接レスポンスしたりすることで、レスポンスを変更できます。

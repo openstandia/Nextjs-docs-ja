@@ -1,5 +1,5 @@
 ---
-title: API Reference
+title: API リファレンス
 description: Next.js API Reference for the App Router.
 ---
 

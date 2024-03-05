@@ -1,9 +1,9 @@
 ---
 title: Route Handlers
-description: Create custom request handlers for a given route using the Web's Request and Response APIs.
+description: WebのRequestとResponseのAPIを使用して、指定されたルートのカスタムリクエストハンドラを作成します。
 related:
-  title: API Reference
-  description: Learn more about the route.js file.
+  title: API リファレンス
+  description: route.jsファイルの詳細を学びます。
   links:
     - app-router/api-reference/file-conventions/route
 ---

@@ -3,7 +3,7 @@ title: Font最適化
 nav_title: Fonts
 description: Optimize your application's web fonts with the built-in `next/font` loaders.
 related:
-  title: API Reference
+  title: API リファレンス
   description: Learn more about the next/font API.
   links:
     - app-router/api-reference/components/font

@@ -1,6 +1,6 @@
 ---
 title: 国際化
-description: Add support for multiple languages with internationalized routing and localized content.
+description: 複数の言語をサポートし、国際化されたルーティングとローカライズされたコンテンツを追加してください。
 ---
 
 Next.js では、多言語に対応したコンテンツのルーティングやレンダリングを設定できます。サイトを異なるロケールに適応させるには、翻訳されたコンテンツ（ローカライズ）と国際化されたルーティングが必要です。

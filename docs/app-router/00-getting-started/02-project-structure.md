@@ -1,7 +1,7 @@
 ---
 title: Next.jsのプロジェクト構成
 nav_title: Project Structure
-description: A list of folders and files conventions in a Next.js project
+description: Next.js プロジェクトのフォルダとファイル規約のリスト
 ---
 
 このページでは、Next.js プロジェクトのファイルおよびフォルダー構造の概要を説明します。トップレベルのファイルやフォルダ、設定ファイル、そして `app` ディレクトリと `pages` ディレクトリ内のルーティング規約について説明します。

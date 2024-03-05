@@ -3,7 +3,7 @@ title: Script 最適化
 nav_title: Scripts
 description: Optimize 3rd party scripts with the built-in Script component.
 related:
-  title: API Reference
+  title: API リファレンス
   description: Learn more about the next/script API.
   links:
     - app-router/api-reference/components/script
