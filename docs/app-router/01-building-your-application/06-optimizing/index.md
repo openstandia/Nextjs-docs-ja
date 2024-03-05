@@ -1,7 +1,7 @@
 ---
 title: 最適化
 nav_title: Optimizing
-description: Optimize your Next.js application for best performance and user experience.
+description: 最高のパフォーマンスとユーザーエクスペリエンスを実現するために、Next.jsアプリケーションを最適化しましょう。
 ---
 
 Next.js には、アプリケーションの速度と[Core Web Vitals](https://web.dev/vitals/)を向上させるために設計されたさまざまな最適化が組み込まれています。このガイドでは、ユーザーエクスペリエンスを向上させるために活用できる最適化について説明します。

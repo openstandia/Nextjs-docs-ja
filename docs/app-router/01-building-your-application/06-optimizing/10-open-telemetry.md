@@ -1,6 +1,6 @@
 ---
 title: OpenTelemetry
-description: Learn how to instrument your Next.js app with OpenTelemetry.
+description: OpenTelemetryを使用してNext.jsアプリケーションに計測機能を組み込む方法を学びましょう。
 ---
 
 > **Good to know**: この機能は**実験的**なものなので、`next.config.js`で`experimental.instrumentationHook = true;`を指定して、明示的にオプトインする必要があります。

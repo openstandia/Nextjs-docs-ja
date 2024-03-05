@@ -1,7 +1,7 @@
 ---
 title: サーバーとクライアントの構成パターン
 nav_title: 構成パターン
-description: Recommended patterns for using Server and Client Components.
+description: ServerとClientコンポーネントの使用のためのおすすめのパターン
 ---
 
 React アプリケーションを構築する際には、アプリケーションのどの部分をサーバーとクライアントのどちらにレンダリングするかを検討する必要があります。このページでは、Server Component と Client Component を使用する際に推奨される構成パターンをいくつか取り上げます。

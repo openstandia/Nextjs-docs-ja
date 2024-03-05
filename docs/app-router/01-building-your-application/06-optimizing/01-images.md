@@ -1,4 +1,13 @@
-# 画像最適化
+---
+title: 画像最適化
+nav_title: Images
+description: next/imageコンポーネントを使用して、画像を最適化します。
+related:
+  title: API リファレンス
+  description: next/image APIについてさらに詳しく学びましょう。
+  links:
+    - app-router/api-reference/components/image
+---
 
 <details>  
   <summary>例</summary>  

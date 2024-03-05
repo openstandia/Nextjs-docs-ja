@@ -1,6 +1,6 @@
 ---
 title: デプロイ
-description: Learn how to deploy your Next.js app to production, either managed or self-hosted.
+description: Next.jsアプリをプロダクション環境にデプロイする方法を学びましょう。管理された環境またはセルフホスト環境のいずれかを選択することができます。
 ---
 
 おめでとうございます！Next.js アプリケーションをデプロイする準備が整いました。このページでは、[Next.js Build API](#nextjs-build-api) を使ってマネージドまたはセルフホストでデプロイする方法を説明します。

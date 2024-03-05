@@ -1,6 +1,6 @@
 ---
 title: データフェッチ
-description: Learn the fundamentals of data fetching with React and Next.js.
+description: ReactとNext.jsでデータフェッチングの基本を学びましょう。
 ---
 
 - [データのフェッチ、キャッシュ、再検証](https://nextjs.org/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating) Next.js アプリケーションでデータをフェッチ、キャッシュ、再検証する方法を学びます。

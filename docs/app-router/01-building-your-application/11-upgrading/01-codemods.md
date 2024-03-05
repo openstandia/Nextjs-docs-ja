@@ -1,6 +1,6 @@
 ---
 title: Codemods
-description: Use codemods to upgrade your Next.js codebase when new features are released.
+description: Next.jsの新機能がリリースされた際には、codemodsを使用してコードベースをアップグレードしてください。
 ---
 
 Codemods は、コードベース上でプログラム的に実行される変換機能です。これにより、手作業ですべてのファイルに目を通すことなく、プログラムで多くの変更を適用できます。

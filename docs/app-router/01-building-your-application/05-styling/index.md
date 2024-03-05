@@ -1,6 +1,6 @@
 ---
 title: スタイリング
-description: Learn the different ways you can style your Next.js application.
+description: Next.jsアプリケーションのスタイルを変更するさまざまな方法を学びましょう。
 ---
 
 Next.js は、アプリケーションをスタイリングするさまざまな方法をサポートしています：

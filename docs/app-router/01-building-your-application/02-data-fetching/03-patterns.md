@@ -1,6 +1,6 @@
 ---
 title: データのフェッチのパターン
-description: Learn about common data fetching patterns in React and Next.js.
+description: ReactとNext.jsでよく使われるデータ取得パターンについて学びましょう。
 ---
 
 React と Next.js でデータをフェッチするには、いくつかの推奨パターンとベストプラクティスがあります。このページでは、もっとも一般的なパターンとその使い方について説明します。
