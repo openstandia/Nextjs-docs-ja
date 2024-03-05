@@ -1,6 +1,6 @@
 ---
 title: favicon, icon, and apple-icon
-description: API Reference for the Favicon, Icon and Apple Icon file conventions.
+description: Favicon、icon、および Apple icon ファイルの規則に関するAPIリファレンス。
 sidebar_position: 1
 ---
 

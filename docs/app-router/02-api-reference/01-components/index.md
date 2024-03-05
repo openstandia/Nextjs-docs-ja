@@ -1,6 +1,6 @@
 ---
 title: Components
-description: API Reference for Next.js built-in components.
+description: Next.jsの組み込みコンポーネントのAPIリファレンス。
 ---
 
 ## Font

@@ -1,6 +1,6 @@
 ---
 title: images
-description: Custom configuration for the next/image loader
+description: next/image ローダーのカスタム設定
 ---
 
 Next.js ビルトインの画像最適化 API ではなく、クラウドのプロバイダーを使って画像を最適化したい場合は、`next.config.js`で次のように設定します：

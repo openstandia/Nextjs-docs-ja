@@ -1,6 +1,6 @@
 ---
 title: mdxRs
-description: Use the new Rust compiler to compile MDX files in the App Router.
+description: 新しいRustコンパイラを使用して、App Router内のMDXファイルをコンパイルします。
 ---
 
 `@next/mdx`と一緒に使用します。新しい Rust コンパイラを使用して MDX ファイルをコンパイルします。

@@ -1,6 +1,6 @@
 ---
 title: serverComponentsExternalPackages
-description: Opt-out specific dependencies from the Server Components bundling and use native Node.js `require`.
+description: Server Components　のバンドルから特定の依存関係を除外し、ネイティブなNode.jsの require を使用してください。
 ---
 
 [Server Components](/docs/app-router/building-your-application/rendering/server-components)と[Route Handlers](/docs/app-router/building-your-application/routing/route-handlers)の内部で使用される依存関係は、Next.js によって自動的にバンドルされます。

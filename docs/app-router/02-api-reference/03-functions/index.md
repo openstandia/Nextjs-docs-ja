@@ -1,6 +1,6 @@
 ---
 title: Functions
-description: API Reference for Next.js Functions and Hooks.
+description: Next.js関数とフックのAPIリファレンス。
 ---
 
 :::caution

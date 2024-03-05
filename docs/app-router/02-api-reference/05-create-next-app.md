@@ -1,6 +1,6 @@
 ---
 title: create-next-app
-description: Create Next.js apps in one command with create-next-app.
+description: create-next-appを使って、Next.jsアプリを一つのコマンドで作成しましょう。
 ---
 
 Next.js を使い始めるもっとも簡単な方法は、`create-next-app`を使うことです。この CLI ツールを使うと、Next.js アプリケーションのビルドをすばやく開始できます。

@@ -1,7 +1,7 @@
 ---
 title: Fontモジュール
 nav_title: Font
-description: Optimizing loading web fonts with the built-in `next/font` loaders.
+description: 組み込みの next/font ローダーを使用して、Webフォントの読み込みを最適化します。
 sidebar_position: 1
 ---
 

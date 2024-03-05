@@ -1,6 +1,6 @@
 ---
 title: output
-description: Next.js automatically traces which files are needed by each page to allow for easy deployment of your application. Learn how it works here.
+description: Next.jsは、アプリケーションの簡単なデプロイを可能にするために、自動的に各ページが必要とするファイルをトレースします。こちらでその仕組みを学びましょう。
 ---
 
 ビルド中、Next.jsは各ページとその依存関係を自動的にトレースし、実運用バージョンのアプリケーションをデプロイするために必要なすべてのファイルを特定します。

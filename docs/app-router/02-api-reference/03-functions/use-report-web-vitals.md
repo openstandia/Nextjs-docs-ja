@@ -1,6 +1,6 @@
 ---
 title: useReportWebVitals
-description: API Reference for the useReportWebVitals function.
+description: useReportWebVitals 関数のAPIリファレンス。
 ---
 
 `useReportWebVitals`フックを使用すると、[Core Web Vitals](https://web.dev/vitals/)をレポートでき、アナリティクスサービスと組み合わせることも可能です。

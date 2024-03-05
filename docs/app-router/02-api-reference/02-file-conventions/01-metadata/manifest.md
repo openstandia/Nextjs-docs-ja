@@ -1,6 +1,6 @@
 ---
 title: manifest.json
-description: API Reference for manifest.json file.
+description: manifest.jsonファイルのAPIリファレンス。
 sidebar_position: 2
 ---
 
