@@ -1,6 +1,6 @@
 ---
 title: assetPrefix
-description: Learn how to use the assetPrefix config option to configure your CDN.
+description: CDNを設定するためのassetPrefix設定オプションの使い方を学びましょう。
 ---
 
 > **注意**: [Vercel にデプロイする](/docs/app-router/building-your-application/deploying)と、Next.js プロジェクトはグローバル CDN が自動的に設定されます。手動で Asset Prefix を設定する必要はありません。

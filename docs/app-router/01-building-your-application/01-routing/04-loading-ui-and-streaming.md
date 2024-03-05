@@ -1,6 +1,6 @@
 ---
 title: ロードUIとストリーミング
-description: Built on top of Suspense, Loading UI allows you to create a fallback for specific route segments, and automatically stream content as it becomes ready.
+description: Susppense の上に構築された Loading UI は、特定のルートセグメント用のフォールバックを作成し、準備が整ったコンテンツを自動的にストリームすることができます。
 ---
 
 特殊ファイル `loading.js` は、[React Suspense](https://ja.react.dev/reference/react/Suspense) を使って意味のあるローディング UI を作成するのに役立ちます。この規約を使えば、ルート Segment のコンテンツがロードされる間、サーバーから[インスタントロード状態](#インスタントロード状態)を表示できます。

@@ -2,7 +2,7 @@
 title: cookies
 description: Cookies関数のAPIリファレンス
 related:
-  title: Next Steps
+  title: 次のステップ
   description: 次に何をすべきかについては、以下のセクションを参照されたい
   links:
     - app-router/building-your-application/data-fetching/server-actions

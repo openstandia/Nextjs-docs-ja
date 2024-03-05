@@ -1,6 +1,6 @@
 ---
 title: アプリケーションの構築
-description: Learn how to use Next.js features to build your application.
+description: Next.jsの機能を使ってアプリケーションを構築する方法を学びましょう。
 ---
 
 <!-- Pages Router の内容はコメントアウトしています -->

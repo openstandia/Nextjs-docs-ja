@@ -1,6 +1,6 @@
 ---
 title: Edge and Node.js Runtimes
-description: Learn about the switchable runtimes (Edge and Node.js) in Next.js.
+description: Next.jsで切り替え可能なランタイム（EdgeとNode.js）について学びましょう。
 ---
 
 Next.js の文脈では、ランタイムとは、実行中のコードが利用できるライブラリ、API、および一般的な機能の集合を指します。
@@ -16,7 +16,7 @@ Next.js の文脈では、ランタイムとは、実行中のコードが利用
 
 |                                                                                                                                          | Node   | Serverless | Edge             |
 | ---------------------------------------------------------------------------------------------------------------------------------------- | :----- | :--------- | :--------------- |
-| Cold Boot | /      | Normal     | Low          |
+| Cold Boot                                                                                                                                | /      | Normal     | Low              |
 | [HTTP Streaming](/docs/app-router/building-your-application/routing/loading-ui-and-streaming)                                            | Yes    | Yes        | Yes              |
 | IO                                                                                                                                       | All    | All        | `fetch`          |
 | スケーラビリティ                                                                                                                         | /      | High       | Highest          |

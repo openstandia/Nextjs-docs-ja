@@ -1,6 +1,6 @@
 ---
 title: instrumentation.js
-description: instrumentation.jsファイルのAPIリファレンス
+description: instrumentation.jsファイルのAPIリファレンス。
 related:
   title: Instrumentation の詳細を学ぶ
   links:

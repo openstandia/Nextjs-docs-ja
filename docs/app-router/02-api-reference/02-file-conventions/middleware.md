@@ -1,6 +1,6 @@
 ---
 title: middleware.js
-description: middleware.js ファイルのAPIリファレンスです。
+description: middleware.js ファイルのAPIリファレンス。
 related:
   title: ミドルウェアについてさらに学ぶ
   links:
@@ -117,4 +117,5 @@ Middlewareは [Edge ランタイム](/docs/app-router/building-your-application/
 | `v12.0.0`  | Middleware（ベータ）追加                                                                                                   |
 
 ## ミドルウェアについてさらに学ぶ
+
 [Middleware](/docs/app-router/building-your-application/routing/middleware)

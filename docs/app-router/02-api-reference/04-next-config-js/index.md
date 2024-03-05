@@ -1,6 +1,6 @@
 ---
 title: next.config.js 設定オプション
-description: Learn how to configure your application with next.config.js.
+description: next.config.jsを使用してアプリケーションの設定を行う方法を学びましょう。
 ---
 
 Next.js の設定は、プロジェクトディレクトリのルートに存在する `next.config.js` ファイルで設定できます。

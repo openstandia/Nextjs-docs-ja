@@ -1,6 +1,6 @@
 ---
 title: sitemap.xml
-description: API Reference for the sitemap.xml file.
+description: sitemap.xml ファイルのAPIリファレンス.
 sidebar_position: 5
 ---
 

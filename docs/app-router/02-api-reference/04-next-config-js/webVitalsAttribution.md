@@ -1,6 +1,6 @@
 ---
 title: webVitalsAttribution
-description: Learn how to use the webVitalsAttribution option to pinpoint the source of Web Vitals issues.
+description: Web Vitalsの問題の原因を特定するために、webVitalsAttributionオプションの使用方法を学びましょう。
 ---
 
 ウェブ・バイタルに関連する問題をデバッグする際、問題の原因を突き止めることができると便利です。例えば、累積レイアウトシフト（CLS）の場合、最大のレイアウトシフトが発生したときに、最初にシフトした要素を知りたいことがあります。あるいは、Largest Contentful Paint（LCP）の場合、そのページの LCP に関係する要素を特定したいかもしれません。LCP 要素が画像の場合、画像リソースの URL を知ることで、最適化が必要なアセットを見つけることができます。

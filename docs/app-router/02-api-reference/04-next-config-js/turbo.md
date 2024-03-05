@@ -1,7 +1,7 @@
 ---
 title: turbo (Experimental)
 nav_title: turbo
-description: Configure Next.js with Turbopack-specific options
+description: Turbopack固有のオプションを使用して、Next.jsを設定します。
 ---
 
 > **注意**：これらの機能は実験的なもので、`next --turbo`でのみ機能します。

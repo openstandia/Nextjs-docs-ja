@@ -1,6 +1,6 @@
 ---
 title: distDir
-description: Set a custom build directory to use instead of the default .next directory.
+description: デフォルトの .next ディレクトリの代わりにカスタムのビルドディレクトリを設定します。
 ---
 
 `.next`の代わりに使用するビルドディレクトリの名前を指定できます。

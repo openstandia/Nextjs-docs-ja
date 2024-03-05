@@ -1,6 +1,6 @@
 ---
 title: ファイル規約
-description: API Reference for Next.js Special Files.
+description: Next.jsの特殊ファイルに関するAPIリファレンス
 ---
 
 ### default.js
