@@ -121,7 +121,7 @@ module.exports = {
 }
 ```
 
-> **Good to know**: Next.js では、`pages` ディレクトリにある JavaScript ファイルはすべてルートとみなされます。そのため、`relay-compiler` の場合は、ページの外で `artifactDirectory` の設定を指定する必要があります。そうしないと、`relay-compiler` は `__generated__` ディレクトリのソースファイルの隣にファイルを生成し、このファイルがルートとみなされ、プロダクションビルドが壊れてしまいます。
+> **Good to know**: Next.js では、`pages` ディレクトリにある JavaScript ファイルはすべてルートとみなされます。そのため、`relay-compiler` の場合は、`pages` 以外の場所に `artifactDirectory` の設定を指定する必要があります。そうしないと、`relay-compiler` は `__generated__` ディレクトリのソースファイルの隣にファイルを生成し、このファイルがルートとみなされ、プロダクションビルドが壊れてしまいます。
 
 ### React Properties の削除
 
