@@ -1,6 +1,7 @@
 ---
 title: rewrite
 description: Next.jsアプリケーションにリライト機能を追加します
+sidebar_position: 28
 ---
 
 リライトにより、リクエストされたパスを別のパスにマップできます。

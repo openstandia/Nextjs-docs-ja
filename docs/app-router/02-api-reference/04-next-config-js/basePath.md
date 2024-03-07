@@ -1,6 +1,7 @@
 ---
 title: basePath
 description: basePath を使用して、Next.jsアプリケーションをドメインのサブパスにデプロイします。
+sidebar_position: 3
 ---
 
 Next.js アプリケーションをドメインのサブパスにデプロイするには、`basePath`設定オプションを使います。

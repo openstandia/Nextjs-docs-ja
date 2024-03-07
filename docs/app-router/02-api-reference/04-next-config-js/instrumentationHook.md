@@ -6,6 +6,7 @@ related:
   links:
     - app-router/api-reference/file-conventions/instrumentation
     - app-router/building-your-application/optimizing/instrumentation
+sidebar_position: 16
 ---
 
 実験的な `instrumentationHook` オプションを使用すると、Next.js アプリの [instrumentation ファイル](/docs/app-router/api-reference/file-conventions/instrumentation)を使用して instrumentation を設定できます。

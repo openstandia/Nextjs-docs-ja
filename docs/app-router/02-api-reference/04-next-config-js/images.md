@@ -1,6 +1,7 @@
 ---
 title: images
 description: next/image ローダーのカスタム設定
+sidebar_position: 14
 ---
 
 Next.js ビルトインの画像最適化 API ではなく、クラウドのプロバイダーを使って画像を最適化したい場合は、`next.config.js`で次のように設定します：
@@ -26,16 +27,17 @@ export default function myImageLoader({ src, width, quality }) {
 
 ## ローダーの設定例
 
-- [Akamai](#akamai)
-- [Cloudinary](#cloudinary)
-- [Cloudflare](#cloudflare)
-- [Contentful](#contentful)
-- [Fastly](#fastly)
-- [Gumlet](#gumlet)
-- [ImageEngine](#imageengine)
-- [Imgix](#imgix)
-- [Thumbor](#thumbor)
-- [Supabase](#supabase)
+- [ローダーの設定例](#ローダーの設定例)
+  - [Akamai](#akamai)
+  - [Cloudinary](#cloudinary)
+  - [Cloudflare](#cloudflare)
+  - [Contentful](#contentful)
+  - [Fastly](#fastly)
+  - [Gumlet](#gumlet)
+  - [ImageEngine](#imageengine)
+  - [Imgix](#imgix)
+  - [Thumbor](#thumbor)
+  - [Supabase](#supabase)
 
 ### Akamai
 
