@@ -20,3 +20,8 @@ React と Next.js では、記述できるテストの種類がいくつかあ�
 ## Guides
 
 Next.js と一般的に使用されているテストツールのセットアップ方法については、それぞれのドキュメントを参照してください。
+
+- [Vitest](/docs/app-router/building-your-application/testing/vitest): ユニットテストのために Next.js で Vitest をセットアップする方法を学びます。
+- [Jest](/docs/app-router/building-your-application/testing/jest): ユニットテストとスナップショットテストのために、Next.js で Jest をセットアップする方法を学びます。
+- [Playwright](/docs/app-router/building-your-application/testing/playwright): エンドツーエンド（E2E）テストのために Next.js で Playwright をセットアップする方法を学びます。
+- [Cypress](/docs/app-router/building-your-application/testing/cypress): エンドツーエンド（E2E）とコンポーネントテストのために Next.js で Cypress をセットアップする方法を学びます。
