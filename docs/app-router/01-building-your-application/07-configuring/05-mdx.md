@@ -1,6 +1,7 @@
 ---
 title: Markdown と MDX
 nav_title: MDX
+sidebar_label: MDX
 description: MDX を構成して、Markdown  ファイルで JSX を書く方法を学びましょう。
 ---
 
