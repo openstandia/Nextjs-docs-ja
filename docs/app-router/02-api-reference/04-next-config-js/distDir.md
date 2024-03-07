@@ -1,6 +1,7 @@
 ---
 title: distDir
 description: デフォルトの .next ディレクトリの代わりにカスタムのビルドディレクトリを設定します。
+sidebar_position: 6
 ---
 
 `.next`の代わりに使用するビルドディレクトリの名前を指定できます。

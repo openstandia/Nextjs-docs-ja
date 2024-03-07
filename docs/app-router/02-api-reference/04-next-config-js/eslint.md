@@ -1,6 +1,7 @@
 ---
 title: eslint
 description: デフォルトでは、Next.jsはビルド時にESLintのエラーと警告を報告します。この動作をオプトアウトする方法については、こちらを確認してください。
+sidebar_position: 8
 ---
 
 プロジェクトで ESLint が使用されていることが検出されると、Next.js はエラーがある場合に**プロダクション・ビルド**（`next build`）を失敗させます。

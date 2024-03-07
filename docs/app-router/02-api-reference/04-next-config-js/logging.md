@@ -1,6 +1,7 @@
 ---
 title: logging
 description: 開発モードで Next.js を実行する際のデータフェッチのログ出力設定方法
+sidebar_position: 17
 ---
 
 Next.js を開発モードで実行しているときに、完全な URL がコンソールにログ出力されるかどうかと、ログレベル設定ができます。
