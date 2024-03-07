@@ -1,6 +1,7 @@
 ---
 title: trailingSlash
 description: Next.jsのページを設定して、末尾のスラッシュの有無に対応させます。
+sidebar_position: 31
 ---
 
 デフォルトでは、Next.js は末尾にスラッシュのある URL を、末尾にスラッシュのない URL にリダイレクトします。たとえば`/about/`は`/about`にリダイレクトされます。末尾にスラッシュのない URL は、末尾にスラッシュのある URL にリダイレクトされます。

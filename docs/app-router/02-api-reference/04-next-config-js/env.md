@@ -1,6 +1,7 @@
 ---
 title: env
 description: Next.jsアプリケーションでビルド時に環境変数を追加およびアクセスする方法を学びましょう。
+sidebar_position: 7
 ---
 
 > [Next.js 9.4](https://nextjs.org/blog/next-9-4)のリリース以来、環境変数をより直感的かつ人間工学的に[追加できるようになりました](/docs/app-router/building-your-application/configuring/environment-variables)。ぜひお試しください！

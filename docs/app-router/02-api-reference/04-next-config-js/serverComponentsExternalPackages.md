@@ -1,6 +1,7 @@
 ---
 title: serverComponentsExternalPackages
 description: Server Components　のバンドルから特定の依存関係を除外し、ネイティブなNode.jsの require を使用してください。
+sidebar_position: 30
 ---
 
 [Server Components](/docs/app-router/building-your-application/rendering/server-components)と[Route Handlers](/docs/app-router/building-your-application/routing/route-handlers)の内部で使用される依存関係は、Next.js によって自動的にバンドルされます。

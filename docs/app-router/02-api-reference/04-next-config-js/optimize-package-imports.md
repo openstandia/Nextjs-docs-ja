@@ -1,6 +1,7 @@
 ---
 title: optimizePackageImports
 description: Next.js 設定オプションの optmizedPackageImports の API リファレンス
+sidebar_position: 20
 ---
 
 パッケージによっては、何百、何千ものモジュールをエクスポートすることができ、開発および生産時にパフォーマンスの問題を引き起こす可能性があります。

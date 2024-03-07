@@ -2,6 +2,8 @@
 title: Custom Webpack Config
 nav_title: webpack
 description: Next.jsを使用する際にwebpackの設定をカスタマイズする方法を学びましょう。
+sidebar_position: 37
+sidebar_label: webpack
 ---
 
 > **Good to know**: webpack の設定変更はセマンティックバージョニングの対象外です。自己責任で行ってください。
