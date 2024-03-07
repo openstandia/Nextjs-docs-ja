@@ -2,6 +2,7 @@
 title: typedRoutes (experimental)
 nav_title: typedRoutes
 description: 静的型付きリンクの実験的なサポートを有効にします。
+sidebar_label: typedRoutes
 sidebar_position: 34
 ---
 
