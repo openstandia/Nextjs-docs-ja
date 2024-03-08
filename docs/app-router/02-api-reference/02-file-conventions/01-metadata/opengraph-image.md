@@ -1,6 +1,6 @@
 ---
-title: opengraph-image and twitter-image
-description: Open GraphイメージおよびTwitterイメージファイルの規則に関するAPIリファレンス。
+title: opengraph-image と twitter-image
+description: Open Graph 画像および Twitter 画像ファイルの規則に関する API リファレンスです。
 sidebar_position: 3
 ---
 
