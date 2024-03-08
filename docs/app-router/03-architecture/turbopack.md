@@ -1,6 +1,6 @@
 ---
 title: Turbopack
-description: Turbopack は JavaScript と TypeScript のために最適化されたインクリメンタルバンドラであり、Rust で書かれ、Next.js に組み込まれています
+description: Turbopack は JavaScript と TypeScript のために最適化されたインクリメンタルバンドラであり、Rust で書かれ、Next.js に組み込まれています。
 ---
 
 [Turbopack](https://turbo.build/pack) (ベータ版)は、JavaScript と TypeScript のために最適化されたインクリメンタルバンドラであり、Rust で書かれ、Next.js に組み込まれています。
