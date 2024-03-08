@@ -1,9 +1,9 @@
 ---
 title: Dynamic Routes
-description: Dynamic Routes can be used to programmatically generate route segments from dynamic data.
+description: Dynamic Routes は、動的なデータからルートセグメントをプログラムで生成するために使用できます。
 related:
-  title: Next Steps
-  description: For more information on what to do next, we recommend the following sections
+  title: 次のステップ
+  description: 次に何をすべきかについては、以下のセクションを参照してください。
   links:
     - app-router/building-your-application/routing/linking-and-navigating
     - app-router/api-reference/functions/generate-static-params

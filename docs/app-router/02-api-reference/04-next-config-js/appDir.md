@@ -1,6 +1,7 @@
 ---
 title: appDir
-description: Enable the App Router to use layouts, streaming, and more.
+description: App Routerを使用して、レイアウト、ストリーミングなどを有効にします。
+sidebar_position: 1
 ---
 
 > **Good to know**: このオプションは Next.js 13.4 から不要に**なりました**。App Router は安定版になっています。

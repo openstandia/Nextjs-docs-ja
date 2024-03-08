@@ -1,6 +1,6 @@
 ---
 title: Client Components
-description: Learn how to use Client Components to render parts of your application on the client.
+description: Client Components を使用して、アプリケーションの一部をクライアント側でレンダリングする方法を学びましょう。
 ---
 
 Client Components を使用すると、リクエスト時にクライアントでレンダリングされるインタラクティブな UI を記述できます。Next.js では、クライアントレンダリングは**オプトイン**です。つまり、React がクライアントにレンダリングするコンポーネントを明示的に決定する必要があります。

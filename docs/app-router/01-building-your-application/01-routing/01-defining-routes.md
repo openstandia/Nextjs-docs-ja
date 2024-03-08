@@ -1,8 +1,8 @@
 ---
 title: ルートの定義
-description: Learn how to create your first route in Next.js.
+description: Next.js で最初のルートを作成する方法を学びます。
 related:
-  description: Learn more about creating pages and layouts.
+  description: ページやレイアウトの作成について詳しく説明します。
   links:
     - app-router/building-your-application/routing/pages-and-layouts
 ---
@@ -17,11 +17,11 @@ Next.js では、**フォルダ**を使ってルートを定義する、ファ�
 
 各フォルダは、**URL** Segment にマッピングされる[**ルート** セグメント](/docs/app-router/building-your-application/routing#ルート-segment)を表します。[入れ子になったルート](/docs/app-router/building-your-application/routing#ネストされたルート)を作成するには、フォルダ同士を入れ子にします。
 
-![Route segments to path segments](../../assets/route-segments-to-path-segments.svg)
+![Route segments to path segments](../../assets/route-segments-to-path-segments.avif)
 
 特殊な[`page.js`ファイル](/docs/app-router/building-your-application/routing/pages-and-layouts#ページ)はルート Segment を一般公開するために使われます。
 
-![Defining Routes](../../assets/defining-routes.svg)
+![Defining Routes](../../assets/defining-routes.avif)
 
 この例では、`/dashboard/analytics`の URL パスは、対応する`page.js`ファイルを持っていないため、一般にはアクセスできません。このフォルダは、コンポーネント、スタイルシート、画像、またはその他の配置されたファイルを保存するために使用できます。
 

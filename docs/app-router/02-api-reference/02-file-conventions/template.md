@@ -1,6 +1,7 @@
 ---
 title: template.js
-description: template.jsファイルのAPIリファレンス
+description: template.js ファイルの API リファレンスです。
+sidebar_position: 11
 ---
 
 **テンプレート**ファイルは、それぞれの子レイアウトやページをラップするという点で[レイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#レイアウト)と同様です。しかし、ルートをまたいで持続し、状態を維持するレイアウトとは異なり、テンプレートはナビゲーションごとにその子コンポーネントの新しいインスタンスを生成します。

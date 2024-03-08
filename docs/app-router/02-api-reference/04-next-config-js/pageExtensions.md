@@ -1,6 +1,7 @@
 ---
 title: pageExtensions
 description: Pagesルーターでページを解決するときにNext.jsが使用するデフォルトのページ拡張子を拡張します
+sidebar_position: 22
 ---
 
 By default, Next.js accepts files with the following extensions: `.tsx`, `.ts`, `.jsx`, `.js`.

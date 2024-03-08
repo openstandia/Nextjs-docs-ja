@@ -1,6 +1,6 @@
 ---
 title: useSelectedLayoutSegments
-description: API Reference for the useSelectedLayoutSegments hook.
+description: useSelectedLayoutSegments フックのAPIリファレンス。
 ---
 
 `useSelectedLayoutSegments`は**Client Component**のフックであり、呼び出されたレイアウト**以下**にあるアクティブなルート Segments を読み取ることができます。

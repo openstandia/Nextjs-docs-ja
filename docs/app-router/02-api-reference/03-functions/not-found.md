@@ -1,6 +1,6 @@
 ---
 title: notFound
-description: API Reference for the notFound function.
+description: notFound 関数のAPIリファレンス。
 ---
 
 `notFound`関数を使うと、ルート Segment 内で[`not-found`ファイル](/docs/app-router/api-reference/file-conventions/not-found)をレンダリングして、`<meta name="robots" content="noindex" />`タグを挿入できます。

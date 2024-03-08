@@ -1,6 +1,6 @@
 ---
 title: Error Handling
-description: Handle runtime errors by automatically wrapping route segments and their nested children in a React Error Boundary.
+description: ルートセグメントとそのネストした子要素を React Error Boundary で自動的にラップすることで、ランタイムエラーを処理します。
 ---
 
 `error.js`ファイル規約によって、[入れ子になったルート](/docs/app-router/building-your-application/routing#ネストされたルート)の実行時エラーを優雅に処理できます。

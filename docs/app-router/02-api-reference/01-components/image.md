@@ -1,6 +1,7 @@
 ---
 title: <Image>
-description: Optimize Images in your Next.js Application using the built-in `next/image` Component.
+description: Next.jsのアプリケーションで、組み込みの next/image コンポーネントを使用して画像を最適化します。
+sidebar_position: 2
 ---
 
 <details>
