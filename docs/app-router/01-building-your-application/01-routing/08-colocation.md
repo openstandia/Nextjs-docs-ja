@@ -1,6 +1,6 @@
 ---
 title: プロジェクト編成とファイル・コロケーション
-nav_title: Project Organization
+sidebar_label: プロジェクト編成
 description: Next.jsプロジェクトを整理し、ファイルを配置する方法を学びます。
 related:
   links:

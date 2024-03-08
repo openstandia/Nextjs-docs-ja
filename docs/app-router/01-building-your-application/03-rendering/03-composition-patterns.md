@@ -1,6 +1,6 @@
 ---
 title: サーバーとクライアントの構成パターン
-nav_title: 構成パターン
+sidebar_label: 構成パターン
 description: ServerとClientコンポーネントの使用のためのおすすめのパターン
 ---
 

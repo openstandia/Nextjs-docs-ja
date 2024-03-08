@@ -1,6 +1,6 @@
 ---
 title: Script 最適化
-nav_title: Scripts
+sidebar_label: Scripts
 description: 組み込みのスクリプトコンポーネントを使用して、サードパーティのスクリプトを最適化します。
 related:
   title: API リファレンス

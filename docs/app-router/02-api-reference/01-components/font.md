@@ -1,6 +1,6 @@
 ---
 title: Fontモジュール
-nav_title: Font
+sidebar_label: Font
 description: 組み込みの next/font ローダーを使用して、Webフォントの読み込みを最適化します。
 sidebar_position: 1
 ---

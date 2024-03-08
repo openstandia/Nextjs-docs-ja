@@ -1,6 +1,6 @@
 ---
 title: Metadata Files API Reference
-nav_title: Metadata Files
+sidebar_label: メタデータファイル
 description: メタデータファイルの規約に関するAPIドキュメンテーションです。
 ---
 

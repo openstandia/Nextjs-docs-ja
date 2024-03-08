@@ -1,6 +1,6 @@
 ---
 title: 最適化
-nav_title: Optimizing
+sidebar_label: 最適化
 description: 最高のパフォーマンスとユーザーエクスペリエンスを実現するために、Next.jsアプリケーションを最適化しましょう。
 ---
 

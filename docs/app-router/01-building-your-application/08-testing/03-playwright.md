@@ -1,6 +1,6 @@
 ---
 title: Playwright
-nav_title: Playwright
+sidebar_label: Playwright
 description: エンドツーエンド（E2E）テストのために Next.js で Playwright をセットアップする方法を学びます。
 ---
 

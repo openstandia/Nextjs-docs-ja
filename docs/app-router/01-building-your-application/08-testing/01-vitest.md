@@ -1,6 +1,6 @@
 ---
 title: Vitest
-nav_title: Vitest
+sidebar_label: Vitest
 description: ユニットテストのために Next.js で Vitest をセットアップする方法を学びます。
 ---
 

@@ -1,9 +1,8 @@
 ---
 title: exportPathMap (Deprecated)
-nav_title: exportPathMap
+sidebar_label: exportPathMap
 description: next export を使用したときにHTMLファイルとしてエクスポートされるページをカスタマイズします。
 sidebar_position: 9
-sidebar_label: exportPathMap
 ---
 
 > この機能は `next export` 専用で、現在では**非推奨**となっており、`pages` を使った `getStaticPaths` や `app` を使った `generateStaticParams` が主流となっています。

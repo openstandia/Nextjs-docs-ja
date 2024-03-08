@@ -1,6 +1,6 @@
 ---
 title: Font最適化
-nav_title: Fonts
+sidebar_label: Fonts
 description: 内蔵された next/font ローダーを使用して、アプリケーションのウェブフォントを最適化しましょう。
 related:
   title: API リファレンス

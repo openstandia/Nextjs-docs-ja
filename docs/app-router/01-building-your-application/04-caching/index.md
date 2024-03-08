@@ -1,6 +1,6 @@
 ---
 title: キャッシング
-nav_title: キャッシング
+sidebar_label: キャッシング
 description: Next.jsアプリケーションをキャッシュするさまざまな方法を紹介します。
 ---
 

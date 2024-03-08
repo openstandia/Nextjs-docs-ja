@@ -1,6 +1,5 @@
 ---
 title: Custom Webpack Config
-nav_title: webpack
 description: Next.jsを使用する際にwebpackの設定をカスタマイズする方法を学びましょう。
 sidebar_position: 37
 sidebar_label: webpack
