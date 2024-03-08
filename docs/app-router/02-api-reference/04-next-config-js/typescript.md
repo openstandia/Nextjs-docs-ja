@@ -1,6 +1,7 @@
 ---
 title: typescript
-description: Next.js reports TypeScript errors by default. Learn to opt-out of this behavior here.
+description: Next.jsでは、デフォルトでTypeScriptのエラーが報告されます。この動作を無効にする方法をこちらで学びましょう。
+sidebar_position: 35
 ---
 
 プロジェクトに TypeScript のエラーがあると、Next.js のプロダクション・ビルド（`next build`）に失敗します。

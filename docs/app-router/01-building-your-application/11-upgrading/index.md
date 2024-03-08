@@ -1,7 +1,7 @@
 ---
 title: アップグレードガイド
 sidebar_label: アップグレード
-description: Learn how to upgrade to the latest versions of Next.js.
+description: Next.jsの最新バージョンへのアップグレード方法を学びましょう。
 ---
 
 アプリケーションを Next.js の新しいバージョンにアップグレードするか、Pages Router から App Router に移行します。

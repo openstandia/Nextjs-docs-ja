@@ -1,6 +1,6 @@
 ---
 title: 静的アセット
-description: Next.js allows you to serve static files, like images, in the public directory. You can learn how it works here.
+description: Next.jsでは、公開ディレクトリ内の画像などの静的ファイルを提供することができます。こちらでその動作方法を学ぶことができます。
 ---
 
 Next.js では、ルートディレクトリの`public`というフォルダの下に、画像などの静的ファイルを置くことができます。`public`内のファイルは、ベース URL（`/`）から始まるコードで参照できます。

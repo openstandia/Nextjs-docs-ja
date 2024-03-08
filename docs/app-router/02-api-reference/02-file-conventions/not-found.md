@@ -1,6 +1,6 @@
 ---
 title: not-found.js
-description: API reference for the not-found.js file.
+description: not-found.js ファイルの API リファレンスです。
 sidebar_position: 7
 ---
 

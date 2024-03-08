@@ -1,6 +1,6 @@
 ---
 title: データのフェッチ、キャッシュ、再検証
-description: Learn how to fetch data in your Next.js application.
+description: Next.jsアプリケーションでデータを取得する方法を学びましょう。
 ---
 
 データ取得は、あらゆるアプリケーションの中核をなす部分です。このページでは、React と Next.js でデータをフェッチ、キャッシュ、再検証する方法について説明します。

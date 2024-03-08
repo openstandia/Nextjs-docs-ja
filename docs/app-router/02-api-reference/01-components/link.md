@@ -1,6 +1,6 @@
 ---
 title: <Link>
-description: Enable fast client-side navigation with the built-in `next/link` component.
+description: ビルトインの next/link コンポーネントを使用して、クライアントサイドの高速なナビゲーションを可能にします。
 sidebar_position: 3
 ---
 

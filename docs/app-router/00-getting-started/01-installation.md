@@ -1,9 +1,9 @@
 ---
 title: インストール
-description: Create a new Next.js application with `create-next-app`. Set up TypeScript, styles, and configure your `next.config.js` file.
+description: create-next-app で新しい Next.js アプリケーションを作成します。TypeScript、スタイルを設定し、next.config.js ファイルを設定します。
 related:
-  title: Next Steps
-  description: Learn about the files and folders in your Next.js project.
+  title: 次のステップ
+  description: Next.jsプロジェクトのファイルとフォルダについて学びます。
   links:
     - getting-started/project-structure
 ---

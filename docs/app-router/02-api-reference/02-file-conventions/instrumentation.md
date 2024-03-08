@@ -1,10 +1,11 @@
 ---
 title: instrumentation.js
-description: instrumentation.jsファイルのAPIリファレンス
+description: instrumentation.js ファイルのAPIリファレンスです。
 related:
   title: Instrumentation の詳細を学ぶ
   links:
     - app-router/building-your-application/optimizing/instrumentation
+sidebar_position: 3
 ---
 
 `instrumentation.js|ts` ファイルは、モニタリングとロギングのツールをアプリケーションに統合するために使われます。

@@ -1,7 +1,8 @@
 ---
 title: typedRoutes (experimental)
+description: 静的型付きリンクの実験的なサポートを有効にします。
 sidebar_label: typedRoutes
-description: Enable experimental support for statically typed links.
+sidebar_position: 34
 ---
 
 [静的型付けリンク](/docs/app-router/building-your-application/configuring/typescript#statically-typed-links)の実験的なサポートです。この機能を使用するには、プロジェクトで TypeScript だけでなく App Router も使用する必要があります。

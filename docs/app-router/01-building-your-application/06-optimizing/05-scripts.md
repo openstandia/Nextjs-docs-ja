@@ -1,10 +1,10 @@
 ---
 title: Script 最適化
 sidebar_label: Scripts
-description: Optimize 3rd party scripts with the built-in Script component.
+description: 組み込みのスクリプトコンポーネントを使用して、サードパーティのスクリプトを最適化します。
 related:
-  title: API Reference
-  description: Learn more about the next/script API.
+  title: API リファレンス
+  description: next/script APIについてさらに詳しく学びましょう。
   links:
     - app-router/api-reference/components/script
 ---

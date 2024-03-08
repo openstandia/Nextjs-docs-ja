@@ -1,6 +1,6 @@
 ---
 title: ページとレイアウト
-description: Create your first page and shared layout with the App Router.
+description: App Router で最初のページと共有レイアウトを作成します。
 ---
 
 > [ルーティングの基礎](/docs/app-router/building-your-application/routing)と[ルーティングの定義](/docs/app-router/building-your-application/routing/defining-routes)のページを先に読むことをお勧めします。

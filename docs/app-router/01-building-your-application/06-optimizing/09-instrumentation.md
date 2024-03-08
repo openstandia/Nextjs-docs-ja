@@ -1,6 +1,6 @@
 ---
 title: Instrumentation
-description: Learn how to use instrumentation to run code at server startup in your Next.js app
+description: Next.jsアプリケーションでサーバー起動時にコードを実行するための Instrumentation の使い方を学びましょう。
 ---
 
 <!-- textlint-disable -->

@@ -1,6 +1,6 @@
 ---
 title: 初めに
-description: Learn how to create full-stack web applications with Next.js.
+description: Next.js でフルスタックの Web アプリケーションを作成する方法を学びます。
 ---
 
 # イントロダクション

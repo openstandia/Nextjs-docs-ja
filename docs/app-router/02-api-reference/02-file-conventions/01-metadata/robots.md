@@ -1,6 +1,6 @@
 ---
 title: robots.txt
-description: API Reference for robots.txt file.
+description: robots.txt ファイルの API リファレンスです。
 sidebar_position: 4
 ---
 

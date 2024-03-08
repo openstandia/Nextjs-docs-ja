@@ -22,6 +22,7 @@ Next.js でリダイレクトを操作するには、いくつかの方法があ
 ## `redirect` 関数
 
 <!-- TODO: fix link -->
+
 `redirect` 関数を使用すると、ユーザーを別の URL にリダイレクトできます。[Server Components](/docs/app-router/building-your-application/rendering/server-components), [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers), [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で `redirect` を呼び出すことができます。
 
 `redirect` は、ミューテーションやイベントの後によく使用されます。例えば、投稿の作成する場合には以下のようになります。
@@ -57,6 +58,7 @@ export async function createPost(id: string) {
 ## `permanentRedirect` 関数
 
 <!-- TODO: fix link -->
+
 `permanentRedirect` 関数を使用すると、ユーザーを**永久的に**別の URL にリダイレクトできます。[Server Components](/docs/app-router/building-your-application/rendering/server-components), [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers), [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で `permanentRedirect` を呼び出すことができます。
 
 `permanentRedirect` は、エンティティの正規 URL を変更するミューテーションやイベントの後によく使用されます。例えば、ユーザーが自分のユーザーネームを変更した後のユーザープロフィールの URL を更新する場合などです:
@@ -85,7 +87,6 @@ export async function updateUsername(username: string, formData: FormData) {
 > - `permanentRedirect` は絶対 URL を引数に取り、外部リンクへのリダイレクトにも使用できます。
 > - レンダリングプロセスの前にリダイレクトしたい場合は、[`next.config.js`](#nextconfigjs-内の-redirects) または [Middleware](#middleware-内の-nextresponseredirect) を使用してください。
 
-
 詳細は[`permanentRedirect` API リファレンス](/docs/app-router/api-reference/functions/permanentRedirect)を参照してください。
 
 ## `useRouter()` フック
@@ -109,16 +110,18 @@ export default function Page() {
 ```
 
 > **Good to know**:
+>
 > - プログラムによるユーザーのナビゲーションが必要ない場合は、[`<Link>`](/docs/app-router/api-reference/components/link) コンポーネントを使用してください。
 
-詳細は [`useRouter` API リファレンス](/docs/app-router/api-reference/functions/use-router)を参照してください。 
+詳細は [`useRouter` API リファレンス](/docs/app-router/api-reference/functions/use-router)を参照してください。
 
 ## `next.config.js` 内の `redirects`
 
 `next.config.js` ファイルの `redirects` オプションを使用すると、受信したリクエストのパスを別のパスにリダイレクトできます。これは、ページの URL 構造を変更したり、事前にリダイレクトのリストが分かっている場合に便利です。
 
 <!-- TODO: fix link -->
-`redirects`は、[path](/docs/app-router/api-reference/next-config-js/redirects#path-matching), [header、cookie、query のマッチング](/docs/app-router/api-reference/next-config-js/redirects#header-cookie-and-query-matching)をサポートしており、リクエストに基づいてユーザーをリダイレクトする柔軟性を提供します。 
+
+`redirects`は、[path](/docs/app-router/api-reference/next-config-js/redirects#path-matching), [header、cookie、query のマッチング](/docs/app-router/api-reference/next-config-js/redirects#header-cookie-and-query-matching)をサポートしており、リクエストに基づいてユーザーをリダイレクトする柔軟性を提供します。
 
 `redirects` を使用するには、`next.config.js` ファイルにオプションを追加します:
 
@@ -151,7 +154,7 @@ module.exports = {
 > - `redirects` は、プラットフォームによっては制限があるかもしれません。例えば、Vercel では、リダイレクトの制限は 1,024 回です。大量のリダイレクト (1,000以上) を管理するには、[Middleware](/docs/app-router/building-your-application/routing/middleware) を使用したカスタムのソリューションを作成することを検討してください。詳細は[規模に応じたリダイレクトの管理](#規模に応じたリダイレクトの管理高度) を参照してください。
 > - `redirects` は Middleware の前に実行されます。
 
-## Middleware 内の `NextResponse.redirect` 
+## Middleware 内の `NextResponse.redirect`
 
 Middleware を使用すると、リクエストが完了する前にコードを実行できます。その後、着信リクエストに基づいて、`NextResponse.redirect`を使用して異なる URL にリダイレクトします。これは、条件（例えば、認証、セッション管理など）に基づいてユーザーをリダイレクトしたい場合や、[多数のリダイレクトがある場合](#規模に応じたリダイレクトの管理高度)に便利です。
 
@@ -177,6 +180,7 @@ export const config = {
   matcher: '/dashboard/:path*',
 }
 ```
+
 > **Good to know**:
 >
 > - Middleware は、`next.config.js` の `redirects` の**後**、レンダリングの**前**に実行されます。

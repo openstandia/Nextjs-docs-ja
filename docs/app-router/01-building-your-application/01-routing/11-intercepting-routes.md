@@ -1,8 +1,8 @@
 ---
 title: Intercepting Routes
-description: Use intercepting routes to load a new route within the current layout while masking the browser URL, useful for advanced routing patterns such as modals.
+description: 現在のレイアウト内に新しいルートをロードしながら、ブラウザのURLをマスキングするために、intercepting routes を使用します。これは、モーダルなどの高度なルーティングパターンに便利です。
 related:
-  title: Next Steps
+  title: 次のステップ
   description: Learn how to use modals with Intercepted and Parallel Routes.
   links:
     - app-router/building-your-application/routing/parallel-routes

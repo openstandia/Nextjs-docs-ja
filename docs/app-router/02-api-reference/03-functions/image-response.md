@@ -1,6 +1,6 @@
 ---
 title: ImageResponse
-description: API Reference for the ImageResponse constructor.
+description: ImageResponseコンストラクタのAPIリファレンス。
 ---
 
 `ImageResponse` コンストラクターを使用すると、JSX と CSS を使って動的な画像を生成できます。これは、Open Graph 画像、Twitter カードなどのソーシャルメディア画像を生成するのに便利です。

@@ -1,7 +1,7 @@
 ---
 title: プロジェクト編成とファイル・コロケーション
 sidebar_label: プロジェクト編成
-description: Learn how to organize your Next.js project and colocate files.
+description: Next.jsプロジェクトを整理し、ファイルを配置する方法を学びます。
 related:
   links:
     - app-router/building-your-application/routing/defining-routes

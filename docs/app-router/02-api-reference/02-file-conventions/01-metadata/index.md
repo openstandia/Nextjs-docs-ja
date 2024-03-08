@@ -1,7 +1,7 @@
 ---
 title: Metadata Files API Reference
 sidebar_label: メタデータファイル
-description: API documentation for the metadata file conventions.
+description: メタデータファイルの規約に関するAPIドキュメンテーションです。
 ---
 
 このセクションでは、**メタデータファイルの規約**について説明します。ファイルベースのメタデータは、特殊なメタデータファイルをルート Segment に追加することで定義できます。
@@ -12,22 +12,8 @@ description: API documentation for the metadata file conventions.
 
 ファイルが定義されると、Next.js は自動的にそのファイルを配信し（本番環境ではキャッシングのためにハッシュが含まれる）、アセットの URL、ファイルタイプ、画像サイズなど、正しいメタデータで関連するヘッド要素を更新します。
 
-### favicon, icon, apple-icon
-
-[Favicon、Icon、Apple Icon ファイル規約のための API リファレンス](/docs/app-router/api-reference/file-conventions/metadata/app-icons)
-
-### manifest.json
-
-[manifest.json ファイルのための API リファレンス](/docs/app-router/api-reference/file-conventions/metadata/manifest)
-
-### opengraph-image と twitter-image
-
-[OpenGraph 画像と Twitter 画像ファイル規約のための API リファレンス](/docs/app-router/api-reference/file-conventions/metadata/opengraph-image)
-
-### robots.txt
-
-[robots.txt ファイル規約のための API リファレンス](/docs/app-router/api-reference/file-conventions/metadata/robots)
-
-### sitmap.xml
-
-[sitemap.xml ファイル規約のための API リファレンス](/docs/app-router/api-reference/file-conventions/metadata/sitemap)
+- [favicon, icon, apple-icon](./app-icons): Favicon、icon、および Apple icon ファイルの規則に関するAPIリファレンスです。
+- [manifest.json](./manifest): manifest.json ファイルの API リファレンスです。
+- [opengraph-image と twitter-image](./opengraph-image): Open Graph 画像および Twitter 画像ファイルの規則に関する API リファレンスです。
+- [robots.txt](./robots): robots.txt ファイルの API リファレンスです。
+- [sitmap.xml](./sitemap): sitemap.xml ファイルの API リファレンスです。

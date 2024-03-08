@@ -1,6 +1,7 @@
 ---
 title: reactStrictMode
-description: The complete Next.js runtime is now Strict Mode-compliant, learn how to opt-in
+description: Next.jsの完全なランタイムはStrict Modeに対応しました。オプトイン方法を学びましょう。
+sidebar_position: 26
 ---
 
 > **Good to know**: Next.js 13.4 以降、アプリルーターではデフォルトで Strict Mode が`true`になっているので、この設定は`pages`に対してのみ必要です。`reactStrictMode: false`を設定することで、Strict Mode を無効にすることができます。

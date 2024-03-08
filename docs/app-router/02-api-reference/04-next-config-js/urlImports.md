@@ -1,6 +1,7 @@
 ---
 タイトル: urlImports
 説明: Next.jsで外部URLからモジュールをインポートする設定（Experimental）。
+sidebar_position: 36
 ---
 
 URLインポートは（ローカルディスクからではなく）直接外部サーバーからモジュールをインポートするための実験的機能です。
