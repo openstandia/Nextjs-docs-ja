@@ -1,6 +1,6 @@
 ---
 title: error.js
-description: error.jsの特別ファイルのAPIリファレンス。
+description: 特殊ファイル error.js の API リファレンスです。
 related:
   title: エラーハンドリングについてさらに学びましょう。
   links:

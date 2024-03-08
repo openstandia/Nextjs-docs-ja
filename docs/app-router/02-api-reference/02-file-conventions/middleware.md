@@ -1,6 +1,6 @@
 ---
 title: middleware.js
-description: middleware.js ファイルのAPIリファレンス。
+description: middleware.js ファイルの API リファレンスです。
 related:
   title: ミドルウェアについてさらに学ぶ
   links:

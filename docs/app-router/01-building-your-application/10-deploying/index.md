@@ -214,3 +214,31 @@ Next.js は、[version Skew](https://www.industrialempathy.com/posts/version-ske
 アプリケーションがリロードされるとき、ページナビゲーション間で永続するように設計されていない場合、アプリケーションの状態が失われる可能性があります。例えば、URL ステートやローカルストレージを使用すると、ページ更新後もステートが持続します。しかし、`useState` のようなコンポーネントの状態は、そのようなナビゲーションの際に失われます。
 
 Vercel は、Next.js アプリケーションに追加の[skew protection](https://vercel.com/docs/deployments/skew-protection?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)を提供し、新しいビルドがデプロイされている間も、以前のビルドのアセットと関数が利用可能であることを保証します。
+
+### ストリーミングと Suspense
+
+Next.js App Router は、セルフホスト時に[ストリーミング応答](/docs/app-router/building-your-application/routing/loading-ui-and-streaming)をサポートします。
+Nginx や同様のプロキシを使用している場合は、バッファリングを無効にしてストリーミングを利用できるように設定する必要があります。
+
+たとえば、Nginx で `X-Accel-Buffering` を `no` に設定することで、バッファリングを無効にできます:
+
+```js title="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/:path*{/}?',
+        headers: [
+          {
+            key: 'X-Accel-Buffering',
+            value: 'no',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+- [Production Checklist](./production-checklist): Next.js アプリケーションを本番環境に導入する前に、最高のパフォーマンスとユーザーエクスペリエンスを確保するための推奨事項です。
+- [静的エクスポート](./static-exports): Next.js は、静的サイトまたはシングルページアプリケーション（SPA）として開始し、その後オプションでサーバーを必要とする機能を使用するようにアップグレードすることができます。

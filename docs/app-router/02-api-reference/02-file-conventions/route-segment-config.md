@@ -1,6 +1,6 @@
 ---
 title: Route Segment Config
-description: Next.jsの Route Segment のオプションの設定方法について学びましょう。
+description: Next.js の Route Segment を設定するためのオプションについて学びます。
 sidebar_position: 10
 ---
 

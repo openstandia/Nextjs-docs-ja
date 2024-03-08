@@ -1,6 +1,6 @@
 ---
 title: default.js
-description: default.js ファイルのAPIリファレンス
+description: default.js ファイルのAPIリファレンスです。
 related:
   title: Parallel Routesの詳細を学ぶ
   links:

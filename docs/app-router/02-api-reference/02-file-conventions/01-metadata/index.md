@@ -1,7 +1,7 @@
 ---
 title: Metadata Files API Reference
 nav_title: Metadata Files
-description: メタデータファイルの規約に関するAPIドキュメンテーション。
+description: メタデータファイルの規約に関するAPIドキュメンテーションです。
 ---
 
 このセクションでは、**メタデータファイルの規約**について説明します。ファイルベースのメタデータは、特殊なメタデータファイルをルート Segment に追加することで定義できます。

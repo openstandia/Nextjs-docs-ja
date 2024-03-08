@@ -1,6 +1,6 @@
 ---
 title: loading.js
-description: loading.js ファイルのAPIリファレンス。
+description: loading.js ファイルの API リファレンスです。
 sidebar_position: 5
 ---
 
