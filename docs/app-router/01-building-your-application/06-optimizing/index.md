@@ -1,6 +1,6 @@
 ---
 title: 最適化
-nav_title: Optimizing
+sidebar_label: 最適化
 description: Optimize your Next.js application for best performance and user experience.
 ---
 

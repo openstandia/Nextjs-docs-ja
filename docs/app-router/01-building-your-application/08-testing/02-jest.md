@@ -1,6 +1,6 @@
 ---
 title: Jest
-nav_title: Jest
+sidebar_label: Jest
 description: ユニットテストとスナップショットテストのために、Next.js で Jest をセットアップする方法を学びます。
 ---
 

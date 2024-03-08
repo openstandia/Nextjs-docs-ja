@@ -1,6 +1,6 @@
 ---
 title: Markdown と MDX
-nav_title: MDX
+sidebar_label: MDX
 description: MDX を構成して、Markdown  ファイルで JSX を書く方法を学びましょう。
 ---
 
@@ -21,7 +21,9 @@ I **love** using [Next.js](https://nextjs.org/)
 [MDX](https://mdxjs.com/) は、Markdown のスーパーセットで、Markdown ファイルに直接 [JSX](https://react.dev/learn/writing-markup-with-jsx) を書くことができます。コンテンツに動的な対話性を追加したり、React コンポーネントを埋め込む強力な方法です。
 
 <!-- textlint-disable -->
+
 Next.js は、アプリケーション内のローカル MDX コンテンツと、サーバー上で動的にフェッチされるリモート MDX ファイルの両方をサポートしています。 Next.js プラグインは、Markdown と React コンポーネントを HTML に変換する役割を果たし、Server Components（App Routerのデフォルト）での使用をサポートします。
+
 <!-- textlint-enable -->
 
 ## `@next/mdx`
@@ -79,7 +81,7 @@ module.exports = withMDX(nextConfig)
 
 これで、MDX ページ内で Markdown を使用したり、直接 React コンポーネントをインポートできます:
 
-```mdx 
+```mdx
 import { MyComponent } from 'my-components'
 
 # Welcome to my MDX page!
@@ -151,7 +153,7 @@ const nextConfig = {
 }
 
 const withMDX = createMDX({
-	// 必要な Markdown プラグインをここに追加する
+  // 必要な Markdown プラグインをここに追加する
   options: {
     remarkPlugins: [remarkGfm],
     rehypePlugins: [],

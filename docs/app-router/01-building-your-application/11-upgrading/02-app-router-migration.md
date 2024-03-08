@@ -1,6 +1,6 @@
 ---
 title: App Router Incremental Adoption Guide 🚧
-nav_title: App Routerへの移行
+sidebar_label: App Routerへの移行
 description: Learn how to upgrade your existing Next.js application from the Pages Router to the App Router.
 ---
 

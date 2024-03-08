@@ -1,6 +1,6 @@
 ---
 title: typedRoutes (experimental)
-nav_title: typedRoutes
+sidebar_label: typedRoutes
 description: Enable experimental support for statically typed links.
 ---
 

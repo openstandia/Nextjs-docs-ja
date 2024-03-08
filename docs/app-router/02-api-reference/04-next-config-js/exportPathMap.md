@@ -1,6 +1,6 @@
 ---
 title: exportPathMap (Deprecated)
-nav_title: exportPathMap
+sidebar_label: exportPathMap
 description: next export を使用したときにHTMLファイルとしてエクスポートされるページをカスタマイズします。
 ---
 

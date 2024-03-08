@@ -1,6 +1,6 @@
 ---
 title: Next.jsのプロジェクト構成
-nav_title: Project Structure
+sidebar_label: プロジェクト構成
 description: A list of folders and files conventions in a Next.js project
 ---
 

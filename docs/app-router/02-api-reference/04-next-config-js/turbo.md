@@ -1,6 +1,6 @@
 ---
 title: turbo (Experimental)
-nav_title: turbo
+sidebar_label: turbo
 description: Configure Next.js with Turbopack-specific options
 ---
 

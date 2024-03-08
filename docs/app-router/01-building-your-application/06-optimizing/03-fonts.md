@@ -1,6 +1,6 @@
 ---
 title: Font最適化
-nav_title: Fonts
+sidebar_label: Fonts
 description: Optimize your application's web fonts with the built-in `next/font` loaders.
 related:
   title: API Reference

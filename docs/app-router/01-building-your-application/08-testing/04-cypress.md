@@ -1,6 +1,6 @@
 ---
 title: Cypress
-nav_title: Cypress
+sidebar_label: Cypress
 description: エンドツーエンド（E2E）とコンポーネントテストのために Next.js で Cypress をセットアップする方法を学びます。
 ---
 

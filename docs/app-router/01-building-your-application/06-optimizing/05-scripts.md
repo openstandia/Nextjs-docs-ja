@@ -1,6 +1,6 @@
 ---
 title: Script 最適化
-nav_title: Scripts
+sidebar_label: Scripts
 description: Optimize 3rd party scripts with the built-in Script component.
 related:
   title: API Reference

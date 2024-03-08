@@ -1,6 +1,6 @@
 ---
 title: アップグレードガイド
-nav_title: Upgrading
+sidebar_label: アップグレード
 description: Learn how to upgrade to the latest versions of Next.js.
 ---
 

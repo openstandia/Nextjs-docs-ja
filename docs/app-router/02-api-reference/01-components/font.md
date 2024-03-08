@@ -1,6 +1,6 @@
 ---
 title: Fontモジュール
-nav_title: Font
+sidebar_label: Font
 description: Optimizing loading web fonts with the built-in `next/font` loaders.
 sidebar_position: 1
 ---

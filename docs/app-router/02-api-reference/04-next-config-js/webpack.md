@@ -1,6 +1,6 @@
 ---
 title: Custom Webpack Config
-nav_title: webpack
+sidebar_label: webpack
 description: Learn how to customize the webpack config used by Next.js
 ---
 
