@@ -1,6 +1,6 @@
 ---
 title: template.js
-description: template.jsファイルのAPIリファレンス
+description: template.js ファイルの API リファレンスです。
 sidebar_position: 11
 ---
 

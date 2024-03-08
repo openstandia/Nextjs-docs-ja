@@ -1,6 +1,6 @@
 ---
 title: Edge Runtime
-description: Edge Runtime のAPIリファレンス。
+description: Edge Runtime の API リファレンスです。
 ---
 
 Next.js Edge ランタイムは標準的な Web API をベースにしており、以下の API をサポートしています：

@@ -1,6 +1,6 @@
 ---
 title: <Script>
-description: next/script コンポーネントを使用して、Next.jsアプリケーション内のサードパーティのスクリプトを最適化しましょう。
+description: next/script コンポーネントを使用して、Next.jsアプリケーション内のサードパーティのスクリプトを最適化します。
 sidebar_position: 4
 ---
 
