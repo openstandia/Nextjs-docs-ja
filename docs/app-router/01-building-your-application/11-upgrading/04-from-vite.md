@@ -66,7 +66,7 @@ Next.js には、それらを自動的に最適化する組み込みコンポー
 
 ### ステップ 1: Next.js の依存関係のインストール
 
-最初にすべきことは、依存関係として `next` をインストールします:
+最初にすべきことは、依存関係として `next` をインストールすることです:
 
 ```bash title="Terminal"
 npm install next@latest
@@ -210,7 +210,7 @@ export default function RootLayout({
 }
 ```
 
-5. `favicon.ico`、`icon.png`、`robots.txt` などの[メタデータファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ)は、`app` ディレクトリのトップレベルに配置されている限り、アプリの `<head>` タグに自動的に追加されます。[すべての対応ファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ)をアプリディレクトリに移動した後、それらの `<link>` タグを安全に削除することができます:
+5. `favicon.ico`、`icon.png`、`robots.txt` などの[メタデータファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ)は、`app` ディレクトリのトップレベルに配置されている限り、アプリの `<head>` タグに自動的に追加されます。[すべての対応ファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ)を `app` ディレクトリに移動した後、それらの `<link>` タグを安全に削除することができます:
 
 ```tsx title="app/layout.tsx"
 export default function RootLayout({
