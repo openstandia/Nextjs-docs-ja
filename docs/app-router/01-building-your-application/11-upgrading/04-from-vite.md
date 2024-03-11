@@ -41,11 +41,11 @@ Next.js では、クライアントでのデータ取得がサポートされて
 
 これにより、読み込みが速く[レイアウトがずれる](https://vercel.com/blog/how-core-web-vitals-affect-seo)ことのないページを構築できます。
 
-### データフェッチ・ストラテジー
+### データフェッチ・ストラテジーの選択
 
 Next.js では、ニーズに応じて、ページやコンポーネントごとにデータ取得方法を選択できます。
-ビルド時、サーバーでのリクエスト時、クライアントでのリクエスト時でのフェッチを決めることができます。
-たとえば、構築時に CMS からデータをフェッチしてブログ記事をレンダリングし、CDN に効率的にキャッシュすることができます。
+ビルド時、サーバーでのリクエスト時、およびクライアントでのリクエスト時において、フェッチすることを決めることができます。
+たとえば、ビルド時に CMS からデータをフェッチしてブログ記事をレンダリングし、CDN に効率的にキャッシュすることができます。
 
 ### Middleware
 
@@ -66,7 +66,7 @@ Next.js には、それらを自動的に最適化する組み込みコンポー
 
 ### ステップ 1: Next.js の依存関係のインストール
 
-最初にすべきこととして、依存関係として `next` をインストールします:
+最初にすべきことは、依存関係として `next` をインストールします:
 
 ```bash title="Terminal"
 npm install next@latest
@@ -95,7 +95,7 @@ TypeScript を使用している場合は、Next.js と互換性を持たせる�
 TypeScript を使用していない場合は、この手順を省略できます。
 
 1. `tsconfig.node.json` の[プロジェクト参照](https://www.typescriptlang.org/tsconfig#references)を削除します。
-2. `./dist/types/**/*.ts` と `./next-env.d.ts` を[ `include` 配列](https://www.typescriptlang.org/tsconfig#include)に追加します。
+2. `./dist/types/**/*.ts` と `./next-env.d.ts` を [`include` 配列](https://www.typescriptlang.org/tsconfig#include)に追加します。
 3. `./node_modules` を [`exclude` 配列](https://www.typescriptlang.org/tsconfig#exclude)に追加します。
 4. [`compilerOptions` 内の `plugins` 配列](https://www.typescriptlang.org/tsconfig#plugins)に `{ "name": "next" }` を追加します。: `"plugins": [{ "name": "next" }]`
 5. [`esModuleInterop`](https://www.typescriptlang.org/tsconfig#esModuleInterop) に `true` を設定します。: `"esModuleInterop": true`
@@ -210,7 +210,7 @@ export default function RootLayout({
 }
 ```
 
-5. `favicon.ico`、`icon.png`、`robots.txt` などの[メタデータファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ)は、アプリディレクトリのトップレベルに配置されている限り、アプリの `<head>` タグに自動的に追加されます。[すべての対応ファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ)をアプリディレクトリに移動した後、それらの `<link>` タグを安全に削除することができます:
+5. `favicon.ico`、`icon.png`、`robots.txt` などの[メタデータファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ)は、`app` ディレクトリのトップレベルに配置されている限り、アプリの `<head>` タグに自動的に追加されます。[すべての対応ファイル](/docs/app-router/building-your-application/optimizing/metadata#ファイルベースのメタデータ)をアプリディレクトリに移動した後、それらの `<link>` タグを安全に削除することができます:
 
 ```tsx title="app/layout.tsx"
 export default function RootLayout({
@@ -313,7 +313,7 @@ export function ClientOnly() {
 ```
 
 このファイルは `use client` ディレクティブで定義された[Client Component](/docs/app-router/building-your-application/rendering/client-components) です。
-Client Component は、クライアントに送信される前にサーバ上で HTML にプリレンダリングされます。
+Client Component は、クライアントに送信される前にサーバ上で [HTML にプリレンダリング](/docs/app-router/building-your-application/rendering/client-components#client-components-はどのようにレンダリングされるのか)されます。
 
 クライアント専用のアプリケーションを起動したいので、`App` コンポーネントから下のプリレンダリングを無効にするように `Next.js` を設定します。
 
@@ -355,8 +355,8 @@ Next.js では、静的画像のインポートはオブジェクトを返しま
 `<Image>` コンポーネントには、[画像の自動最適化](/docs/app-router/building-your-application/optimizing/images)という利点もあります。
 `<Image>` コンポーネントは、画像の寸法に基づいて、生成される `<img>` の `width` 属性と `height` 属性を自動的に設定します。
 これにより、画像の読み込み時にレイアウトがずれるのを防ぐことができます。
-しかし、アプリに含まれる画像の寸法の一方だけがスタイル設定され、もう一方が自動設定されていない場合、問題が発生する可能性があります。
-`auto` にスタイリングされていない場合、寸法は `<img>` dimension 属性の値がデフォルトとなり、画像が歪んで見える原因となります。
+しかし、アプリに含まれる画像の寸法の一方だけがスタイル設定され、もう一方が `auto` にスタイル設定されていない場合、問題が発生する可能性があります。
+`auto` にスタイル設定されていない場合、 寸法はデフォルトで `<img>` タグの寸法属性の値になり、イメージが歪んで見える原因となります。
 
 `<img>` タグを維持することで、アプリケーションの変更量を減らし、上記の問題を防ぐことができます。
 その後、オプションで `<Image>` コンポーネントに移行して、[ローダーを設定する](/docs/app-router/building-your-application/optimizing/images#loaders)ことで画像の最適化を利用したり、画像の自動最適化を備えたデフォルトの Next.js サーバーに移行したりすることができます。
@@ -382,7 +382,7 @@ import logo from '../public/logo.png'
 ```
 
 代わりに、タイトルに基づいて画像アセットの公開 URL を参照することもできます。
-例えば、`public/logo.png` はアプリケーション内の `/logo.png` というパスに画像を提供しますので、`src` の値として使用できます。
+例えば、`public/logo.png` はアプリケーション内の `/logo.png` というパスで画像を提供しますので、`src` の値として使用できます。
 
 > **注意:** TypeScript を使用している場合、`src` プロパティにアクセスする際に型エラーが発生する可能性があります。
 > 今のところは無視してかまいません。このガイドの終わりまでには修正されるでしょう。
@@ -392,7 +392,8 @@ import logo from '../public/logo.png'
 Next.js は Vite と同様に `.env` [環境変数](/docs/app-router/building-your-application/configuring/environment-variables)をサポートしています。
 主な違いは、クライアントサイドで環境変数を公開するためのプレフィックスです。
 
-プレフィックスが `VITE_` の環境変数はすべて `NEXT_PUBLIC_`に変更してください。
+- プレフィックスが `VITE_` の環境変数はすべて `NEXT_PUBLIC_`に変更してください。
+
 Vite では、Next.js ではサポートされていないいくつかの組み込み環境変数を特別な `import.meta.env` オブジェクトで公開しています。
 以下のように使用方法を更新する必要があります:
 
@@ -466,7 +467,7 @@ dist
 ## 次のステップ
 
 すべてが計画どおりに進んでいれば、Next.js アプリケーションはシングルページアプリケーションとして動作しています。
-しかし、まだ Next.js のメリットのほとんどを活用できていません。次に行うことは次のとおりです:
+まだ Next.js のメリットのほとんどを活用できていませんが、あなたは今すべての利点を享受するために漸進的な変更を開始することができます。次にやるべきことは以下の通りです:
 
 - React Router から [Next.js App Router](/docs/app-router/building-your-application/routing) に移行して、次のことを実現します。
   - コードの自動分割
