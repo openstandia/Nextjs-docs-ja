@@ -1,6 +1,6 @@
 ---
 title: usePathname
-description: usePathname フックのAPIリファレンス。
+description: usePathname フックの API リファレンスです。
 ---
 
 `usePathname`は、現在の URL のパス名を読み取るための**Client Component**のフックです。

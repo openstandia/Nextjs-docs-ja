@@ -1,6 +1,6 @@
 ---
 title: revalidatePath
-description: revalidatePath 関数の API リファレンス
+description: revalidatePath 関数の API リファレンスです。
 ---
 
 `revalidatePath`を使用すると、特定のパスに対する[キャッシュ・データ](/docs/app-router/building-your-application/caching)をオンデマンドで消去できます。

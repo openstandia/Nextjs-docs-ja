@@ -1,6 +1,6 @@
 ---
 title: generateViewport
-description: generateViewport関数のAPIリファレンス
+description: generateViewport 関数の API リファレンスです。
 related:
   title: 次のステップ
   description: Metadata APIオプションをすべて表示する

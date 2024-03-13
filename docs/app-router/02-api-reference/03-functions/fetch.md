@@ -1,6 +1,6 @@
 ---
 title: fetch
-description: 拡張フェッチ関数のAPIリファレンス
+description: 拡張フェッチ関数のAPIリファレンスです。
 ---
 
 Next.js は、ネイティブの [Web `fetch()` API](https://developer.mozilla.org/docs/Web/API/Fetch_API) を拡張して、サーバー上の各リクエストに独自の永続キャッシュのセマンティクスを設定できるようにしました。

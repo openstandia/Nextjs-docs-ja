@@ -1,6 +1,6 @@
 ---
 title: unstable_noStore
-description: unstable_noStore 関数の API リファレンス
+description: unstable_noStore 関数の API リファレンスです。
 ---
 
 `unstable_noStore` を使用すると、静的レンダリングを宣言的にオプトアウトし、特定のコンポーネントをキャッシュすべきでないことを示すことができます。

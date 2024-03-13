@@ -1,6 +1,6 @@
 ---
 title: revalidateTag
-description: revalidateTag 関数の API リファレンス
+description: revalidateTag 関数の API リファレンスです。
 ---
 
 `revalidateTag` を使用すると、特定のキャッシュ・タグの[キャッシュ・データ](/docs/app-router/building-your-application/caching)をオンデマンドで消去できます。

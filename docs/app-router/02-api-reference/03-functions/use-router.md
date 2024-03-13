@@ -1,6 +1,6 @@
 ---
 title: useRouter
-description: useRouter フックのAPIリファレンス。
+description: useRouter フックのAPIリファレンスです。
 ---
 
 `useRouter`フックは、[Client Component](/docs/app-router/building-your-application/rendering/client-components)内でプログラム的にルートを変更できます。

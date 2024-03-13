@@ -1,6 +1,6 @@
 ---
 title: useParams
-description: useParams フックのAPIリファレンス。
+description: useParams フックのAPIリファレンスです。
 ---
 
 `useParams`は**Client Component**のフックであり、現在の URL の[動的パラメータ](/docs/app-router/building-your-application/routing/dynamic-routes)を読み取ることができます。

@@ -1,6 +1,6 @@
 ---
 title: NextResponse
-description: NextResponse の API リファレンス
+description: NextResponse の API リファレンスです。
 ---
 
 <!--

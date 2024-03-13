@@ -1,6 +1,6 @@
 ---
 title: NextRequest
-description: NextRequest の API リファレンス
+description: NextRequest の API リファレンスです。
 ---
 
 <!--

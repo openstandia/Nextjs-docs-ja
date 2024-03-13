@@ -1,6 +1,6 @@
 ---
 タイトル: headers
-説明: headers関数のAPIリファレンス
+説明: headers 関数の API リファレンスです。
 ---
 
 `headers`関数を使用すると、[Server Component](/docs/app-router/building-your-application/rendering/server-components)からHTTPの受信リクエストヘッダーを読み取ることができます。

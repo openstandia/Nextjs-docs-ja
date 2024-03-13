@@ -1,6 +1,6 @@
 ---
 title: generateImageMetadata
-description: 1つのMetadata API専用ファイルに複数の画像を生成する方法を紹介します
+description: 1 つの Metadata API 専用ファイルに複数の画像を生成する方法を紹介します。
 related:
   title: 次のステップ
   description: Metadata APIオプションをすべて表示します

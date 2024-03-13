@@ -1,6 +1,6 @@
 ---
 title: draftMode
-description: draftMode関数のAPIリファレンス。
+description: draftMode 関数の API リファレンスです。
 ---
 
 `draftMode` 関数を使用すると、[Server Component](/docs/app-router/building-your-application/rendering/server-components)

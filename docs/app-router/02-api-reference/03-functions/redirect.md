@@ -1,6 +1,6 @@
 ---
 title: redirect
-description: redirect関数のAPIリファレンス
+description: redirect 関数の API リファレンスです。
 related:
   links:
     - app-router/api-reference/functions/permanentRedirect

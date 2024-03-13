@@ -1,6 +1,6 @@
 ---
 title: useSelectedLayoutSegment
-description: useSelectedLayoutSegment フックのAPIリファレンス。
+description: useSelectedLayoutSegment フックの API リファレンスです。
 ---
 
 `useSelectedLayoutSegment`は**Client Component**のフックであり、呼び出されたレイアウトの**1 階層下**のアクティブなルート Segment を読み取ることができます。
