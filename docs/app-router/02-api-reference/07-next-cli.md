@@ -1,6 +1,6 @@
 ---
 title: Next.js CLI
-description: The Next.js CLI allows you to start, build, and export your application. Learn more about it here.
+description: Next.js CLI は、アプリケーションの開始、ビルド、およびエクスポートを行うことができる便利なツールです。詳細については、こちらをご覧ください。
 ---
 
 Next.js CLI を使用して、アプリケーションの起動、ビルド、エクスポートができます。

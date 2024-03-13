@@ -1,6 +1,6 @@
 ---
 title: ルートグループ
-description: Route Groups can be used to partition your Next.js application into different sections.
+description: ルートグループは、Next.jsアプリケーションをさまざまなセクションに分割するために使用できます。
 ---
 
 `app`ディレクトリでは、ネストされたフォルダは通常 URL パスにマップされます。しかし、フォルダーを **ルートグループ** としてマークすることで、そのフォルダーがルートの URL パスに含まれないようにできます。

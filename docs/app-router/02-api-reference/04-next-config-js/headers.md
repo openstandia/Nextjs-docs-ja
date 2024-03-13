@@ -1,6 +1,7 @@
 ---
 title: headers
 description: Next.js アプリにカスタム HTTP ヘッダーを追加します
+sidebar_position: 12
 ---
 
 headers は、指定されたパスの受信リクエストに対するレスポンスにカスタム HTTP ヘッダーを設定することができます。

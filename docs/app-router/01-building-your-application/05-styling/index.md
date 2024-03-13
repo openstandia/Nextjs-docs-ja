@@ -1,6 +1,6 @@
 ---
 title: スタイリング
-description: Learn the different ways you can style your Next.js application.
+description: Next.jsアプリケーションのスタイルを変更するさまざまな方法を学びましょう。
 ---
 
 Next.js は、アプリケーションをスタイリングするさまざまな方法をサポートしています：
@@ -12,3 +12,8 @@ Next.js は、アプリケーションをスタイリングするさまざまな
 - **CSS-in-JS**: CSS を JavaScript コンポーネントに直接埋め込み、動的でスコープされたスタイリングを可能にします
 
 各アプローチの詳細については、それぞれのドキュメントを参照してください。
+
+- [CSS Modules](/docs/app-router/building-your-application/styling/css-modules): CSS Modules を使用して Next.js アプリケーションをスタイルします。
+- [Tailwind CSS](/docs/app-router/building-your-application/styling/tailwind-css): Tailwind CSS を使用して Next.js アプリケーションをスタイルします。
+- [Sass](/docs/app-router/building-your-application/styling/sass): Next.js で CSS-in-JS ライブラリを使用する。
+- [CSS-in-JS](/docs/app-router/building-your-application/styling/css-in-js): Sass を使って Next.js アプリケーションをスタイリングします。

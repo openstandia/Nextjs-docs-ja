@@ -1,6 +1,6 @@
 ---
 title: Draft Mode
-description: Next.js has draft mode to toggle between static and dynamic pages. You can learn how it works with App Router here.
+description: Next.jsには、静的ページと動的ページを切り替えるためのドラフトモードがあります。App Routerでその動作方法を学ぶことができます。
 ---
 
 `Static rendering` は、ページがヘッドレス CMS からデータを取得する場合に便利です。ただし、ヘッドレス CMS 上でドラフトを書いて、すぐにそのドラフトをページで確認したい場合には理想的ではありません。こうした場合、Next.js にこれらのページをビルド時ではなく **リクエスト時** にレンダリングさせ、公開コンテンツではなくドラフトコンテンツを取得したいと思うでしょう。この特定のケースに対して、Next.js は [ダイナミックレンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング) に切り替えることが望ましいです。

@@ -1,6 +1,6 @@
 ---
 title: page.js
-description: API reference for the page.js file.
+description: page.js ファイルの API リファレンスです。
 sidebar_position: 8
 ---
 

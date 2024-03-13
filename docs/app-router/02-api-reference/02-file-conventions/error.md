@@ -1,8 +1,8 @@
 ---
 title: error.js
-description: API reference for the error.js special file.
+description: 特殊ファイル error.js の API リファレンスです。
 related:
-  title: Learn more about error handling
+  title: エラーハンドリングについてさらに学びましょう。
   links:
     - app-router/building-your-application/routing/error-handling
 sidebar_position: 2

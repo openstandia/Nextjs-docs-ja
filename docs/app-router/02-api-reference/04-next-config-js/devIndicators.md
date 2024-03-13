@@ -1,6 +1,7 @@
 ---
 title: devIndicators
-description: Optimized pages include an indicator to let you know if it's being statically optimized. You can opt-out of it here.
+description: 最適化されたページには、静的に最適化されているかどうかを知らせるインジケータがあります。ここでオプトアウトすることもできます。
+sidebar_position: 5
 ---
 
 コードを編集して Next.js がアプリケーションをコンパイルしているとき、ページの右下にコンパイルインジケータが表示されます。

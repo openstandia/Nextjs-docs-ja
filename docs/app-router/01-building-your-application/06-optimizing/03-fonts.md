@@ -1,9 +1,9 @@
 ---
 title: Font最適化
-nav_title: Fonts
-description: Optimize your application's web fonts with the built-in `next/font` loaders.
+sidebar_label: Fonts
+description: 内蔵された next/font ローダーを使用して、アプリケーションのウェブフォントを最適化しましょう。
 related:
-  title: API Reference
+  title: API リファレンス
   description: Learn more about the next/font API.
   links:
     - app-router/api-reference/components/font

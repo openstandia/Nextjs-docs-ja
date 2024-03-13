@@ -1,6 +1,7 @@
 ---
 title: productionBrowserSourceMaps
-description: Enables browser source map generation during the production build.
+description: プロダクションビルド中にブラウザのソースマップの生成を有効にします。
+sidebar_position: 25
 ---
 
 Source Map は開発時にはデフォルトで有効になっています。プロダクション環境でのビルド時には、クライアント側にソースが漏れるのを防ぐため、設定フラグでオプトインしない限り、Source Map は無効になります。

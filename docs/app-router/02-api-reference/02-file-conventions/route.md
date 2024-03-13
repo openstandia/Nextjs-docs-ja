@@ -1,6 +1,6 @@
 ---
 title: route.js
-description: API reference for the route.js special file.
+description: 特殊ファイル route.js の API リファレンスです。
 sidebar_position: 9
 ---
 

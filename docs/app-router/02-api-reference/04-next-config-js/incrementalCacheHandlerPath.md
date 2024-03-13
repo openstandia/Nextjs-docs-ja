@@ -2,6 +2,7 @@
 title: Custom Next.js Cache Handler
 sidebar_label: cacheHandler
 description: Next.jsのキャッシュを構成し、Redis、Memcachedなどの外部サービスを使用してデータを保存、再検証する方法を学習します。
+sidebar_position: 15
 ---
 
 Next.js では、Pages Router及びApp Routerの[デフォルトのキャッシュハンドラ](/docs/app-router/building-your-application/data-fetching/fetching-caching-and-revalidating)はファイルシステムキャッシュを使用します。これには設定は必要ありませんが、`next.config.js`の`cacheHandler`フィールドを使用してキャッシュハンドラをカスタマイズすることができます。

@@ -1,8 +1,8 @@
 ---
 title: ルートの定義
-description: Learn how to create your first route in Next.js.
+description: Next.js で最初のルートを作成する方法を学びます。
 related:
-  description: Learn more about creating pages and layouts.
+  description: ページやレイアウトの作成について詳しく説明します。
   links:
     - app-router/building-your-application/routing/pages-and-layouts
 ---

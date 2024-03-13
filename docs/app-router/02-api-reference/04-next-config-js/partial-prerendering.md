@@ -1,6 +1,7 @@
 ---
 title: Partial Prerendering (experimental)
 description: Next.js 14 で部分プリレンダリング（実験的）を有効にする方法について説明します。
+sidebar_position: 23
 ---
 
 > **注意**: 部分プリレンダリングは実験的な機能であり、現在のところ **本番環境には適していません**。

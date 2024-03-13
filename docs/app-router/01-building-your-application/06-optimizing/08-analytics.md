@@ -1,6 +1,6 @@
 ---
 title: アナリティクス
-description: Measure and track page performance using Next.js Speed Insights
+description: Next.js Speed Insightsを使用して、ページのパフォーマンスを測定して追跡します。
 ---
 
 Next.js には、パフォーマンスメトリクスの測定とレポート機能が組み込まれています。`useReportWebVitals` フックを使って自分でレポートを管理することもできますし、Vercel が提供する[マネージドサービス](https://vercel.com/analytics?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)で自動的にメトリクスを収集して可視化することもできます。

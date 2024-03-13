@@ -1,6 +1,6 @@
 ---
 title: <Script>
-description: Optimize third-party scripts in your Next.js application using the built-in `next/script` Component.
+description: next/script コンポーネントを使用して、Next.jsアプリケーション内のサードパーティのスクリプトを最適化します。
 sidebar_position: 4
 ---
 

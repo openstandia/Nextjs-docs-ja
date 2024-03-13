@@ -1,6 +1,6 @@
 ---
 title: ルーティングの基礎
-nav_title: ルーティング
+sidebar_label: ルーティング
 description: フロントエンドアプリケーションのルーティングの基礎を学びます。
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: 遅延ロード
-description: Lazy load imported libraries and React Components to improve your application's loading performance.
+description: アプリケーションの読み込みパフォーマンスを向上させるために、インポートされたライブラリとReactコンポーネントを遅延読み込みしてください。
 ---
 
 Next.js の[遅延ロード](https://developer.mozilla.org/en-US/docs/Web/Performance/Lazy_loading)は、ルートのレンダリングに必要な JavaScript の量を減らすことで、アプリケーションの初期読み込みパフォーマンスを向上させます。

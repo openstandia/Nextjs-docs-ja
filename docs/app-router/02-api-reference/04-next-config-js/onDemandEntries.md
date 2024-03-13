@@ -1,6 +1,7 @@
 ---
 title: onDemandEntries
-description: Configure how Next.js will dispose and keep in memory pages created in development.
+description: Next.js が開発中に作成されるページを解放したりメモリに保持する方法を設定します。
+sidebar_position: 19
 ---
 
 Next.js は、開発中にビルドされたページをサーバーがメモリ上にどのように破棄するか、または保持するかを制御するオプションをいくつか公開しています。

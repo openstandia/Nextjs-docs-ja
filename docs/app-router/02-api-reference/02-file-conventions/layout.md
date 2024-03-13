@@ -1,6 +1,6 @@
 ---
 title: layout.js
-description: API reference for the layout.js file.
+description: layout.js ファイルの API リファレンスです。
 sidebar_position: 4
 ---
 
