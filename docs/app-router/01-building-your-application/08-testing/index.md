@@ -1,6 +1,6 @@
 ---
 title: テスト
-description: 'Next.jsと、よく使われる4つのテストツール（Cypress、Playwright、Vitest、Jest）のセットアップ方法を学びます。'
+description: Next.js と、よく使われる4つのテストツール（Cypress、Playwright、Vitest、Jest）のセットアップ方法を学びます。
 ---
 
 React と Next.js では、記述できるテストの種類がいくつかあり、それぞれに目的と使用例があります。このページでは、アプリケーションのテストに使用できる種類と一般的に使用されているツールの概要を説明します。
