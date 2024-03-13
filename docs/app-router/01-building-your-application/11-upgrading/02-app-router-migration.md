@@ -64,8 +64,6 @@ Next.js 12 では、一時的なインポート（`next/future/image`）によ�
 
 ### `<Link>` コンポーネント
 
-The [`<Link>` Component](/docs/app-router/building-your-application/routing/linking-and-navigating#link-component) no longer requires manually adding an `<a>` tag as a child. This behavior was added as an experimental option in [version 12.2](https://nextjs.org/blog/next-12-2) and is now the default. In Next.js 13, `<Link>` always renders `<a>` and allows you to forward props to the underlying tag.
-
 [`<Link>` コンポーネント](/docs/app-router/building-your-application/routing/linking-and-navigating#link-コンポーネント)は、手動で `<a>` タグを子として追加する必要がなくなりました。
 この動作はバージョン 12.2 で実験的なオプションとして追加されたもので、現在はデフォルトになっています。
 Next.js 13 では、`<Link>` は常に `<a>` をレンダリングし、その下にあるタグに prop を転送することができます。
@@ -99,13 +97,6 @@ import Link from 'next/link'
 
 ### Font 最適化
 
-Previously, Next.js helped you optimize fonts by [inlining font CSS](/docs/app-router/building-your-application/optimizing/fonts).
-Version 13 introduces the new [`next/font`](/docs/app-router/building-your-application/optimizing/fonts) module which gives you the ability to customize your font loading experience while still ensuring great performance and privacy. `next/font` is supported in both the `pages` and `app` directories.
-
-While [inlining CSS](/docs/app-router/building-your-application/optimizing/fonts) still works in `pages`, it does not work in `app`. You should use [`next/font`](/docs/app-router/building-your-application/optimizing/fonts) instead.
-
-See the [Font Optimization](/docs/app-router/building-your-application/optimizing/fonts) page to learn how to use `next/font`.
-
 以前の Next.js では、[Font CSS をインライン化する](/docs/app-router/building-your-application/optimizing/fonts) ことで Font の最適化をサポートしていました。
 バージョン 13 では、新しい [`next/font`](/docs/app-router/building-your-application/optimizing/fonts) モジュールが導入され、優れたパフォーマンスとプライバシーを確保しながら、Font の読み込み体験をカスタマイズできるようになりました。
 `next/font` は、`pages` と `app`の両方のディレクトリでサポートされています。
@@ -117,24 +108,26 @@ See the [Font Optimization](/docs/app-router/building-your-application/optimizin
 
 ## `pages` から `app` への移行
 
-> **🎥 Watch:** Learn how to incrementally adopt the App Router → [YouTube (16 minutes)](https://www.youtube.com/watch?v=YQMSietiFm0).
+> **🎥 Watch:** App Router を段階的に導入する方法を学ぶ → [YouTube（16分）](https://www.youtube.com/watch?v=YQMSietiFm0)。
 
-Moving to the App Router may be the first time using React features that Next.js builds on top of such as Server Components, Suspense, and more. When combined with new Next.js features such as [special files](/docs/app-router/building-your-application/routing#file-conventions) and [layouts](/docs/app-router/building-your-application/routing/pages-and-layouts#layouts), migration means new concepts, mental models, and behavioral changes to learn.
+App Router への移行は、Server Components や Suspense など、Next.js がその上に構築する React の機能を初めて使うことになるかもしれません。
+[特殊なファイル](/docs/app-router/building-your-application/routing#ファイル規約)や[レイアウト](/docs/app-router/building-your-application/routing/pages-and-layouts#レイアウト)などの Next.js の新機能と組み合わせると、移行は新しい概念、メンタルモデル、行動の変化を学ぶことを意味します。
 
-We recommend reducing the combined complexity of these updates by breaking down your migration into smaller steps. The `app` directory is intentionally designed to work simultaneously with the `pages` directory to allow for incremental page-by-page migration.
+移行を小さなステップに分割することで、これらのアップデートの複雑さを軽減することをお勧めします。
+`app` ディレクトリは、ページごとに段階的に移行できるように、意図的に `pages` ディレクトリと同時に動作するように設計されています。
 
-- The `app` directory supports nested routes _and_ layouts. [Learn more](/docs/app-router/building-your-application/routing).
-- Use nested folders to [define routes](/docs/app-router/building-your-application/routing/defining-routes) and a special `page.js` file to make a route segment publicly accessible. [Learn more](#step-4-migrating-pages).
-- [Special file conventions](/docs/app-router/building-your-application/routing#file-conventions) are used to create UI for each route segment. The most common special files are `page.js` and `layout.js`.
-  - Use `page.js` to define UI unique to a route.
-  - Use `layout.js` to define UI that is shared across multiple routes.
-  - `.js`, `.jsx`, or `.tsx` file extensions can be used for special files.
-- You can colocate other files inside the `app` directory such as components, styles, tests, and more. [Learn more](/docs/app-router/building-your-application/routing).
-- Data fetching functions like `getServerSideProps` and `getStaticProps` have been replaced with [a new API](/docs/app-router/building-your-application/data-fetching) inside `app`. `getStaticPaths` has been replaced with [`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params).
-- `pages/_app.js` and `pages/_document.js` have been replaced with a single `app/layout.js` root layout. [Learn more](/docs/app-router/building-your-application/routing/pages-and-layouts#root-layout-required).
-- `pages/_error.js` has been replaced with more granular `error.js` special files. [Learn more](/docs/app-router/building-your-application/routing/error-handling).
-- `pages/404.js` has been replaced with the [`not-found.js`](/docs/app-router/api-reference/file-conventions/not-found) file.
-- `pages/api/*` API Routes have been replaced with the [`route.js`](/docs/app-router/api-reference/file-conventions/route) (Route Handler) special file.
+- `app` ディレクトリはネストされたルート _と_ レイアウトをサポートします。詳細は[こちら](/docs/app-router/building-your-application/routing)。
+- ネストされたフォルダを使用して[ルートを定義](/docs/app-router/building-your-application/routing/defining-routes)し、特別な `page.js` ファイルを使用してルートセグメントを一般公開します。詳細は[こちら](#ステップ-4-ページの移行)。
+- [特別なファイル規約](/docs/app-router/building-your-application/routing#ファイル規約)は、各ルートセグメントの UI を作成するために使用されます。最も一般的な特殊ファイルは `page.js` と `layout.js` です。
+  - ルートに固有の UI を定義するには `page.js` を使います。
+  - 複数のルートで共有される UI を定義するには `layout.js` を使います。
+  - 特殊なファイルには `.js`、`.jsx`、`.tsx` の拡張子を使用できます。
+- コンポーネント、スタイル、テストなど、他のファイルを `app` ディレクトリ内に配置できます。詳細は[こちら](/docs/app-router/building-your-application/routing)。
+- `getServerSideProps` や `getStaticProps` のようなデータ取得関数は、`app` 内部の[新しい API](/docs/app-router/building-your-application/data-fetching) に置き換えられました。 `getStaticPaths` は [`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params) に置き換えられました。
+- `pages/_app.js` と `pages/_document.js` は、単一の `app/layout.js` ルートレイアウトに置き換えられました。詳細は[こちら](/docs/app-router/building-your-application/routing/pages-and-layouts#ルートレイアウト-必須)。
+- `pages/_error.js` は、より詳細な `error.js` 特殊ファイルに置き換えられました。詳細は[こちら](/docs/app-router/building-your-application/routing/error-handling)。
+- `pages/404.js` は [`not-found.js`](/docs/app-router/api-reference/file-conventions/not-found) ファイルに置き換えられました。
+- `pages/api/*` API Routes は [`route.js`](/docs/app-router/api-reference/file-conventions/route) (Route Handler) 特殊ファイルに置き換えられました。
 
 ### ステップ 1: `app` ディレクトリの作成
 
