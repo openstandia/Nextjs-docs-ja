@@ -41,7 +41,7 @@ Next.js で認証を実装するために、以下の3つの基本的な概念�
 
 ```tsx title="app/login/page.tsx"
 import { authenticate } from '@/app/lib/actions'
- 
+
 export default function Page() {
   return (
     <form action={authenticate}>
@@ -59,9 +59,9 @@ export default function Page() {
 
 ```ts title="app/lib/actions.ts"
 'use server'
- 
+
 import { signIn } from '@/auth'
- 
+
 export async function authenticate(formData: FormData) {
   try {
     await signIn('credentials', formData)
@@ -85,18 +85,20 @@ export async function authenticate(formData: FormData) {
 - **認証失敗**:認証情報が間違っていたり、エラーが発生した場合など、この関数は認証の失敗に対応するエラーメッセージを返します。
 
 <!-- textlint-disable -->
+
 最後に `login-form.tsx` コンポーネントでは、React の `useFormState` を使用して Server Action を呼び出し、フォームのエラー処理と`useFormStatus`を使用してフォームの状態を処理できます:
+
 <!-- textlint-enable -->
 
 ```tsx title="app/login/page.tsx"
 'use client'
- 
+
 import { authenticate } from '@/app/lib/actions'
 import { useFormState, useFormStatus } from 'react-dom'
- 
+
 export default function Page() {
   const [errorMessage, dispatch] = useFormState(authenticate, undefined)
- 
+
   return (
     <form action={dispatch}>
       <input type="email" name="email" placeholder="Email" required />
@@ -106,10 +108,10 @@ export default function Page() {
     </form>
   )
 }
- 
+
 function LoginButton() {
   const { pending } = useFormStatus()
- 
+
   return (
     <button aria-disabled={pending} type="submit">
       Login
@@ -120,7 +122,6 @@ function LoginButton() {
 
 Next.js プロジェクトで、より合理的に認証設定を行うには、特に複数のログイン方法を提供する場合は、包括的な[認証ソリューション](#例)の使用を検討してください。
 
-
 ## 認可
 
 ユーザーが認証されたら、次に特定のルートへのアクセス許可と、Server Action でのデータの変更や Route Handlers の呼び出しといった操作のための認可が必要となります。
@@ -129,17 +130,24 @@ Next.js プロジェクトで、より合理的に認証設定を行うには、
 
 [Middleware](/docs/app-router/building-your-application/routing/middleware)は Next.js でウェブサイトのさまざまな部分へのアクセスを制御するための便利な機能です。これにより、ユーザーダッシュボードなどの領域を保護しながら、マーケティングページなどの公開ページを作成できます。すべてのルートに対して Middleware を適用し、アクセスを公開するルートだけを除外するように設定することを推奨します。
 
-Next.js での認証のための Middleware 実装方法は以下のとおりです: 
+Next.js での認証のための Middleware 実装方法は以下のとおりです:
 
 1. **Middleware の設定:**
-  - プロジェクトのルートディレクトリに`middleware.ts`または`.js`ファイルを作成します
-  - ユーザーアクセスの認証など、認証トークンのチェックのようなロジックを含めます
+
+- プロジェクトのルートディレクトリに`middleware.ts`または`.js`ファイルを作成します
+- ユーザーアクセスの認証など、認証トークンのチェックのようなロジックを含めます
+
 2. **保護対象のルートの定義:**
-  - すべてのルートが認可を必要とするわけではありません。Middlewareの`matcher`オプションを使用して、認可チェックが不要なルートを指定します
+
+- すべてのルートが認可を必要とするわけではありません。Middlewareの`matcher`オプションを使用して、認可チェックが不要なルートを指定します
+
 3. **Middleware のロジック:**
-  - ユーザーが認証されているかどうかを確認するロジックを記述します。ルートの認可のためにユーザーロールや権限のチェックを行います
+
+- ユーザーが認証されているかどうかを確認するロジックを記述します。ルートの認可のためにユーザーロールや権限のチェックを行います
+
 4. **認可されていないアクセスのハンドリング:**
-  - 認可されていないユーザーをログインページやエラーページにリダイレクトします
+
+- 認可されていないユーザーをログインページやエラーページにリダイレクトします
 
 Middleware ファイルの例:
 
@@ -167,14 +175,14 @@ export const config = {
 
 ```tsx title="app/page.tsx"
 import { redirect } from 'next/navigation'
- 
+
 export default function Page() {
   // リダイレクトが必要かどうかを判断するロジック
   const accessDenied = true
   if (accessDenied) {
     redirect('/login')
   }
- 
+
   // その他のルートとロジックを定義する
 }
 ```
@@ -193,8 +201,7 @@ DAL のセキュリティを確保するための詳細なガイド、例えば�
 
 ### Server Actions の保護
 
-<!-- TODO: Fix link -->
-[Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) を扱う際には、公開されている API エンドポイントと同じセキュリティを考慮することが重要です。各アクションに対するユーザーの認証を確認することが重要です。Server Action 内でユーザーの権限を判断するチェックを実装します。例えば、特定のアクションを管理者ユーザーに限定します。
+[Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) を扱う際には、公開されている API エンドポイントと同じセキュリティを考慮することが重要です。各アクションに対するユーザーの認証を確認することが重要です。Server Action 内でユーザーの権限を判断するチェックを実装します。例えば、特定のアクションを管理者ユーザーに限定します。
 
 以下の例では、アクションの処理を続ける前にユーザーのロールを確認します:
 

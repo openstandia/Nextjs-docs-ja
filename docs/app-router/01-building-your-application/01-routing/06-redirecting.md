@@ -21,9 +21,7 @@ Next.js でリダイレクトを操作するには、いくつかの方法があ
 
 ## `redirect` 関数
 
-<!-- TODO: fix link -->
-
-`redirect` 関数を使用すると、ユーザーを別の URL にリダイレクトできます。[Server Components](/docs/app-router/building-your-application/rendering/server-components), [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers), [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で `redirect` を呼び出すことができます。
+`redirect` 関数を使用すると、ユーザーを別の URL にリダイレクトできます。[Server Components](/docs/app-router/building-your-application/rendering/server-components), [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers), [Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations)で `redirect` を呼び出すことができます。
 
 `redirect` は、ミューテーションやイベントの後によく使用されます。例えば、投稿の作成する場合には以下のようになります。
 
@@ -57,9 +55,7 @@ export async function createPost(id: string) {
 
 ## `permanentRedirect` 関数
 
-<!-- TODO: fix link -->
-
-`permanentRedirect` 関数を使用すると、ユーザーを**永久的に**別の URL にリダイレクトできます。[Server Components](/docs/app-router/building-your-application/rendering/server-components), [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers), [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で `permanentRedirect` を呼び出すことができます。
+`permanentRedirect` 関数を使用すると、ユーザーを**永久的に**別の URL にリダイレクトできます。[Server Components](/docs/app-router/building-your-application/rendering/server-components), [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers), [Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations)で `permanentRedirect` を呼び出すことができます。
 
 `permanentRedirect` は、エンティティの正規 URL を変更するミューテーションやイベントの後によく使用されます。例えば、ユーザーが自分のユーザーネームを変更した後のユーザープロフィールの URL を更新する場合などです:
 
@@ -119,9 +115,7 @@ export default function Page() {
 
 `next.config.js` ファイルの `redirects` オプションを使用すると、受信したリクエストのパスを別のパスにリダイレクトできます。これは、ページの URL 構造を変更したり、事前にリダイレクトのリストが分かっている場合に便利です。
 
-<!-- TODO: fix link -->
-
-`redirects`は、[path](/docs/app-router/api-reference/next-config-js/redirects#path-matching), [header、cookie、query のマッチング](/docs/app-router/api-reference/next-config-js/redirects#header-cookie-and-query-matching)をサポートしており、リクエストに基づいてユーザーをリダイレクトする柔軟性を提供します。
+`redirects`は、[path](/docs/app-router/api-reference/next-config-js/redirects#パスマッチング), [header、cookie、query のマッチング](/docs/app-router/api-reference/next-config-js/redirects#ヘッダークッキークエリーのマッチング)をサポートしており、リクエストに基づいてユーザーをリダイレクトする柔軟性を提供します。
 
 `redirects` を使用するには、`next.config.js` ファイルにオプションを追加します:
 

@@ -308,8 +308,6 @@ Next.js では、React Server Component Payload を個々の Route Segment に�
 
 その結果、ユーザーのナビゲーション体験が向上します:
 
-<!-- TODO: fix link -->
-
 - 訪問したルートがキャッシュされるため、すぐに戻る/進むナビゲーションができ、プリフェッチと[部分レンダリング](/docs/app-router/building-your-application/routing/linking-and-navigating#4-部分レンダリング)により、新しいルートへのナビゲーションが高速になります
 - ナビゲーションの間に全ページをリロードする必要がなく、React の状態とブラウザの状態が保持されます
 
@@ -357,8 +355,7 @@ Router Cache は無効にできません。[`router.refresh`](/docs/app-router/a
 ### Data Cache と クライアントサイドの Router Cache
 
 - [Route Handler](/docs/app-router/building-your-application/routing/route-handlers)の Data Cache を再有効化しても、Route Handler は特定のルートに結びついていないので、Router Cache はすぐには無効化**されません**。つまり、Router Cache はハードリフレッシュされるか、自動無効化期間が経過するまで、以前のペイロードを提供し続けます
-<!-- TODO: fix link -->
-- Data Cache と Router Cache を直ちに無効にするには、[Sevrer Action](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) で [`revalidatePath`](#revalidatepath) または [`revalidateTag`](#fetch-optionsnexttags-と-revalidatetag) を使用します
+- Data Cache と Router Cache を直ちに無効にするには、[Sevrer Action](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) で [`revalidatePath`](#revalidatepath) または [`revalidateTag`](#fetch-optionsnexttags-と-revalidatetag) を使用します
 
 ## API
 
@@ -468,8 +465,7 @@ revalidateTag('a')
 何を行いたいかによって `revalidateTag`を使用できる場所は 2 つあります:
 
 1. [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers) - サードパーティのイベント（webhook など）に応答してデータを再検証します。Route Handlers は特定のルートに紐づいていないので、Router Cache をすぐに無効にはできません
-<!-- TODO: fix link -->
-2. [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) - ユーザーのアクション（フォーム送信など）の後にデータを再検証します。これは関連するルートの Router Cache を無効にします
+2. [Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) - ユーザーのアクション（フォーム送信など）の後にデータを再検証します。これは関連するルートの Router Cache を無効にします
 
 ### `revalidatePath`
 
@@ -482,8 +478,7 @@ revalidatePath('/')
 何を行いたいかによって `revalidatePath`を使用できる場所は 2 つあります:
 
 1. [Route Handlers](/docs/app-router/building-your-application/routing/route-handlers) - サードパーティのイベント（例:webhook）に応答してデータを再検証します
-<!-- TODO: fix link -->
-2. [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) - ユーザーとの対話（フォームの送信やボタンのクリックなど）の後にデータを再検証します
+2. [Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) - ユーザーとの対話（フォームの送信やボタンのクリックなど）の後にデータを再検証します
 
 詳細は [`revalidatePath` API リファレンス](/docs/app-router/api-reference/functions/revalidatePath)を参照してください。
 

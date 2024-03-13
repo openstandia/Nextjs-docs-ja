@@ -199,8 +199,6 @@ export default function Icon() {}
 
 `icon`と`apple-icon`は、ページやレイアウトと同じ[ルート Segment の設定オプション](/docs/app-router/api-reference/file-conventions/route-segment-config)を使用できる、特殊な[ルートハンドラ](/docs/app-router/building-your-application/routing/route-handlers)です。
 
-<!-- Todo: Fix links -->
-
 | オプション                                                                                                | 型                                                                              | デフォルト |
 | :-------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ | :--------- |
 | [`dynamic`](/docs/app-router/api-reference/file-conventions/route-segment-config#dynamic)                 | <code>'auto' &#124; 'force-dynamic' &#124; 'error' &#124; 'force-static'</code> | `'auto'`   |
