@@ -1,6 +1,6 @@
 ---
 title: trailingSlash
-description: Next.jsのページを設定して、末尾のスラッシュの有無に対応させます。
+description: Next.js のページを設定して、末尾のスラッシュの有無に対応させます。
 sidebar_position: 31
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: images
-description: next/image ローダーのカスタム設定
+description: next/image ローダーのカスタム設定です。
 sidebar_position: 14
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: pageExtensions
-description: Pagesルーターでページを解決するときにNext.jsが使用するデフォルトのページ拡張子を拡張します
+description: Pages Router でページを解決するときに Next.js が使用するデフォルトのページ拡張子を拡張します。
 sidebar_position: 22
 ---
 

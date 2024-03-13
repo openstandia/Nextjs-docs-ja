@@ -1,6 +1,6 @@
 ---
 title: logging
-description: 開発モードで Next.js を実行する際のデータフェッチのログ出力設定方法
+description: 開発モードで Next.js を実行する際のデータフェッチのログ出力設定方法です。
 sidebar_position: 17
 ---
 

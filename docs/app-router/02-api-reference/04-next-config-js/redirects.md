@@ -1,6 +1,6 @@
 ---
 title: redirects
-description: Next.js アプリにリダイレクトを追加します
+description: Next.js アプリにリダイレクトを追加します。
 sidebar_position: 27
 ---
 

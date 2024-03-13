@@ -1,6 +1,6 @@
 ---
 title: poweredByHeader
-description: Next.jsでは、デフォルトで x-powered-by ヘッダーが追加されます。オプトアウトする方法については、こちらをご覧ください。
+description: Next.js では、デフォルトで x-powered-by ヘッダーが追加されます。オプトアウトする方法については、こちらをご覧ください。
 sidebar_position: 24
 ---
 

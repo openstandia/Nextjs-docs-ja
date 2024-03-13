@@ -1,7 +1,7 @@
 ---
 title: turbo (Experimental)
 sidebar_label: turbo
-description: Turbopack固有のオプションを使用して、Next.jsを設定します。
+description: Turbopack 固有のオプションを使用して、Next.js を設定します。
 sidebar_position: 33
 ---
 

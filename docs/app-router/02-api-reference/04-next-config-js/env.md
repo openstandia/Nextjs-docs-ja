@@ -1,6 +1,6 @@
 ---
 title: env
-description: Next.jsアプリケーションでビルド時に環境変数を追加およびアクセスする方法を学びましょう。
+description: Next.js アプリケーションでビルド時に環境変数を追加およびアクセスする方法を学びます。
 sidebar_position: 7
 ---
 

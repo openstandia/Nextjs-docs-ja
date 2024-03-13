@@ -1,6 +1,6 @@
 ---
 title: headers
-description: Next.js アプリにカスタム HTTP ヘッダーを追加します
+description: Next.js アプリにカスタム HTTP ヘッダーを追加します。
 sidebar_position: 12
 ---
 

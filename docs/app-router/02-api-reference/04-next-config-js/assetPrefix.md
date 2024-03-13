@@ -1,6 +1,6 @@
 ---
 title: assetPrefix
-description: CDNを設定するためのassetPrefix設定オプションの使い方を学びましょう。
+description: CDN を設定するための assetPrefix 設定オプションの使い方を学びます。
 sidebar_position: 2
 ---
 

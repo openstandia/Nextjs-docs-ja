@@ -1,6 +1,6 @@
 ---
 title: mdxRs
-description: 新しいRustコンパイラを使用して、App Router内のMDXファイルをコンパイルします。
+description: 新しい Rust コンパイラを使用して、App Router 内の MDX ファイルをコンパイルします。
 sidebar_position: 18
 ---
 

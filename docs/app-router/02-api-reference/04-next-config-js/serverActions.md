@@ -1,6 +1,6 @@
 ---
 title: serverActions
-description: Next.jsアプリケーションでのServer Actionsの挙動を設定します。
+description: Next.js アプリケーションでの Server Actions の挙動を設定します。
 sidebar_position: 29
 ---
 
