@@ -1,6 +1,6 @@
 ---
 title: generateStaticParams
-description: generateStaticParams 関数の API リファレンス
+description: generateStaticParams 関数の API リファレンスです。
 ---
 
 `generateStaticParams` 関数を[動的なルートセグメント](/docs/app-router/building-your-application/routing/dynamic-routes)と組み合わせて使うことで、

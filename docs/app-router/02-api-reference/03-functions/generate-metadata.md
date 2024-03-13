@@ -1,7 +1,7 @@
 ---
 title: Metadata Object and generateMetadata Options
 sidebar_label: generateMetadata
-description: Next.js アプリケーションにメタデータを追加して、検索エンジン最適化（SEO）とウェブ共有性を向上させる方法をご紹介します
+description: Next.js アプリケーションにメタデータを追加して、検索エンジン最適化（SEO）とウェブ共有性を向上させる方法をご紹介します。
 related:
   title: 次のステップ
   description: Metadata APIオプションをすべて表示します

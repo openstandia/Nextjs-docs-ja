@@ -1,12 +1,12 @@
 ---
 title: permanentRedirect
-description: permanentRedirect関数のAPIリファレンス
+description: permanentRedirect 関数の API リファレンスです。
 related:
   links:
     - app-router/api-reference/functions/redirect
 ---
 
-`permanentRedirect`関数を使用すると、ユーザーを別のURLにリダイレクトできます。`permanentRedirect`はServer Components、Client Components、[Route Handlers](/docs/app-router/building-your-application/routing/route-handlers)、および[Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で使用できます。
+`permanentRedirect`関数を使用すると、ユーザーを別のURLにリダイレクトできます。`permanentRedirect`はServer Components、Client Components、[Route Handlers](/docs/app-router/building-your-application/routing/route-handlers)、および[Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations)で使用できます。
 
 ストリーミングのコンテキストで使用されると、クライアント側でリダイレクトを発生させるためのメタタグを挿入します。Server Actionで使用されると、呼び出し元に対して303 HTTPリダイレクトレスポンスを返します。それ以外の場合は、呼び出し元に対して308（パーマネント）HTTPリダイレクトレスポンスを返します。
 
@@ -29,9 +29,7 @@ permanentRedirect(path, type)
 
 <!-- textlint-disable -->
 
-<!-- TODO: fix link to Server Actions -->
-
-デフォルトでは、`permanentRedirect`は[Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で`push`（ブラウザの履歴スタックに新たなエントリを追加する）を使用し、それ以外では`replace`（ブラウザの履歴スタックの現在のURLを置き換える）を使用します。`type`パラメータを指定することで、この動作を上書きできます。
+デフォルトでは、`permanentRedirect`は[Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations)で`push`（ブラウザの履歴スタックに新たなエントリを追加する）を使用し、それ以外では`replace`（ブラウザの履歴スタックの現在のURLを置き換える）を使用します。`type`パラメータを指定することで、この動作を上書きできます。
 
 <!-- textlint-enable -->
 

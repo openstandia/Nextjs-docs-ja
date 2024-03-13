@@ -1,6 +1,6 @@
 ---
 title: generateEtags
-description: Next.jsでは、デフォルトですべてのページにetagが生成されます。etagの生成を無効にする方法については、こちらで詳細をご確認ください。
+description: Next.js では、デフォルトですべてのページに etag が生成されます。etag の生成を無効にする方法については、こちらで詳細をご確認ください。
 sidebar_position: 11
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: Custom Next.js Cache Handler
 sidebar_label: cacheHandler
-description: Next.jsのキャッシュを構成し、Redis、Memcachedなどの外部サービスを使用してデータを保存、再検証する方法を学習します。
+description: Next.js のキャッシュを構成し、Redis、Memcached などの外部サービスを使用してデータを保存、再検証する方法を学習します。
 sidebar_position: 15
 ---
 

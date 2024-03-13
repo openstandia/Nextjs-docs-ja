@@ -1,6 +1,6 @@
 ---
 title: cookies
-description: Cookies関数のAPIリファレンス
+description: Cookies 関数の API リファレンスです。
 related:
   title: 次のステップ
   description: 次に何をすべきかについては、以下のセクションを参照されたい

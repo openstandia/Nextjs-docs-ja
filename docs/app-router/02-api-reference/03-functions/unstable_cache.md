@@ -1,6 +1,6 @@
 ---
 title: unstable_cache
-description: unstable_cache 関数の API リファレンス
+description: unstable_cache 関数の API リファレンスです。
 ---
 
 `unstable_cache` は、データベースクエリのような重要な操作の結果をキャッシュし、複数のリクエストで再利用することができます。

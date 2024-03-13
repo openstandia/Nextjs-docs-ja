@@ -1,6 +1,6 @@
 ---
 title: typescript
-description: Next.jsでは、デフォルトでTypeScriptのエラーが報告されます。この動作を無効にする方法をこちらで学びましょう。
+description: Next.js では、デフォルトで TypeScript のエラーが報告されます。この動作を無効にする方法をこちらで学びます。
 sidebar_position: 35
 ---
 

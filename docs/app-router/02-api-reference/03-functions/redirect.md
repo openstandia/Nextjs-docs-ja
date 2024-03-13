@@ -1,14 +1,12 @@
 ---
 title: redirect
-description: redirect関数のAPIリファレンス
+description: redirect 関数の API リファレンスです。
 related:
   links:
     - app-router/api-reference/functions/permanentRedirect
 ---
 
-<!-- TODO: fix link to Server Actions -->
-
-`redirect`関数はユーザーを他のURLにリダイレクトすることを可能にします。`redirect`は[Server Component](/docs/app-router/building-your-application/rendering/server-components)、[Route Handlers](/docs/app-router/building-your-application/routing/route-handlers)、[Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で利用できます。
+`redirect` 関数はユーザーを他のURLにリダイレクトすることを可能にします。`redirect`は[Server Component](/docs/app-router/building-your-application/rendering/server-components)、[Route Handlers](/docs/app-router/building-your-application/routing/route-handlers)、[Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations)で利用できます。
 
 [ストリーミングのコンテキスト](/docs/app-router/building-your-application/routing/loading-ui-and-streaming#ストリーミングとは)で利用するとクライアント側でリダイレクトを発生させるためのメタタグを挿入します。Server Actions で利用した場合、303のHTTPリダイレクトレスポンスを呼び出し側に返します。それ以外の場合では、307のHTTPリダイレクトレスポンスを呼び出し側に返します。
 
@@ -34,9 +32,7 @@ redirect(path, type)
 
 <!-- textlint-disable -->
 
-<!-- TODO: fix link to Server Actions -->
-
-デフォルトでは、[Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)では`redirect` は `push`（ブラウザの履歴スタックに新たなエントリを追加する）を使用し、それ以外の場所では`replace`（ブラウザの履歴スタックの現在のURLを置き換える）を使用します。この振る舞いは `type` パラメータを指定することで上書きできます。
+デフォルトでは、[Server Actions](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations)では`redirect` は `push`（ブラウザの履歴スタックに新たなエントリを追加する）を使用し、それ以外の場所では`replace`（ブラウザの履歴スタックの現在のURLを置き換える）を使用します。この振る舞いは `type` パラメータを指定することで上書きできます。
 
 <!-- textlint-enable -->
 

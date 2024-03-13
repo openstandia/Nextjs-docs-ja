@@ -1,6 +1,6 @@
 ---
 title: serverComponentsExternalPackages
-description: Server Components　のバンドルから特定の依存関係を除外し、ネイティブなNode.jsの require を使用してください。
+description: Server Components のバンドルから特定の依存関係を除外し、ネイティブな Node.js の require を使用してください。
 sidebar_position: 30
 ---
 

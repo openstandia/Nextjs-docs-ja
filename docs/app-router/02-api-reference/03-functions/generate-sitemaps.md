@@ -1,7 +1,7 @@
 ---
 title: generateSitemaps
 sidebar_label: generateSitemaps
-description: generateSiteMaps関数を使用して、アプリケーション用に複数のサイトマップを作成する方法を説明します
+description: generateSiteMaps 関数を使用して、アプリケーション用に複数のサイトマップを作成する方法を説明します。
 related:
   title: 次のステップ
   description: Next.jsアプリケーションのサイトマップを作成する方法をご紹介します

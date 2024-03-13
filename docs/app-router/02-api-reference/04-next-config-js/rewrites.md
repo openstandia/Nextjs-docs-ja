@@ -1,6 +1,6 @@
 ---
-title: rewrite
-description: Next.jsアプリケーションにリライト機能を追加します
+title: rewrites
+description: Next.js アプリケーションにリライト機能を追加します。
 sidebar_position: 28
 ---
 

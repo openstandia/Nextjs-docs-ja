@@ -1,6 +1,6 @@
 ---
 title: レンダリング
-description: Learn the differences between Next.js rendering environments, strategies, and runtimes.
+description: Next.js のレンダリング環境、ストラテジー、ランタイムの違いを学びます。
 ---
 
 レンダリングは、書いたコードをユーザーインターフェイスに変換します。React と Next.js を使用すると、コードの一部をサーバーまたはクライアントでレンダリングできるハイブリッド Web アプリケーションを作成できます。このセクションでは、これらのレンダリング環境、ストラテジー、ランタイムの違いを理解するのに役立ちます。

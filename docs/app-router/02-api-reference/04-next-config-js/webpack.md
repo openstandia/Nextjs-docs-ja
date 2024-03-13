@@ -1,6 +1,6 @@
 ---
 title: Custom Webpack Config
-description: Next.jsを使用する際にwebpackの設定をカスタマイズする方法を学びましょう。
+description: Next.js を使用する際に webpack の設定をカスタマイズする方法を学びます。
 sidebar_position: 37
 sidebar_label: webpack
 ---
@@ -9,13 +9,10 @@ sidebar_label: webpack
 
 アプリケーションの webpack 設定をカスタムする前に、Next.js がすでにサポートしていないか確認してください：
 
-<!-- TODO: Fix links -->
-
 - [CSS imports](/docs/app-router/building-your-application/styling)
 - [CSS modules](/docs/app-router/building-your-application/styling/css-modules)
 - [Sass/SCSS imports](/docs/app-router/building-your-application/styling/sass)
 - [Sass/SCSS modules](/docs/app-router/building-your-application/styling/sass)
-- [preact](https://github.com/vercel/next.js/tree/canary/examples/using-preact)
 
 よく問い合わされる機能のいくつかは、プラグインとして提供されています：
 

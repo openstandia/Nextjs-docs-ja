@@ -1,6 +1,6 @@
 ---
 title: reactStrictMode
-description: Next.jsの完全なランタイムはStrict Modeに対応しました。オプトイン方法を学びましょう。
+description: Next.js の完全なランタイムは Strict Mode に対応しました。オプトイン方法を学びます。
 sidebar_position: 26
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: useSearchParams
-description: useSearchParams フックのAPIリファレンス。
+description: useSearchParams フックの API リファレンスです。
 ---
 
 `useSearchParams`は、現在の URL の**クエリ文字列**を読み取るための**Client Component**のフックです。

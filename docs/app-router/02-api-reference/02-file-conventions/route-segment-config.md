@@ -47,25 +47,20 @@ export const dynamic = 'auto'
 
 - **`auto`**（デフォルト）：デフォルトのオプションでは、コンポーネントの動的な動作を妨げることなく、可能な限りキャッシュします
 - **`force-dynamic`**： [動的なレンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)を強制します。その結果、リクエスト時にそれぞれのユーザーに対してルートがレンダリングされます。このオプションは`pages`ディレクトリにおける`getServerSideProps()` と同等です。
-- **`error`**：静的レンダリングを強制し、[動的関数](/docs/app-router/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions)やキャッシュされていないデータを使用しているコンポーネントがある場合、エラーを発生させてレイアウトやページのデータをキャッシュします。このオプションは以下と同じです
+- **`error`**：静的レンダリングを強制し、[動的関数](/docs/app-router/building-your-application/rendering/server-components#動的関数)やキャッシュされていないデータを使用しているコンポーネントがある場合、エラーを発生させてレイアウトやページのデータをキャッシュします。このオプションは以下と同じです
   - `pages`ディレクトリにおける`getStaticProps()`
   - レイアウトまたはページ内のすべての`fetch()`リクエストのオプションを`{ cache: 'force-cache' }`にする
   - Segment 設定を`fetchCache = 'only-cache', dynamicParams = false`にする
   - `dynamic = 'error'`は`dynamicParams`のデフォルトを`true`から`false`に変更します。`generateStaticParams`で生成されなかった動的パラメータは、手動で`dynamicParams = true`を設定することで、動的にページをレンダリングするように戻すことができます
     <!-- textlint-disable -->
-    <!-- TODO: Fix links -->
 - **`force-static`**： [`cookies()`](/docs/app-router/api-reference/functions/cookies)、[`headers()`](/docs/app-router/api-reference/functions/headers)、[`useSearchParams()`](/docs/app-router/api-reference/functions/use-search-params)が空の値を返すように強制することで、静的レンダリングを強制し、レイアウトやページのデータをキャッシュします
 <!-- textlint-enable -->
 
 > **Good to know**:
 
-<!-- TODO: Fix links -->
-
-> - `getServerSideProps`と`getStaticProps`から`dynamic: 'force-dynamic'`と`dynamic: 'error'`への[移行方法](/docs/app-router/building-your-application/upgrading/app-router-migration#step-6-migrating-data-fetching-methods)は[アップグレードガイド](/docs/app-router/building-your-application/upgrading/app-router-migration#step-6-migrating-data-fetching-methods)に記載されています。
+> - `getServerSideProps`と`getStaticProps`から`dynamic: 'force-dynamic'`と`dynamic: 'error'`への[移行方法](/docs/app-router/building-your-application/upgrading/app-router-migration#ステップ-6-データフェッチメソッドの移行)は[アップグレードガイド](/docs/app-router/building-your-application/upgrading/app-router-migration#ステップ-6-データフェッチメソッドの移行)に記載されています。
 
 ### `dynamicParams`
-
-<!-- TODO: Fix links -->
 
 [`generateStaticParams`](/docs/app-router/api-reference/functions/generate-static-params)で生成されなかった動的な Segment にアクセスしたときの動作を制御します。
 

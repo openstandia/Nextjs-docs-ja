@@ -42,9 +42,7 @@ export default function Page({
 
 > **Good to know**:
 
-<!-- TODO: Fix links -->
-
-> - `searchParams`は、事前に値を知ることができない[動的 API](/docs/app-router/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions)です。これを使用すると、リクエスト時にページが[動的レンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)に移行します
+> - `searchParams`は、事前に値を知ることができない[動的 API](/docs/app-router/building-your-application/rendering/server-components#動的関数)です。これを使用すると、リクエスト時にページが[動的レンダリング](/docs/app-router/building-your-application/rendering/server-components#動的レンダリング)に移行します
 > - `searchParams`は、`URLSearchParams`インスタンスではなく、プレーンな JavaScript オブジェクトを返します
 
 ## Version 履歴

@@ -1,6 +1,6 @@
 ---
 title: httpAgentOptions
-description: Next.jsでは、デフォルトでHTTP Keep-Aliveが自動的に使用されます。HTTP Keep-Aliveを無効にする方法については、こちらをご覧ください。
+description: Next.js では、デフォルトで HTTP Keep-Alive が自動的に使用されます。HTTP Keep-Alive を無効にする方法については、こちらをご覧ください。
 sidebar_position: 13
 ---
 

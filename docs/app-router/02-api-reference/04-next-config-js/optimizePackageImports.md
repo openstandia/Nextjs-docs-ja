@@ -1,6 +1,6 @@
 ---
 title: optimizePackageImports
-description: Next.js 設定オプションの optmizedPackageImports の API リファレンス
+description: Next.js 設定オプションの optmizedPackageImports の API リファレンスです。
 sidebar_position: 20
 ---
 

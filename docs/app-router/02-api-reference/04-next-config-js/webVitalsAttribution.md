@@ -1,6 +1,6 @@
 ---
 title: webVitalsAttribution
-description: Web Vitalsの問題の原因を特定するために、webVitalsAttributionオプションの使用方法を学びましょう。
+description: Web Vitals の問題の原因を特定するために、webVitalsAttribution オプションの使用方法を学びます。
 sidebar_position: 38
 ---
 
