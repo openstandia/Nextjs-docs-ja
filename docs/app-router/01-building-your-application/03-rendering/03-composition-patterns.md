@@ -370,7 +370,7 @@ export default function ClientComponent({
 
 ```tsx title="app/page.tsx"
 // このパターンは動作する：
-// Client ComponentのchildまたはpropとしてSevrer Componentを渡す
+// Client ComponentのchildまたはpropとしてServer Componentを渡す
 import ClientComponent from './client-component'
 import ServerComponent from './server-component'
 
