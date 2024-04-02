@@ -355,7 +355,7 @@ Router Cache は無効にできません。[`router.refresh`](/docs/app-router/a
 ### Data Cache と クライアントサイドの Router Cache
 
 - [Route Handler](/docs/app-router/building-your-application/routing/route-handlers)の Data Cache を再有効化しても、Route Handler は特定のルートに結びついていないので、Router Cache はすぐには無効化**されません**。つまり、Router Cache はハードリフレッシュされるか、自動無効化期間が経過するまで、以前のペイロードを提供し続けます
-- Data Cache と Router Cache を直ちに無効にするには、[Sevrer Action](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) で [`revalidatePath`](#revalidatepath) または [`revalidateTag`](#fetch-optionsnexttags-と-revalidatetag) を使用します
+- Data Cache と Router Cache を直ちに無効にするには、[Server Action](/docs/app-router/building-your-application/data-fetching/server-actions-and-mutations) で [`revalidatePath`](#revalidatepath) または [`revalidateTag`](#fetch-optionsnexttags-と-revalidatetag) を使用します
 
 ## API
 
