@@ -111,11 +111,11 @@ export async function POST() {
 - それらは `page` のようなレイアウトやクライアントサイドのナビゲーションには **参加しません**。
 - `page.js` と同じルートに `route.js` ファイルを置くことは**できません。**
 
-| Page                 | Route              | Result                       |
-| -------------------- | ------------------ | ---------------------------- |
-| `app/page.js`        | `app/route.js`     | <Cross size={18} /> Conflict |
-| `app/page.js`        | `app/api/route.js` | <Check size={18} /> Valid    |
-| `app/[user]/page.js` | `app/api/route.js` | <Check size={18} /> Valid    |
+| Page                 | Route              | Result   |
+| -------------------- | ------------------ | -------- |
+| `app/page.js`        | `app/route.js`     | Conflict |
+| `app/page.js`        | `app/api/route.js` | Valid    |
+| `app/[user]/page.js` | `app/api/route.js` | Valid    |
 
 各 `route.js` または `page.js` ファイルは、そのルートのすべての HTTP verbs を引き継ぎます。
 
