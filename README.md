@@ -60,3 +60,10 @@ The copyright of this project belongs to Nomura Research Institute, Ltd.
 - [Personal Data Protection Statement](https://www.nri.com/en/site/security)
 - [Privacy Policy](https://www.nri.com/en/site/privacy)
 - [Declaration of Information Security Measures](https://www.nri.com/en/site/security_declare)
+
+## Contributors
+
+<a href="https://github.com/openstandia/Nextjs-docs-ja/graphs/contributors">
+  <img width="500px" src="https://contrib.rocks/image?repo=openstandia/Nextjs-docs-ja" />
+</a>
+
