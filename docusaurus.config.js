@@ -28,6 +28,21 @@ const config = {
   favicon: 'img/favicon.ico',
   projectName: 'nextjs-docs-ja',
 
+  themes: [
+    [
+      // @ts-ignore
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
+      // @ts-ignore
+      ({
+        indexPages: true,
+        hashed: true,
+        language: ['en', 'ja'],
+        highlightSearchTermsOnTargetPage: true,
+      }),
+    ],
+  ],
+
   presets: [
     [
       'classic',
