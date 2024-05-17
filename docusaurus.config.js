@@ -74,6 +74,7 @@ const config = {
         logo: {
           alt: 'Next.js Docs Logo',
           src: 'img/logo.svg',
+          srcDark: 'img/logo-dark.svg'
         },
         items: [
           {
