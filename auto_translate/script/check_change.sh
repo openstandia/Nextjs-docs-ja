@@ -31,7 +31,7 @@ TARGET_BRANCH="feature/auto-translate"
 # fi
 
 # 取得したshaをもとにcommit差分を取得
-response=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: token  ${TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28" "${DEFAULT_API_URL}/commits/${TARGET_BRANCH}")
+response=$(curl -s -w "\n%{http_code}" -H "Accept: application/vnd.github+json" -H "Authorization: token  ${TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28" "${DEFAULT_API_URL}/commits/${TARGET_BRANCH}")
 echo "${response}"
 body=$(echo "$response" | head -n -1 | sed 's/\\//g' | tr -d '[:cntrl:]' | jq -r ".files[].filename")
 echo "${body}"
