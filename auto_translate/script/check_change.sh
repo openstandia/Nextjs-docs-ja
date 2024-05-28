@@ -20,6 +20,31 @@ config_dir="${shell_dir}/../config"
 source "${config_dir}"/.env
 
 # 1. github apiを使用してfeature/translate-docsブランチの変更があったファイルを取得する
-result=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "https://api.github.com/repos/openstandia/Nextjs-docs-ja/issues" | jq)
-echo "Hello Github Actions"
-echo "$result"
+# feature/translate-docsブランチの最新commitのshaを取得する
+response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/branches/${TARGET_BRANCH}")
+body=$(echo "$response" | head -n -1 | jq -r ".commit.sha")
+code=$(echo "$response" | tail -n 1)
+
+if [ "$code" = "200" ]; then
+  echo "取得sha ${body}"
+else
+  echo "取得失敗"
+  exit 1
+fi
+
+# 取得したshaをもとにcommit差分を取得
+response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/commits/${body}")
+body=$(echo "$response" | head -n -1 | jq -r "files[].filename")
+code=$(echo "$response" | tail -n 1)
+
+if [ "$code" = "200" ]; then
+  echo "取得file"
+  echo "${body}"
+else
+  echo "取得失敗"
+  exit 1
+fi
+echo "pwd"
+pwd
+echo "ls -l"
+ls -l 
