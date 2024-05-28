@@ -14,10 +14,8 @@
 
 # 0. 環境設定
 TOKEN=$1
-shell_dir="$(cd "$(dirname "$0")" && pwd)"
-config_dir="${shell_dir}/../config"
 # shellcheck source=/dev/null
-source "${config_dir}"/.env
+source auto_translate/config/.env
 
 # 1. github apiを使用してfeature/translate-docsブランチの変更があったファイルを取得する
 # feature/translate-docsブランチの最新commitのshaを取得する
