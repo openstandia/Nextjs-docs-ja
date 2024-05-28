@@ -20,7 +20,6 @@ TARGET_BRANCH="feature/auto-translate"
 # 1. github apiを使用してfeature/auto-translateブランチの変更があったファイルを取得する
 # feature/auto-translateブランチの最新commitのshaを取得する
 response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/branches/${TARGET_BRANCH}")
-echo "${response}"
 body=$(echo "$response" | head -n -1 | jq -r ".commit.sha")
 code=$(echo "$response" | tail -n 1)
 
@@ -33,7 +32,7 @@ fi
 
 # 取得したshaをもとにcommit差分を取得
 response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/commits/${body}")
-body=$(echo "$response" | head -n -1 | jq -r ".files[].filename")
+body=$(echo "$response" | head -n -1 | tr -d '[:cntrl:]' | jq ".files[].filename")
 code=$(echo "$response" | tail -n 1)
 
 if [ "$code" = "200" ]; then
