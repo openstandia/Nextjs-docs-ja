@@ -31,9 +31,9 @@ else
 fi
 
 # 取得したshaをもとにcommit差分を取得
-response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/commits/${body}" | tr -d "\n")
-echo "${response}"
-body=$(echo "$response" | head -n -1 | jq ".files[].filename")
+response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/commits/${body}")
+body=$(echo "$response" | head -n -1 | jq -R)
+echo "${body}"
 code=$(echo "$response" | tail -n 1)
 
 if [ "$code" = "200" ]; then
