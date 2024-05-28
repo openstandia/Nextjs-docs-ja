@@ -31,8 +31,8 @@ else
 fi
 
 # 取得したshaをもとにcommit差分を取得
-response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/commits/${body}")
-body=$(echo "$response" | head -n -1 | jq -R)
+response=$(curl -s -w "\n%{http_code}" -H "Accept: application/vnd.github+json" -H "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/commits/${body}")
+body=$(echo "$response" | head -n -1 | jq ".files[].filename")
 echo "${body}"
 code=$(echo "$response" | tail -n 1)
 
