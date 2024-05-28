@@ -30,8 +30,10 @@ if [ "$code" = "200" ]; then
       echo "追加、変更されたファイルはありません。"
       exit 1
   fi
-  for((i = 0; i < target_file_num ; i++)); do
+  i=0
+  while [ $i -lt "$target_file_num" ]; do
         printf "[%2d]: filename: %-40s \n" $((i + 1)) "$(echo "$body" | jq ".[$i].filename")"
+        i=$((i + 1))
   done
 else
   echo "取得失敗"
