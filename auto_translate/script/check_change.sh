@@ -14,6 +14,9 @@
 
 # 0. 環境設定
 TOKEN=$1
+echo "環境調査"
+pwd
+ls -l
 # shellcheck source=/dev/null
 source auto_translate/config/.env
 
