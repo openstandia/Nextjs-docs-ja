@@ -5,7 +5,7 @@
 # 名前：check_change.sh
 #
 # 機能：docs配下の変更を取得する
-#     1. github apiを使用してfeature/translate-docsブランチの変更があったファイルを取得する
+#     1. github apiを使用してfeature/auto-translateブランチの変更があったファイルを取得する
 #     2. 変更があったファイルを参照して内容を取得する 
 #
 # 設定：autotranslate/config/.envを参照して、適切な値を設定すること。
@@ -20,8 +20,8 @@ ls -l
 # shellcheck source=/dev/null
 source auto_translate/config/.env
 
-# 1. github apiを使用してfeature/translate-docsブランチの変更があったファイルを取得する
-# feature/translate-docsブランチの最新commitのshaを取得する
+# 1. github apiを使用してfeature/auto-translateブランチの変更があったファイルを取得する
+# feature/auto-translateブランチの最新commitのshaを取得する
 response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/branches/${TARGET_BRANCH}")
 body=$(echo "$response" | head -n -1 | jq -r ".commit.sha")
 code=$(echo "$response" | tail -n 1)
