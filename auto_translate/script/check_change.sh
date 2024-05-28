@@ -14,13 +14,12 @@
 
 # 0. 環境設定
 TOKEN=$1
-# shellcheck source=/dev/null
-source ./auto_translate/config/.env
+DEFAULT_API_URL="https://api.github.com/repos/openstandia/Nextjs-docs-ja"
+TARGET_BRANCH="feature/translate-docs"
 
 # 1. github apiを使用してfeature/auto-translateブランチの変更があったファイルを取得する
 # feature/auto-translateブランチの最新commitのshaを取得する
 response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/branches/${TARGET_BRANCH}")
-echo "${response}"
 body=$(echo "$response" | head -n -1 | jq -r ".commit.sha")
 code=$(echo "$response" | tail -n 1)
 
