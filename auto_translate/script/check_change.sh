@@ -14,15 +14,13 @@
 
 # 0. 環境設定
 TOKEN=$1
-echo "環境調査"
-pwd
-ls -l
 # shellcheck source=/dev/null
-source auto_translate/config/.env
+source ./auto_translate/config/.env
 
 # 1. github apiを使用してfeature/auto-translateブランチの変更があったファイルを取得する
 # feature/auto-translateブランチの最新commitのshaを取得する
 response=$(curl -s -w "\n%{http_code}" --header "Authorization: token ${TOKEN}" "${DEFAULT_API_URL}/branches/${TARGET_BRANCH}")
+echo "${response}"
 body=$(echo "$response" | head -n -1 | jq -r ".commit.sha")
 code=$(echo "$response" | tail -n 1)
 
@@ -45,7 +43,3 @@ else
   echo "取得失敗"
   exit 1
 fi
-echo "pwd"
-pwd
-echo "ls -l"
-ls -l 
