@@ -44,6 +44,6 @@ fi
 
 # 2. 変更があったファイルパスを外部ファイルに出力する
 # この後のジョブで使用できるようにtranslate_files_path配列をtxtファイルに書き出し
-printf "%s\n" "${translate_files_path[@]}" > /auto_translate/script/translate_files_path/translate_files_path.txt
+printf "%s\n" "${translate_files_path[@]}" > auto_translate/script/translate_files_path/translate_files_path.txt
 
 echo "INFO: check_changeジョブの終了"

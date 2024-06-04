@@ -18,7 +18,7 @@
 translate_files_path=()
 while IFS= read -r line; do
   translate_files_path+=("$line")
-done < /auto_translate/script/translate_files_path/translate_files_path.txt
+done < auto_translate/script/translate_files_path/translate_files_path.txt
 
 for item in "${translate_files_path[@]}"; do
   # 2. 翻訳対象ファイルの内容をChatGPTのAPIをたたいて翻訳してもらう
