@@ -25,14 +25,14 @@ target_file_num=$(echo "$body" | jq length)
 
 if [ "$code" = "200" ]; then
   if [ "$target_file_num" -eq 0 ]; then
-      echo "追加、変更されたファイルはありません。"
-      exit 1
+    echo "追加、変更されたファイルはありません。"
+    exit 1
   fi
   i=0
   translate_files_path=()
   echo "INFO：翻訳対象ファイル"
   while [ $i -lt "$target_file_num" ]; do
-        file_path="$(echo "$body" | jq ".[$i].filename")"
+        file_path="$(echo "$body" | jq -r ".[$i].filename")"
         printf "[%2d]: filename: %-40s \n" $((i + 1)) "$file_path"
         translate_files_path+=("$file_path")
         i=$((i + 1))
