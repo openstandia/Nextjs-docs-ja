@@ -6,9 +6,7 @@
 #
 # 機能：docs配下の変更を取得する
 #     1. github apiを使用してfeature/auto-translateブランチの変更があったファイルを取得する
-#     2. 変更があったファイルを参照して内容を取得する 
-#
-# 設定：autotranslate/config/.envを参照して、適切な値を設定すること。
+#     2. 変更があったファイルパスを外部ファイルに出力する
 #
 ################################################################################
 
@@ -31,11 +29,21 @@ if [ "$code" = "200" ]; then
       exit 1
   fi
   i=0
+  translate_files_path=()
+  echo "INFO：翻訳対象ファイル"
   while [ $i -lt "$target_file_num" ]; do
-        printf "[%2d]: filename: %-40s \n" $((i + 1)) "$(echo "$body" | jq ".[$i].filename")"
+        file_path="$(echo "$body" | jq ".[$i].filename")"
+        printf "[%2d]: filename: %-40s \n" $((i + 1)) "$file_path"
+        translate_files_path+=("$file_path")
         i=$((i + 1))
   done
 else
   echo "取得失敗"
   exit 1
 fi
+
+# 2. 変更があったファイルパスを外部ファイルに出力する
+# この後のジョブで使用できるようにtranslate_files_path配列をtxtファイルに書き出し
+printf "%s\n" "${translate_files_path[@]}" > /auto_translate/script/translate_files_path/translate_files_path.txt
+
+echo "INFO: check_changeジョブの終了"
