@@ -74,4 +74,7 @@ for item in "${translate_files_path[@]}"; do
   echo "APIレスポンス:"
   echo "$response" | jq -r '.choices[0].message.content'
 
+  # 上書き内容
+  over_write_content=$(echo "$response" | jq -r '.choices[0].message.content')
+  echo "$over_write_content" > "$item"
 done
