@@ -77,4 +77,9 @@ for item in "${translate_files_path[@]}"; do
   # 上書き内容
   over_write_content=$(echo "$response" | jq -r '.choices[0].message.content')
   echo "$over_write_content" > "$item"
+
+  # 上書き後の内容確認
+  echo ""
+  echo "$item ファイルの上書き後の内容確認"
+  cat "$item"
 done
