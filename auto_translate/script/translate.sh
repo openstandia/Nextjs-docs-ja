@@ -22,6 +22,7 @@ done < auto_translate/script/translate_files_path/translate_files_path.txt
 
 for item in "${translate_files_path[@]}"; do
   # 2. 翻訳対象ファイルの内容をChatGPTのAPIをたたいて翻訳してもらう
+  # TODO:mdファイル以外だったらcontinue処理を行う
   # ファイルごとAPIで送信できる？？→できなさそうなのでファイルの内容を読み取ってテキストデータで送信
   file_content=$(cat "$item")
 
