@@ -7,6 +7,8 @@ on:
     paths:
       - 'docs/app-router/**'
 
+permissions:
+  contents: write
 jobs:
   auto-translate:
     runs-on: ubuntu-latest
@@ -22,24 +24,22 @@ jobs:
         run: bash auto_translate/script/check_change.sh "${{ secrets.GITHUB_TOKEN }}"
       - name: translation with chatGPT
         run: bash auto_translate/script/translate.sh
-      # - name: Overwrite translation results
-      #   run: sh auto_translate/script/over_write.sh
-      
-      # # ブランチのコミット
-      # - name: Add and Commit
-      #   uses: EndBug/add-and-commit@v7
-      #   with:
-      #     branch: fix/hoge_${{ env.CURRENT_DATETIME }}
-      #     message: ${{ env.PR_TITLE }}
-      #     add: ${{ env.JSON_FILE_PATH }}
-      
-      # # pull requestの作成
-      # - name: Create pull request
-      #   uses: repo-sync/pull-request@v2
-      #   with:
-      #     source_branch: fix/hoge_${{ env.CURRENT_DATETIME }}
-      #     destination_branch: ${{ env.DEST_BRANCH }}
-      #     pr_title: ${{ env.PR_TITLE }}
-      #     pr_template: ${{ env.PR_TEMPLATE }}
-      #     pr_label: ${{ env.PR_LABEL }}
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add changes to Git
+        run: |
+          git add .
+
+      - name: Commit changes
+        run: |
+          git commit -m "Automated commit from GitHub Actions"
+
+      - name: Push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin HEAD:${{ github.ref }}

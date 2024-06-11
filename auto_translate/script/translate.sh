@@ -30,23 +30,27 @@ for item in "${translate_files_path[@]}"; do
   echo "$file_content"
   echo ""
 
-#   # ChatGPT APIに送信するペイロードの作成
-#   PAYLOAD=$(cat <<EOF
-#   {
+# REQUEST_DATA=$(jq -n \
+#   --arg text "$file_content" \
+#   '{
 #     "model": "gpt-4",
 #     "messages": [
-#       {"role": "system", "content": "You are a translator."},
-#       {"role": "user", "content": "以下のテキストを日本語に翻訳してください:\n\n$file_content"}
+#       {
+#         "role": "system",
+#         "content": "Translate the following text to Japanese."
+#       },
+#       {
+#         "role": "user",
+#         "content": $text
+#       }
 #     ]
-#   }
-# EOF
-#   )
+#   }')
 
 #   # APIリクエストを送信
 #   RESPONSE=$(curl -s -X POST https://api.openai.com/v1/chat/completions \
 #     -H "Authorization: Bearer $API_KEY" \
 #     -H "Content-Type: application/json" \
-#     -d "$PAYLOAD")
+#     -d "$REQUEST_DATA")
 
   # 仮のAPIレスポンス
   response='{
@@ -59,8 +63,7 @@ for item in "${translate_files_path[@]}"; do
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "翻訳例です。"
-      },
+        "content": "---\ntitle: App Router\ndescription: Layouts、Server Components、Suspenseなど、Next.js と React の最新機能を備えた新しい App Router をご利用ください。\n---\n\n:::caution\n本ドキュメントは[公式ドキュメント](https://nextjs.org/docs)の [v14.1.0](https://github.com/vercel/next.js/tree/v14.1.0/docs) の断面を翻訳したものです。Next.js の公式 X アカウントにも[ポスト](https://twitter.com/nextjs/status/1746921179879735677)頂きました。\n\n[公式ドキュメント](https://nextjs.org/docs)のアップデートに追随して適宜更新しますが、最新情報が反映できていない可能性があります。\n\n一部翻訳途中のページがありますが、随時翻訳を追加予定です。\n:::\n\nNext.js の App Router は、React の最新機能を使ってアプリケーションを構築するための新しい方法です。すでに Next.js に慣れ親しんでいる方であれば、App Router が既存のファイルシステムベースのルーターである [Pages Router](https://nextjs.org/docs/pages) の自然な進化形であることがわかるでしょう。\n\n新しいアプリケーションには、App Router の使用をお勧めします。既存のアプリケーションについては、[段階的に App Router に移行できます](/docs/app-router/building-your-application/upgrading/app-router-migration)。同じアプリケーションで両方のルーターを使用することも可能です。\n\nこのセクションでは、App Router で利用可能な機能について説明します。"      },
       "finish_reason": "stop"
     }
   ],
@@ -71,8 +74,8 @@ for item in "${translate_files_path[@]}"; do
   }
 }'
   # レスポンスを表示
-  echo "APIレスポンス:"
-  echo "$response" | jq -r '.choices[0].message.content'
+  # echo "APIレスポンス:"
+  # echo "$response" | jq -r '.choices[0].message.content'
 
   # 上書き内容
   over_write_content=$(echo "$response" | jq -r '.choices[0].message.content')
