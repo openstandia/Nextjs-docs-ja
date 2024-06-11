@@ -1,0 +1,18 @@
+---
+title: App Router
+description: Discover the new App Router with the latest features of Next.js and React, including Layouts, Server Components, and Suspense.
+---
+
+:::caution
+This document is a translation of the [official documentation](https://nextjs.org/docs) at [v14.1.0](https://github.com/vercel/next.js/tree/v14.1.0/docs). It was also [posted](https://twitter.com/nextjs/status/1746921179879735677) on Next.js' official X account.
+
+While we strive to update this translation to follow the updates in the [official documentation](https://nextjs.org/docs), there may be some instances where the latest information is not yet reflected.
+
+Some pages are partially translated and translations will be added as they are completed.
+:::
+
+The Next.js App Router is a new way to build applications using the latest features of React. If you are already familiar with Next.js, you will recognize that the App Router is a natural evolution of the existing file-system-based [Pages Router](https://nextjs.org/docs/pages).
+
+For new applications, we recommend using the App Router. For existing applications, you can [migrate to the App Router gradually](/docs/app-router/building-your-application/upgrading/app-router-migration). It is also possible to use both routers within the same application.
+
+This section describes the features available with the App Router.
