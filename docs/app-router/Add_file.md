@@ -16,3 +16,5 @@ Next.js の App Router は、React の最新機能を使ってアプリケーシ
 新しいアプリケーションには、App Router の使用をお勧めします。既存のアプリケーションについては、[段階的に App Router に移行できます](/docs/app-router/building-your-application/upgrading/app-router-migration)。同じアプリケーションで両方のルーターを使用することも可能です。
 
 このセクションでは、App Router で利用可能な機能について説明します。
+
+テスト
