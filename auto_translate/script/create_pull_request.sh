@@ -19,8 +19,8 @@ TARGET_BRANCH="feature/pr-test"
 # 1. GitHub APIを使用してPRを作成する
 # プルリクエストの内容を定義
 # GitHubリポジトリの情報を設定
-PR_TITLE="test PR title"         # プルリクエストのタイトル
-PR_BODY="test PR body"  # プルリクエストの本文
+PR_TITLE="Auto translate"         # プルリクエストのタイトル
+PR_BODY="自動翻訳が完了しました。問題がないか確認お願いします。"  # プルリクエストの本文
 
 
 # プルリクエストのデータをJSON形式で構築

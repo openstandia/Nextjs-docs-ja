@@ -51,7 +51,6 @@ const translateFile = async (filePath) => {
     // ファイルの内容を読み込む
     let file_content = fs.readFileSync(filePath, 'utf-8')
     const content = buildContent(file_content)
-    console.log('翻訳内容：', content)
 
     // ChatGPT APIを使用して翻訳する
     const stream = await openai.chat.completions.create({
@@ -59,14 +58,11 @@ const translateFile = async (filePath) => {
       messages: [{ role: 'user', content }],
       stream: false,
     })
-
-    console.log('翻訳結果：', stream)
-
+    // 翻訳結果の取得
     const translatedContent = stream.choices[0]?.message.content || ''
 
     // 翻訳結果をファイルに上書きする
     fs.writeFileSync(filePath, translatedContent, 'utf-8')
-
     console.log(chalk.green(`Translated content written to: ${filePath}`))
   } catch (err) {
     console.error(
@@ -88,6 +84,10 @@ async function main() {
     for (const filePath of filePaths) {
       translateFile(filePath.trim())
     }
+
+    // ファイル削除処理
+    await unlink(changedFilesPath)
+    console.log('ファイルが正常に削除されました')
   } catch (err) {
     console.error(
       chalk.red('Error reading translate_files_path.txt:', err.message)
