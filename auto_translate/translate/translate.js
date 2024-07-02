@@ -62,7 +62,7 @@ const translateFile = async (filePath) => {
 
     console.log('翻訳結果：', stream)
 
-    const translatedContent = stream.data.choices[0]?.message.content.trim()
+    const translatedContent = stream.choices[0]?.message.content || ''
 
     // 翻訳結果をファイルに上書きする
     fs.writeFileSync(filePath, translatedContent, 'utf-8')
