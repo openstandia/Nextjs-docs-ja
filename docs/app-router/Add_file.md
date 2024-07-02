@@ -1,6 +1,8 @@
-Thomas Cranmer (2 July 1489 – 21 March 1556) was a leader of the English Reformation and Archbishop of Canterbury. He helped build the case for the annulment of Henry VIII's marriage to Catherine of Aragon. He established the first doctrinal and liturgical structures of the Church of England and published the Exhortation and Litany.
+この文章は英語のリフォーマーションのリーダーであり、カンタベリー大司教だったトマス・クランマー（1489年7月2日 - 1556年3月21日）について述べています。
+彼はヘンリー8世とカトリーナ・オブ・アラゴンの結婚無効の根拠を作り上げました。
+彼は始めてのイングランド教会の教義と礼拝の体系を確立し、ExhortationとLitanyを公開しました。
 
-testfile
-translate testfile
-test
-test
+タイトル = "テストファイル"
+テストファイルを翻訳する
+テスト
+テスト
