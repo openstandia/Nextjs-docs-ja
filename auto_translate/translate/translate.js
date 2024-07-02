@@ -4,7 +4,8 @@ import path from 'path'
 import chalk from 'chalk'
 
 const apiKey = process.env.API_KEY
-const filesPath = '../translate_files_path/translate_files_path.txt'
+const changedFilesPath =
+  'auto_translate/translate_files_path/translate_files_path.txt'
 
 if (apiKey == undefined) {
   console.error(chalk.red('Please set the API_KEY environment variable'))
@@ -75,7 +76,10 @@ const translateFile = async (filePath) => {
 async function main() {
   try {
     // translate_files_path.txt から翻訳対象ファイルのパスを読み取る
-    const filePaths = fs.readFileSync(filesPath, 'utf-8').trim().split('\n')
+    const filePaths = fs
+      .readFileSync(changedFilesPath, 'utf-8')
+      .trim()
+      .split('\n')
 
     // 各ファイルに対して翻訳処理を実行する
     for (const filePath of filePaths) {
