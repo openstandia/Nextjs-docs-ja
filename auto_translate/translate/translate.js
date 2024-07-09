@@ -84,10 +84,6 @@ async function main() {
     for (const filePath of filePaths) {
       translateFile(filePath.trim())
     }
-
-    // ファイル削除処理
-    await unlink(changedFilesPath)
-    console.log('ファイルが正常に削除されました')
   } catch (err) {
     console.error(
       chalk.red('Error reading translate_files_path.txt:', err.message)
