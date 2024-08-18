@@ -12,8 +12,8 @@ description: メタデータファイルの規約に関するAPIドキュメン�
 
 ファイルが定義されると、Next.js は自動的にそのファイルを配信し（本番環境ではキャッシングのためにハッシュが含まれる）、アセットの URL、ファイルタイプ、画像サイズなど、正しいメタデータで関連するヘッド要素を更新します。
 
-- [favicon, icon, apple-icon](./app-icons): Favicon、icon、および Apple icon ファイルの規則に関するAPIリファレンスです。
-- [manifest.json](./manifest): manifest.json ファイルの API リファレンスです。
-- [opengraph-image と twitter-image](./opengraph-image): Open Graph 画像および Twitter 画像ファイルの規則に関する API リファレンスです。
-- [robots.txt](./robots): robots.txt ファイルの API リファレンスです。
-- [sitmap.xml](./sitemap): sitemap.xml ファイルの API リファレンスです。
+- [favicon, icon, apple-icon](./app-icons.md): Favicon、icon、および Apple icon ファイルの規則に関するAPIリファレンスです。
+- [manifest.json](./manifest.md): manifest.json ファイルの API リファレンスです。
+- [opengraph-image と twitter-image](./opengraph-image.md): Open Graph 画像および Twitter 画像ファイルの規則に関する API リファレンスです。
+- [robots.txt](./robots.md): robots.txt ファイルの API リファレンスです。
+- [sitemap.xml](./sitemap.md): sitemap.xml ファイルの API リファレンスです。
