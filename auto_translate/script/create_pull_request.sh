@@ -12,15 +12,21 @@
 # 0. 環境設定
 TOKEN=$1
 SOURCE_BRANCH=$2
+CHANGED_FILES=$3
 DEFAULT_API_URL="https://api.github.com/repos/openstandia/Nextjs-docs-ja"
 TARGET_BRANCH="feature/pr-test"
 
 
+# 変更ファイルを箇条書き形式に変換
+CHANGED_FILES_LIST=$(echo "$CHANGED_FILES" | sed 's/^/- /' | sed 's/ /\'$'\n- /g')
+
+# タイムスタンプの取得
+TIMESTAMP=$(date +'%Y-%m-%d %H:%M:%S')
+
 # 1. GitHub APIを使用してPRを作成する
 # プルリクエストの内容を定義
-# GitHubリポジトリの情報を設定
-PR_TITLE="Auto translate"         # プルリクエストのタイトル
-PR_BODY="自動翻訳が完了しました。問題がないか確認お願いします。"  # プルリクエストの本文
+PR_TITLE="Auto translate completed at ${TIMESTAMP}"
+PR_BODY="自動翻訳が完了しました。以下のファイルが変更されました:\n${CHANGED_FILES_LIST}\n\n問題がないか確認お願いします。"
 
 
 # プルリクエストのデータをJSON形式で構築

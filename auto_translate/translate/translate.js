@@ -4,8 +4,10 @@ import path from 'path'
 import chalk from 'chalk'
 
 const apiKey = process.env.API_KEY
-const changedFilesPath =
-  'auto_translate/translate_files_path/translate_files_path.txt'
+const changedFiles = process.env.CHANGED_FILES
+
+// const changedFilesPath =
+//   'auto_translate/translate_files_path/translate_files_path.txt'
 
 if (apiKey == undefined) {
   console.error(chalk.red('Please set the API_KEY environment variable'))
@@ -72,22 +74,36 @@ const translateFile = async (filePath) => {
   }
 }
 
+// async function main() {
+//   try {
+//     // translate_files_path.txt から翻訳対象ファイルのパスを読み取る
+//     const filePaths = fs
+//       .readFileSync(changedFilesPath, 'utf-8')
+//       .trim()
+//       .split('\n')
+
+//     // 各ファイルに対して翻訳処理を実行する
+//     for (const filePath of filePaths) {
+//       translateFile(filePath.trim())
+//     }
+//   } catch (err) {
+//     console.error(
+//       chalk.red('Error reading translate_files_path.txt:', err.message)
+//     )
+//   }
+// }
+
 async function main() {
   try {
-    // translate_files_path.txt から翻訳対象ファイルのパスを読み取る
-    const filePaths = fs
-      .readFileSync(changedFilesPath, 'utf-8')
-      .trim()
-      .split('\n')
+    // 環境変数 CHANGED_FILES から翻訳対象ファイルのパスを取得する
+    const filePaths = changedFiles.split(' ')
 
     // 各ファイルに対して翻訳処理を実行する
     for (const filePath of filePaths) {
       translateFile(filePath.trim())
     }
   } catch (err) {
-    console.error(
-      chalk.red('Error reading translate_files_path.txt:', err.message)
-    )
+    console.error(chalk.red('Error processing changed files:', err.message))
   }
 }
 

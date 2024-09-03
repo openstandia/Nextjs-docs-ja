@@ -29,7 +29,8 @@ jobs:
       # 変更ファイル取得
       - name: Check and get changed files
         run: |
-          bash auto_translate/script/check_change.sh "${{ secrets.GITHUB_TOKEN }}" "${BRANCH_NAME}"
+          changed_files=$(git diff --name-status HEAD~1 | awk '$1 == "A" || $1 == "M" {print $2}')
+          echo "CHANGED_FILES=${changed_files}" >> $GITHUB_ENV
 
       # Nodeの環境構築
       - name: Use Node.js 20.9.0
@@ -46,6 +47,7 @@ jobs:
       - name: Translate with ChatGPT
         env:
           API_KEY: ${{ secrets.API_KEY }}
+          CHANGED_FILES: ${{ env.CHANGED_FILES }}
         run: node auto_translate/translate/translate.js
 
       # 翻訳対象パスファイルの削除
@@ -76,4 +78,4 @@ jobs:
 
       # PRの作成処理
       - name: Create PR
-        run: bash auto_translate/script/create_pull_request.sh "${{ secrets.GITHUB_TOKEN }}" "${BRANCH_NAME}"
+        run: bash auto_translate/script/create_pull_request.sh "${{ secrets.GITHUB_TOKEN }}" "${{ env.BRANCH_NAME }}" "${{ env.CHANGED_FILES }}"
