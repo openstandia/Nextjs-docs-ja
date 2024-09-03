@@ -1,22 +1,22 @@
-# Introduction to Next.js
+# Next.js入門
 
-Next.js is a popular framework for building fast and user-friendly web applications. It provides a hybrid static and server rendering model, file-based routing, and many other powerful features.
+Next.jsは、迅速でユーザーフレンドリーなウェブアプリケーションを構築するための人気のフレームワークです。ハイブリッドな静的・サーバーレンダリングモデル、ファイルベースのルーティング、その他多くの強力な機能を提供しています。
 
-## Features
+## 機能
 
-- Automatic static optimization
-- Built-in CSS and Sass support
-- Fast refresh for reliable live-editing experience
-- API routes to build API endpoints with Serverless Functions
-- Powerful internationalization support
+- 自動的な静的最適化
+- 組み込みのCSSとSassのサポート
+- 信頼できるライブ編集体験のためのFast Refresh
+- サーバーレスファンクションを用いたAPIエンドポイント構築のためのAPIルート
+- 強力な国際化対応
 
 ### Good to know
 
-Using Next.js, you can start a project with zero configuration to enhance your developer experience. It also improves your user's experience on the web by providing optimal performance by default.
+Next.jsを使用すれば、開発者体験を向上させるためにゼロからの設定でプロジェクトを始めることができます。また、最適なパフォーマンスがデフォルトで提供されるため、ウェブ上のユーザー体験も改善します。
 
-## Getting Started
+## 始め方
 
-To create a new Next.js application, run the following command:
+新しいNext.jsアプリケーションを作成するためには、以下のコマンドを実行します：
 
 ```bash
 npx create-next-app@latest
