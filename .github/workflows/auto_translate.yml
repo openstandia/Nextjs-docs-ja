@@ -20,22 +20,18 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
-
-      # ブランチ名を定義
-      - name: Define branch name
-        run: |
-          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-          echo "INFO: ブランチ名は${{ env.BRANCH_NAME }}"
+          ref: ${{ github.ref_name }}
 
       # 変更ファイル取得
       # bash auto_translate/script/check_change.sh "${{ secrets.GITHUB_TOKEN }}" "${BRANCH_NAME}"
       - name: Check and get changed files
         run: |
-          git fetch
-          changed_files=$(git diff --name-only HEAD~1)
+          git status
+          git fetch --all
+          git pull
+          changed_files=$(git diff --name-status HEAD~1 | awk '$1 == "A" || $1 == "M" {print $2}')
           echo "CHANGED_FILES=${changed_files}" >> $GITHUB_ENV
-          echo "INFO: 変更対象ファイル名は${{ env.CHANGED_FILES }}"
+          echo "INFO: 変更対象ファイル名は${CHANGED_FILES }"
 
       # Nodeの環境構築
       - name: Use Node.js 20.9.0
@@ -52,7 +48,7 @@ jobs:
       - name: Translate with ChatGPT
         env:
           API_KEY: ${{ secrets.API_KEY }}
-          CHANGED_FILES: ${{ env.CHANGED_FILES }}
+          CHANGED_FILES: ${CHANGED_FILES }
         run: node auto_translate/translate/translate.js
 
       # 翻訳対象パスファイルの削除
@@ -79,8 +75,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push origin HEAD:${{ github.ref }}
+          git push origin HEAD:${{ github.ref_name }}
 
       # PRの作成処理
       - name: Create PR
-        run: bash auto_translate/script/create_pull_request.sh "${{ secrets.GITHUB_TOKEN }}" "${{ env.BRANCH_NAME }}" "${{ env.CHANGED_FILES }}"
+        run: bash auto_translate/script/create_pull_request.sh "${{ secrets.GITHUB_TOKEN }}" "${{ github.ref_name }}" "${CHANGED_FILES }"
