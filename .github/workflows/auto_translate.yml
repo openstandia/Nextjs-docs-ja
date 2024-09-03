@@ -4,7 +4,7 @@ name: Auto Translate
 on:
   push:
     branches:
-      - 'feature/auto-translate'
+      - 'feature/auto-translate-*'
     paths:
       - 'docs/app-router/**'
 
@@ -20,11 +20,16 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v4
         with:
-          ref: feature/auto-translate
+          ref: ${{ github.ref }}
+
+      # ブランチ名を定義
+      - name: Define branch name
+        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
       # 変更ファイル取得
       - name: Check and get changed files
-        run: bash auto_translate/script/check_change.sh "${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          bash auto_translate/script/check_change.sh "${{ secrets.GITHUB_TOKEN }}" "${BRANCH_NAME}"
 
       # Nodeの環境構築
       - name: Use Node.js 20.9.0
@@ -37,11 +42,13 @@ jobs:
           npm ci
           npm install openai
 
+      # 翻訳処理
       - name: Translate with ChatGPT
         env:
           API_KEY: ${{ secrets.API_KEY }}
         run: node auto_translate/translate/translate.js
 
+      # 翻訳対象パスファイルの削除
       - name: Remove translate_files_path.txt
         run: |
           rm auto_translate/translate_files_path/translate_files_path.txt
@@ -55,10 +62,11 @@ jobs:
       - name: Add changes to Git
         run: |
           git add .
-      # TODO:コミットコメントの修正
+
       - name: Commit changes
         run: |
-          git commit -m "Automated commit from GitHub Actions"
+          timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+          git commit -m "Automated translation commit: Translated Next.js docs to Japanese under docs/app-router. Timestamp: $timestamp"
 
       - name: Push changes
         env:
@@ -68,4 +76,4 @@ jobs:
 
       # PRの作成処理
       - name: Create PR
-        run: bash auto_translate/script/create_pull_request.sh "${{ secrets.GITHUB_TOKEN }}"
+        run: bash auto_translate/script/create_pull_request.sh "${{ secrets.GITHUB_TOKEN }}" "${BRANCH_NAME}"

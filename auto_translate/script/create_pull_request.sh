@@ -11,8 +11,8 @@
 
 # 0. 環境設定
 TOKEN=$1
+SOURCE_BRANCH=$2
 DEFAULT_API_URL="https://api.github.com/repos/openstandia/Nextjs-docs-ja"
-SOURCE_BRANCH="feature/auto-translate"
 TARGET_BRANCH="feature/pr-test"
 
 
