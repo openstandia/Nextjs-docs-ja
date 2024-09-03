@@ -12,10 +12,14 @@
 # 0. 環境設定
 TOKEN=$1
 SOURCE_BRANCH=$2
-CHANGED_FILES=$3
 DEFAULT_API_URL="https://api.github.com/repos/openstandia/Nextjs-docs-ja"
 TARGET_BRANCH="feature/pr-test"
 
+CHANGED_FILES=$(cat auto_translate/translate_files_path/translate_files_path.txt)
+if [ -z "$CHANGED_FILES" ]; then
+  echo "ERROR: No changed files detected."
+  exit 1
+fi
 
 # 変更ファイルを箇条書き形式に変換
 CHANGED_FILES_LIST=$(echo "$CHANGED_FILES" | sed 's/^/- /' | sed 's/ /\'$'\n- /g')
@@ -46,4 +50,3 @@ RESPONSE=$(curl -s -X POST -H "Authorization: token ${TOKEN}" \
 
 # 作成されたプルリクエストのURLを表示
 echo "Pull Request created: $(echo "$RESPONSE" | jq -r .html_url)"
-
