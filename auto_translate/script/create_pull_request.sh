@@ -72,7 +72,7 @@ if [ "$PR_NUMBER" != "null" ]; then
     -d '{"reviewers":["kannoixia"]}' \
     "${DEFAULT_API_URL}/pulls/${PR_NUMBER}/requested_reviewers")
 
-  echo "INFO: レビュワーが設定されました: $(echo "$REVIEW_RESPONSE" | jq -r .message)"
+  echo "INFO: レビュワーが設定されました: $(echo "$REVIEW_RESPONSE" | jq -r '.requested_reviewers[0].login')"
 else
   echo "ERROR: PR番号が取得できず、レビュワーを設定できませんでした。レスポンス: $RESPONSE"
 fi
