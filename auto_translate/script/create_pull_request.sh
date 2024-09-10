@@ -13,7 +13,7 @@
 TOKEN=$1
 SOURCE_BRANCH=$2
 DEFAULT_API_URL="https://api.github.com/repos/openstandia/Nextjs-docs-ja"
-TARGET_BRANCH="feature/pr-test"
+TARGET_BRANCH="main"
 
 CHANGED_FILES=$(cat auto_translate/translate_files_path/translate_files_path.txt)
 if [ -z "$CHANGED_FILES" ]; then
@@ -77,7 +77,7 @@ if [ "$PR_NUMBER" != "null" ]; then
   REVIEW_RESPONSE=$(curl -s -X POST -H "Authorization: token ${TOKEN}" \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
-    -d '{"reviewers":["kannoixia"]}' \
+    -d '{"reviewers":["jonghyo"]}' \
     "${DEFAULT_API_URL}/pulls/${PR_NUMBER}/requested_reviewers")
 
   echo "INFO: レビュワーが設定されました: $(echo "$REVIEW_RESPONSE" | jq -r '.requested_reviewers[0].login')"
