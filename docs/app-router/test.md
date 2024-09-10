@@ -1,59 +1,59 @@
 ---
-title: イントロダクション
-description: Next.jsのドキュメンテーションへようこそ。
+title: Introduction
+description: Welcome to the Next.js Documentation.
 ---
 
-Next.jsのドキュメンテーションへようこそ！
+Welcome to the Next.js documentation!
 
-## Next.jsとは何ですか？
+## What is Next.js?
 
-Next.jsは、フルスタックのWebアプリケーションを構築するためのReactフレームワークです。ユーザーインターフェースを構築するためにReactコンポーネントを使用し、その他の機能や最適化のためにNext.jsを使用します。
+Next.js is a React framework for building full-stack web applications. You use React Components to build user interfaces, and Next.js for additional features and optimizations.
 
-内部的には、Next.jsはReactに必要なツール類、例えばバンドリング、コンパイルなどを抽象化し、自動的に設定します。このおかげで、設定に時間を費やすことなくアプリケーションの構築に集中できます。
+Under the hood, Next.js also abstracts and automatically configures tooling needed for React, like bundling, compiling, and more. This allows you to focus on building your application instead of spending time with configuration.
 
-あなたが個人の開発者であろうと、大きなチームの一部であろうと、Next.jsはあなたがインタラクティブで、動的で、高速なReactアプリケーションを構築するのを助けます。
+Whether you're an individual developer or part of a larger team, Next.js can help you build interactive, dynamic, and fast React applications.
 
-## 主な特徴
+## Main Features
 
-Next.jsの主な特徴は以下の通りです：
+Some of the main Next.js features include:
 
-| 特徴                                                                  | 説明                                                                                                                                                                                      |
+| Feature                                                                  | Description                                                                                                                                                                                      |
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [ルーティング](/docs/app-router/building-your-application/routing)                   | サーバーコンポーネントを基盤としたファイルシステムベースのルーターで、レイアウト、ネストされたルーティング、ローディングステート、エラーハンドリングなどをサポートしています。                                                    |
-| [レンダリング](/docs/app-router/building-your-application/rendering)               | クライアントサイドとサーバーサイドのレンダリングをクライアントとサーバーコンポーネントで実現します。Next.jsによるサーバー上での静的および動的なレンダリングでさらに最適化され、エッジやNode.jsランタイムでのストリーミングが可能です。 |
-| [データフェッチ](/docs/app-router/building-your-application/data-fetching)       | サーバーコンポーネントでのasync/awaitを使用したデータフェッチを簡易化し、リクエストのメモリゼーション、データキャッシング、再確認が可能な拡張`fetch` APIを提供します。                                              |
-| [スタイリング](/docs/app-router/building-your-application/styling)                   | CSSモジュール、Tailwind CSS、CSS-in-JSを含むあなたが好むスタイリング方法に対応しています。                                                                                                   |
-| [最適化](/docs/app-router/building-your-application/optimizing)          | 画像、フォント、スクリプトの最適化を行い、あなたのアプリケーションのCore Web Vitalsとユーザーエクスペリエンスを向上させます。                                                                                        |
-| [TypeScript](/docs/app-router/building-your-application/configuring/typescript) | TypeScriptのサポートを強化し、より良い型チェックや効率的なコンパイル、カスタムTypeScriptプラグインや型チェッカーを提供します。                                                 |
+| [Routing](/docs/app/building-your-application/routing)                   | A file-system based router built on top of Server Components that supports layouts, nested routing, loading states, error handling, and more.                                                    |
+| [Rendering](/docs/app/building-your-application/rendering)               | Client-side and Server-side Rendering with Client and Server Components. Further optimized with Static and Dynamic Rendering on the server with Next.js. Streaming on Edge and Node.js runtimes. |
+| [Data Fetching](/docs/app/building-your-application/data-fetching)       | Simplified data fetching with async/await in Server Components, and an extended `fetch` API for request memoization, data caching and revalidation.                                              |
+| [Styling](/docs/app/building-your-application/styling)                   | Support for your preferred styling methods, including CSS Modules, Tailwind CSS, and CSS-in-JS                                                                                                   |
+| [Optimizations](/docs/app/building-your-application/optimizing)          | Image, Fonts, and Script Optimizations to improve your application's Core Web Vitals and User Experience.                                                                                        |
+| [TypeScript](/docs/app/building-your-application/configuring/typescript) | Improved support for TypeScript, with better type checking and more efficient compilation, as well as custom TypeScript Plugin and type checker.                                                 |
 
-## このドキュメンテーションの使い方
+## How to Use These Docs
 
-画面の左側には、ドキュメンテーションのナビバーがあります。ドキュメンテーションのページは基本から応用までの順序で整理されているので、アプリケーションの構築時に順に従って進むことができます。しかし、自分のニーズに合わせて任意の順序で読むことも、特定のページにスキップすることも可能です。
+On the left side of the screen, you'll find the docs navbar. The pages of the docs are organized sequentially, from basic to advanced, so you can follow them step-by-step when building your application. However, you can read them in any order or skip to the pages that apply to your use case.
 
-画面の右側には、ページ内の各セクションを簡単に移動するための「目次」があります。ページを素早く見つけるには、上部にある検索バーを使用するか、検索ショートカット（`Ctrl+K`または`Cmd+K`）を使用できます。
+On the right side of the screen, you'll see a table of contents that makes it easier to navigate between sections of a page. If you need to quickly find a page, you can use the search bar at the top, or the search shortcut (`Ctrl+K` or `Cmd+K`).
 
-始めるためには、[インストール](/docs/getting-started/installation)ガイドをご覧ください。
+To get started, check out the [Installation](/docs/getting-started/installation) guide.
 
-## App RouterとPages Router
+## App Router vs Pages Router
 
-Next.jsには2種類のルーターがあります。App RouterとPages Routerです。App Routerは新しいルーターで、Reactの最新機能、例えばサーバーコンポーネントやストリーミングなどを使用することができます。Pages Routerは、元々のNext.jsのルーターで、サーバーがレンダリングするReactアプリケーションの構築を可能にし、古いNext.jsアプリケーションに対して引き続きサポートされています。
+Next.js has two different routers: the App Router and the Pages Router. The App Router is a newer router that allows you to use React's latest features, such as Server Components and Streaming. The Pages Router is the original Next.js router, which allowed you to build server-rendered React applications and continues to be supported for older Next.js applications.
 
-サイドバーの最上部には、**App Router**と**Pages Router**の2つの機能を切り替えるためのドロップダウンメニューがあります。それぞれのディレクトリには固有の機能があるため、どれが選択されているかを確認することが重要です。
+At the top of the sidebar, you'll notice a dropdown menu that allows you to switch between the **App Router** and the **Pages Router** features. Since there are features that are unique to each directory, it's important to keep track of which tab is selected.
 
-ページの上部のパンくずリストも、App Routerのドキュメンテーションを表示しているのか、それともPages Routerのドキュメンテーションを表示しているのかを示します。
+The breadcrumbs at the top of the page will also indicate whether you're viewing App Router docs or Pages Router docs.
 
-## 前提条件となる知識
+## Pre-Requisite Knowledge
 
-私たちのドキュメントは初心者に優しいように設計されていますが、ドキュメントをNext.jsの機能に集中した形で保つために、基早のラインを設定する必要があります。新しい概念を紹介するたびに、関連するドキュメンテーションへのリンクを提供します。
+Although our docs are designed to be beginner-friendly, we need to establish a baseline so that the docs can stay focused on Next.js functionality. We'll make sure to provide links to relevant documentation whenever we introduce a new concept.
 
-私たちのドキュメントから最も得られるように、HTML、CSS、Reactの基本的な理解を持っていることが推奨されます。Reactのスキルを磨く必要がある場合は、私たちの[React基礎コース](/learn/react-foundations)をチェックしてください。そこでは基本について紹介します。その後は、Next.jsについて詳しく学ぶために[ダッシュボードアプリケーションを構築](/learn/dashboard-app)してみてください。
+To get the most out of our docs, it's recommended that you have a basic understanding of HTML, CSS, and React. If you need to brush up on your React skills, check out our [React Foundations Course](/learn/react-foundations), which will introduce you to the fundamentals. Then, learn more about Next.js by [building a dashboard application](/learn/dashboard-app).
 
-## アクセシビリティ
+## Accessibility
 
-ドキュメンテーションを読む際にスクリーンリーダーを使用する最適なアクセシビリティを得るために、FirefoxとNVDA、またはSafariとVoiceOverを使用することを推奨します。
+For optimal accessibility when using a screen reader while reading the docs, we recommend using Firefox and NVDA, or Safari and VoiceOver.
 
-## 私たちのコミュニティに参加してみてください
+## Join our Community
 
-Next.jsに関する何か質問があれば、いつでも私たちのコミュニティに尋ねてみてください。[GitHub Discussions](https://github.com/vercel/next.js/discussions)、[Discord](https://discord.com/invite/bUG2bvbtHy)、[X（Twitter）](https://x.com/nextjs)、または[Reddit](https://www.reddit.com/r/nextjs)でお待ちしています。
+If you have questions about anything related to Next.js, you're always welcome to ask our community on [GitHub Discussions](https://github.com/vercel/next.js/discussions), [Discord](https://discord.com/invite/bUG2bvbtHy), [X (Twitter)](https://x.com/nextjs), and [Reddit](https://www.reddit.com/r/nextjs).
 
 test
