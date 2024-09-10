@@ -38,7 +38,7 @@ if [ "$code" = "200" ]; then
         i=$((i + 1))
   done
 else
-  echo "取得失敗"
+  echo "ERROR: 取得失敗"
   exit 1
 fi
 
