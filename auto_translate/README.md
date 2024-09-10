@@ -64,6 +64,8 @@ Place the files obtained from the official Next.js documentation into the `docs/
 
 ### 3. Push the Branch
 
+Only one PR can be created from the same branch, so if you want to create a PR from the same branch, please merge or close the already existing PR.
+
 Push the changes to the remote repository using the following commands:
 
 ```sh
