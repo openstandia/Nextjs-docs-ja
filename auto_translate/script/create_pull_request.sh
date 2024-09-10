@@ -25,7 +25,7 @@ fi
 CHANGED_FILES_LIST=$(echo "$CHANGED_FILES" | sed 's/^/- /')
 
 # タイムスタンプの取得
-TIMESTAMP=$(date +'%Y-%m-%d %H:%M:%S')
+TIMESTAMP=$(TZ=Asia/Tokyo date +'%Y-%m-%d %H:%M:%S')
 
 # 1. GitHub APIを使用してPRを作成する
 # プルリクエストの内容を定義
