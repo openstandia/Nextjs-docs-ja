@@ -19,11 +19,11 @@ DEFAULT_API_URL="https://api.github.com/repos/openstandia/Nextjs-docs-ja"
 # ブランチの最新commitの変更ファイル名を取得
 response=$(curl -s -w "\n%{http_code}" -H "Accept: application/vnd.github+json" -H "Authorization: token  ${TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28" "${DEFAULT_API_URL}/commits/${TARGET_BRANCH}")
 body=$(echo "$response" | head -n -1 | sed 's/\\//g' | tr -d '[:cntrl:]' | jq "[.files[] | select(.status != \"removed\") | { filename: .filename}]")
-code=$(echo "$response" | tail -n 1)
+status=$(echo "$response" | tail -n 1)
 
 target_file_num=$(echo "$body" | jq length)
 
-if [ "$code" = "200" ]; then
+if [ "$status" = "200" ]; then
   if [ "$target_file_num" -eq 0 ]; then
     echo "INFO: 追加、変更されたファイルはありません。"
     exit 1

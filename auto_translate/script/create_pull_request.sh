@@ -60,6 +60,14 @@ RESPONSE=$(curl -s -X POST -H "Authorization: token ${TOKEN}" \
   -d "$PR_DATA" \
   "${DEFAULT_API_URL}/pulls")
 
+status=$(tail -n1 <<< "$RESPONSE")
+
+# ステータスが201でない場合はエラーとして処理
+if [ "$status" -ne 201 ]; then
+  echo "ERROR: PRの作成に失敗しました。ステータス:  $status"
+  exit 1
+fi
+
 # 作成されたプルリクエストのURLを表示
 echo "INFO: PRは以下に作成されました: $(echo "$RESPONSE" | jq -r .html_url)"
 
@@ -75,4 +83,5 @@ if [ "$PR_NUMBER" != "null" ]; then
   echo "INFO: レビュワーが設定されました: $(echo "$REVIEW_RESPONSE" | jq -r '.requested_reviewers[0].login')"
 else
   echo "ERROR: PR番号が取得できず、レビュワーを設定できませんでした。レスポンス: $RESPONSE"
+  exit 1
 fi
