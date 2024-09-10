@@ -22,7 +22,7 @@ if [ -z "$CHANGED_FILES" ]; then
 fi
 
 # 変更ファイルを箇条書き形式に変換
-CHANGED_FILES_LIST="${CHANGED_FILES//^/- /}"
+CHANGED_FILES_LIST=$(echo "$CHANGED_FILES" | sed 's/^/- /')
 
 # タイムスタンプの取得
 TIMESTAMP=$(date +'%Y-%m-%d %H:%M:%S')
@@ -69,7 +69,7 @@ if [ "$PR_NUMBER" != "null" ]; then
   REVIEW_RESPONSE=$(curl -s -X POST -H "Authorization: token ${TOKEN}" \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
-    -d '{"reviewers":["j-kanno"]}' \
+    -d '{"reviewers":["kannoixia"]}' \
     "${DEFAULT_API_URL}/pulls/${PR_NUMBER}/requested_reviewers")
 
   echo "INFO: レビュワーが設定されました: $(echo "$REVIEW_RESPONSE" | jq -r .message)"
