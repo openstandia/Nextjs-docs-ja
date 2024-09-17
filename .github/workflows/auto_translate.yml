@@ -1,0 +1,73 @@
+name: Auto Translate
+
+on:
+  push:
+    branches:
+      - 'feature/auto-translate-*'
+    paths:
+      - 'docs/app-router/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-translate:
+    runs-on: ubuntu-latest
+    steps:
+      # 対象ブランチへCheckout
+      - name: checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up timezone to JST
+        run: |
+          TZ=Asia/Tokyo
+
+      # 変更ファイル取得
+      - name: Check and get changed files
+        run: |
+          bash auto_translate/script/check_change.sh "${{ secrets.GITHUB_TOKEN }}" "${{ github.ref_name }}"
+
+      # Nodeの環境構築
+      - name: Use Node.js 20.9.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.9.0'
+
+      - name: npm install
+        run: |
+          npm ci
+          npm install openai
+
+      # 翻訳処理
+      - name: Translate with ChatGPT
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+        run: node auto_translate/translate/translate.js
+
+      # 変更内容のadd、commit、push処理
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add changes to Git
+        run: |
+          git add .
+
+      - name: Commit changes
+        run: |
+          timestamp=$(TZ=Asia/Tokyo date +'%Y-%m-%d %H:%M:%S')
+          git commit -m "Automated translation commit: Translated Next.js docs to Japanese under docs/app-router. Timestamp: $timestamp"
+
+      - name: Push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin HEAD:${{ github.ref_name }}
+
+      # PRの作成処理
+      - name: Create PR
+        run: bash auto_translate/script/create_pull_request.sh "${{ secrets.GITHUB_TOKEN }}" "${{ github.ref_name }}"
