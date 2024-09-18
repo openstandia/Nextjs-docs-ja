@@ -48,8 +48,8 @@ if [ -n "$diff_output" ]; then
     readonly hash_after=$(echo "$diff_output" | grep '^+Subproject' | sed 's/+Subproject commit //' | tr -d '[:space:]')
     trace 'submodule hash' "$hash_before..$hash_after"
 
-    submodule_diff_output=$(git submodule foreach git diff -M100% --name-status $hash_before..$hash_after -- docs \
-                          | grep -v '^Entering*')
+    readonly submodule_diff_output=$(git submodule foreach git diff -M100% --name-status $hash_before..$hash_after -- docs \
+                                   | grep -v '^Entering*')
 
     echo "$submodule_diff_output" > "$output_file_name"
     trace "$output_file_name" "$submodule_diff_output"
