@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import chalk from 'chalk'
+import { chalk } from 'zx'
 
-export const PROJECT_ROOT = path.normalize(`${__dirname}/../..`)
+export const PROJECT_ROOT = path.normalize(`${import.meta.dirname}/../..`)
 
 export async function readFile(path: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -28,9 +28,19 @@ export async function removeFile(path: string): Promise<void> {
   })
 }
 
-export async function writeFile(path: string, content: string): Promise<void> {
+export async function writeFile(
+  path: string,
+  content: string | string[]
+): Promise<void> {
+  let contentString: string
+  if (Array.isArray(content)) {
+    contentString = content.join('\n')
+  } else {
+    contentString = content
+  }
+
   return new Promise((resolve, reject) => {
-    fs.writeFile(path, content, (err) => {
+    fs.writeFile(path, contentString, (err) => {
       if (err) {
         reject(err)
       } else {
