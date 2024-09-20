@@ -1,54 +1,8 @@
-import fs from 'node:fs'
 import path from 'node:path'
-import { chalk } from 'zx'
+import { chalk, minimist, fs } from 'zx'
+import ParsedArgs = minimist.ParsedArgs
 
 export const PROJECT_ROOT = path.normalize(`${import.meta.dirname}/../..`)
-
-export async function readFile(path: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path, (err, data) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(data.toString())
-      }
-    })
-  })
-}
-
-export async function removeFile(path: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    fs.unlink(path, (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
-    })
-  })
-}
-
-export async function writeFile(
-  path: string,
-  content: string | string[]
-): Promise<void> {
-  let contentString: string
-  if (Array.isArray(content)) {
-    contentString = content.join('\n')
-  } else {
-    contentString = content
-  }
-
-  return new Promise((resolve, reject) => {
-    fs.writeFile(path, contentString, (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
-    })
-  })
-}
 
 export function listMdxFilesRecursively(dir: string): string[] {
   return fs
@@ -141,7 +95,7 @@ function createMdxDiff(status: string, data: string): MdxDiff {
 }
 
 export async function parseMdxDiff(filePath: string): Promise<MdxDiff[]> {
-  const content = await readFile(filePath)
+  const content = (await fs.readFile(filePath)).toString()
 
   return content
     .split('\n')
@@ -168,5 +122,48 @@ export function createLogger(prefix: string) {
     const [message, ...others] = data
 
     console.log(palette[type](`[${prefix}] ${message}`), ...others)
+  }
+}
+
+type ParseResult<T> =
+  | {
+      success: true
+      args: T
+    }
+  | {
+      success: false
+      message: string
+    }
+
+type ArgsParser<T> = (args: ParsedArgs) => ParseResult<T>
+
+export function parseArgs<T>(options: {
+  description: string
+  usage: string
+  parser: ArgsParser<T>
+}): (args: ParsedArgs) => ParseResult<T> {
+  return (args: ParsedArgs) => {
+    const result = options.parser(args)
+    if (result.success) {
+      return {
+        success: true,
+        args: result.args,
+      }
+    }
+
+    const message = `Invalid arguments!
+  Description:
+    ${options.description}
+
+  Usage:
+    ${options.usage}
+
+  Error message:
+    ${result.message}
+`
+    return {
+      success: false,
+      message: message,
+    }
   }
 }
