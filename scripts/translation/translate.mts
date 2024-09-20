@@ -12,6 +12,10 @@ import {
   parseArgs,
 } from './utils.mts'
 
+/*
+ * Definitions
+ */
+
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
   concurrency: 5,
@@ -23,6 +27,10 @@ const defaults = {
 const log = createLogger(basename(import.meta.filename))
 
 const limit = pLimit(defaults.concurrency)
+
+/*
+ * Entry point
+ */
 
 log('important', '🚀 translate started.')
 
@@ -83,11 +91,10 @@ const command = await (async () => {
   ).toString()
 
   const translate = async (mdxFilePath: string) => {
-    const userContent = (
-      await fs.readFile(path.resolve(defaults.nextjsDir, mdxFilePath))
-    ).toString()
+    const targetMdxFile = path.resolve(defaults.nextjsDir, mdxFilePath)
+    const userContent = (await fs.readFile(targetMdxFile)).toString()
 
-    log('normal', `requesting to OpenAI to translate "${mdxFilePath}"`)
+    log('normal', `requesting to OpenAI to translate "${targetMdxFile}"`)
     const result = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
@@ -107,7 +114,6 @@ const command = await (async () => {
     const pathToWrite = path.resolve(PROJECT_ROOT, mdxFilePath)
     log('normal', `writing translated files to "${pathToWrite}"`)
     await fs.ensureDir(dirname(pathToWrite))
-
     await fs.writeFile(pathToWrite, translatedContent ?? '')
   }
 

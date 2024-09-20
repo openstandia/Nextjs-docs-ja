@@ -1,5 +1,5 @@
 import { $, argv, fs } from 'zx'
-import path, { basename } from 'node:path'
+import path, { basename, dirname } from 'node:path'
 import process from 'node:process'
 import { createLogger, parseArgs } from './utils.mts'
 
@@ -64,7 +64,7 @@ const docDiffOutput =
 const docDiffLines = docDiffOutput
   .text()
   .split('\n')
-  .filter((line) => line)
+  .filter((line) => line.trim())
   .filter((line) => !line.startsWith('Entering'))
 
 docDiffLines.forEach((line) => {
@@ -80,7 +80,8 @@ if (args.outputFilePath) {
     return `${prev}${index === 0 ? '' : '\n'}${current}`
   }, '')
 
-  log('important', `writing diffs to ${pathToWrite}`)
+  log('important', `writing diffs to "${pathToWrite}"`)
+  await fs.ensureDir(dirname(pathToWrite))
   await fs.writeFile(pathToWrite, content)
 }
 

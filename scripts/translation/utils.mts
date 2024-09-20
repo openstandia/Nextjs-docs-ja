@@ -4,6 +4,22 @@ import ParsedArgs = minimist.ParsedArgs
 
 export const PROJECT_ROOT = path.normalize(`${import.meta.dirname}/../..`)
 
+export const asyncFlatMap = async <T, R>(
+  arr: T[],
+  callback: (value: T, index: number, array: T[]) => Promise<R>
+): Promise<FlatArray<Awaited<R>[], 1>[]> => {
+  const a = await Promise.all(arr.map(callback))
+  return a.flat()
+}
+
+export const wait = (sec: number) => {
+  return new Promise<void>((r) => {
+    setTimeout(() => {
+      r()
+    }, sec * 1_000)
+  })
+}
+
 export function listMdxFilesRecursively(dir: string): string[] {
   return fs
     .readdirSync(dir, { withFileTypes: true })
