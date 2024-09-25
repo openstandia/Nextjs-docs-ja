@@ -151,6 +151,9 @@ export function createLogger(prefix: string) {
   return (type: 'normal' | 'important' | 'error', ...data: unknown[]): void => {
     const [message, ...others] = data
 
-    console.log(palette[type](`[konjacbot:${prefix}] ${message}`), ...others)
+    console.log(
+      palette[type](`[${configs.botName}:${prefix}] ${message}`),
+      ...others
+    )
   }
 }
