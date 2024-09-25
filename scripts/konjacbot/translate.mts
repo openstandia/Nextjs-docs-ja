@@ -116,6 +116,8 @@ const command = await (async () => {
 
 const commands = diffList.map((diff) => limit(() => command(diff)))
 
+log('important', `${commands.length} files to translate found.`)
+
 await spinner(() => Promise.all(commands))
 
-log('important', '✅ translation finished successfully!')
+log('important', '✅ translation finished successfully !')
