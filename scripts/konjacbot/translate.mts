@@ -14,7 +14,7 @@ import { configs } from './configs.mts'
 
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
-  concurrency: 5,
+  concurrency: 2, //see https://platform.openai.com/account/rate-limits
   lang: 'ja',
   promptDir: path.join(import.meta.dirname, `prompt`),
 } as const
@@ -29,7 +29,7 @@ const { projectRootDir, submoduleName, docsDir } = configs
  * entry point
  */
 
-log('important', '🚀 translate started !')
+log('important', '🚀 translation started !')
 
 const {
   positionals: [diffFilePath],
@@ -118,4 +118,4 @@ const commands = diffList.map((diff) => limit(() => command(diff)))
 
 await spinner(() => Promise.all(commands))
 
-log('important', '🎉 translate finished successfully!')
+log('important', '✅ translation finished successfully!')

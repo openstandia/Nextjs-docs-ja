@@ -1,6 +1,5 @@
 import path, { basename, dirname } from 'node:path'
-import process from 'node:process'
-import { argv, fs } from 'zx'
+import { fs } from 'zx'
 import pLimit from 'p-limit'
 import { asyncFlatMap, createLogger, wait, parseMdxDiff } from './utils.mts'
 import { configs } from '@site/scripts/konjacbot/configs.mts'
@@ -15,7 +14,7 @@ const { projectRootDir, submoduleName } = configs
 const defaults = {
   outputDir: path.resolve(projectRootDir, 'static/img'),
   downloadEndpoint: 'https://nextjs.org/_next/image',
-  delay: 5,
+  delay: 5, //sec
   concurrency: 2,
 } as const
 
@@ -157,4 +156,4 @@ const requests = distinctImagePathList.map((imagePath, index) => {
 await Promise.all(requests)
 
 log('important', `downloaded ${distinctImagePathList.length} image files.`)
-log('important', '✅  dlimg finished successfully!')
+log('important', '✅ dlimg finished successfully!')
