@@ -11,6 +11,7 @@ import { basename } from 'node:path'
  */
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
+  enableAISummary: false, //運用始まったらtrueにする
   label: configs.botName,
   branchPrefix: `${configs.botName}/sync-nextjs-docs`,
   nextjs: {
@@ -21,8 +22,7 @@ const defaults = {
 
 const log = createLogger(basename(import.meta.url))
 
-async function buildNextJsGithubUrl() {
-  const diff = (await $`git diff HEAD^ -- ${configs.submoduleName}`).text()
+function buildNextJsGithubUrl(diff: string) {
   const hash = {
     before: diff.match(/^-Subproject commit ([0-9a-zA-Z]+)$/m)?.[1],
     after: diff.match(/^\+Subproject commit ([0-9a-zA-Z]+)$/m)?.[1],
@@ -54,6 +54,36 @@ async function buildNextJsGithubUrl() {
   }
 }
 
+async function buildAISummary(diff: string) {
+  const openai = new OpenAI({
+    apiKey: defaults.apiKey,
+  })
+
+  const result = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      {
+        role: 'system',
+        content:
+          'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を作成してください。',
+      },
+      { role: 'user', content: diff },
+    ],
+    stream: false,
+  })
+
+  if (result.choices.length !== 1) {
+    throw new Error(
+      `invalid OpenAI translation result: ${JSON.stringify(result)}`
+    )
+  }
+  const content = result.choices[0].message.content
+
+  return `# 本PRの更新内容のサマリ by ChatGPT🤖
+  ${content}
+  `
+}
+
 /*
  * entry point
  */
@@ -70,10 +100,17 @@ if (!status.trim()) {
 
 //ブランチ切ってpush
 const submodule = (await $`git submodule`).text()
+
+const submoduleHash = submodule.match(/[0-9a-z]{40}/)
+if (submoduleHash == null || submoduleHash.length !== 1) {
+  throw Error('failed to resolve submodule hash.')
+}
+
 const hash = {
-  short: submodule.trim().substring(0, 7),
-  long: submodule.trim().substring(0, 40),
+  short: submoduleHash[0].substring(0, 7),
+  long: submoduleHash[0].substring(0, 40),
 } as const
+
 const branch = `${defaults.branchPrefix}-${hash.short}`
 
 await $`git checkout -b ${branch}`
@@ -81,36 +118,15 @@ await $`git add .`
 await $`git commit -a -m "translate next.js @ ${hash.short} into Japanese."`
 await $`git push origin ${branch}`
 
-const diff = (await $`git diff HEAD^`).text()
-const openai = new OpenAI({
-  apiKey: defaults.apiKey,
-})
-
-const result = await openai.chat.completions.create({
-  model: 'gpt-4o',
-  messages: [
-    {
-      role: 'system',
-      content:
-        'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を作成してください。',
-    },
-    { role: 'user', content: diff },
-  ],
-  stream: false,
-})
-
-if (result.choices.length !== 1) {
-  throw new Error(
-    `invalid OpenAI translation result: ${JSON.stringify(result)}`
-  )
-}
-const diffSummary = result.choices[0].message.content
-
 //PR作成
 //TODO 既にPRが出ている場合の考慮
-const nextjsGitHubUrl = await buildNextJsGithubUrl()
 
 const title = `${configs.botName}: translated Next.js docs @ ${hash.short} into Japanese`
+
+const nextjsGitHubUrl = buildNextJsGithubUrl(
+  (await $`git diff HEAD^ -- ${configs.submoduleName}`).text()
+)
+
 const body = `
 # 翻訳した公式ドキュメントバージョン
 [${nextjsGitHubUrl.tree.label}](${nextjsGitHubUrl.tree.url})
@@ -118,9 +134,12 @@ const body = `
 # 翻訳した公式ドキュメントの変更点
 [${nextjsGitHubUrl.compare.label}](${nextjsGitHubUrl.compare.url})
 
-# 本PRの更新内容のサマリ by ChatGPT🤖
-${diffSummary}
-`
+${
+  defaults.enableAISummary
+    ? await buildAISummary((await $`git diff HEAD^`).text())
+    : ''
+}`
+
 await $`gh pr create -B main -t ${title} -b ${body} -l ${defaults.label}`
 
 log('important', '✅ PR created successfully !')
