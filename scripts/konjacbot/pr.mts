@@ -11,6 +11,7 @@ import { basename } from 'node:path'
  */
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
+  enableAISummary: false, //運用始まったらtrueにする
   label: configs.botName,
   branchPrefix: `${configs.botName}/sync-nextjs-docs`,
   nextjs: {
@@ -54,6 +55,38 @@ async function buildNextJsGithubUrl() {
   }
 }
 
+async function buildAISummary() {
+  const diff = (await $`git diff HEAD^`).text()
+
+  const openai = new OpenAI({
+    apiKey: defaults.apiKey,
+  })
+
+  const result = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      {
+        role: 'system',
+        content:
+          'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を作成してください。',
+      },
+      { role: 'user', content: diff },
+    ],
+    stream: false,
+  })
+
+  if (result.choices.length !== 1) {
+    throw new Error(
+      `invalid OpenAI translation result: ${JSON.stringify(result)}`
+    )
+  }
+  const content = result.choices[0].message.content
+
+  return `# 本PRの更新内容のサマリ by ChatGPT🤖
+  ${content}
+  `
+}
+
 /*
  * entry point
  */
@@ -70,6 +103,9 @@ if (!status.trim()) {
 
 //ブランチ切ってpush
 const submodule = (await $`git submodule`).text()
+
+console.log(submodule)
+
 const hash = {
   short: submodule.trim().substring(0, 7),
   long: submodule.trim().substring(0, 40),
@@ -80,31 +116,6 @@ await $`git checkout -b ${branch}`
 await $`git add .`
 await $`git commit -a -m "translate next.js @ ${hash.short} into Japanese."`
 await $`git push origin ${branch}`
-
-const diff = (await $`git diff HEAD^`).text()
-const openai = new OpenAI({
-  apiKey: defaults.apiKey,
-})
-
-const result = await openai.chat.completions.create({
-  model: 'gpt-4o',
-  messages: [
-    {
-      role: 'system',
-      content:
-        'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を作成してください。',
-    },
-    { role: 'user', content: diff },
-  ],
-  stream: false,
-})
-
-if (result.choices.length !== 1) {
-  throw new Error(
-    `invalid OpenAI translation result: ${JSON.stringify(result)}`
-  )
-}
-const diffSummary = result.choices[0].message.content
 
 //PR作成
 //TODO 既にPRが出ている場合の考慮
@@ -118,9 +129,8 @@ const body = `
 # 翻訳した公式ドキュメントの変更点
 [${nextjsGitHubUrl.compare.label}](${nextjsGitHubUrl.compare.url})
 
-# 本PRの更新内容のサマリ by ChatGPT🤖
-${diffSummary}
-`
+${defaults.enableAISummary ? await buildAISummary() : ''}`
+
 await $`gh pr create -B main -t ${title} -b ${body} -l ${defaults.label}`
 
 log('important', '✅ PR created successfully !')
