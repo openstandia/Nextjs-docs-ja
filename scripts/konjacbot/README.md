@@ -16,7 +16,7 @@ To update translations of the [Next.js documentation](https://nextjs.org/docs) i
 - [Translation](./translate.mts)
   - Translates files detected as differing using the OpenAI API.
 - [Image Downloading](./dlimg.mts)
-  - Downloads images from the public site as they are not managed in the Next.js Git repository.
+  - Downloads images from the [public site](https://nextjs.org/docs) as they are not managed in the Next.js Git repository.
 - [Creating Pull Requests](./pr.mts)
   - Creates a branch in this repository and submits a Pull Request with the translated content.
 
@@ -93,7 +93,7 @@ npx tsx ./scripts/konjacbot/translate.mts .kj-diff.txt
 ```
 
 ### Description
-- Acquire the [prompt](./pr.mts) for the language specified by `-l`
+- Acquire the [prompt](./prompt) for the language specified by `-l`
 - Read the md(x) files listed in the specified diff file and translate using the OpenAI API
 - Output the translation results to a file
 
@@ -119,7 +119,7 @@ npx tsx ./scripts/konjacbot/dlimg.mts .kj-diff.txt
 
 ### Description
 - Read the md(x) files listed in the specified diff file and obtain the paths to the image files used within
-- Download images from the public site
+- Download images from the [public site](https://nextjs.org/docs)
 - Save the downloaded files
 
 ## [Creating Pull Requests](./pr.mts)
