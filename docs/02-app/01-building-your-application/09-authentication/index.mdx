@@ -1,0 +1,412 @@
+---
+title: 認証
+description: Next.jsアプリケーションに認証を実装する方法を学びましょう。
+---
+
+認証を理解することは、アプリケーションのデータを保護するために非常に重要です。このページでは、認証を実装するために使用するReactとNext.jsの機能について説明します。
+
+開始する前に、プロセスを次の3つの概念に分けて考えると役立ちます：
+
+1. **[認証](#authentication)**: ユーザーが自分自身であることを確認します。ユーザーは、ユーザー名とパスワードなど、何かを持っていることで自分の身元を証明する必要があります。
+2. **[セッション管理](#session-management)**: リクエスト間でユーザーの認証状態を追跡します。
+3. **[認可](#authorization)**: ユーザーがアクセスできるルートとデータを決定します。
+
+以下の図は、ReactとNext.jsの機能を使用した認証フローを示しています：
+
+<Image
+  alt="Diagram showing the authentication flow with React and Next.js features"
+  srcLight="/docs/light/authentication-overview.png"
+  srcDark="/docs/dark/authentication-overview.png"
+  width="1600"
+  height="1383"
+/>
+
+このページの例では、教育目的のために基本的なユーザー名とパスワードの認証を紹介します。カスタム認証ソリューションを実装することもできますが、セキュリティの向上と操作の簡略化のために、認証ライブラリを使用することをお勧めします。これらのライブラリは、認証、セッション管理、認可のための組み込みのソリューションを提供し、ソーシャルログイン、多要素認証、役割ベースアクセス制御などの追加機能も提供します。[Auth Libraries](#auth-libraries)セクションにリストがあります。
+
+## 認証
+
+<AppOnly>
+
+### サインアップとログインの機能
+
+[`<form>`](https://react.dev/reference/react-dom/components/form)要素を使って、Reactの[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)と`useFormState`を利用してユーザーの認証情報を取得し、フォームフィールドを検証し、認証プロバイダーのAPIやデータベースを呼び出すことができます。
+
+Server Actionsは常にサーバー上で実行されるので、認証ロジックを処理するための安全な環境を提供します。
+
+サインアップ/ログイン機能を実装するための手順は次のとおりです：
+
+#### 1. ユーザーの認証情報を取得する
+
+ユーザーの認証情報を取得するために、送信時にServer Actionを呼び出すフォームを作成します。例えば、ユーザーの名前、メールアドレス、パスワードを受け取るサインアップフォームを次のように作成します：
+
+```tsx title="app/ui/signup-form.tsx" switcher
+import { signup } from '@/app/actions/auth'
+
+export function SignupForm() {
+  return (
+    <form action={signup}>
+      <div>
+        <label htmlFor="name">Name</label>
+        <input id="name" name="name" placeholder="Name" />
+      </div>
+      <div>
+        <label htmlFor="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="Email" />
+      </div>
+      <div>
+        <label htmlFor="password">Password</label>
+        <input id="password" name="password" type="password" />
+      </div>
+      <button type="submit">Sign Up</button>
+    </form>
+  )
+}
+```
+
+```jsx title="app/ui/signup-form.js" switcher
+import { signup } from '@/app/actions/auth'
+
+export function SignupForm() {
+  return (
+    <form action={signup}>
+      <div>
+        <label htmlFor="name">Name</label>
+        <input id="name" name="name" placeholder="Name" />
+      </div>
+      <div>
+        <label htmlFor="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="Email" />
+      </div>
+      <div>
+        <label htmlFor="password">Password</label>
+        <input id="password" name="password" type="password" />
+      </div>
+      <button type="submit">Sign Up</button>
+    </form>
+  )
+}
+```
+
+```tsx title="app/actions/auth.tsx" switcher
+export async function signup(formData: FormData) {}
+```
+
+```jsx title="app/actions/auth.js" switcher
+export async function signup(formData) {}
+```
+
+#### 2. フォームフィールドをサーバーで検証する
+
+Server Actionを使用してフォームフィールドをサーバーで検証します。認証プロバイダーがフォームの検証を提供していない場合は、[Zod](https://zod.dev/)や[Yup](https://github.com/jquense/yup)などのスキーマ検証ライブラリを使用することができます。
+
+Zodを例として使用し、適切なエラーメッセージを持つフォームスキーマを定義します：
+
+```ts title="app/lib/definitions.ts" switcher
+import { z } from 'zod'
+
+export const SignupFormSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: 'Name must be at least 2 characters long.' })
+    .trim(),
+  email: z.string().email({ message: 'Please enter a valid email.' }).trim(),
+  password: z
+    .string()
+    .min(8, { message: 'Be at least 8 characters long' })
+    .regex(/[a-zA-Z]/, { message: 'Contain at least one letter.' })
+    .regex(/[0-9]/, { message: 'Contain at least one number.' })
+    .regex(/[^a-zA-Z0-9]/, {
+      message: 'Contain at least one special character.',
+    })
+    .trim(),
+})
+
+export type FormState =
+  | {
+      errors?: {
+        name?: string[]
+        email?: string[]
+        password?: string[]
+      }
+      message?: string
+    }
+  | undefined
+```
+
+```js title="app/lib/definitions.js" switcher
+import { z } from 'zod'
+
+export const SignupFormSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: 'Name must be at least 2 characters long.' })
+    .trim(),
+  email: z.string().email({ message: 'Please enter a valid email.' }).trim(),
+  password: z
+    .string()
+    .min(8, { message: 'Be at least 8 characters long' })
+    .regex(/[a-zA-Z]/, { message: 'Contain at least one letter.' })
+    .regex(/[0-9]/, { message: 'Contain at least one number.' })
+    .regex(/[^a-zA-Z0-9]/, {
+      message: 'Contain at least one special character.',
+    })
+    .trim(),
+})
+```
+
+認証プロバイダーのAPIやデータベースへの不要な呼び出しを防ぐために、定義されたスキーマに一致しないフォームフィールドがある場合はServer Actionで早期に`return`することができます。
+
+```ts title="app/actions/auth.ts" switcher
+import { SignupFormSchema, FormState } from '@/app/lib/definitions'
+
+export async function signup(state: FormState, formData: FormData) {
+  // フォームフィールドを検証する
+  const validatedFields = SignupFormSchema.safeParse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+    password: formData.get('password'),
+  })
+
+  // フォームフィールドが無効な場合は早期にreturnする
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    }
+  }
+
+  // プロバイダーまたはデータベースにユーザーを作成する呼び出しを行う...
+}
+```
+
+```js title="app/actions/auth.js" switcher
+import { SignupFormSchema } from '@/app/lib/definitions'
+
+export async function signup(state, formData) {
+  // フォームフィールドを検証する
+  const validatedFields = SignupFormSchema.safeParse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+    password: formData.get('password'),
+  })
+
+  // フォームフィールドが無効な場合は早期にreturnする
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    }
+  }
+
+  // プロバイダーまたはデータベースにユーザーを作成する呼び出しを行う...
+}
+```
+
+`<SignupForm />`に戻り、Reactの`useFormState`フックを使用して、フォームが送信中の検証エラーを表示できます：
+
+```tsx title="app/ui/signup-form.tsx" switcher highlight={7,15,21,27-39}
+'use client'
+
+import { useFormState, useFormStatus } from 'react-dom'
+import { signup } from '@/app/actions/auth'
+
+export function SignupForm() {
+  const [state, action] = useFormState(signup, undefined)
+
+  return (
+    <form action={action}>
+      <div>
+        <label htmlFor="name">Name</label>
+        <input id="name" name="name" placeholder="Name" />
+      </div>
+      {state?.errors?.name && <p>{state.errors.name}</p>}
+
+      <div>
+        <label htmlFor="email">Email</label>
+        <input id="email" name="email" placeholder="Email" />
+      </div>
+      {state?.errors?.email && <p>{state.errors.email}</p>}
+
+      <div>
+        <label htmlFor="password">Password</label>
+        <input id="password" name="password" type="password" />
+      </div>
+      {state?.errors?.password && (
+        <div>
+          <p>Password must:</p>
+          <ul>
+            {state.errors.password.map((error) => (
+              <li key={error}>- {error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <SubmitButton />
+    </form>
+  )
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button disabled={pending} type="submit">
+      Sign Up
+    </button>
+  )
+}
+```
+
+```jsx title="app/ui/signup-form.js" switcher highlight={7,15,21,27-39}
+'use client'
+
+import { useFormState, useFormStatus } from 'react-dom'
+import { signup } from '@/app/actions/auth'
+
+export function SignupForm() {
+  const [state, action] = useFormState(signup, undefined)
+
+  return (
+    <form action={action}>
+      <div>
+        <label htmlFor="name">Name</label>
+        <input id="name" name="name" placeholder="John Doe" />
+      </div>
+      {state?.errors?.name && <p>{state.errors.name}</p>}
+
+      <div>
+        <label htmlFor="email">Email</label>
+        <input id="email" name="email" placeholder="john@example.com" />
+      </div>
+      {state?.errors?.email && <p>{state.errors.email}</p>}
+
+      <div>
+        <label htmlFor="password">Password</label>
+        <input id="password" name="password" type="password" />
+      </div>
+      {state?.errors?.password && (
+        <div>
+          <p>Password must:</p>
+          <ul>
+            {state.errors.password.map((error) => (
+              <li key={error}>- {error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <SubmitButton />
+    </form>
+  )
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button disabled={pending} type="submit">
+      Sign Up
+    </button>
+  )
+}
+```
+
+> **Good to know:**
+>
+> - これらの例は、Next.js App RouterにバンドルされているReactの`useFormState`フックを使用しています。React 19を使用している場合は、代わりに`useActionState`を使用してください。詳細は[React docs](https://react.dev/reference/react/useActionState)を参照してください。
+> - React 19では、`useFormStatus`で返されるオブジェクトにdata、method、actionなどの追加キーが含まれます。React 19を使用していない場合、`pending`キーのみが使用可能です。
+> - React 19では、`useActionState`にも返される状態に`pending`キーが含まれます。
+> - データを操作する前に、ユーザーがアクションを実行する権限を持っていることを確認する必要があります。[認証と認可](#authorization)を参照してください。
+
+#### 3. ユーザーを作成するか、ユーザーの認証情報を確認する
+
+フォームフィールドを検証した後、ユーザーアカウントを新規作成するか、認証プロバイダーのAPIやデータベースを呼び出してユーザーの存在を確認します。
+
+前回の例を続けます：
+
+```tsx title="app/actions/auth.tsx" switcher
+export async function signup(state: FormState, formData: FormData) {
+  // 1. フォームフィールドを検証する
+  // ...
+
+  // 2. データベースに挿入するデータを準備する
+  const { name, email, password } = validatedFields.data
+  // 例：ユーザーのパスワードを保存する前にハッシュ化する
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  // 3. データベースにユーザーを挿入するか、認証ライブラリのAPIを呼び出す
+  const data = await db
+    .insert(users)
+    .values({
+      name,
+      email,
+      password: hashedPassword,
+    })
+    .returning({ id: users.id })
+
+  const user = data[0]
+
+  if (!user) {
+    return {
+      message: 'An error occurred while creating your account.',
+    }
+  }
+
+  // TODO:
+  // 4. ユーザーセッションを作成する
+  // 5. ユーザーをリダイレクトする
+}
+```
+
+```jsx title="app/actions/auth.js" switcher
+export async function signup(state, formData) {
+  // 1. フォームフィールドを検証する
+  // ...
+
+  // 2. データベースに挿入するデータを準備する
+  const { name, email, password } = validatedFields.data
+  // 例：ユーザーのパスワードを保存する前にハッシュ化する
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  // 3. データベースにユーザーを挿入するか、認証ライブラリのAPIを呼び出す
+  const data = await db
+    .insert(users)
+    .values({
+      name,
+      email,
+      password: hashedPassword,
+    })
+    .returning({ id: users.id })
+
+  const user = data[0]
+
+  if (!user) {
+    return {
+      message: 'An error occurred while creating your account.',
+    }
+  }
+
+  // TODO:
+  // 4. ユーザーセッションを作成する
+  // 5. ユーザーをリダイレクトする
+}
+```
+
+ユーザーアカウントを正常に作成したり認証情報を確認した後、セッションを作成してユーザーの認証状態を管理します。セッション管理の戦略に応じて、セッションはクッキーやデータベース、またはその両方に保存することができます。[セッション管理](#session-management)セクションを続けて、詳細を学びましょう。
+
+> **Tips:**
+>
+> - 上記の例は学生向けに認証ステップを詳細に説明しているため、冗長に見えます。これにより、安全なソリューションを自分で実装するのがすぐに複雑になることが分かります。プロセスを簡略化するために[認証ライブラリ](#auth-libraries)を使用することを検討してください。
+> - ユーザーエクスペリエンスを向上させるために、登録フローの早い段階で重複するメールアドレスやユーザー名を確認することを検討するかもしれません。例えば、ユーザーがユーザー名を入力する際や入力フィールドがフォーカスを失ったときにチェックするなどです。これにより、不要なフォーム送信を防ぎ、ユーザーに即座のフィードバックを提供することができます。[use-debounce](https://www.npmjs.com/package/use-debounce)などのライブラリを使用して、これらのチェックの頻度を管理することができます。
+
+</AppOnly>
+
+<PagesOnly>
+
+サインアップおよび/またはサインインフォームを実装する手順は次のとおりです：
+
+1. ユーザーはフォームを通じて認証情報を送信します。
+2. フォームはAPIルートで処理されるリクエストを送信します。
+3. 認証情報が成功裏に検証されると、プロセスが完了し、ユーザーの認証成功を示します。
+4. 検証が成功しない場合は、エラーメッセージが表示されます。
+
+以下のログインフォームを考えてみましょう。ユーザーは認証情報を入力できます：
+
+```tsx title="pages/login

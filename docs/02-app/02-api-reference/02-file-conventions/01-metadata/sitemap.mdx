@@ -1,0 +1,425 @@
+---
+title: sitemap.xml
+description: sitemap.xmlファイルに関するAPIリファレンス
+related:
+  title: Next Steps
+  description: generateSitemaps関数の使用方法を学ぶ
+  links:
+    - app/api-reference/functions/generate-sitemaps
+---
+
+`sitemap.(xml|js|ts)`は、検索エンジンクローラーがサイトをより効率的にインデックスできるようにするための[Sitemaps XMLフォーマット](https://www.sitemaps.org/protocol.html)に一致する特殊なファイルです。
+
+### Sitemapファイル (.xml)
+
+小規模なアプリケーションの場合、`sitemap.xml`ファイルを作成し、`app`ディレクトリのルートに配置できます。
+
+```xml title="app/sitemap.xml"
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://acme.com</loc>
+    <lastmod>2023-04-06T15:02:24.021Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>1</priority>
+  </url>
+  <url>
+    <loc>https://acme.com/about</loc>
+    <lastmod>2023-04-06T15:02:24.021Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://acme.com/blog</loc>
+    <lastmod>2023-04-06T15:02:24.021Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
+```
+
+### コードを使用してのsitemap生成 (.js, .ts)
+
+`app`ディレクトリ内の特定のファイルでsitemapをプログラム的に生成することができ、デフォルト関数をエクスポートしてURLの配列を返します。TypeScriptを使用している場合は、[`Sitemap`](#returns)の型を利用できます。
+
+> **Good to know**: `sitemap.js`は特別なルートハンドラーであり、キャッシュがデフォルトで有効です。ただし、[動的関数](/docs/app/building-your-application/caching#dynamic-functions)または[動的構成](/docs/app/building-your-application/caching#segment-config-options)オプションを使用している場合を除きます。
+
+```ts title="app/sitemap.ts" switcher
+import type { MetadataRoute } from 'next'
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  return [
+    {
+      url: 'https://acme.com',
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 1,
+    },
+    {
+      url: 'https://acme.com/about',
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: 'https://acme.com/blog',
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.5,
+    },
+  ]
+}
+```
+
+```js title="app/sitemap.js" switcher
+export default function sitemap() {
+  return [
+    {
+      url: 'https://acme.com',
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 1,
+    },
+    {
+      url: 'https://acme.com/about',
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: 'https://acme.com/blog',
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.5,
+    },
+  ]
+}
+```
+
+生成された出力:
+
+```xml title="acme.com/sitemap.xml"
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://acme.com</loc>
+    <lastmod>2023-04-06T15:02:24.021Z</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>1</priority>
+  </url>
+  <url>
+    <loc>https://acme.com/about</loc>
+    <lastmod>2023-04-06T15:02:24.021Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://acme.com/blog</loc>
+    <lastmod>2023-04-06T15:02:24.021Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
+```
+
+### 画像向けSitemaps
+
+`images`プロパティを使用して画像用のsitemapを作成できます。詳細は[Google Developer Docs](https://developers.google.com/search/docs/crawling-indexing/sitemaps/image-sitemaps)を参照してください。
+
+```ts title="app/sitemap.ts" switcher
+import type { MetadataRoute } from 'next'
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  return [
+    {
+      url: 'https://example.com',
+      lastModified: '2021-01-01',
+      changeFrequency: 'weekly',
+      priority: 0.5,
+      images: ['https://example.com/image.jpg'],
+    },
+  ]
+}
+```
+
+生成された出力:
+
+```xml title="acme.com/sitemap.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+>
+  <url>
+    <loc>https://example.com</loc>
+    <image:image>
+      <image:loc>https://example.com/image.jpg</image:loc>
+    </image:image>
+    <lastmod>2021-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
+```
+
+### 動画向けSitemaps
+
+`videos`プロパティを使用して動画用のsitemapを作成できます。詳細は[Google Developer Docs](https://developers.google.com/search/docs/crawling-indexing/sitemaps/video-sitemaps)を参照してください。
+
+```ts title="app/sitemap.ts" switcher
+import type { MetadataRoute } from 'next'
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  return [
+    {
+      url: 'https://example.com',
+      lastModified: '2021-01-01',
+      changeFrequency: 'weekly',
+      priority: 0.5,
+      videos: [
+        {
+          title: 'example',
+          thumbnail_loc: 'https://example.com/image.jpg',
+          description: 'this is the description', // これは説明です
+        },
+      ],
+    },
+  ]
+}
+```
+
+生成された出力:
+
+```xml title="acme.com/sitemap.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"
+>
+  <url>
+    <loc>https://example.com</loc>
+    <video:video>
+      <video:title>example</video:title>
+      <video:thumbnail_loc>https://example.com/image.jpg</video:thumbnail_loc>
+      <video:description>this is the description</video:description> <!-- これは説明です -->
+    </video:video>
+    <lastmod>2021-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
+```
+
+### ローカライズされたSitemapの生成
+
+```ts title="app/sitemap.ts" switcher
+import type { MetadataRoute } from 'next'
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  return [
+    {
+      url: 'https://acme.com',
+      lastModified: new Date(),
+      alternates: {
+        languages: {
+          es: 'https://acme.com/es',
+          de: 'https://acme.com/de',
+        },
+      },
+    },
+    {
+      url: 'https://acme.com/about',
+      lastModified: new Date(),
+      alternates: {
+        languages: {
+          es: 'https://acme.com/es/about',
+          de: 'https://acme.com/de/about',
+        },
+      },
+    },
+    {
+      url: 'https://acme.com/blog',
+      lastModified: new Date(),
+      alternates: {
+        languages: {
+          es: 'https://acme.com/es/blog',
+          de: 'https://acme.com/de/blog',
+        },
+      },
+    },
+  ]
+}
+```
+
+```js title="app/sitemap.js" switcher
+export default function sitemap() {
+  return [
+    {
+      url: 'https://acme.com',
+      lastModified: new Date(),
+      alternates: {
+        languages: {
+          es: 'https://acme.com/es',
+          de: 'https://acme.com/de',
+        },
+      },
+    },
+    {
+      url: 'https://acme.com/about',
+      lastModified: new Date(),
+      alternates: {
+        languages: {
+          es: 'https://acme.com/es/about',
+          de: 'https://acme.com/de/about',
+        },
+      },
+    },
+    {
+      url: 'https://acme.com/blog',
+      lastModified: new Date(),
+      alternates: {
+        languages: {
+          es: 'https://acme.com/es/blog',
+          de: 'https://acme.com/de/blog',
+        },
+      },
+    },
+  ]
+}
+```
+
+生成された出力:
+
+```xml title="acme.com/sitemap.xml"
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://acme.com</loc>
+    <xhtml:link
+      rel="alternate"
+      hreflang="es"
+      href="https://acme.com/es"/>
+    <xhtml:link
+      rel="alternate"
+      hreflang="de"
+      href="https://acme.com/de"/>
+    <lastmod>2023-04-06T15:02:24.021Z</lastmod>
+  </url>
+  <url>
+    <loc>https://acme.com/about</loc>
+    <xhtml:link
+      rel="alternate"
+      hreflang="es"
+      href="https://acme.com/es/about"/>
+    <xhtml:link
+      rel="alternate"
+      hreflang="de"
+      href="https://acme.com/de/about"/>
+    <lastmod>2023-04-06T15:02:24.021Z</lastmod>
+  </url>
+  <url>
+    <loc>https://acme.com/blog</loc>
+    <xhtml:link
+      rel="alternate"
+      hreflang="es"
+      href="https://acme.com/es/blog"/>
+    <xhtml:link
+      rel="alternate"
+      hreflang="de"
+      href="https://acme.com/de/blog"/>
+    <lastmod>2023-04-06T15:02:24.021Z</lastmod>
+  </url>
+</urlset>
+```
+
+### 複数のSitemapの生成
+
+ほとんどのアプリケーションでは単一のSitemapが機能しますが、大規模なWebアプリケーションではSitemapを複数のファイルに分割する必要がある場合があります。
+
+複数のSitemapを作成するには2つの方法があります:
+
+- `sitemap.(xml|js|ts)`を複数のルートセグメント内にネストさせる方法。例: `app/sitemap.xml`と`app/products/sitemap.xml`
+- [`generateSitemaps`](/docs/app/api-reference/functions/generate-sitemaps)関数を使用する方法
+
+例えば、`generateSitemaps`を使用してSitemapを分割するには、Sitemapの`id`を持つオブジェクトの配列を返します。その後、`id`を使用して固有のSitemapsを生成します。
+
+```ts title="app/product/sitemap.ts" switcher
+import type { MetadataRoute } from 'next'
+import { BASE_URL } from '@/app/lib/constants'
+
+export async function generateSitemaps() {
+  // 総製品数を取得し、必要なSitemapの数を計算する
+  return [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }]
+}
+
+export default async function sitemap({
+  id,
+}: {
+  id: number
+}): Promise<MetadataRoute.Sitemap> {
+  // Googleの制限は1つのSitemapに50,000 URLです
+  const start = id * 50000
+  const end = start + 50000
+  const products = await getProducts(
+    `SELECT id, date FROM products WHERE id BETWEEN ${start} AND ${end}`
+  )
+  return products.map((product) => ({
+    url: `${BASE_URL}/product/${product.id}`,
+    lastModified: product.date,
+  }))
+}
+```
+
+```js title="app/product/sitemap.js" switcher
+import { BASE_URL } from '@/app/lib/constants'
+
+export async function generateSitemaps() {
+  // 総製品数を取得し、必要なSitemapの数を計算する
+  return [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }]
+}
+
+export default async function sitemap({ id }) {
+  // Googleの制限は1つのSitemapに50,000 URLです
+  const start = id * 50000
+  const end = start + 50000
+  const products = await getProducts(
+    `SELECT id, date FROM products WHERE id BETWEEN ${start} AND ${end}`
+  )
+  return products.map((product) => ({
+    url: `${BASE_URL}/product/${product.id}`,
+    lastModified: product.date,
+  }))
+}
+```
+
+生成されたSitemapsは`/.../sitemap/[id]`に存在します。例えば、`/product/sitemap/1.xml`のようになります。
+
+詳細については[`generateSitemaps` APIリファレンス](/docs/app/api-reference/functions/generate-sitemaps)を参照してください。
+
+## 戻り値
+
+`sitemap.(xml|ts|js)`からエクスポートされたデフォルト関数は、以下のプロパティを持つオブジェクトの配列を返すべきです:
+
+```tsx
+type Sitemap = Array<{
+  url: string
+  lastModified?: string | Date
+  changeFrequency?:
+    | 'always'
+    | 'hourly'
+    | 'daily'
+    | 'weekly'
+    | 'monthly'
+    | 'yearly'
+    | 'never'
+  priority?: number
+  alternates?: {
+    languages?: Languages<string>
+  }
+}>
+```
+
+## バージョン履歴
+
+| バージョン   | 変更内容                                                |
+| ------------ | ------------------------------------------------------- |
+| `v14.2.0`    | ローカライゼーションのサポートを追加                      |
+| `v13.4.14`   | `changeFrequency`および`priority`属性をsitemapに追加       |
+| `v13.3.0`    | `sitemap`が導入                                          |
