@@ -1,3 +1,9 @@
+/**
+ * @fileoverview This script computes differences in documentation files within a git submodule
+ * and writes them to a specified output file if provided.
+ * It supports handling both incremental and full diffs of documentation changes.
+ */
+
 import { $, fs, within } from 'zx'
 import path, { basename, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -5,14 +11,15 @@ import { parseArgs } from 'node:util'
 import { createLogger, listMdxFilesRecursively } from './utils.mts'
 import { configs } from './configs.mts'
 
-/*
- * definitions
- */
-
 const { projectRootDir, submoduleName, docsDir } = configs
 
 const log = createLogger(basename(import.meta.url))
 
+/**
+ * Lists all MDX files as added (A) diffs.
+ *
+ * @returns {string[]} An array of diff strings representing new files.
+ */
 function resolveAllAsDiff(): string[] {
   const submoduleDir = path.resolve(projectRootDir, submoduleName)
   const enDocsDir = path.resolve(submoduleDir, docsDir)
@@ -23,6 +30,11 @@ function resolveAllAsDiff(): string[] {
   })
 }
 
+/**
+ * Resolves differences in the submodule documentation based on commit hashes.
+ *
+ * @returns {Promise<string[]>} A promise resolving to an array of diff strings.
+ */
 async function resolveDiff(): Promise<string[]> {
   const submoduleDiffOutput = await $`git diff -- ${submoduleName}`
 
@@ -54,10 +66,6 @@ async function resolveDiff(): Promise<string[]> {
       .filter((line) => line.trim())
   })
 }
-
-/*
- * entry point
- */
 
 log('important', `🚀 diff docs started !`)
 

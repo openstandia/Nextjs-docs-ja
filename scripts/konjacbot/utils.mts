@@ -1,16 +1,35 @@
+/**
+ * @fileoverview This module provides utility functions for handling git diffs, managing MDX files, and logging.
+ * The functions include parsing and creating MDX diffs, listing MDX files, and asynchronous utility functions.
+ */
+
 import path from 'node:path'
 import { chalk, fs } from 'zx'
 import { configs } from './configs.mts'
 
-export const asyncFlatMap = async <T, R>(
+/**
+ * Asynchronously applies a callback to each element of an array, then flattens the result by one level.
+ *
+ * @template T, R
+ * @param {T[]} arr - The array to iterate over.
+ * @param {(value: T, index: number, array: T[]) => Promise<R>} callback - The function called per element.
+ * @returns {Promise<FlatArray<Awaited<R>[], 1>[]>} A promise resolving to a new flattened array.
+ */
+export async function asyncFlatMap<T, R>(
   arr: T[],
   callback: (value: T, index: number, array: T[]) => Promise<R>
-): Promise<FlatArray<Awaited<R>[], 1>[]> => {
+): Promise<FlatArray<Awaited<R>[], 1>[]> {
   const a = await Promise.all(arr.map(callback))
   return a.flat()
 }
 
-export const wait = (sec: number) => {
+/**
+ * Waits for a specified number of seconds.
+ *
+ * @param {number} sec - Number of seconds to wait.
+ * @returns {Promise<void>} A promise that resolves after the specific time has elapsed.
+ */
+export async function wait(sec: number): Promise<void> {
   return new Promise<void>((r) => {
     setTimeout(() => {
       r()
@@ -18,6 +37,12 @@ export const wait = (sec: number) => {
   })
 }
 
+/**
+ * Recursively lists all MDX files in a directory.
+ *
+ * @param {string} dir - The directory to search for MDX files.
+ * @returns {string[]} An array of file paths.
+ */
 export function listMdxFilesRecursively(dir: string): string[] {
   return fs
     .readdirSync(dir, { withFileTypes: true })
@@ -30,6 +55,18 @@ export function listMdxFilesRecursively(dir: string): string[] {
 }
 
 export type MdxFilePath = `${(typeof configs)['docsDir']}/${string}`
+
+/**
+ * Checks whether the given path is of type MdxFilePath.
+ *
+ * @param {string} path - The path to check.
+ * @returns {path is MdxFilePath} True if the path is an MDX file path.
+ */
+export function isMdxFilePath(path: string): path is MdxFilePath {
+  return path.startsWith(`${configs.docsDir}/`)
+}
+
+export type MdxDiff = BasicMdxDiff | RenamedMdxDiff | UnknownMdxDiff
 
 export type BasicMdxDiff = {
   status: 'A' | 'D' | 'M'
@@ -47,20 +84,22 @@ export type UnknownMdxDiff = {
   data: string
 }
 
-export type MdxDiff = BasicMdxDiff | RenamedMdxDiff | UnknownMdxDiff
-
+/**
+ * Creates an MdxDiff object from a status and data string.
+ *
+ * @param {string} status - The git diff status.
+ * @param {string} data - The relevant file path(s).
+ * @returns {MdxDiff} An object representing the MDX diff.
+ * @throws Will throw an error for invalid data or unknown status.
+ */
 function createMdxDiff(status: string, data: string): MdxDiff {
-  const isMdxFilePath = (path: string): path is MdxFilePath => {
-    return path.startsWith(configs.docsDir)
-  }
-
   const createBaseMdxDiff = (
     status: BasicMdxDiff['status'],
     data: string
   ): BasicMdxDiff => {
     const items = data.split(/\s+/)
     if (items.length !== 1) {
-      throw Error('invalid data') //TODO
+      throw Error('invalid data') // TODO
     }
 
     if (!isMdxFilePath(items[0])) {
@@ -79,7 +118,7 @@ function createMdxDiff(status: string, data: string): MdxDiff {
   ): RenamedMdxDiff => {
     const items = data.split(/\s+/)
     if (items.length !== 2) {
-      throw Error('invalid data') //TODO
+      throw Error('invalid data') // TODO
     }
 
     if (!isMdxFilePath(items[0]) || !isMdxFilePath(items[1])) {
@@ -120,10 +159,17 @@ function createMdxDiff(status: string, data: string): MdxDiff {
     case ' ':
       return createUnknownMdxDiff(normalizedStatus, data)
     default:
-      throw new Error('unknown status') //TODO
+      throw new Error('unknown status') // TODO
   }
 }
 
+/**
+ * Parses a file containing MDX diff information.
+ *
+ * @param {string} filePath - Path to the file containing diff information.
+ * @returns {Promise<MdxDiff[]>} A promise resolving to an array of MdxDiff objects.
+ * @throws Will throw an error for unknown diff or format irregularities.
+ */
 export async function parseMdxDiff(filePath: string): Promise<MdxDiff[]> {
   const content = (await fs.readFile(filePath)).toString()
 
@@ -141,6 +187,12 @@ export async function parseMdxDiff(filePath: string): Promise<MdxDiff[]> {
     })
 }
 
+/**
+ * Creates a logger function with a specific prefix.
+ *
+ * @param {string} prefix - A string to prefix to all log messages.
+ * @returns {(type: 'normal' | 'important' | 'error', ...data: unknown[]) => void} A logger function.
+ */
 export function createLogger(prefix: string) {
   const palette = {
     normal: (m: string) => m,

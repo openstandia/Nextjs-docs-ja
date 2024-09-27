@@ -1,3 +1,8 @@
+/**
+ * @fileoverview This script downloads images referenced in MDX files based on git diffs.
+ * It ensures concurrency control and includes a delay between requests to manage load.
+ */
+
 import path, { basename, dirname } from 'node:path'
 import { fs } from 'zx'
 import pLimit from 'p-limit'
@@ -5,16 +10,12 @@ import { asyncFlatMap, createLogger, wait, parseMdxDiff } from './utils.mts'
 import { configs } from '@site/scripts/konjacbot/configs.mts'
 import { parseArgs } from 'node:util'
 
-/*
- * definitions
- */
-
 const { projectRootDir, submoduleName } = configs
 
 const defaults = {
   outputDir: path.resolve(projectRootDir, 'static/img'),
   downloadEndpoint: 'https://nextjs.org/_next/image',
-  delay: 5, //sec
+  delay: 5, // sec
   concurrency: 2,
 } as const
 
@@ -22,6 +23,12 @@ const log = createLogger(basename(import.meta.url))
 
 const limit = pLimit(defaults.concurrency)
 
+/**
+ * Parses the content to find Next.js <Image> components and their srcLight and srcDark attributes.
+ *
+ * @param {string} content - The content of an MDX file.
+ * @returns {{ srcLight?: string; srcDark?: string }[]} An array of objects containing image sources.
+ */
 function parseImageComponent(
   content: string
 ): { srcLight?: string; srcDark?: string }[] {
@@ -44,7 +51,20 @@ function parseImageComponent(
   return results
 }
 
-async function downloadImage(imagePath: string, index: number): Promise<void> {
+/**
+ * Downloads an image from a specified path and saves it to a local directory.
+ *
+ * @param {string} imagePath - The source path of the image to download.
+ * @param {number} index - The index of the current download task.
+ * @param {string[]} imagePathList - The array of source path ot the image to download.
+ * @returns {Promise<void>} A promise that resolves when the image is downloaded and saved.
+ * @throws Will throw an error if the download or file writing fails.
+ */
+async function downloadImage(
+  imagePath: string,
+  index: number,
+  imagePathList: string[]
+): Promise<void> {
   const searchPrams = new URLSearchParams()
   searchPrams.append('url', imagePath)
   searchPrams.append('w', '3840')
@@ -93,10 +113,6 @@ async function downloadImage(imagePath: string, index: number): Promise<void> {
   return fs.writeFile(pathToWrite, image)
 }
 
-/*
- * entry point
- */
-
 log('important', '🚀 started to download images !')
 
 const {
@@ -134,8 +150,7 @@ const imagePathList = await asyncFlatMap(
   async (content) =>
     parseImageComponent((await content).toString())
       .flatMap((imagSrc) => [imagSrc.srcLight, imagSrc.srcDark])
-      .filter((path) => path)
-      .map((path) => path as string) //TODO type guard
+      .filter((path) => path != null)
 )
 const distinctImagePathList = Array.from(new Set(imagePathList))
 
@@ -145,11 +160,11 @@ distinctImagePathList.forEach((imagePath) => {
 
 log('important', `${distinctImagePathList.length} image files found.`)
 
-const requests = distinctImagePathList.map((imagePath, index) => {
+const requests = distinctImagePathList.map((imagePath, index, array) => {
   return limit(async () => {
-    // ダウンロード先に負荷をかけすぎないように、delayを入れる
+    // Introduce a delay to avoid overloading the download endpoint
     await wait(defaults.delay)
-    return downloadImage(imagePath, index)
+    return downloadImage(imagePath, index, array)
   })
 })
 

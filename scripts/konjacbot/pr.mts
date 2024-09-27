@@ -1,3 +1,8 @@
+/**
+ * @fileoverview This script automates the creation of a pull request with translated Next.js documentation.
+ * It detects changes via git diffs, utilizes OpenAI for summary generation, and leverages GitHub CLI for PR creation.
+ */
+
 import { $ } from 'zx'
 import process from 'node:process'
 import OpenAI from 'openai'
@@ -6,12 +11,9 @@ import { configs } from './configs.mts'
 import { createLogger } from './utils.mts'
 import { basename } from 'node:path'
 
-/*
- * definitions
- */
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
-  enableAISummary: false, //運用始まったらtrueにする
+  enableAISummary: false, // TODO: 運用が始まったらtrueに
   label: configs.botName,
   branchPrefix: `${configs.botName}/sync-nextjs-docs`,
   nextjs: {
@@ -22,7 +24,17 @@ const defaults = {
 
 const log = createLogger(basename(import.meta.url))
 
-function buildNextJsGithubUrl(diff: string) {
+/**
+ * Builds GitHub URLs for comparing commits on the Next.js repository.
+ *
+ * @param {string} diff - The git diff output.
+ * @returns {{compare: {label: string, url: string}, tree: {label: string, url: string}}} Object containing comparison and tree URLs.
+ * @throws Will throw an error if it fails to extract commit hashes from the diff.
+ */
+function buildNextJsGithubUrl(diff: string): {
+  compare: { label: string; url: string }
+  tree: { label: string; url: string }
+} {
   const hash = {
     before: diff.match(/^-Subproject commit ([0-9a-zA-Z]+)$/m)?.[1],
     after: diff.match(/^\+Subproject commit ([0-9a-zA-Z]+)$/m)?.[1],
@@ -54,7 +66,14 @@ function buildNextJsGithubUrl(diff: string) {
   }
 }
 
-async function buildAISummary(diff: string) {
+/**
+ * Uses OpenAI API to create a summary of the given git diff.
+ *
+ * @param {string} diff - The git diff output.
+ * @returns {Promise<string>} A promise resolving to a summary of the changes.
+ * @throws Will throw an error for invalid OpenAI translation results.
+ */
+async function buildAISummary(diff: string): Promise<string> {
   const openai = new OpenAI({
     apiKey: defaults.apiKey,
   })
@@ -79,18 +98,11 @@ async function buildAISummary(diff: string) {
   }
   const content = result.choices[0].message.content
 
-  return `# 本PRの更新内容のサマリ by ChatGPT🤖
-  ${content}
-  `
+  return `# 本PRの更新内容のサマリ by ChatGPT🤖\n  ${content}\n`
 }
-
-/*
- * entry point
- */
 
 log('important', '🚀 pr creation started !')
 
-//変更が無かったらその時点で終了
 const status = (await $`git status -s`).text()
 
 if (!status.trim()) {
@@ -98,7 +110,6 @@ if (!status.trim()) {
   process.exit(0)
 }
 
-//ブランチ切ってpush
 const submodule = (await $`git submodule`).text()
 
 const submoduleHash = submodule.match(/[0-9a-z]{40}/)
@@ -111,15 +122,14 @@ const hash = {
   long: submoduleHash[0].substring(0, 40),
 } as const
 
+// TODO: 既にPRやブランチが存在するケースの考慮
+
 const branch = `${defaults.branchPrefix}-${hash.short}`
 
 await $`git checkout -b ${branch}`
 await $`git add .`
 await $`git commit -a -m "translate next.js @ ${hash.short} into Japanese."`
 await $`git push origin ${branch}`
-
-//PR作成
-//TODO 既にPRが出ている場合の考慮
 
 const title = `${configs.botName}: translated Next.js docs @ ${hash.short} into Japanese`
 

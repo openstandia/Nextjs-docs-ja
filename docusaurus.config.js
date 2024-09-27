@@ -23,7 +23,7 @@ const config = {
   url: 'https://ja.next-community-docs.dev/',
   baseUrl: process.env.BASE_URL || '/',
   staticDirectories: ['public', 'static'],
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   projectName: 'nextjs-docs-ja',
@@ -151,8 +151,8 @@ const config = {
         copyright: `© Copyright Nomura Research Institute, Ltd.`,
       },
       prism: {
-        theme: prismThemes.vsLight,
-        darkTheme: prismThemes.vsDark,
+        theme: prismThemes.oneLight,
+        darkTheme: prismThemes.oneDark,
       },
       colorMode: {
         respectPrefersColorScheme: true,

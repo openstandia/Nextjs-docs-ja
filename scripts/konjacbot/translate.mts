@@ -1,3 +1,9 @@
+/**
+ * @fileoverview This script handles the translation of MDX files based on git diffs,
+ * utilizing the OpenAI API for language translation. It processes file status changes
+ * and applies actions such as translations, deletions, and renamings accordingly.
+ */
+
 import OpenAI from 'openai'
 import pLimit from 'p-limit'
 import path, { basename, dirname } from 'node:path'
@@ -8,13 +14,9 @@ import { spinner, fs } from 'zx'
 import { parseMdxDiff, MdxDiff, createLogger, MdxFilePath } from './utils.mts'
 import { configs } from './configs.mts'
 
-/*
- * definitions
- */
-
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
-  concurrency: 2, //see https://platform.openai.com/account/rate-limits
+  concurrency: 2, // See https://platform.openai.com/account/rate-limits
   lang: 'ja',
   promptDir: path.join(import.meta.dirname, `prompt`),
 } as const
@@ -24,10 +26,6 @@ const log = createLogger(basename(import.meta.filename))
 const limit = pLimit(defaults.concurrency)
 
 const { projectRootDir, submoduleName, docsDir } = configs
-
-/*
- * entry point
- */
 
 log('important', '🚀 translation started !')
 
@@ -49,6 +47,12 @@ const diffList = await parseMdxDiff(
   path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
 )
 
+/**
+ * A function to handle translation, deletion, and renaming of files based on diff status.
+ *
+ * Translations are performed using the OpenAI API, which is configured using the user-specific API key
+ * and language based prompts.
+ */
 const command = await (async () => {
   const openai = new OpenAI({
     apiKey: defaults.apiKey,
