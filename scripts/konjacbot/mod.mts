@@ -69,7 +69,10 @@ function wrapSwitcherWithTabs(input: string): string {
     const { language, title, code, highlightAttr } = getMatchGroups(match)
     if (language && title && code) {
       const label = languageMap[language] || language
-      const titleWithoutExtension = title.replace(/\.\w+/g, '')
+      const titleWithoutExtension = title.replace(
+        /\.[^\s\.]+$|\.[^\s\.]+\s/g,
+        ''
+      )
 
       if (currentTitle === titleWithoutExtension) {
         // Append a new tab item to the existing tabs if the title matches.
