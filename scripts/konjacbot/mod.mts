@@ -52,7 +52,7 @@ function wrapSwitcherWithTabs(input: string): string {
   }
 
   const regex =
-    /^\s*```(?<language>[a-zA-Z0-9]+)\s+title="(?<title>[^"]+)"(?<highlightAttr>\s+highlight=\{[0-9]+\})?\s+switcher(?<code>[\s\S]*?)^\s*```/gm
+    /^\s*```(?<language>[a-zA-Z0-9]+)\s+title="(?<title>[^"]+)"(?<highlightAttr>\s+highlight=[^\s]+)?\s+switcher(?<code>[\s\S]*?)^\s*```/gm
 
   let result = ''
   let lastIndex = 0
