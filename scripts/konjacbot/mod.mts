@@ -52,7 +52,7 @@ function wrapSwitcherWithTabs(input: string): string {
   }
 
   const regex =
-    /^\s*```(?<language>[a-zA-Z0-9]+)\s+title="(?<title>[^"]+)"\s+switcher(?<code>[\s\S]*?)^\s*```/gm
+    /^\s*```(?<language>[a-zA-Z0-9]+)\s+title="(?<title>[^"]+)"(?<highlightAttr>\s+highlight=\{[0-9]+\})?\s+switcher(?<code>[\s\S]*?)^\s*```/gm
 
   let result = ''
   let lastIndex = 0
@@ -66,19 +66,33 @@ function wrapSwitcherWithTabs(input: string): string {
     // Append non-matching content before the current match.
     result += input.slice(lastIndex, match.index)
 
-    const { language, title, code } = getMatchGroups(match)
+    const { language, title, code, highlightAttr } = getMatchGroups(match)
     if (language && title && code) {
       const label = languageMap[language] || language
-      const titleWithoutExtension = title.replace(/\.\w+$/, '')
+      const titleWithoutExtension = title.replace(/\.\w+/g, '')
 
       if (currentTitle === titleWithoutExtension) {
         // Append a new tab item to the existing tabs if the title matches.
-        addTabItem(tabItems, language, label, title, code)
+        addTabItem({
+          tabItems,
+          language,
+          label,
+          title,
+          code,
+          highlightAttr,
+        })
       } else {
         // Close the previous set of tabs if there are any, and start a new one.
         result += closeTabs(tabItems)
         currentTitle = titleWithoutExtension
-        addTabItem(tabItems, language, label, title, code)
+        addTabItem({
+          tabItems,
+          language,
+          label,
+          title,
+          code,
+          highlightAttr,
+        })
       }
     }
 
@@ -101,37 +115,49 @@ function wrapSwitcherWithTabs(input: string): string {
   return result
 
   /**
-   * Extracts the language, title, and code content from the match object.
+   * Extracts the language, title, code content, and highlight attribute from the match object.
    *
    * @param {RegExpMatchArray} match - The regex match object containing the code block details.
-   * @returns {{ language: string, title: string, code: string }} The extracted language, title, and code.
+   * @returns {{ language: string, title: string, code: string, highlightAttr: string | undefined }} The extracted language, title, code, and optional highlight attribute.
    */
   function getMatchGroups(match: RegExpMatchArray) {
     return {
       language: match.groups?.language,
       title: match.groups?.title,
       code: match.groups?.code,
+      highlightAttr: match.groups?.highlightAttr,
     }
   }
 
   /**
    * Adds a new <TabItem> component for the given code block.
    *
-   * @param {string[]} tabItems - The list of current tab items to append to.
-   * @param {string} language - The programming language of the code block.
-   * @param {string} label - The label to display for the tab (based on the language).
-   * @param {string} title - The title of the code block.
-   * @param {string} code - The actual code content of the block.
+   * @param {object} params - The parameters for adding a tab item.
+   * @param {string[]} params.tabItems - The list of current tab items to append to.
+   * @param {string} params.language - The programming language of the code block.
+   * @param {string} params.label - The label to display for the tab (based on the language).
+   * @param {string} params.title - The title of the code block.
+   * @param {string} params.code - The actual code content of the block.
+   * @param {string | undefined} params.highlightAttr - The highlight attribute, if any.
    */
-  function addTabItem(
-    tabItems: string[],
-    language: string,
-    label: string,
-    title: string,
+  function addTabItem({
+    tabItems,
+    language,
+    label,
+    title,
+    code,
+    highlightAttr,
+  }: {
+    tabItems: string[]
+    language: string
+    label: string
+    title: string
     code: string
-  ) {
+    highlightAttr?: string
+  }) {
+    const highlight = highlightAttr ? ` ${highlightAttr.trim()}` : ''
     tabItems.push(
-      `<TabItem value="${language}" label="${label}">\n\n\`\`\`${language} title="${title}" switcher\n${code.trim()}\n\`\`\`\n</TabItem>`
+      `<TabItem value="${language}" label="${label}">\n\n\`\`\`${language} title="${title}"${highlight} switcher\n${code.trim()}\n\`\`\`\n</TabItem>`
     )
   }
 
