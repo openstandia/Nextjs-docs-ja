@@ -6,6 +6,7 @@
 import path from 'node:path'
 import { chalk, fs } from 'zx'
 import { configs } from './configs.mts'
+import OpenAI from 'openai'
 
 /**
  * Asynchronously applies a callback to each element of an array, then flattens the result by one level.
@@ -208,4 +209,52 @@ export function createLogger(prefix: string) {
       ...others
     )
   }
+}
+
+/**
+ * Creates an AI client that interacts with OpenAI's Chat API to fetch responses based on provided prompts.
+ *
+ * @param {OpenAI} openai - An instance of the OpenAI API client.
+ * @returns {(prompt: { system: string; user: string }) => Promise<string>} A function that takes a prompt and returns the assistant's response as a string.
+ */
+export function createAIClient(
+  openai: OpenAI
+): (prompt: { system: string; user: string }) => Promise<string> {
+  async function fetch(prompt: {
+    system: string
+    user: string
+  }): Promise<string> {
+    const messages: OpenAI.ChatCompletionMessageParam[] = [
+      { role: 'system', content: prompt.system },
+      { role: 'user', content: prompt.user },
+    ]
+
+    let isComplete = false
+
+    while (!isComplete) {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages,
+        stream: false,
+      })
+
+      const choice = response.choices[0]
+      const receivedText = choice.message?.content ?? ''
+
+      messages.push({ role: 'assistant', content: receivedText })
+
+      if (choice.finish_reason === 'stop') {
+        isComplete = true
+      } else if (choice.finish_reason !== 'length') {
+        throw new Error('Unexpected finish reason')
+      }
+    }
+
+    return messages
+      .filter((msg) => msg.role === 'assistant')
+      .map((msg) => msg.content)
+      .join('')
+  }
+
+  return fetch
 }

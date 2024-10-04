@@ -11,7 +11,13 @@ import { parseArgs } from 'node:util'
 import process from 'node:process'
 import { spinner, fs } from 'zx'
 
-import { parseMdxDiff, MdxDiff, createLogger, MdxFilePath } from './utils.mts'
+import {
+  parseMdxDiff,
+  MdxDiff,
+  createLogger,
+  MdxFilePath,
+  createAIClient,
+} from './utils.mts'
 import { configs } from './configs.mts'
 
 const defaults = {
@@ -54,9 +60,11 @@ const diffList = await parseMdxDiff(
  * and language based prompts.
  */
 const command = await (async () => {
-  const openai = new OpenAI({
-    apiKey: defaults.apiKey,
-  })
+  const requestAI = createAIClient(
+    new OpenAI({
+      apiKey: defaults.apiKey,
+    })
+  )
 
   const systemContent = (
     await fs.readFile(path.resolve(defaults.promptDir, `${lang}.md`))
@@ -71,26 +79,16 @@ const command = await (async () => {
     const userContent = (await fs.readFile(targetMdxFile)).toString()
 
     log('normal', `requesting to OpenAI to translate "${targetMdxFile}"`)
-    const result = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: systemContent },
-        { role: 'user', content: userContent },
-      ],
-      stream: false,
-    })
 
-    if (result.choices.length !== 1) {
-      throw new Error(
-        `invalid OpenAI translation result: ${JSON.stringify(result)}`
-      )
-    }
-    const translatedContent = result.choices[0].message.content
+    const translatedContent = await requestAI({
+      system: systemContent,
+      user: userContent,
+    })
 
     const pathToWrite = path.resolve(projectRootDir, mdxFilePath)
     log('normal', `writing translated files to "${pathToWrite}"`)
     await fs.ensureDir(dirname(pathToWrite))
-    await fs.writeFile(pathToWrite, translatedContent ?? '')
+    await fs.writeFile(pathToWrite, translatedContent)
   }
 
   const rm = async (mdxFilePath: MdxFilePath) => {

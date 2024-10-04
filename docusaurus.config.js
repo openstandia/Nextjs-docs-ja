@@ -151,8 +151,16 @@ const config = {
         copyright: `© Copyright Nomura Research Institute, Ltd.`,
       },
       prism: {
-        theme: prismThemes.oneLight,
-        darkTheme: prismThemes.oneDark,
+        theme: prismThemes.github,
+        darkTheme: {
+          ...prismThemes.dracula,
+          ...{
+            plain: {
+              ...prismThemes.dracula.plain,
+              backgroundColor: '#0a0a0a',
+            },
+          },
+        },
       },
       colorMode: {
         respectPrefersColorScheme: true,

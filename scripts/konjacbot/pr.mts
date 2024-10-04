@@ -8,7 +8,7 @@ import process from 'node:process'
 import OpenAI from 'openai'
 import * as path from 'node:path'
 import { configs } from './configs.mts'
-import { createLogger } from './utils.mts'
+import { createAIClient, createLogger } from './utils.mts'
 import { basename } from 'node:path'
 
 const defaults = {
@@ -74,31 +74,19 @@ function buildNextJsGithubUrl(diff: string): {
  * @throws Will throw an error for invalid OpenAI translation results.
  */
 async function buildAISummary(diff: string): Promise<string> {
-  const openai = new OpenAI({
-    apiKey: defaults.apiKey,
+  const requestAI = createAIClient(
+    new OpenAI({
+      apiKey: defaults.apiKey,
+    })
+  )
+
+  const result = await requestAI({
+    system:
+      'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を作成してください。',
+    user: diff,
   })
 
-  const result = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      {
-        role: 'system',
-        content:
-          'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を作成してください。',
-      },
-      { role: 'user', content: diff },
-    ],
-    stream: false,
-  })
-
-  if (result.choices.length !== 1) {
-    throw new Error(
-      `invalid OpenAI translation result: ${JSON.stringify(result)}`
-    )
-  }
-  const content = result.choices[0].message.content
-
-  return `# 本PRの更新内容のサマリ by ChatGPT🤖\n  ${content}\n`
+  return `# 本PRの更新内容のサマリ by ChatGPT🤖\n  ${result}\n`
 }
 
 log('important', '🚀 pr creation started !')
