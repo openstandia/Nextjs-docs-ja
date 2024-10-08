@@ -1,8 +1,8 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github')
-const darkCodeTheme = require('prism-react-renderer/themes/dracula')
+import { themes as prismThemes } from 'prism-react-renderer'
+import { officialNextJsDocsSidebarItemsAdapter } from './sidebars.adapter.mjs'
 
 const configureGtag = () => {
   const trackingId = process.env.GTAG_TRACKING_ID
@@ -28,10 +28,14 @@ const config = {
   favicon: 'img/favicon.ico',
   projectName: 'nextjs-docs-ja',
 
+  customFields: {
+    nextJsGitHubVersionHash: process.env.NEXT_JS_GITHUB_VERSION_HASH,
+  },
+
   themes: [
     [
       // @ts-ignore
-      require.resolve("@easyops-cn/docusaurus-search-local"),
+      require.resolve('@easyops-cn/docusaurus-search-local'),
       /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
       // @ts-ignore
       ({
@@ -51,10 +55,19 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/openstandia/Nextjs-docs-ja/blob/main',
+
+          async sidebarItemsGenerator({
+            defaultSidebarItemsGenerator,
+            ...args
+          }) {
+            const defaultSidebarItems = await defaultSidebarItemsGenerator(args)
+            return officialNextJsDocsSidebarItemsAdapter(defaultSidebarItems)
+          },
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
+        blog: false,
         sitemap: {
           changefreq: 'weekly',
           priority: 0.5,
@@ -70,22 +83,23 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Next.js Docs',
+        title: '日本語翻訳プロジェクト',
         logo: {
           alt: 'Next.js Docs Logo',
           src: 'img/logo.svg',
-          srcDark: 'img/logo-dark.svg'
+          srcDark: 'img/logo-dark.svg',
+          className: 'navbar__logo-nextjs',
         },
         items: [
           {
-            type: 'doc',
-            docId: 'app-router/index',
-            position: 'left',
-            label: 'ガイドライン',
+            href: 'https://nextjs.org/docs',
+            label: 'English',
+            position: 'right',
           },
           {
             href: 'https://github.com/openstandia/Nextjs-docs-ja',
-            label: 'GitHub',
+            'aria-label': 'GitHub',
+            className: 'navbar__link-github',
             position: 'right',
           },
         ],
@@ -137,21 +151,19 @@ const config = {
         copyright: `© Copyright Nomura Research Institute, Ltd.`,
       },
       prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
+        theme: prismThemes.github,
+        darkTheme: {
+          ...prismThemes.dracula,
+          ...{
+            plain: {
+              ...prismThemes.dracula.plain,
+              backgroundColor: '#0a0a0a',
+            },
+          },
+        },
       },
       colorMode: {
         respectPrefersColorScheme: true,
-      },
-      // for docusaurus-plugin-image-zoom
-      zoom: {
-        selector: '.markdown :not(em) > img',
-        config: {
-          background: {
-            light: 'rgb(255, 255, 255)',
-            dark: 'rgb(50, 50, 50)',
-          },
-        },
       },
       metadata: [
         {
@@ -190,9 +202,14 @@ const config = {
   i18n: {
     defaultLocale: 'ja',
     locales: ['ja'],
+    localeConfigs: {
+      ja: {
+        label: '日本語',
+        direction: 'ltr',
+        htmlLang: 'ja',
+      },
+    },
   },
-
-  plugins: [require.resolve('docusaurus-plugin-image-zoom')],
 }
 
 module.exports = config
