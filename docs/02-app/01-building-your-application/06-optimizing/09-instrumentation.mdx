@@ -1,0 +1,99 @@
+---
+title: 計装
+description: Next.jsアプリでサーバー起動時にコードを実行するための計装の使用方法を学ぶ
+related:
+  title: 計装についてもっと学ぶ
+  links:
+    - app/api-reference/file-conventions/instrumentation
+    - app/api-reference/next-config-js/instrumentationHook
+---
+
+{/* この文書の内容は、アプリおよびページルーター間で共有されています。ページルーターに特有の内容を追加したい場合は、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有コンテンツは、コンポーネントでラップしないでください。 */}
+
+計装は、監視とログ記録のツールをアプリケーションに統合するためのコードを使用するプロセスです。これにより、アプリケーションのパフォーマンスと動作を追跡し、本番環境での問題をデバッグできるようになります。
+
+## 規約
+
+計装を設定するには、プロジェクトの**ルートディレクトリ**（または[`src`](/docs/app/building-your-application/configuring/src-directory)フォルダーを使用している場合はその中）に `instrumentation.ts|js` ファイルを作成します。
+
+次に、そのファイルに `register` 関数をエクスポートします。この関数は、新しいNext.jsサーバーインスタンスが開始されるときに**1回**呼び出されます。
+
+たとえば、Next.jsを[OpenTelemetry](https://opentelemetry.io/)と[@vercel/otel](https://vercel.com/docs/observability/otel-overview)と共に使用するには、次のようにします:
+
+```ts filename="instrumentation.ts" switcher
+import { registerOTel } from '@vercel/otel'
+
+// OTelを登録する関数をエクスポート
+export function register() {
+  registerOTel('next-app') // 'next-app'としてOTelを登録
+}
+```
+
+```js filename="instrumentation.js" switcher
+import { registerOTel } from '@vercel/otel'
+
+// OTelを登録する関数をエクスポート
+export function register() {
+  registerOTel('next-app') // 'next-app'としてOTelを登録
+}
+```
+
+完全な実装については、[Next.js with OpenTelemetry example](https://github.com/vercel/next.js/tree/canary/examples/with-opentelemetry)を参照してください。
+
+> **Good to know**:
+>
+> - この機能は**実験的**です。使用するには、`next.config.js`で[`experimental.instrumentationHook = true；`](/docs/app/api-reference/next-config-js/instrumentationHook)を明示的に設定して有効化する必要があります。
+> - `instrumentation`ファイルはプロジェクトのルートにあり、`app`または`pages`ディレクトリの中には置かないでください。`src`フォルダーを使用している場合は、`src`の中で`pages`や`app`とともにファイルを配置します。
+> - サフィックスを追加するために[`pageExtensions`設定オプション](/docs/app/api-reference/next-config-js/pageExtensions)を使用する場合、`instrumentation`ファイル名もそれに合わせて更新する必要があります。
+
+## 例
+
+### 副作用を持つファイルのインポート
+
+時々、副作用を引き起こすためだけにコード内でファイルをインポートすると便利な場合があります。たとえば、グローバル変数のセットを定義するファイルをインポートするが、コード内でそのファイルを明示的に使用しないかもしれません。それでも、パッケージが宣言したグローバル変数にアクセスできます。
+
+`register`関数内でJavaScriptの`import`構文を使用してファイルをインポートすることをお勧めします。以下の例は、`register`関数における`import`の基本的な使用方法を示しています:
+
+```ts filename="instrumentation.ts" switcher
+export async function register() {
+  await import('package-with-side-effect') // 副作用を持つパッケージをインポート
+}
+```
+
+```js filename="instrumentation.js" switcher
+export async function register() {
+  await import('package-with-side-effect') // 副作用を持つパッケージをインポート
+}
+```
+
+> **Good to know:**
+>
+> ファイルのトップではなく、`register`関数内からファイルをインポートすることをお勧めします。これにより、コード内の全ての副作用を1か所にまとめ、ファイルのトップでグローバルにインポートすることによる意図しない結果を避けることができます。
+
+### 実行時特有のコードのインポート
+
+Next.jsはすべての環境で`register`を呼び出すため、特定のランタイムをサポートしていないコードを条件付きでインポートすることが重要です（例：[EdgeまたはNode.js](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)）。現在の環境を取得するには、`NEXT_RUNTIME`環境変数を使用できます:
+
+```ts filename="instrumentation.ts" switcher
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./instrumentation-node') // Node.js向けの計装をインポート
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./instrumentation-edge') // Edge向けの計装をインポート
+  }
+}
+```
+
+```js filename="instrumentation.js" switcher
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./instrumentation-node') // Node.js向けの計装をインポート
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./instrumentation-edge') // Edge向けの計装をインポート
+  }
+}
+```

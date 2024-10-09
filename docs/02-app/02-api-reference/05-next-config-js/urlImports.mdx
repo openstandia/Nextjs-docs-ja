@@ -1,0 +1,91 @@
+---
+title: urlImports
+description: Next.jsを設定して外部URLからモジュールをインポートできるようにします。
+version: experimental
+---
+
+{/* このドキュメントの内容は、アプリとページルーターの間で共有されています。ページルーターに特化した内容を追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有コンテンツはコンポーネントでラップしないでください。 */}
+
+URLインポートは実験的な機能で、ローカルディスクではなく、外部サーバーからモジュールを直接インポートできるようにします。
+
+> **警告**: 信頼できるドメインのみを使用してマシン上でダウンロードおよび実行してください。この機能が安定とされるまで、慎重かつ注意深く使用してください。
+
+この機能を利用するには、`next.config.js`内に許可されたURLプレフィックスを追加します：
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    urlImports: ['https://example.com/assets/', 'https://cdn.skypack.dev'],
+  },
+}
+```
+
+その後、URLから直接モジュールをインポートできます：
+
+```js
+import { a, b, c } from 'https://example.com/assets/some/module.js'
+```
+
+URLインポートは通常のパッケージインポートが使える場所であればどこでも使用できます。
+
+## セキュリティモデル
+
+この機能は**セキュリティを最優先事項として**設計されています。最初に、URLインポートを許可するドメインを明示的に設定することを強制する実験的なフラグを追加しました。今後、この機能をさらに進めて、[エッジランタイム](/docs/app/api-reference/edge)を使用してブラウザサンドボックス内で実行するようにURLインポートを制限することを目指しています。
+
+## ロックファイル
+
+URLインポートを使用すると、Next.jsは`next.lock`ディレクトリを作成し、その中にロックファイルと取得したアセットを含めます。
+このディレクトリは**Gitにコミットされる必要があり**、`.gitignore`で無視されてはいけません。
+
+- `next dev`を実行すると、Next.jsはすべての新しく発見されたURLインポートをダウンロードしてロックファイルに追加します
+- `next build`を実行すると、Next.jsはロックファイルのみを使用して、本番用のアプリケーションをビルドします
+
+通常、ネットワークリクエストは必要ありませんが、ロックファイルが古くなっている場合はビルドが失敗します。
+例外は`Cache-Control: no-cache`で応答するリソースであり、これらのリソースはロックファイルに`no-cache`エントリがあり、ビルドごとに常にネットワークから取得されます。
+
+## 例
+
+### Skypack
+
+```js
+import confetti from 'https://cdn.skypack.dev/canvas-confetti'
+import { useEffect } from 'react'
+
+export default () => {
+  useEffect(() => {
+    confetti()
+  })
+  return <p>Hello</p>
+}
+```
+
+### 静的画像インポート
+
+```js
+import Image from 'next/image'
+import logo from 'https://example.com/assets/logo.png'
+
+export default () => (
+  <div>
+    <Image src={logo} placeholder="blur" />
+  </div>
+)
+```
+
+### CSS内のURL
+
+```css
+.className {
+  background: url('https://example.com/assets/hero.jpg');
+}
+```
+
+### アセットインポート
+
+```js
+const logo = new URL('https://example.com/assets/file.txt', import.meta.url)
+
+console.log(logo.pathname)
+
+// "/_next/static/media/file.a9727b5d.txt" と表示
+```

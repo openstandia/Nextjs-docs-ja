@@ -1,0 +1,132 @@
+---
+title: Next.jsでのPlaywrightのセットアップ
+nav_title: Playwright
+description: End-to-End (E2E)テストのためにNext.jsでPlaywrightをセットアップする方法を学びましょう
+---
+
+Playwrightは、Chromium、Firefox、WebKitを単一のAPIで自動化できるテストフレームワークです。これを使って**エンドツーエンド（E2E）**テストを記述できます。このガイドでは、Next.jsにPlaywrightをセットアップし、最初のテストを書く方法を紹介します。
+
+## クイックスタート
+
+最も早く始める方法は、`create-next-app`で[with-playwrightの例](https://github.com/vercel/next.js/tree/canary/examples/with-playwright)を利用することです。これにより、Playwrightが設定された状態のNext.jsプロジェクトが作成されます。
+
+```bash filename="Terminal"
+npx create-next-app@latest --example with-playwright with-playwright-app
+```
+
+## 手動セットアップ
+
+Playwrightをインストールするには、次のコマンドを実行してください。
+
+```bash filename="Terminal"
+npm init playwright
+# または
+yarn create playwright
+# または
+pnpm create playwright
+```
+
+これにより、プロジェクト用にPlaywrightを設定および構成するための一連のプロンプトが表示され、`playwright.config.ts`ファイルが追加されます。手順のガイドについては、[Playwrightインストールガイド](https://playwright.dev/docs/intro#installation)を参照してください。
+
+## 最初のPlaywright E2Eテストの作成
+
+2つの新しいNext.jsページを作成します：
+
+<AppOnly>
+
+```tsx filename="app/page.tsx"
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <div>
+      <h1>Home</h1>
+      <Link href="/about">About</Link>
+    </div>
+  )
+}
+```
+
+```tsx filename="app/about/page.tsx"
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <div>
+      <h1>About</h1>
+      <Link href="/">Home</Link>
+    </div>
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```tsx filename="pages/index.ts"
+import Link from 'next/link'
+
+export default function Home() {
+  return (
+    <div>
+      <h1>Home</h1>
+      <Link href="/about">About</Link>
+    </div>
+  )
+}
+```
+
+```tsx filename="pages/about.ts"
+import Link from 'next/link'
+
+export default function About() {
+  return (
+    <div>
+      <h1>About</h1>
+      <Link href="/">Home</Link>
+    </div>
+  )
+}
+```
+
+</PagesOnly>
+
+次に、ナビゲーションが正しく動作しているかどうか確認するテストを追加します：
+
+```ts filename="tests/example.spec.ts"
+import { test, expect } from '@playwright/test'
+
+test('should navigate to the about page', async ({ page }) => {
+  // インデックスページから開始します（baseURLはplaywright.config.tsのwebServerで設定されます）
+  await page.goto('http://localhost:3000/')
+  // 「About」というテキストを持つ要素を見つけてクリックします
+  await page.click('text=About')
+  // 新しいURLは"/about"であるべきです（そこでbaseURLが使用されます）
+  await expect(page).toHaveURL('http://localhost:3000/about')
+  // 新しいページには「About」というh1が含まれているべきです
+  await expect(page.locator('h1')).toContainText('About')
+})
+```
+
+> **Good to know**:
+>
+> `playwright.config.ts` [設定ファイル](https://playwright.dev/docs/test-configuration)に[`"baseURL": "http://localhost:3000"`](https://playwright.dev/docs/api/class-testoptions#test-options-base-url)を追加すれば、`page.goto("/")`を`page.goto("http://localhost:3000/")`の代わりに使用できます。
+
+### Playwrightテストの実行
+
+Playwrightは、アプリケーションをナビゲートするユーザーをChromium、Firefox、Webkitの3つのブラウザでシミュレートします。これには、Next.jsサーバーが稼働している必要があります。アプリケーションがどのように振る舞うかをより正確に再現するために、本番コードに対してテストを実行することをおすすめします。
+
+`npm run build`と`npm run start`を実行し、別のターミナルウィンドウで`npx playwright test`を実行して、Playwrightテストを実行します。
+
+> **Good to know**: また、Playwrightに開発サーバーを開始させ、完全に利用可能になるまで待機させる[`webServer`](https://playwright.dev/docs/test-webserver/)機能を利用することもできます。
+
+### Continuous Integration（CI）でのPlaywrightの実行
+
+Playwrightはデフォルトで[ヘッドレスモード](https://playwright.dev/docs/ci#running-headed)でテストを実行します。すべてのPlaywright依存関係をインストールするには、`npx playwright install-deps`を実行します。
+
+PlaywrightとContinuous Integrationに関する詳細は、次のリソースから学ぶことができます：
+
+- [Next.js with Playwrightの例](https://github.com/vercel/next.js/tree/canary/examples/with-playwright)
+- [CIプロバイダーでのPlaywright](https://playwright.dev/docs/ci)
+- [Playwright Discord](https://discord.com/invite/playwright-807756831384403968)

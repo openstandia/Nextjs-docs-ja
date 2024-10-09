@@ -1,0 +1,122 @@
+---
+title: カスタムサーバ
+description: カスタムサーバを使用してNext.jsアプリをプログラムで開始します。
+---
+
+{/* このドキュメントの内容は、アプリルーターとページルーターの間で共有されています。`<PagesOnly>Content</PagesOnly>`コンポーネントを使用して、ページルーター固有の内容を追加できます。共有内容はコンポーネントでラップしないでください。 */}
+
+Next.jsはデフォルトで`next start`による独自のサーバを含んでいます。既存のバックエンドがある場合でも、Next.jsと併用することができます（これはカスタムサーバではありません）。カスタムNext.jsサーバはカスタムパターンのためにサーバをプログラムで開始することを可能にします。大多数のケースでは、このアプローチは必要ありません。ただし、必要に応じて使用できます。
+
+> **Good to know**:
+>
+> - カスタムサーバの使用を決定する前に、Next.jsの統合ルーターではアプリの要件が満たせない場合にのみ使用すべきであることを覚えておいてください。カスタムサーバは、**[自動静的最適化](/docs/pages/building-your-application/rendering/automatic-static-optimization)**のような重要なパフォーマンス最適化を削除します。
+> - カスタムサーバは[Vercel](https://vercel.com/frameworks/nextjs)でデプロイすることができません。
+> - スタンドアロンモードを使用する場合、カスタムサーバファイルは追跡されません。このモードでは、最小限の`server.js`ファイルを別途出力します。これらは一緒に使用することはできません。
+
+カスタムサーバの[以下の例](https://github.com/vercel/next.js/tree/canary/examples/custom-server)を見てください。
+
+```ts filename="server.ts" switcher
+import { createServer } from 'http'
+import { parse } from 'url'
+import next from 'next'
+
+const port = parseInt(process.env.PORT || '3000', 10)
+const dev = process.env.NODE_ENV !== 'production'
+const app = next({ dev })
+const handle = app.getRequestHandler()
+
+app.prepare().then(() => {
+  createServer((req, res) => {
+    const parsedUrl = parse(req.url!, true)
+    handle(req, res, parsedUrl)
+  }).listen(port)
+
+  console.log(
+    `> Server listening at http://localhost:${port} as ${
+      dev ? 'development' : process.env.NODE_ENV
+    }`
+  )
+})
+```
+
+```js filename="server.js" switcher
+import { createServer } from 'http'
+import { parse } from 'url'
+import next from 'next'
+
+const port = parseInt(process.env.PORT || '3000', 10)
+const dev = process.env.NODE_ENV !== 'production'
+const app = next({ dev })
+const handle = app.getRequestHandler()
+
+app.prepare().then(() => {
+  createServer((req, res) => {
+    const parsedUrl = parse(req.url, true)
+    handle(req, res, parsedUrl)
+  }).listen(port)
+
+  console.log(
+    `> Server listening at http://localhost:${port} as ${
+      dev ? 'development' : process.env.NODE_ENV
+    }`
+  )
+})
+```
+
+> `server.js`はNext.jsのコンパイラまたはバンドリングプロセスを経由しません。このファイルが要求する構文やソースコードが、使用している現在のNode.jsバージョンと互換性があることを確認してください。[例を見る](https://github.com/vercel/next.js/tree/canary/examples/custom-server)
+
+カスタムサーバを実行するには、`package.json`の`scripts`を次のように更新する必要があります。
+
+```json filename="package.json"
+{
+  "scripts": {
+    "dev": "node server.js",
+    "build": "next build",
+    "start": "NODE_ENV=production node server.js"
+  }
+}
+```
+
+あるいは、`nodemon`を設定することもできます（[例](https://github.com/vercel/next.js/tree/canary/examples/custom-server)）。カスタムサーバは、サーバをNext.jsアプリケーションに接続するために以下のインポートを使用します。
+
+```js
+import next from 'next'
+
+const app = next({})
+```
+
+上記の`next`インポートは、以下のオプションを持つオブジェクトを受け取る関数です。
+
+| オプション         | タイプ               | 説明                                                                             |
+| -------------- | ------------------ | -------------------------------------------------------------------------------- |
+| `conf`         | `Object`           | `next.config.js`で使用するのと同じオブジェクト。デフォルトは`{}`                |
+| `customServer` | `Boolean`          | (_オプション_) サーバがNext.jsによって作成された場合は`false`を設定          |
+| `dev`          | `Boolean`          | (_オプション_) Next.jsを開発モードで起動するかどうか。デフォルトは`false`           |
+| `dir`          | `String`           | (_オプション_) Next.jsプロジェクトの場所。デフォルトは`'.'`                     |
+| `quiet`        | `Boolean`          | (_オプション_) サーバ情報を含むエラーメッセージを非表示にします。デフォルトは`false` |
+| `hostname`     | `String`           | (_オプション_) サーバが実行されているホスト名                                    |
+| `port`         | `Number`           | (_オプション_) サーバが実行されているポート                                      |
+| `httpServer`   | `node:http#Server` | (_オプション_) Next.jsが実行されているHTTPサーバ                                 |
+| `turbo`        | `Boolean`          | (_オプション_) Turbopackを有効にする                                               |
+
+返された`app`は、その後、要求を必要に応じてNext.jsに処理させるために使用できます。
+
+<PagesOnly>
+
+## ファイルシステムルーティングの無効化
+
+デフォルトでは、`Next`は`pages`フォルダの各ファイルを、ファイル名に一致するパス名で提供します。プロジェクトがカスタムサーバを使用している場合、この動作は、同じコンテンツが複数のパスから提供される結果をもたらす可能性があり、SEOやUXに問題を引き起こすことがあります。
+
+この動作を無効にして`pages`内のファイルに基づくルーティングを防ぐためには、`next.config.js`を開き、`useFileSystemPublicRoutes`設定を無効にします。
+
+```js filename="next.config.js"
+module.exports = {
+  useFileSystemPublicRoutes: false,
+}
+```
+
+> `useFileSystemPublicRoutes`はファイル名ルートをSSRから無効にします；クライアントサイドルーティングは依然としてそれらのパスにアクセスするかもしれません。このオプションを使用する場合、プログラムによって移動を防ぐ必要のあるルートへのナビゲーションを防ぐべきです。
+
+> クライアントサイドルーターを設定して、クライアントサイドのリダイレクトをファイル名ルートに許可しないようにすることも検討してください。それについては[`router.beforePopState`](/docs/pages/api-reference/functions/use-router#routerbeforepopstate)を参照してください。
+
+</PagesOnly>

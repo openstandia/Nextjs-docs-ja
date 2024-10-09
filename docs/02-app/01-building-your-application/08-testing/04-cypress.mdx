@@ -1,0 +1,288 @@
+---
+title: Next.jsでCypressをセットアップする
+nav_title: Cypress
+description: End-to-End（E2E）とコンポーネントテストのためにNext.jsでCypressをセットアップする方法を学びます。
+---
+
+[Cypress](https://www.cypress.io/)は、**End-to-End（E2E）**および**コンポーネントテスト**で使用されるテストランナーです。このページでは、Next.jsでCypressをセットアップし、最初のテストを書く方法を示します。
+
+> **警告:**
+>
+> - **コンポーネントテスト**について、Cypressは現在[Next.js バージョン 14](https://github.com/cypress-io/cypress/issues/28185)と`async`サーバーコンポーネントをサポートしていません。これらの問題は追跡中です。今のところ、コンポーネントテストはNext.js バージョン13で動作し、`async`サーバーコンポーネントにはE2Eテストを推奨します。
+> - Cypress バージョン13.6.3未満では、[TypeScript バージョン 5](https://github.com/cypress-io/cypress/issues/27731)と`moduleResolution:"bundler"`はサポートしていません。 しかし、この問題はCypress バージョン13.6.3以降で解決されています。[cypress v13.6.3](https://docs.cypress.io/guides/references/changelog#13-6-3)
+
+<AppOnly>
+
+## クイックスタート
+
+`create-next-app`を使用して、[with-cypress 例](https://github.com/vercel/next.js/tree/canary/examples/with-cypress)と共にすぐに始めることができます。
+
+```bash filename="Terminal"
+npx create-next-app@latest --example with-cypress with-cypress-app
+```
+
+</AppOnly>
+
+## 手動セットアップ
+
+Cypressを手動でセットアップするには、`cypress`を開発依存としてインストールします：
+
+```bash filename="Terminal"
+npm install -D cypress
+# または
+yarn add -D cypress
+# または
+pnpm install -D cypress
+```
+
+`package.json`のスクリプトフィールドにCypress `open`コマンドを追加します：
+
+```json filename="package.json"
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "cypress:open": "cypress open"
+  }
+}
+```
+
+初めてCypressを実行して、Cypressテストスイートを開きます：
+
+```bash filename="Terminal"
+npm run cypress:open
+```
+
+**E2Eテスト**および/または**コンポーネントテスト**を設定することができます。これらのオプションのいずれかを選択すると、プロジェクトに`cypress.config.js`ファイルと`cypress`フォルダーが自動的に作成されます。
+
+## 最初のCypress E2Eテストの作成
+
+`cypress.config.js`ファイルに次の構成が含まれていることを確認してください：
+
+```ts filename="cypress.config.ts"
+import { defineConfig } from 'cypress'
+
+export default defineConfig({
+  e2e: {
+    setupNodeEvents(on, config) {},
+  },
+})
+```
+
+```js filename="cypress.config.js"
+const { defineConfig } = require('cypress')
+
+module.exports = defineConfig({
+  e2e: {
+    setupNodeEvents(on, config) {},
+  },
+})
+```
+
+それから、新しいNext.jsファイルを2つ作成します：
+
+<AppOnly>
+
+```jsx filename="app/page.js"
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <div>
+      <h1>ホーム</h1>
+      <Link href="/about">About</Link>
+    </div>
+  )
+}
+```
+
+```jsx filename="app/about/page.js"
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <div>
+      <h1>About</h1>
+      <Link href="/">ホーム</Link>
+    </div>
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx filename="pages/index.js"
+import Link from 'next/link'
+
+export default function Home() {
+  return (
+    <div>
+      <h1>ホーム</h1>
+      <Link href="/about">About</Link>
+    </div>
+  )
+}
+```
+
+```jsx filename="pages/about.js"
+import Link from 'next/link'
+
+export default function About() {
+  return (
+    <div>
+      <h1>About</h1>
+      <Link href="/">ホーム</Link>
+    </div>
+  )
+}
+```
+
+</PagesOnly>
+
+ナビゲーションが正しく機能しているかどうかを確認するテストを追加します：
+
+```js filename="cypress/e2e/app.cy.js"
+describe('Navigation', () => {
+  it('should navigate to the about page', () => {
+    // インデックスページから開始
+    cy.visit('http://localhost:3000/')
+
+    // href属性に"about"を含むリンクを見つけてクリックします
+    cy.get('a[href*="about"]').click()
+
+    // 新しいURLには"/about"が含まれているはずです
+    cy.url().should('include', '/about')
+
+    // 新しいページには"About"を含むh1があるはずです
+    cy.get('h1').contains('About')
+  })
+})
+```
+
+### E2Eテストの実行
+
+Cypressはユーザーがアプリケーションを操作する様子をシミュレートしますが、これはNext.jsサーバーが動作していることが必要です。アプリケーションがどのように動作するかにより近づけるため、プロダクションコードを対象にテストを実行することを推奨します。
+
+`npm run build && npm run start`を実行してNext.jsアプリケーションをビルドし、その後別のターミナルウィンドウで`npm run cypress:open`を実行してCypressを起動し、E2Eテストスイートを実行します。
+
+> **Good to know:**
+>
+> - `cy.visit("http://localhost:3000/")`の代わりに`cy.visit("/")`を使用するには、`cypress.config.js`構成ファイルに`baseUrl: 'http://localhost:3000'`を追加することができます。
+> - 代わりに`start-server-and-test`パッケージをインストールしてCypressと共にNext.jsプロダクションサーバーを実行することができます。インストール後、`"test": "start-server-and-test start http://localhost:3000 cypress"`を`package.json`のスクリプトフィールドに追加します。新しい変更の後にはアプリケーションを再ビルドするのを忘れないでください。
+
+## 最初のCypressコンポーネントテストの作成
+
+コンポーネントテストは、アプリケーション全体をバンドルしたりサーバーを起動したりすることなく特定のコンポーネントをビルドしてマウントします。
+
+Cypressアプリで**コンポーネントテスト**を選択し、**Next.js**をフロントエンドフレームワークとして選択します。プロジェクト内に`cypress/component`フォルダーが作成され、`cypress.config.js`ファイルが更新されてコンポーネントテストが有効になります。
+
+`cypress.config.js`ファイルに次の構成が含まれていることを確認してください：
+
+```ts filename="cypress.config.ts"
+import { defineConfig } from 'cypress'
+
+export default defineConfig({
+  component: {
+    devServer: {
+      framework: 'next',
+      bundler: 'webpack',
+    },
+  },
+})
+```
+
+```js filename="cypress.config.js"
+const { defineConfig } = require('cypress')
+
+module.exports = defineConfig({
+  component: {
+    devServer: {
+      framework: 'next',
+      bundler: 'webpack',
+    },
+  },
+})
+```
+
+前のセクションと同じコンポーネントを想定して、コンポーネントが期待される出力をレンダリングしているかどうかを確認するテストを追加します：
+
+<AppOnly>
+
+```tsx filename="cypress/component/about.cy.tsx"
+import Page from '../../app/page'
+
+describe('<Page />', () => {
+  it('should render and display expected content', () => {
+    // ホームページのReactコンポーネントをマウントします
+    cy.mount(<Page />)
+
+    // 新しいページには"Home"を含むh1があるはずです
+    cy.get('h1').contains('Home')
+
+    // 期待されるURLを持つリンクが存在することを確認します
+    // リンクをたどることはE2Eテストにより適しています
+    cy.get('a[href="/about"]').should('be.visible')
+  })
+})
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx filename="cypress/component/about.cy.js"
+import AboutPage from '../../pages/about'
+
+describe('<AboutPage />', () => {
+  it('should render and display expected content', () => {
+    // アバウトページのReactコンポーネントをマウントします
+    cy.mount(<AboutPage />)
+
+    // 新しいページには"About page"を含むh1があるはずです
+    cy.get('h1').contains('About')
+
+    // 期待されるURLを持つリンクが存在することを確認します
+    // リンクをたどることはE2Eテストにより適しています
+    cy.get('a[href="/"]').should('be.visible')
+  })
+})
+```
+
+</PagesOnly>
+
+> **Good to know**:
+>
+> - Cypressは現在`async`サーバーコンポーネントのコンポーネントテストをサポートしていません。E2Eテストの使用を推奨します。
+> - コンポーネントテストではNext.jsサーバーが必要ないため、サーバーが利用可能であることに依存する`<Image />`などの機能はそのままでは動作しない場合があります。
+
+### コンポーネントテストの実行
+
+ターミナルで`npm run cypress:open`を実行してCypressを起動し、コンポーネントテストスイートを実行します。
+
+## 継続的インテグレーション（CI）
+
+インタラクティブなテストに加えて、`cypress run`コマンドを使用してCypressをヘッドレスで実行することもできます。これはCI環境に適しています：
+
+```json filename="package.json"
+{
+  "scripts": {
+    //...
+    "e2e": "start-server-and-test dev http://localhost:3000 \"cypress open --e2e\"",
+    "e2e:headless": "start-server-and-test dev http://localhost:3000 \"cypress run --e2e\"",
+    "component": "cypress open --component",
+    "component:headless": "cypress run --component"
+  }
+}
+```
+
+これらのリソースからCypressと継続的インテグレーションについてもっと学ぶことができます：
+
+- [Next.jsとCypressの例](https://github.com/vercel/next.js/tree/canary/examples/with-cypress)
+- [Cypress継続的インテグレーションドキュメント](https://docs.cypress.io/guides/continuous-integration/introduction)
+- [Cypress GitHub Actionsガイド](https://on.cypress.io/github-actions)
+- [公式Cypress GitHubアクション](https://github.com/cypress-io/github-action)
+- [Cypress Discord](https://discord.com/invite/cypress)

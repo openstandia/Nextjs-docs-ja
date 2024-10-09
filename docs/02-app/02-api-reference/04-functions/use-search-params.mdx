@@ -1,0 +1,371 @@
+---
+title: useSearchParams
+description: useSearchParamsフックのAPIリファレンス
+---
+
+`useSearchParams`は**クライアントコンポーネント**フックで、現在のURLの**クエリ文字列**を読み取ることができます。
+
+`useSearchParams`は[`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams)インターフェースの**読み取り専用**版を返します。
+
+```tsx filename="app/dashboard/search-bar.tsx" switcher
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
+export default function SearchBar() {
+  const searchParams = useSearchParams()
+
+  const search = searchParams.get('search')
+
+  // URL -> `/dashboard?search=my-project`
+  // `search` -> 'my-project'
+  return <>Search: {search}</>
+}
+```
+
+```jsx filename="app/dashboard/search-bar.js" switcher
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
+export default function SearchBar() {
+  const searchParams = useSearchParams()
+
+  const search = searchParams.get('search')
+
+  // URL -> `/dashboard?search=my-project`
+  // `search` -> 'my-project'
+  return <>Search: {search}</>
+}
+```
+
+## パラメータ
+
+```tsx
+const searchParams = useSearchParams()
+```
+
+`useSearchParams`は、パラメータを受け取りません。
+
+## 戻り値
+
+`useSearchParams`は[`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams)インターフェースの**読み取り専用**版を返し、URLのクエリ文字列を読み取るためのユーティリティメソッドが含まれます：
+
+- [`URLSearchParams.get()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/get)：検索パラメータに関連付けられた最初の値を返します。例えば：
+
+  | URL                  | `searchParams.get("a")`                                                                                         |
+  | -------------------- | --------------------------------------------------------------------------------------------------------------- |
+  | `/dashboard?a=1`     | `'1'`                                                                                                           |
+  | `/dashboard?a=`      | `''`                                                                                                            |
+  | `/dashboard?b=3`     | `null`                                                                                                          |
+  | `/dashboard?a=1&a=2` | `'1'` _- 値をすべて取得するには[`getAll()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll)を使用します_ |
+
+- [`URLSearchParams.has()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/has)：指定したパラメータが存在するかどうかを示す論理値を返します。例えば：
+
+  | URL              | `searchParams.has("a")` |
+  | ---------------- | ----------------------- |
+  | `/dashboard?a=1` | `true`                  |
+  | `/dashboard?b=3` | `false`                 |
+
+- [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams)の他の**読み取り専用**メソッドに関する詳細情報、例えば[`getAll()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll)、[`keys()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/keys)、[`values()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/values)、[`entries()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries)、[`forEach()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/forEach)、および[`toString()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/toString)などを学ぶことができます。
+
+> **Good to know**：
+>
+> - `useSearchParams`は[クライアントコンポーネント](/docs/app/building-your-application/rendering/client-components)フックであり、[サーバーコンポーネント](/docs/app/building-your-application/rendering/server-components)では**サポートされていません**。これは[部分的なレンダリング](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)中に古い値を防ぐためです。
+> - アプリケーションが`/pages`ディレクトリを含む場合、`useSearchParams`は`ReadonlyURLSearchParams | null`を返します。`null`の値は、移行中の互換性のためで、`getServerSideProps`を使用しないページの事前レンダリング中に検索パラメータが取得できないからです。
+
+### 静的レンダリング
+
+ルートが[静的にレンダリングされる](/docs/app/building-your-application/rendering/server-components#static-rendering-default)場合、`useSearchParams`を呼び出すと、最も近い[`Suspense`境界](/docs/app/building-your-application/routing/loading-ui-and-streaming#example)までのクライアントコンポーネントツリーがクライアント側でレンダリングされます。
+
+これにより、ルートの一部を静的にレンダリングし、`useSearchParams`を使用する動的な部分をクライアント側でレンダリングすることができます。
+
+`useSearchParams`を使用するクライアントコンポーネントを`<Suspense/>`境界でラップすることをお勧めします。これにより、それより上のクライアントコンポーネントが静的にレンダリングされて、最初のHTMLの一部として送信されます。[例](/docs/app/api-reference/functions/use-search-params#static-rendering)。
+
+例えば：
+
+```tsx filename="app/dashboard/search-bar.tsx" switcher
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
+export default function SearchBar() {
+  const searchParams = useSearchParams()
+
+  const search = searchParams.get('search')
+
+  // スタティックレンダリングを使用している場合、これはサーバー側でログ出力されません
+  console.log(search)
+
+  return <>Search: {search}</>
+}
+```
+
+```jsx filename="app/dashboard/search-bar.js" switcher
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
+export default function SearchBar() {
+  const searchParams = useSearchParams()
+
+  const search = searchParams.get('search')
+
+  // スタティックレンダリングを使用している場合、これはサーバー側でログ出力されません
+  console.log(search)
+
+  return <>Search: {search}</>
+}
+```
+
+```tsx filename="app/dashboard/page.tsx" switcher
+import { Suspense } from 'react'
+import SearchBar from './search-bar'
+
+// Suspense境界にフォールバックとして渡されるこのコンポーネントは
+// 初期のHTMLで検索バーの代わりにレンダリングされます。
+// Reactハイドレーション中に値が利用可能になると、フォールバックは
+// `<SearchBar>` コンポーネントに置き換えられます。
+function SearchBarFallback() {
+  return <>placeholder</>
+}
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <Suspense fallback={<SearchBarFallback />}>
+          <SearchBar />
+        </Suspense>
+      </nav>
+      <h1>Dashboard</h1>
+    </>
+  )
+}
+```
+
+```jsx filename="app/dashboard/page.js" switcher
+import { Suspense } from 'react'
+import SearchBar from './search-bar'
+
+// Suspense境界にフォールバックとして渡されるこのコンポーネントは
+// 初期のHTMLで検索バーの代わりにレンダリングされます。
+// Reactハイドレーション中に値が利用可能になると、フォールバックは
+// `<SearchBar>` コンポーネントに置き換えられます。
+function SearchBarFallback() {
+  return <>placeholder</>
+}
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <Suspense fallback={<SearchBarFallback />}>
+          <SearchBar />
+        </Suspense>
+      </nav>
+      <h1>Dashboard</h1>
+    </>
+  )
+}
+```
+
+## 挙動
+
+### 動的レンダリング
+
+ルートが[動的にレンダリングされる](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)場合、`useSearchParams`はクライアントコンポーネントの最初のサーバー側レンダリング中にサーバーで利用可能になります。
+
+例えば：
+
+```tsx filename="app/dashboard/search-bar.tsx" switcher
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
+export default function SearchBar() {
+  const searchParams = useSearchParams()
+
+  const search = searchParams.get('search')
+
+  // これは初回レンダリング時にサーバーでログに出力されます
+  // その後はクライアントでのナビゲーションでログに出力されます。
+  console.log(search)
+
+  return <>Search: {search}</>
+}
+```
+
+```jsx filename="app/dashboard/search-bar.js" switcher
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
+export default function SearchBar() {
+  const searchParams = useSearchParams()
+
+  const search = searchParams.get('search')
+
+  // これは初回レンダリング時にサーバーでログに出力されます
+  // その後はクライアントでのナビゲーションでログに出力されます。
+  console.log(search)
+
+  return <>Search: {search}</>
+}
+```
+
+```tsx filename="app/dashboard/page.tsx" switcher
+import SearchBar from './search-bar'
+
+export const dynamic = 'force-dynamic'
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <SearchBar />
+      </nav>
+      <h1>Dashboard</h1>
+    </>
+  )
+}
+```
+
+```jsx filename="app/dashboard/page.js" switcher
+import SearchBar from './search-bar'
+
+export const dynamic = 'force-dynamic'
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <SearchBar />
+      </nav>
+      <h1>Dashboard</h1>
+    </>
+  )
+}
+```
+
+> **Good to know**: [`dynamic`ルートセグメント設定オプション](/docs/app/api-reference/file-conventions/route-segment-config#dynamic)を`force-dynamic`に設定することで動的レンダリングを強制できます。
+
+### サーバーコンポーネント
+
+#### ページ
+
+[ページ](/docs/app/api-reference/file-conventions/page)（サーバーコンポーネント）で検索パラメータにアクセスするには、[`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional)プロップを使用します。
+
+#### レイアウト
+
+ページとは異なり、[レイアウト](/docs/app/api-reference/file-conventions/layout)（サーバーコンポーネント）は`searchParams`プロップを**受け取りません**。これは、共有レイアウトが[ナビゲーション中に再レンダリングされない](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)ため、ナビゲーション間で古い`searchParams`をもたらす可能性があるためです。[詳しい説明](/docs/app/api-reference/file-conventions/layout#layouts-do-not-receive-searchparams)を参照ください。
+
+その代わり、ページの[`searchParams`](/docs/app/api-reference/file-conventions/page)プロップや、`useSearchParams`フックをクライアントコンポーネント内で使用してください。これにより、最新の`searchParams`でクライアント側で再レンダリングされます。
+
+## 例
+
+### `searchParams`の更新
+
+新しい`searchParams`を設定するには、[`useRouter`](/docs/app/api-reference/functions/use-router)または[`Link`](/docs/app/api-reference/components/link)を使用できます。ナビゲーションが行われた後、現在の[`page.js`](/docs/app/api-reference/file-conventions/page)は更新された[`searchParams`プロップ](/docs/app/api-reference/file-conventions/page#searchparams-optional)を受け取ります。
+
+```tsx filename="app/example-client-component.tsx" switcher
+'use client'
+
+export default function ExampleClientComponent() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // 現在のsearchParamsを指定されたキー/値ペアと結合して
+  // 新しいsearchParams文字列を取得します
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set(name, value)
+
+      return params.toString()
+    },
+    [searchParams]
+  )
+
+  return (
+    <>
+      <p>Sort By</p>
+
+      {/* useRouter 使用 */}
+      <button
+        onClick={() => {
+          // <pathname>?sort=asc
+          router.push(pathname + '?' + createQueryString('sort', 'asc'))
+        }}
+      >
+        ASC
+      </button>
+
+      {/* <Link> 使用 */}
+      <Link
+        href={
+          // <pathname>?sort=desc
+          pathname + '?' + createQueryString('sort', 'desc')
+        }
+      >
+        DESC
+      </Link>
+    </>
+  )
+}
+```
+
+```jsx filename="app/example-client-component.js" switcher
+'use client'
+
+export default function ExampleClientComponent() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // 現在のsearchParamsを指定されたキー/値ペアと結合して
+  // 新しいsearchParams文字列を取得します
+  const createQueryString = useCallback(
+    (name, value) => {
+      const params = new URLSearchParams(searchParams)
+      params.set(name, value)
+
+      return params.toString()
+    },
+    [searchParams]
+  )
+
+  return (
+    <>
+      <p>Sort By</p>
+
+      {/* useRouter 使用 */}
+      <button
+        onClick={() => {
+          // <pathname>?sort=asc
+          router.push(pathname + '?' + createQueryString('sort', 'asc'))
+        }}
+      >
+        ASC
+      </button>
+
+      {/* <Link> 使用 */}
+      <Link
+        href={
+          // <pathname>?sort=desc
+          pathname + '?' + createQueryString('sort', 'desc')
+        }
+      >
+        DESC
+      </Link>
+    </>
+  )
+}
+```
+
+## バージョン履歴
+
+| バージョン  | 変更                        |
+| ---------- | --------------------------- |
+| `v13.0.0` | `useSearchParams`が導入されました |

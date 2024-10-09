@@ -1,0 +1,64 @@
+---
+title: unstable_rethrow
+description: unstable_rethrow関数のAPIリファレンス
+version: unstable
+---
+
+`unstable_rethrow`は、アプリケーションコード内でエラーを処理しようとした際のNext.jsによる内部エラーをキャッチしないようにするために使用できます。
+
+例えば、`notFound`関数を呼び出すと、内部的にNext.jsのエラーを発生させ、[`not-found.js`](/docs/app/api-reference/file-conventions/not-found)コンポーネントをレンダリングします。ただし、`try/catch`ブロック内で使用すると、エラーがキャッチされ、`not-found.js`のレンダリングが妨げられます：
+
+```tsx filename="@/app/ui/component.tsx"
+import { notFound } from 'next/navigation'
+
+export default async function Page() {
+  try {
+    const post = await fetch('https://.../posts/1').then((res) => {
+      if (res.status === 404) notFound() // 404のときはnotFoundを呼び出します
+      if (!res.ok) throw new Error(res.statusText) // レスポンスが正常でない場合はエラーをスローします
+      return res.json() // レスポンスをJSONとして返します
+    })
+  } catch (err) {
+    console.error(err) // エラーをコンソールに表示します
+  }
+}
+```
+
+`unstable_rethrow` APIを使用して、内部エラーを再スローし、期待される動作を続行することができます：
+
+```tsx filename="@/app/ui/component.tsx"
+import { notFound, unstable_rethrow } from 'next/navigation'
+
+export default async function Page() {
+  try {
+    const post = await fetch('https://.../posts/1').then((res) => {
+      if (res.status === 404) notFound() // 404のときはnotFoundを呼び出します
+      if (!res.ok) throw new Error(res.statusText) // レスポンスが正常でない場合はエラーをスローします
+      return res.json() // レスポンスをJSONとして返します
+    })
+  } catch (err) {
+    unstable_rethrow(err) // エラーを再スローします
+    console.error(err) // エラーをコンソールに表示します
+  }
+}
+```
+
+以下のNext.js APIは、エラーをスローし、Next.js自身によって再スローおよび処理されるべきです：
+
+- [`notFound()`](/docs/app/api-reference/functions/not-found)
+- [`redirect()`](/docs/app/building-your-application/routing/redirecting#redirect-function)
+- [`permanentRedirect()`](/docs/app/building-your-application/routing/redirecting#permanentredirect-function)
+
+ルートセグメントが静的でない限りエラーをスローするようにマークされている場合、そのセグメント内で動的関数を呼び出すと同様にエラーがスローされ、開発者によってキャッチされるべきではありません。Partial Prerendering (PPR)もこの挙動に影響します。これらのAPIは次のとおりです：
+
+- [`cookies()`](/docs/app/api-reference/functions/cookies)
+- [`headers()`](/docs/app/api-reference/functions/headers)
+- [`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional)
+- `fetch(..., { cache: 'no-store' })`
+- `fetch(..., { next: { revalidate: 0 } })`
+
+> **Good to know**:
+>
+> - このメソッドはキャッチブロックの先頭で呼び出し、エラーオブジェクトを唯一の引数として渡す必要があります。プロミスの`.catch`ハンドラー内でも使用できます
+> - エラーをスローするAPIへの呼び出しがtry/catchでラップされていないことを確認する場合、`unstable_rethrow`を使用する必要はありません
+> - リソースのクリーンアップ（インターバルやタイマーのクリアなど）は、`unstable_rethrow`の呼び出し前に行うか、`finally`ブロック内で行う必要があります

@@ -1,0 +1,365 @@
+---
+title: 静的エクスポート
+description: Next.jsは静的サイトやシングルページアプリケーション(SPA)として始め、後からサーバーが必要な機能をオプションで追加できる。
+---
+
+{/* このドキュメントの内容はアプリとページルーターの間で共有されています。ページルーターに特有のコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有コンテンツはコンポーネントでラップしないでください。 */}
+
+Next.jsは静的サイトやシングルページアプリケーション(SPA)として始め、後からサーバーが必要な機能をオプションで追加できる。
+
+`next build`を実行すると、Next.jsは各ルートに対してHTMLファイルを生成します。厳密なSPAを個々のHTMLファイルに分割することで、Next.jsはクライアント側で不要なJavaScriptコードの読み込みを避け、バンドルサイズを抑えてページの読み込みを高速化します。
+
+Next.jsはこの静的エクスポートをサポートしているため、HTML/CSS/JSの静的アセットを提供できる任意のウェブサーバーにデプロイしてホストできます。
+
+## 設定
+
+静的エクスポートを有効にするには、`next.config.js`内の出力モードを変更します：
+
+```js filename="next.config.js" highlight={5}
+/**
+ * @type {import('next').NextConfig}
+ */
+const nextConfig = {
+  output: 'export',
+
+  // 任意: リンクを`/me`から`/me/`に変更し、`/me.html`から`/me/index.html`を生成
+  // trailingSlash: true,
+
+  // 任意: 自動的な`/me`から`/me/`へのリダイレクトを防ぎ、`href`をそのまま保持
+  // skipTrailingSlashRedirect: true,
+
+  // 任意: 出力ディレクトリ`out`を`dist`に変更
+  // distDir: 'dist',
+}
+
+module.exports = nextConfig
+```
+
+`next build`を実行すると、Next.jsはアプリケーションのHTML/CSS/JSアセットを含む`out`フォルダーを生成します。
+
+<PagesOnly>
+
+[`getStaticProps`](/docs/pages/building-your-application/data-fetching/get-static-props)と[`getStaticPaths`](/docs/pages/building-your-application/data-fetching/get-static-paths)を利用して、`pages`ディレクトリ内の各ページ（または[動的ルート](/docs/app/building-your-application/routing/dynamic-routes)の場合は複数）のHTMLファイルを生成できます。
+
+</PagesOnly>
+
+<AppOnly>
+
+## サポートされる機能
+
+Next.jsのコアは静的エクスポートをサポートするよう設計されています。
+
+### サーバーコンポーネント
+
+`next build`を実行して静的エクスポートを生成すると、`app`ディレクトリ内で使用されているサーバーコンポーネントはビルド中に実行され、従来の静的サイト生成と同様に動作します。
+
+結果として得られるコンポーネントは、初期ページ読み込みのための静的HTML、およびルート間のクライアントナビゲーションのための静的ペイロードとしてレンダリングされます。静的エクスポートを使用する際には、[動的サーバー関数](#unsupported-features)を使用しない限り、サーバーコンポーネントに変更は必要ありません。
+
+```tsx filename="app/page.tsx" switcher
+export default async function Page() {
+  // このフェッチは`next build`のビルド中にサーバーで実行されます
+  const res = await fetch('https://api.example.com/...')
+  const data = await res.json()
+
+  return <main>...</main>
+}
+```
+
+### クライアントコンポーネント
+
+クライアントでデータフェッチを行いたい場合は、[SWR](https://github.com/vercel/swr)でリクエストをメモ化するクライアントコンポーネントを使用できます。
+
+```tsx filename="app/other/page.tsx" switcher
+'use client'
+
+import useSWR from 'swr'
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
+export default function Page() {
+  const { data, error } = useSWR(
+    `https://jsonplaceholder.typicode.com/posts/1`,
+    fetcher
+  )
+  if (error) return 'Failed to load'
+  if (!data) return 'Loading...'
+
+  return data.title
+}
+```
+
+```jsx filename="app/other/page.js" switcher
+'use client'
+
+import useSWR from 'swr'
+
+const fetcher = (url) => fetch(url).then((r) => r.json())
+
+export default function Page() {
+  const { data, error } = useSWR(
+    `https://jsonplaceholder.typicode.com/posts/1`,
+    fetcher
+  )
+  if (error) return 'Failed to load'
+  if (!data) return 'Loading...'
+
+  return data.title
+}
+```
+
+ルートの遷移はクライアント側で行われるため、従来のSPAのように動作します。例えば、次のインデックスルートはクライアントで異なる投稿に移動することができます：
+
+```tsx filename="app/page.tsx" switcher
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <>
+      <h1>Index Page</h1>
+      <hr />
+      <ul>
+        <li>
+          <Link href="/post/1">Post 1</Link>
+        </li>
+        <li>
+          <Link href="/post/2">Post 2</Link>
+        </li>
+      </ul>
+    </>
+  )
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <>
+      <h1>Index Page</h1>
+      <p>
+        <Link href="/other">Other Page</Link>
+      </p>
+    </>
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+## サポートされる機能
+
+静的サイトを構築するために必要なNext.jsの主要機能のほとんどがサポートされています、例えば：
+
+- [`getStaticPaths`を使用する動的ルート](/docs/app/building-your-application/routing/dynamic-routes)
+- `next/link`によるプリフェッチ
+- JavaScriptのプリロード
+- [動的インポート](/docs/pages/building-your-application/optimizing/lazy-loading)
+- 任意のスタイルオプション（例: CSS Modules, styled-jsx）
+- [クライアント側のデータフェッチ](/docs/pages/building-your-application/data-fetching/client-side)
+- [`getStaticProps`](/docs/pages/building-your-application/data-fetching/get-static-props)
+- [`getStaticPaths`](/docs/pages/building-your-application/data-fetching/get-static-paths)
+
+</PagesOnly>
+
+### 画像最適化
+
+`next/image`を使用した[画像最適化](/docs/app/building-your-application/optimizing/images)は、`next.config.js`でカスタムイメージローダーを定義することにより静的エクスポートと共に使用可能です。例えば、Cloudinaryなどのサービスと一緒に画像を最適化できます：
+
+```js filename="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export',
+  images: {
+    loader: 'custom',
+    loaderFile: './my-loader.ts',
+  },
+}
+
+module.exports = nextConfig
+```
+
+このカスタムローダーはリモートソースから画像を取得する方法を定義します。例えば、以下のローダーはCloudinary用のURLを構築します：
+
+```ts filename="my-loader.ts" switcher
+export default function cloudinaryLoader({
+  src,
+  width,
+  quality,
+}: {
+  src: string
+  width: number
+  quality?: number
+}) {
+  const params = ['f_auto', 'c_limit', `w_${width}`, `q_${quality || 'auto'}`]
+  return `https://res.cloudinary.com/demo/image/upload/${params.join(
+    ','
+  )}${src}`
+}
+```
+
+```js filename="my-loader.js" switcher
+export default function cloudinaryLoader({ src, width, quality }) {
+  const params = ['f_auto', 'c_limit', `w_${width}`, `q_${quality || 'auto'}`]
+  return `https://res.cloudinary.com/demo/image/upload/${params.join(
+    ','
+  )}${src}`
+}
+```
+
+その後アプリケーション内で`next/image`を使用し、Cloudinary内の画像への相対パスを定義できます：
+
+```tsx filename="app/page.tsx" switcher
+import Image from 'next/image'
+
+export default function Page() {
+  return <Image alt="turtles" src="/turtles.jpg" width={300} height={300} />
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Image from 'next/image'
+
+export default function Page() {
+  return <Image alt="turtles" src="/turtles.jpg" width={300} height={300} />
+}
+```
+
+<AppOnly>
+
+### ルートハンドラー
+
+`next build`を実行すると、ルートハンドラーは静的なレスポンスをレンダリングします。サポートされるHTTPメソッドは`GET`のみです。これにより、キャッシュされたデータまたはキャッシュされていないデータから静的なHTML、JSON、TXT、その他のファイルを生成できます。例えば：
+
+```ts filename="app/data.json/route.ts" switcher
+export async function GET() {
+  return Response.json({ name: 'Lee' })
+}
+```
+
+```js filename="app/data.json/route.js" switcher
+export async function GET() {
+  return Response.json({ name: 'Lee' })
+}
+```
+
+上記のファイル`app/data.json/route.ts`は、`next build`中に静的ファイルにレンダリングされ、`data.json`に`{ name: 'Lee' }`を含むファイルを生成します。
+
+もし、受信リクエストから動的な値を読み取る必要がある場合は、静的エクスポートを使用できません。
+
+### ブラウザーAPI
+
+クライアントコンポーネントは`next build`中にHTMLに事前レンダリングされます。[Web API](https://developer.mozilla.org/docs/Web/API)（例：`window`、`localStorage`、`navigator`）はサーバー側では利用できないため、ブラウザで実行される場合のみこれらのAPIに安全にアクセスする必要があります。例えば：
+
+```jsx
+'use client';
+
+import { useEffect } from 'react';
+
+export default function ClientComponent() {
+  useEffect(() => {
+    // ここで`window`にアクセスできます
+    console.log(window.innerHeight);
+  }, [])
+
+  return ...;
+}
+```
+
+</AppOnly>
+
+## サポートされない機能
+
+Node.jsサーバーを必要とする機能や、ビルドプロセス中に計算できない動的ロジックは**サポートされません**：
+
+<AppOnly>
+
+- `dynamicParams: true`を使用した[動的ルート](/docs/app/building-your-application/routing/dynamic-routes)
+- `generateStaticParams()`を使用しない[動的ルート](/docs/app/building-your-application/routing/dynamic-routes)
+- リクエストに依存する[ルートハンドラー](/docs/app/building-your-application/routing/route-handlers)
+- [クッキー](/docs/app/api-reference/functions/cookies)
+- [リライト](/docs/app/api-reference/next-config-js/rewrites)
+- [リダイレクト](/docs/app/api-reference/next-config-js/redirects)
+- [ヘッダ](/docs/app/api-reference/next-config-js/headers)
+- [ミドルウェア](/docs/app/building-your-application/routing/middleware)
+- [増分静的生成](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)
+- デフォルトの`loader`を使用した[画像最適化](/docs/app/building-your-application/optimizing/images)
+- [ドラフトモード](/docs/app/building-your-application/configuring/draft-mode)
+- [サーバーアクション](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)
+
+`next dev`でこれらの機能を使用しようとすると、エラーが発生し、ルートレイアウトで[`dynamic`](/docs/app/api-reference/file-conventions/route-segment-config#dynamic)オプションを`error`に設定したのと同様の状態になります。
+
+```jsx
+export const dynamic = 'error'
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+- [国際化されたルーティング](/docs/pages/building-your-application/routing/internationalization)
+- [APIルート](/docs/pages/building-your-application/routing/api-routes)
+- [リライト](/docs/pages/api-reference/next-config-js/rewrites)
+- [リダイレクト](/docs/pages/api-reference/next-config-js/redirects)
+- [ヘッダ](/docs/pages/api-reference/next-config-js/headers)
+- [ミドルウェア](/docs/pages/building-your-application/routing/middleware)
+- [増分静的生成](/docs/pages/building-your-application/data-fetching/incremental-static-regeneration)
+- デフォルトの`loader`を使用した[画像最適化](/docs/pages/building-your-application/optimizing/images)
+- [ドラフトモード](/docs/pages/building-your-application/configuring/draft-mode)
+- [`fallback: true`を使用した`getStaticPaths`](/docs/pages/api-reference/functions/get-static-paths#fallback-true)
+- [`fallback: 'blocking'`を使用した`getStaticPaths`](/docs/pages/api-reference/functions/get-static-paths#fallback-blocking)
+- [`getServerSideProps`](/docs/pages/building-your-application/data-fetching/get-server-side-props)
+
+</PagesOnly>
+
+## デプロイ
+
+静的エクスポートを使用すると、Next.jsはHTML/CSS/JSの静的アセットを提供できる任意のウェブサーバーにデプロイしてホストできます。
+
+`next build`を実行すると、Next.jsは静的エクスポートを`out`フォルダーに生成します。例えば、以下のルートがあるとします：
+
+- `/`
+- `/blog/[id]`
+
+`next build`を実行後、Next.jsは次のファイルを生成します：
+
+- `/out/index.html`
+- `/out/404.html`
+- `/out/blog/post-1.html`
+- `/out/blog/post-2.html`
+
+Nginxのような静的ホストを使用している場合、受信リクエストから正しいファイルへのリライトを設定できます：
+
+```nginx filename="nginx.conf"
+server {
+  listen 80;
+  server_name acme.com;
+
+  root /var/www/out;
+
+  location / {
+      try_files $uri $uri.html $uri/ =404;
+  }
+
+  # これは`trailingSlash: false`のときに必要です。
+  # `trailingSlash: true`のときには省略できます。
+  location /blog/ {
+      rewrite ^/blog/(.*)$ /blog/$1.html break;
+  }
+
+  error_page 404 /404.html;
+  location = /404.html {
+      internal;
+  }
+}
+```
+
+## バージョン履歴
+
+| バージョン  | 変更点                                                                                                        |
+| ---------- | ---------------------------------------------------------------------------------------------------------- |
+| `v14.0.0`  | `next export`は`"output": "export"`に置き換えられ削除されました                                             |
+| `v13.4.0`  | アプリルーター（安定版）は、Reactサーバーコンポーネントとルートハンドラーを使用する静的エクスポートサポートを追加しました                  |
+| `v13.3.0`  | `next export`は非推奨となり、`"output": "export"`に置き換えられました                                       |

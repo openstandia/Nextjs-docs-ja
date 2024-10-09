@@ -1,0 +1,148 @@
+---
+title: robots.txt
+description: robots.txtファイルに関するAPIリファレンス。
+---
+
+検索エンジンのクローラーに、あなたのサイトでどのURLにアクセスできるかを伝えるため、`app`ディレクトリの**ルート**に[Robots Exclusion Standard](https://en.wikipedia.org/wiki/robots.txt#Standard)に準拠した`robots.txt`ファイルを追加または生成します。
+
+## 静的な`robots.txt`
+
+```txt filename="app/robots.txt"
+User-Agent: *
+Allow: /
+Disallow: /private/
+
+Sitemap: https://acme.com/sitemap.xml
+```
+
+## Robotsファイルを生成する
+
+[`Robots`オブジェクト](#robots-object)を返す`robots.js`または`robots.ts`ファイルを追加します。
+
+> **Good to know**: `robots.js`は特別なルートハンドラーで、[動的関数](/docs/app/building-your-application/caching#dynamic-functions)または[動的構成](/docs/app/building-your-application/caching#segment-config-options)オプションを使用しない限り、デフォルトでキャッシュされます。
+
+```ts filename="app/robots.ts" switcher
+import type { MetadataRoute } from 'next'
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: '/private/',
+    },
+    sitemap: 'https://acme.com/sitemap.xml',
+  }
+}
+```
+
+```js filename="app/robots.js" switcher
+export default function robots() {
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: '/private/',
+    },
+    sitemap: 'https://acme.com/sitemap.xml',
+  }
+}
+```
+
+出力結果：
+
+```txt
+User-Agent: *
+Allow: /
+Disallow: /private/
+
+Sitemap: https://acme.com/sitemap.xml
+```
+
+### 特定のユーザーエージェントのカスタマイズ
+
+`rules`プロパティにユーザーエージェントの配列を渡すことで、特定の検索エンジンボットがどのようにサイトをクロールするかをカスタマイズできます。例えば：
+
+```ts filename="app/robots.ts" switcher
+import type { MetadataRoute } from 'next'
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: [
+      {
+        userAgent: 'Googlebot',
+        allow: ['/'],
+        disallow: '/private/',
+      },
+      {
+        userAgent: ['Applebot', 'Bingbot'],
+        disallow: ['/'],
+      },
+    ],
+    sitemap: 'https://acme.com/sitemap.xml',
+  }
+}
+```
+
+```js filename="app/robots.js" switcher
+export default function robots() {
+  return {
+    rules: [
+      {
+        userAgent: 'Googlebot',
+        allow: ['/'],
+        disallow: ['/private/'],
+      },
+      {
+        userAgent: ['Applebot', 'Bingbot'],
+        disallow: ['/'],
+      },
+    ],
+    sitemap: 'https://acme.com/sitemap.xml',
+  }
+}
+```
+
+出力結果：
+
+```txt
+User-Agent: Googlebot
+Allow: /
+Disallow: /private/
+
+User-Agent: Applebot
+Disallow: /
+
+User-Agent: Bingbot
+Disallow: /
+
+Sitemap: https://acme.com/sitemap.xml
+```
+
+### Robotsオブジェクト
+
+```tsx
+type Robots = {
+  rules:
+    | {
+        userAgent?: string | string[]
+        allow?: string | string[]
+        disallow?: string | string[]
+        crawlDelay?: number
+      }
+    | Array<{
+        userAgent: string | string[]
+        allow?: string | string[]
+        disallow?: string | string[]
+        crawlDelay?: number
+      }>
+  sitemap?: string | string[]
+  host?: string
+}
+```
+
+## バージョン履歴
+
+| バージョン | 変更内容              |
+| --------- | -------------------- |
+| `v13.3.0` | `robots`が導入されました。 |

@@ -1,0 +1,132 @@
+---
+title: devIndicators
+description: 最適化されたページには、静的に最適化されているかどうかを知るためのインジケーターが含まれています。ここでオプトアウトすることができます。
+---
+
+{/* このドキュメントの内容はアプリ用とページ用のルーターで共有されています。`<PagesOnly>Content</PagesOnly>`コンポーネントを使用して、ページ用ルーターに特化した内容を追加できます。共有する内容はコンポーネントでラップしないでください。 */}
+
+<AppOnly>
+
+`devIndicators`を使用すると、開発中に現在見ているルートに関するコンテキストを提供するオンスクリーンインジケーターを設定できます。
+
+```ts filename="Types"
+  devIndicators: {
+    appIsrStatus?: boolean, // デフォルトはtrue
+    buildActivity?: boolean, // デフォルトはtrue
+    buildActivityPosition?: 'bottom-right'
+    | 'bottom-left'
+    | 'top-right'
+    | 'top-left', // デフォルトは'bottom-right'
+  },
+```
+
+## `appIsrStatus` (静的インジケーター)
+
+> このオプションはNext.jsのカナリアで利用可能です。
+
+Next.jsは、ルートがビルド時にプリレンダリングされるかどうかを示す静的インジケーターを画面の下隅に表示します。これにより、ルートが静的か動的かを理解しやすくなり、ルートが[静的レンダリングをオプトアウト](#static-route-not-showing-the-indicator)しているかどうかを識別するのに役立ちます。
+
+<Image
+  alt="アプリフォルダ構造"
+  srcLight="/docs/light/static-indicator.png"
+  srcDark="/docs/dark/static-indicator.png"
+  width="1600"
+  height="208"
+/>
+
+インジケーターは閉じるか、`next.config.js`の設定オプションを使用して無効にできます：
+
+```ts filename="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  devIndicators: {
+    appIsrStatus: false,
+  },
+}
+
+export default nextConfig
+```
+
+```js filename="next.config.js" switcher
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  devIndicators: {
+    appIsrStatus: false,
+  },
+}
+
+module.exports = nextConfig
+```
+
+## `buildActivity` (コンパイルインジケーター)
+
+コードを編集し、Next.jsがアプリケーションをコンパイルしているとき、ページの右下隅にコンパイルインジケーターが表示されます。
+
+> **Good to know**: このインジケーターは開発モードでのみ表示され、本番モードでアプリをビルドおよび実行する際には表示されません。
+
+場合によっては、チャットランチャーと競合するなどしてページ上でインジケーターが誤配置されることがあります。その位置を変更するには、`next.config.js`を開いて`devIndicators`オブジェクト内の`buildActivityPosition`を`bottom-right`（デフォルト）、`bottom-left`、`top-right`または`top-left`に設定します：
+
+```js filename="next.config.js"
+module.exports = {
+  devIndicators: {
+    buildActivityPosition: 'bottom-right',
+  },
+}
+```
+
+このインジケーターが役立たない場合もあります。削除するには、`next.config.js`を開き、`devIndicators`オブジェクト内で`buildActivity`設定を無効にします：
+
+```js filename="next.config.js"
+module.exports = {
+  devIndicators: {
+    buildActivity: false,
+  },
+}
+```
+
+## トラブルシューティング
+
+### 静的ルートにインジケーターが表示されない
+
+ルートが静的であり、インジケーターが有効になっているのに表示されない場合、そのルートは静的レンダリングをオプトアウトしている可能性が高いです。
+
+ルートが[静的](/docs/app/building-your-application/rendering/server-components#static-rendering-default)か[動的](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)かを確認するには、`next build --debug`を使用してアプリケーションをビルドし、ターミナルでの出力を確認します。静的（またはプリレンダリングされた）ルートは`○`記号が表示され、動的なルートは`ƒ`記号が表示されます。例えば：
+
+```bash filename="Build Output"
+Route (app)                              Size     First Load JS
+┌ ○ /_not-found                          0 B               0 kB
+└ ƒ /products/[id]                       0 B               0 kB
+
+○  (静的)   静的コンテンツとしてプリレンダリングされます
+ƒ  (動的)   リクエストに応じてサーバーレンダリング
+```
+
+ルートが静的レンダリングをオプトアウトする理由は2つあります：
+
+- 実行時情報に依存する[動的API](/docs/app/building-your-application/rendering/server-components#dynamic-functions)の存在
+- ORMやデータベースドライバーへの呼び出しのような[キャッシュされていないデータリクエスト](/docs/app/building-your-application/data-fetching/fetching)
+
+これらの条件がルートにあるか確認し、ルートを静的にレンダリングできない場合は、[`loading.js`](/docs/app/api-reference/file-conventions/loading)または[`<Suspense />`](https://react.dev/reference/react/Suspense)を使用して[ストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#what-is-streaming)を活用することを検討してください。
+
+</AppOnly>
+
+<PagesOnly>
+
+> **Good to know**: このインジケーターはNext.jsバージョン10.0.1で削除されました。Next.jsの最新バージョンへのアップグレードをおすすめします。
+
+ページが[自動静的最適化](/docs/pages/building-your-application/rendering/automatic-static-optimization)に適格である場合、それを知らせるインジケーターを表示します。
+
+自動静的最適化は非常に有益となる可能性があり、開発時にページが適格かどうかすぐに知ることができると便利です。
+
+一部のケースでは、このインジケーターが役に立たない場合があります、例えば、Electronアプリケーションで作業しているときです。これを削除するには、`next.config.js`を開き、`devIndicators`で`autoPrerender`設定を無効にします：
+
+```js filename="next.config.js"
+module.exports = {
+  devIndicators: {
+    autoPrerender: false,
+  },
+}
+```
+
+</PagesOnly>

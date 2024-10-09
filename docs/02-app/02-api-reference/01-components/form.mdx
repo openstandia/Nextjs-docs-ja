@@ -1,0 +1,320 @@
+---
+title: `<Form>`
+description: フォームの送信とクライアントサイドナビゲーションによる検索パラメータの更新を処理するための`<Form>`コンポーネントの使用方法を学びましょう。
+version: canary
+---
+
+`<Form>`コンポーネントはHTMLの`<form>`要素を拡張し、[**UIの事前取得**](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)と、[クライアントサイドナビゲーション**](/docs/app/building-your-application/routing/loading-ui-and-streaming)を提供します。
+
+URL検索パラメータを更新するフォームでは、これにより必要なボイラープレートコードが減少します。
+
+基本的な使用方法:
+
+```tsx filename="/app/page.tsx" switcher
+import Form from 'next/form'
+
+export default function Page() {
+  return (
+    <Form action="/search">
+      {/* 送信時に入力値がURLに追加されます
+          例: /search?query=abc */}
+      <input name="query" />
+      <button type="submit">Submit</button>
+    </Form>
+  )
+}
+```
+
+```jsx filename="/app/ui/search.js" switcher
+import Form from 'next/form'
+
+export default function Search() {
+  return (
+    <Form action="/search">
+      {/* 送信時に入力値がURLに追加されます
+          例: /search?query=abc */}
+      <input name="query" />
+      <button type="submit">Submit</button>
+    </Form>
+  )
+}
+```
+
+## リファレンス
+
+`<Form>`コンポーネントの動作は、`action`プロップが`string`または`function`のどちらであるかに依存します。
+
+- `action`が**文字列**の場合、`<Form>`はネイティブHTMLフォームのように動作し、**`GET`**方法を使用します。フォームデータはURLに検索パラメータとしてエンコードされ、フォームが送信されると指定されたURLにナビゲートします。また、Next.jsは:
+  - フォームが表示されたときにパスを[事前取得](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)し、共通UI（例: `layout.js`や`loading.js`）を事前ロードすることでナビゲーションの速度を向上させます。
+  - フォームが送信されると、クライアントサイドナビゲーションを実行し、ページ全体のリロードを回避して共通UIとクライアントサイドの状態を維持します。
+- `action`が**関数**（サーバーアクション）の場合、`<Form>`は[Reactのフォーム](https://react.dev/reference/react-dom/components/form)に似た動作をし、フォーム送信時にそのアクションを実行します。
+
+### `action`（文字列）プロップ
+
+`action`が文字列の場合、`<Form>`コンポーネントは以下のプロップをサポートします:
+
+| Prop      | Example            | Type                            | 必須     |
+| --------- | ------------------ | ------------------------------- | -------- |
+| `action`  | `action="/search"` | `string` (URLまたは相対パス)     | Yes      |
+| `replace` | `replace={false}`  | `boolean`                       | -        |
+| `scroll`  | `scroll={true}`    | `boolean`                       | -        |
+
+- **`action`**: フォーム送信時にナビゲートするURLまたはパスです。
+  - 空文字列`""`は、同じルートに更新された検索パラメータで移動します。
+- **`scroll`**: ナビゲーション中のスクロール動作を制御します。デフォルトは`true`で、新しいルートの上部にスクロールし、後方および前方のナビゲーション用にスクロール位置を維持します。
+- **`replace`**: 現在の履歴状態を置き換え、[ブラウザの履歴](https://developer.mozilla.org/en-US/docs/Web/API/History_API)スタックに新しい履歴を追加しません。デフォルトは`false`です。
+
+### `action`（関数）プロップ
+
+`action`が関数の場合、`<Form>`コンポーネントは以下のプロップをサポートします:
+
+| Prop     | Example             | Type                       | 必須     |
+| -------- | ------------------- | -------------------------- | -------- |
+| `action` | `action={myAction}` | `function` (サーバーアクション) | Yes      |
+
+- **`action`**: フォーム送信時に呼び出されるサーバーアクションです。詳しくは[Reactドキュメント](https://react.dev/reference/react-dom/components/form#props)を参照してください。
+
+> **Good to know**: `action`が関数の場合、`replace`と`scroll`プロップは無視されます。
+
+### 注意点
+
+- **`onSubmit`**: フォーム送信ロジックを処理するために使用できます。ただし、`event.preventDefault()`を呼び出すと、指定されたURLへの移動など`<Form>`の動作がオーバーライドされます。
+- **`formAction`**: ボタンまたは`<input type="submit">`フィールドで`action`プロップをオーバーライドするために使用できます。Next.jsはクライアントサイドナビゲーションを実行しますが、このアプローチは事前取得をサポートしていません。
+  - [`basePath`](/docs/app/api-reference/next-config-js/basePath)を使用するときは、`formAction`パスにもそれを含める必要があります。例: `formAction="/base-path/search"`.
+- **[`method`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#method), [`encType`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#enctype), [`target`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#target)**: `<Form>`の動作をオーバーライドするためサポートされません。
+  - 同様に、`formMethod`、`formEncType`、`formTarget`を使用して`method`、`encType`、`target`プロップをそれぞれオーバーライドでき、使用するとネイティブのブラウザの動作になります。
+  - これらのプロップを使用する必要がある場合は、HTMLの`<form>`要素を使用してください。
+- **`key`**: 文字列`action`にキーを渡すことはサポートされていません。再レンダリングまたは変更をトリガーしたい場合は、代わりに関数`action`を使用することを検討してください。
+- **`<input type="file">`**: `action`が文字列の場合、この入力タイプを使用すると、ブラウザの動作に一致してファイルオブジェクトではなくファイル名を送信します。
+
+## 例
+
+### 検索フォームから検索結果ページに移動
+
+`action`としてパスを渡すことで、検索結果ページにナビゲートする検索フォームを作成できます:
+
+```tsx filename="/app/page.tsx" switcher
+import Form from 'next/form'
+
+export default function Page() {
+  return (
+    <Form action="/search">
+      <input name="query" />
+      <button type="submit">Submit</button>
+    </Form>
+  )
+}
+```
+
+```jsx filename="/app/page.js" switcher
+import Form from 'next/form'
+
+export default function Page() {
+  return (
+    <Form action="/search">
+      <input name="query" />
+      <button type="submit">Submit</button>
+    </Form>
+  )
+}
+```
+
+ユーザーがクエリ入力フィールドを更新しフォームを送信すると、フォームデータはURLに検索パラメータとしてエンコードされます。例: `/search?query=abc`.
+
+> **Good to know**: `action`に空文字列`""`を渡すと、同じルートに更新された検索パラメータで移動します。
+
+結果ページでは、[`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional) `page.js`プロップを使用してクエリにアクセスし、外部ソースからデータを取得するために使用できます。
+
+```tsx filename="/app/search/page.tsx" switcher
+import { getSearchResults } from '@/lib/search'
+
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
+  const results = await getSearchResults(searchParams.query)
+
+  return <div>...</div>
+}
+```
+
+```jsx filename="/app/search/page.js" switcher
+import { getSearchResults } from '@/lib/search'
+
+export default async function SearchPage({ searchParams }) {
+  const results = await getSearchResults(searchParams.query)
+
+  return <div>...</div>
+}
+```
+
+`<Form>`がユーザーのビューポートに表示されると、`/search`ページでの共通UI（`layout.js`や`loading.js`など）が事前取得されます。送信時にフォームはすぐに新しいルートに移動し、結果が取得される間にローディングUIを表示します。フォールバックUIを[`loading.js`](/docs/app/api-reference/file-conventions/loading)を使用して設計できます:
+
+```tsx filename="/app/search/loading.tsx" switcher
+export default function Loading() {
+  return <div>Loading...</div>
+}
+```
+
+```jsx filename="/app/search/loading.js" switcher
+export default function Loading() {
+  return <div>Loading...</div>
+}
+```
+
+共通UIがまだロードされていない場合に備えて、[`useFormStatus`](https://react.dev/reference/react-dom/hooks/useFormStatus)を使用してユーザーに即時のフィードバックを表示できます。
+
+まず、フォームがペンディング状態のときにローディング状態を表示するコンポーネントを作成します:
+
+```tsx filename="/app/ui/search-button.tsx" switcher
+'use client'
+import { useFormStatus } from 'react-dom'
+
+export default function SearchButton() {
+  const status = useFormStatus()
+  return (
+    <button type="submit">{status.pending ? 'Searching...' : 'Search'}</button>
+  )
+}
+```
+
+```jsx filename="/app/ui/search-button.js" switcher
+'use client'
+import { useFormStatus } from 'react-dom'
+
+export default function SearchButton() {
+  const status = useFormStatus()
+  return (
+    <button type="submit">{status.pending ? 'Searching...' : 'Search'}</button>
+  )
+}
+```
+
+次に、`SearchButton`コンポーネントを使用するように検索フォームページを更新します:
+
+```tsx filename="/app/page.tsx" switcher
+import Form from 'next/form'
+import { SearchButton } from '@/ui/search-button'
+
+export default function Page() {
+  return (
+    <Form action="/search">
+      <input name="query" />
+      <SearchButton />
+    </Form>
+  )
+}
+```
+
+```jsx filename="/app/ui/search-button.js" switcher
+import Form from 'next/form'
+import { SearchButton } from '@/ui/search-button'
+
+export default function Page() {
+  return (
+    <Form action="/search">
+      <input name="query" />
+      <SearchButton />
+    </Form>
+  )
+}
+```
+
+### サーバーアクションを使った操作
+
+`action`プロップに関数を渡すことで操作を実行できます。
+
+```tsx filename="/app/posts/create/page.tsx" switcher
+import Form from 'next/form'
+import { createPost } from '@/posts/actions'
+
+export default function Page() {
+  return (
+    <Form action={createPost}>
+      <input name="title" />
+      {/* ... */}
+      <button type="submit">Postを作成</button>
+    </Form>
+  )
+}
+```
+
+```jsx filename="/app/posts/create/page.js" switcher
+import Form from 'next/form'
+import { createPost } from '@/posts/actions'
+
+export default function Page() {
+  return (
+    <Form action={createPost}>
+      <input name="title" />
+      {/* ... */}
+      <button type="submit">Postを作成</button>
+    </Form>
+  )
+}
+```
+
+操作後に新しいリソースへリダイレクトすることが一般的です。`next/navigation`の[`redirect`](/docs/app/building-your-application/routing/redirecting)関数を使用して新しい投稿ページへナビゲートできます。
+
+> **Good to know**: フォーム送信の"destination"は操作が実行されるまでわからないため、`<Form>`は共通UIを自動的に事前取得できません。
+
+```tsx filename="/app/posts/actions.ts" switcher
+'use server'
+import { redirect } from 'next/navigation'
+
+export async function createPost(formData: FormData) {
+  // 新しい投稿を作成
+  // ...
+
+  // 新しい投稿へリダイレクト
+  redirect(`/posts/${data.id}`)
+}
+```
+
+```jsx filename="/app/posts/actions.js" switcher
+'use server'
+import { redirect } from 'next/navigation'
+
+export async function createPost(formData) {
+  // 新しい投稿を作成
+  // ...
+
+  // 新しい投稿へリダイレクト
+  redirect(`/posts/${data.id}`)
+}
+```
+
+次に、新しいページで`params`プロップを使用してデータを取得できます:
+
+```tsx filename="/app/posts/[id]/page.tsx" switcher
+import { getPost } from '@/posts/data'
+
+export default async function PostPage({ params }: { params: { id: string } }) {
+  const data = await getPost(params.id)
+
+  return (
+    <div>
+      <h1>{data.title}</h1>
+      {/* ... */}
+    </div>
+  )
+}
+```
+
+```jsx filename="/app/posts/[id]/page.js" switcher
+import { getPost } from '@/posts/data'
+
+export default async function PostPage({ params }) {
+  const data = await getPost(params.id)
+
+  return (
+    <div>
+      <h1>{data.title}</h1>
+      {/* ... */}
+    </div>
+  )
+}
+```
+
+より多くの例については[サーバーアクション](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)のドキュメントを参照してください。

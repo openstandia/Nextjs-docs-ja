@@ -1,0 +1,180 @@
+---
+title: プロジェクトの組織とファイルのコロケーション
+nav_title: プロジェクトの組織
+description: Next.jsのプロジェクトをどのように整理し、ファイルをコロケーションするかを学びましょう
+related:
+  links:
+    - app/building-your-application/routing/defining-routes
+    - app/building-your-application/routing/route-groups
+    - app/building-your-application/configuring/src-directory
+    - app/building-your-application/configuring/absolute-imports-and-module-aliases
+---
+
+Next.jsは、[ルーティングフォルダーとファイルの慣例](/docs/getting-started/project-structure#app-routing-conventions)を除いて、プロジェクトファイルをどのように整理しコロケーションするかについては**意見を持たない**です。
+
+このページでは、プロジェクトを組織するためのデフォルトの動作や特徴を紹介します。
+
+- [デフォルトでの安全なコロケーション](#safe-colocation-by-default)
+- [プロジェクト組織の特徴](#project-organization-features)
+- [プロジェクト組織の戦略](#project-organization-strategies)
+
+## デフォルトでの安全なコロケーション
+
+`app` ディレクトリでは、[ネストされたフォルダー階層](/docs/app/building-your-application/routing#route-segments)がルート構造を定義します。
+
+それぞれのフォルダーはURLパス内の対応するセグメントにマッピングされるルートセグメントを表します。
+
+しかし、ルート構造はフォルダーで定義されているにもかかわらず、ルートセグメントに `page.js` または `route.js` ファイルが追加されるまで、ルートは**公開アクセス可能**ではありません。
+
+<Image
+  alt="page.js または route.js ファイルがルートセグメントに追加されるまでルートは公開アクセス可能ではないことを示す図。"
+  srcLight="/docs/light/project-organization-not-routable.png"
+  srcDark="/docs/dark/project-organization-not-routable.png"
+  width="1600"
+  height="444"
+/>
+
+そして、ルートが公開アクセス可能になったとしても、クライアントに送信されるのは `page.js` または `route.js` によって返される**コンテンツのみ**です。
+
+<Image
+  alt="page.js と route.js ファイルがルートを公開アクセス可能にすることを示す図。"
+  srcLight="/docs/light/project-organization-routable.png"
+  srcDark="/docs/dark/project-organization-routable.png"
+  width="1600"
+  height="687"
+/>
+
+これは、`app` ディレクトリ内のルートセグメント内に**プロジェクトファイル**を**安全にコロケート**でき、誤ってルーティングされることがないことを意味します。
+
+<Image
+  alt="page.js または route.js ファイルを持つセグメントにプロジェクトファイルがコロケートされているがルーティングされないことを示す図。"
+  srcLight="/docs/light/project-organization-colocation.png"
+  srcDark="/docs/dark/project-organization-colocation.png"
+  width="1600"
+  height="1011"
+/>
+
+> **Good to know**:
+>
+> - これは `pages` ディレクトリとは異なり、`pages` 内のすべてのファイルがルートとみなされます。
+> - プロジェクトファイルを `app` にコロケート**することはできます**が、**しなければならない**わけではありません。お好みで、[`app` ディレクトリの外に保持する](#store-project-files-outside-of-app)こともできます。
+
+## プロジェクト組織の特徴
+
+Next.jsは、プロジェクトの組織を助けるためにいくつかの特徴を提供します。
+
+### プライベートフォルダー
+
+プライベートフォルダーは、フォルダーの前にアンダースコアを付けることで作成できます：`_folderName`
+
+これはフォルダーがプライベート実装の詳細であり、ルーティングシステムで考慮されるべきではないことを示します。これにより、フォルダーとそのサブフォルダーはすべてルーティングから**除外**されます。
+
+<Image
+  alt="プライベートフォルダーを使用したフォルダ構造の例"
+  srcLight="/docs/light/project-organization-private-folders.png"
+  srcDark="/docs/dark/project-organization-private-folders.png"
+  width="1600"
+  height="849"
+/>
+
+`app` ディレクトリ内のファイルは[デフォルトで安全にコロケートできます](#safe-colocation-by-default)ので、コロケーションにはプライベートフォルダーは必要ありません。しかしそれらは次のような目的に有用です：
+
+- UIロジックをルーティングロジックから分離すること
+- プロジェクトやNext.jsエコシステム全体で一貫して内部ファイルを整理すること
+- コードエディタでファイルをソートし、グループ分けすること
+- 新しいNext.jsファイルの慣例との命名競合を避けること
+
+> **Good to know**:
+>
+> - フレームワークの慣例ではありませんが、プライベートフォルダー外のファイルを同じアンダースコアパターンを使用して「プライベート」としてマークすることも検討できます。
+> - フォルダー名の前に`%5F`（アンダースコアのURLエンコード形式）を追加することで、アンダースコアで始まるURLセグメントを作成できます：`%5FfolderName`。
+> - プライベートフォルダーを使用しない場合、予期しない命名競合を避けるためにNext.jsの[特別なファイルの慣例](/docs/getting-started/project-structure#routing-files)を知っておくと役立ちます。
+
+### ルートグループ
+
+ルートグループはフォルダーを括弧で囲むことで作成できます：`(folderName)`
+
+これはフォルダーが組織目的のためのものであり、ルートのURLパスに**含まれるべきではない**ことを示します。
+
+<Image
+  alt="ルートグループを使用したフォルダ構造の例"
+  srcLight="/docs/light/project-organization-route-groups.png"
+  srcDark="/docs/dark/project-organization-route-groups.png"
+  width="1600"
+  height="849"
+/>
+
+ルートグループは次のような目的に有用です：
+
+- [URLパスに影響を与えずルートをグループ化して整理する](/docs/app/building-your-application/routing/route-groups#organize-routes-without-affecting-the-url-path)こと（例：サイトのセクション、意図、またはチーム別）
+- 同じルートセグメントレベルでネストされたレイアウトの有効化：
+  - [同じセグメントに複数のネストされたレイアウトを作成する（複数のルートレイアウトを含む）](/docs/app/building-your-application/routing/route-groups#creating-multiple-root-layouts)
+  - [共通セグメント内の一部のルートにレイアウトを追加する](/docs/app/building-your-application/routing/route-groups#opting-specific-segments-into-a-layout)
+
+### `src` ディレクトリ
+
+Next.jsは、アプリケーションコード（`app`を含む）をオプションの[`src` ディレクトリ](/docs/app/building-your-application/configuring/src-directory)内に格納することをサポートします。これにより、プロジェクトのルートに存在することが多いプロジェクトの設定ファイルからアプリケーションコードを分離できます。
+
+<Image
+  alt="`src`ディレクトリを使用したフォルダ構造の例"
+  srcLight="/docs/light/project-organization-src-directory.png"
+  srcDark="/docs/dark/project-organization-src-directory.png"
+  width="1600"
+  height="687"
+/>
+
+### モジュールパスエイリアス
+
+Next.jsは、[モジュールパスエイリアス](/docs/app/building-your-application/configuring/absolute-imports-and-module-aliases)をサポートしており、深くネストされたプロジェクトファイル間でのインポートを読みやすく保守しやすくするために役立ちます。
+
+```jsx filename="app/dashboard/settings/analytics/page.js"
+// before
+import { Button } from '../../../components/button'
+
+// after
+import { Button } from '@/components/button'
+```
+
+## プロジェクト組織の戦略
+
+Next.jsプロジェクト内のファイルやフォルダーを整理する際、「正しい」または「間違った」方法はありません。
+
+以下のセクションでは、よくある戦略の概要を非常に高いレベルでリストしています。最も単純なポイントは、あなたとあなたのチームにとって効果的な戦略を選択し、プロジェクト全体で一貫して使用することです。
+
+> **Good to know**: 以下の例では、一般的なプレースホルダーとして `components` と `lib` フォルダーを使用しています。これらの名前には特別なフレームワークの意味はなく、あなたのプロジェクトは `ui`、`utils`、`hooks`、`styles` などの他のフォルダーを使用するかもしれません。
+
+### `app` の外にプロジェクトファイルを保存する
+
+この戦略は、すべてのアプリケーションコードを**プロジェクトのルート**の共有フォルダーに保存し、`app` ディレクトリをルーティングの目的のみに使用します。
+
+<Image
+  alt="appの外にプロジェクトファイルがあるフォルダ構造の例"
+  srcLight="/docs/light/project-organization-project-root.png"
+  srcDark="/docs/dark/project-organization-project-root.png"
+  width="1600"
+  height="849"
+/>
+
+### `app` の中にトップレベルフォルダーとしてプロジェクトファイルを保存する
+
+この戦略は、すべてのアプリケーションコードを**`app` ディレクトリのルート**の共有フォルダーに保存します。
+
+<Image
+  alt="appの中にプロジェクトファイルがあるフォルダ構造の例"
+  srcLight="/docs/light/project-organization-app-root.png"
+  srcDark="/docs/dark/project-organization-app-root.png"
+  width="1600"
+  height="849"
+/>
+
+### 機能またはルートごとにプロジェクトファイルを分割する
+
+この戦略は、グローバルに共有されるアプリケーションコードをルートの `app` ディレクトリに保存し、より具体的なアプリケーションコードをそれらを使用するルートセグメントに**分割**します。
+
+<Image
+  alt="機能またはルートごとに分割されたプロジェクトファイルを持つフォルダ構造の例"
+  srcLight="/docs/light/project-organization-app-root-split.png"
+  srcDark="/docs/dark/project-organization-app-root-split.png"
+  width="1600"
+  height="1011"
+/>

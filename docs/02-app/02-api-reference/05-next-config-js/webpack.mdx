@@ -1,0 +1,88 @@
+---
+title: カスタムWebpack設定
+nav_title: webpack
+description: Next.jsで使用されるwebpack設定をカスタマイズする方法を学ぶ
+---
+
+{/* このドキュメントの内容は、アプリとページルーターの間で共有されています。ページルーター専用のコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有コンテンツはコンポーネントで囲まないでください。 */}
+
+> **Good to know**: webpack設定への変更はsemverにカバーされていないので自己責任で進めてください
+
+アプリケーションにカスタムwebpack設定を追加する前に、Next.jsがすでにあなたのユースケースをサポートしていないことを確認してください：
+
+<AppOnly>
+
+- [CSSインポート](/docs/app/building-your-application/styling/css)
+- [CSSモジュール](/docs/app/building-your-application/styling/css#css-modules)
+- [Sass/SCSSインポート](/docs/app/building-your-application/styling/sass)
+- [Sass/SCSSモジュール](/docs/app/building-your-application/styling/sass)
+
+</AppOnly>
+
+<PagesOnly>
+
+- [CSSインポート](/docs/pages/building-your-application/styling)
+- [CSSモジュール](/docs/pages/building-your-application/styling/css-modules)
+- [Sass/SCSSインポート](/docs/pages/building-your-application/styling/sass)
+- [Sass/SCSSモジュール](/docs/pages/building-your-application/styling/sass)
+- [babel設定のカスタマイズ](/docs/pages/building-your-application/configuring/babel)
+
+</PagesOnly>
+
+いくつかの一般的に求められる機能はプラグインとして利用可能です：
+
+- [@next/mdx](https://github.com/vercel/next.js/tree/canary/packages/next-mdx)
+- [@next/bundle-analyzer](https://github.com/vercel/next.js/tree/canary/packages/next-bundle-analyzer)
+
+`webpack`の使用を拡張するために、次のように`next.config.js`内でその設定を拡張する関数を定義できます：
+
+```js filename="next.config.js"
+module.exports = {
+  webpack: (
+    config,
+    { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }
+  ) => {
+    // 重要: 修正された設定を返す
+    return config
+  },
+}
+```
+
+> `webpack`関数は3回実行され、サーバー（nodejs / edgeランタイム）用に2回、クライアント用に1回です。これにより、`isServer`プロパティを使用してクライアントとサーバーの設定を区別できます。
+
+`webpack`関数の第2引数は次のプロパティを持つオブジェクトです：
+
+- `buildId`: `String` - ビルドの間で一意の識別子として使用されるビルドID
+- `dev`: `Boolean` - コンパイルが開発環境で行われるかどうかを示す
+- `isServer`: `Boolean` - サーバーサイドのコンパイルには`true`、クライアントサイドのコンパイルには`false`
+- `nextRuntime`: `String | undefined` - サーバーサイドのコンパイルのターゲットランタイム；"edge"または"nodejs"、クライアントサイドのコンパイルの場合は`undefined`
+- `defaultLoaders`: `Object` - Next.jsで内部的に使用されるデフォルトのローダー：
+  - `babel`: `Object` - デフォルトの`babel-loader`設定
+
+`defaultLoaders.babel`の例：
+
+```js
+// babel-loaderに依存するローダーを追加するための設定例
+// このソースは@next/mdxプラグインソースから取られています：
+// https://github.com/vercel/next.js/tree/canary/packages/next-mdx
+module.exports = {
+  webpack: (config, options) => {
+    config.module.rules.push({
+      test: /\.mdx/,
+      use: [
+        options.defaultLoaders.babel,
+        {
+          loader: '@mdx-js/loader',
+          options: pluginOptions.options,
+        },
+      ],
+    })
+
+    return config
+  },
+}
+```
+
+#### `nextRuntime`
+
+`isServer`が`true`のとき、`nextRuntime`が`"edge"`または`"nodejs"`であることに注意してください；`nextRuntime`"`edge`"は現在、ミドルウェアとエッジランタイムでのサーバーコンポーネント専用です。

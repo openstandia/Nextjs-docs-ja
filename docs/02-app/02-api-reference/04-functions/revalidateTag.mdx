@@ -1,0 +1,82 @@
+---
+title: revalidateTag
+description: revalidateTag関数のAPIリファレンス
+---
+
+`revalidateTag`は、特定のキャッシュタグに対してオンデマンドで[キャッシュされたデータ](/docs/app/building-your-application/caching)をパージすることができます。
+
+> **Good to know**:
+>
+> - `revalidateTag`は、[Node.jsとエッジランタイムの両方](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)で利用可能です。
+> - `revalidateTag`は、次にパスが訪問されたときにのみキャッシュを無効化します。つまり、動的ルートセグメントで`revalidateTag`を呼び出しても、すぐに多数の再検証をトリガーするわけではありません。無効化は次にパスが訪問されたときにのみ発生します。
+
+## パラメータ
+
+```tsx
+revalidateTag(tag: string): void;
+```
+
+- `tag`: 再検証したいデータに関連するキャッシュタグを表す文字列。256文字以下である必要があります。この値は大文字と小文字を区別します。
+
+`fetch`にタグを追加する方法は次のとおりです:
+
+```tsx
+fetch(url, { next: { tags: [...] } });
+```
+
+## 戻り値
+
+`revalidateTag`は値を返しません。
+
+## 例
+
+### サーバーアクション
+
+```ts filename="app/actions.ts" switcher
+'use server'
+
+import { revalidateTag } from 'next/cache'
+
+// 投稿追加後にキャッシュを再検証する
+export default async function submit() {
+  await addPost()
+  revalidateTag('posts')
+}
+```
+
+```js filename="app/actions.js" switcher
+'use server'
+
+import { revalidateTag } from 'next/cache'
+
+// 投稿追加後にキャッシュを再検証する
+export default async function submit() {
+  await addPost()
+  revalidateTag('posts')
+}
+```
+
+### ルートハンドラー
+
+```ts filename="app/api/revalidate/route.ts" switcher
+import type { NextRequest } from 'next/server'
+import { revalidateTag } from 'next/cache'
+
+// GETリクエスト時にキャッシュを再検証する
+export async function GET(request: NextRequest) {
+  const tag = request.nextUrl.searchParams.get('tag')
+  revalidateTag(tag)
+  return Response.json({ revalidated: true, now: Date.now() })
+}
+```
+
+```js filename="app/api/revalidate/route.js" switcher
+import { revalidateTag } from 'next/cache'
+
+// GETリクエスト時にキャッシュを再検証する
+export async function GET(request) {
+  const tag = request.nextUrl.searchParams.get('tag')
+  revalidateTag(tag)
+  return Response.json({ revalidated: true, now: Date.now() })
+}
+```

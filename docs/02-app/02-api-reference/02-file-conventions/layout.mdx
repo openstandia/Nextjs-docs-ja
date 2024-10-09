@@ -1,0 +1,169 @@
+---
+title: layout.js
+description: layout.js ファイルのAPIリファレンス
+---
+
+**レイアウト**（layout）は、ルート間で共有されるUIです。
+
+```tsx filename="app/dashboard/layout.tsx" switcher
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <section>{children}</section>
+}
+```
+
+```jsx filename="app/dashboard/layout.js" switcher
+export default function DashboardLayout({ children }) {
+  return <section>{children}</section>
+}
+```
+
+**ルートレイアウト**は、`app`ディレクトリの最上位にあるレイアウトです。`<html>` および `<body>` タグや、他のグローバルに共有されるUIを定義するのに使用されます。
+
+```tsx filename="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+```jsx filename="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+## Props
+
+### `children`（必須）
+
+レイアウトコンポーネントは、`children`プロップを受け入れ、それを利用する必要があります。描画中、`children`はレイアウトが囲むルートセグメントで満たされます。これらは主に子[レイアウト](/docs/app/building-your-application/routing/pages)（もし存在するなら）のコンポーネント、または[ページ](/docs/app/building-your-application/routing/pages)になりますが、適用可能な場合は、[ローディング](/docs/app/building-your-application/routing/loading-ui-and-streaming)や[エラー](/docs/app/building-your-application/routing/error-handling)などの他の特別なファイルになることもあります。
+
+### `params`（任意）
+
+ルートセグメントからそのレイアウトまでの[動的ルートパラメータ](/docs/app/building-your-application/routing/dynamic-routes)オブジェクト。
+
+| 例                                  | URL            | `params`                  |
+| ----------------------------------- | -------------- | ------------------------- |
+| `app/dashboard/[team]/layout.js`    | `/dashboard/1` | `{ team: '1' }`           |
+| `app/shop/[tag]/[item]/layout.js`   | `/shop/1/2`    | `{ tag: '1', item: '2' }` |
+| `app/blog/[...slug]/layout.js`      | `/blog/1/2`    | `{ slug: ['1', '2'] }`    |
+
+例:
+
+```tsx filename="app/shop/[tag]/[item]/layout.tsx" switcher
+export default function ShopLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: {
+    tag: string
+    item: string
+  }
+}) {
+  // URL -> /shop/shoes/nike-air-max-97
+  // `params` -> { tag: 'shoes', item: 'nike-air-max-97' }
+  return <section>{children}</section>
+}
+```
+
+```jsx filename="app/shop/[tag]/[item]/layout.js" switcher
+export default function ShopLayout({ children, params }) {
+  // URL -> /shop/shoes/nike-air-max-97
+  // `params` -> { tag: 'shoes', item: 'nike-air-max-97' }
+  return <section>{children}</section>
+}
+```
+
+## Good to know
+
+### ルートレイアウト
+
+- `app`ディレクトリには、ルート`app/layout.js`が**必ず**含まれていなくてはなりません
+- ルートレイアウトは**必ず**`<html>`および`<body>`タグを定義しなければなりません
+  - `<title>`や`<meta>`などの`<head>`タグをルートレイアウトに手動で追加すべきではありません。代わりに、高度な要件（例えば、ストリーミングや`<head>`要素の重複排除など）を自動的に処理する[メタデータAPI](/docs/app/api-reference/functions/generate-metadata)を使用する必要があります
+- 複数のルートレイアウトを作成するために[ルートグループ](/docs/app/building-your-application/routing/route-groups)を使用できます
+  - **複数のルートレイアウト間を**移動すると、**ページ全体の読み込み**が行われます（クライアントサイドの移動とは対照的に）。例えば、`app/(shop)/layout.js`を使用する`/cart`から、`app/(marketing)/layout.js`を使用する`/blog`への移動は、ページ全体の読み込みが行われます。これは**唯一の例外**です
+
+### レイアウトは`searchParams`を受け取りません
+
+[Pages](/docs/app/api-reference/file-conventions/page)とは異なり、レイアウトコンポーネントは`searchParams`プロップを**受け取りません**。これは、共有レイアウトが[移動中に再描画されないため](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)、移動間で`searchParams`が古くなる可能性があるためです。
+
+クライアントサイド移動を使用する場合、Next.jsは自動的に2つのルート間で共通レイアウト以下のページの部分のみを描画します。
+
+例えば、次のディレクトリ構造では、`dashboard/layout.tsx`は`/dashboard/settings`と`/dashboard/analytics`の両方の共通レイアウトです：
+
+<Image
+  alt="ファイル構造を示し、ダッシュボードフォルダにlayout.tsxファイルがネスティングされており、その中にsettingsとanalyticsフォルダが自分のページを持っている様子"
+  srcLight="/docs/light/shared-dashboard-layout.png"
+  srcDark="/docs/dark/shared-dashboard-layout.png"
+  width="1600"
+  height="687"
+/>
+
+`/dashboard/settings`から`/dashboard/analytics`に移動する際、`dashboard/analytics`内の`page.tsx`はサーバー上で再描画されますが、`dashboard/layout.tsx`は2つのルート間で共有される共通UIのため再描画されません。
+
+このパフォーマンス最適化により、レイアウトを共有するページ間の移動が高速化され、ページのデータ取得とレンダリングだけを実行する必要があり、共有レイアウトが独自のデータを取得する場合を含む完全なルートを実行する必要がありません。
+
+そのため、`dashboard/layout.tsx`が再描画されないため、レイアウトサーバーコンポーネントの`searchParams`プロップは移動後に**古くなってしまう**可能性があります。
+
+代わりに、最新の`searchParams`でクライアントで再描画されるページの[`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional)プロップやクライアントコンポーネント内の[`useSearchParams`](/docs/app/api-reference/functions/use-search-params)フックを使用してください。
+
+### レイアウトは`pathname`にアクセスできません
+
+レイアウトは`pathname`にアクセスできません。これは、レイアウトがデフォルトでサーバコンポーネントであり、[クライアントサイドの移動中に再描画されないため](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)、移動中に`pathname`が古くなる可能性があるためです。ネクストステータスのため、すべてのルートセグメントを再取得することなく古さを防ぐためには、キャッシングの利点を失い、移動時の[RSCペイロード](/docs/app/building-your-application/rendering/server-components#what-is-the-react-server-component-payload-rsc)サイズを増やす必要があります。
+
+代わりに、`pathname`に依存するロジックをクライアントコンポーネントに抽出し、それをレイアウトにインポートできます。クライアントコンポーネントは移動中に再描画（ただし再取得はしない）されるため、[`usePathname`](https://nextjs.org/docs/app/api-reference/functions/use-pathname)などのNext.jsフックを使用して現在のパス名にアクセスし、古さを防ぐことができます。
+
+```tsx filename="app/dashboard/layout.tsx" switcher
+import { ClientComponent } from '@/app/ui/ClientComponent'
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <ClientComponent />
+      {/* 他のレイアウトUI */}
+      <main>{children}</main>
+    </>
+  )
+}
+```
+
+```jsx filename="app/dashboard/layout.js" switcher
+import { ClientComponent } from '@/app/ui/ClientComponent'
+
+export default function Layout({ children }) {
+  return (
+    <>
+      <ClientComponent />
+      {/* 他のレイアウトUI */}
+      <main>{children}</main>
+    </>
+  )
+}
+```
+
+一般的な`pathname`パターンも[`params`](#params-optional)プロップで実装できます。
+
+詳細については、[例](/docs/app/building-your-application/routing/layouts-and-templates#examples)セクションを参照してください。
+
+## バージョン履歴
+
+| バージョン   | 変更点                |
+| --------- | -------------------- |
+| `v13.0.0` | `layout`が導入されました。 |

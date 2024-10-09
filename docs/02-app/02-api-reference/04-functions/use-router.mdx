@@ -1,0 +1,161 @@
+---
+title: useRouter
+description: useRouterフックのAPIリファレンス
+---
+
+`useRouter`フックは、[クライアントコンポーネント](/docs/app/building-your-application/rendering/client-components)内でプログラムによってルートを変更するために使用します。
+
+> **推奨事項:** 特定の理由がない限り、ナビゲーションには[`<Link>`コンポーネント](/docs/app/building-your-application/routing/linking-and-navigating#link-component)を使用してください。
+
+```tsx filename="app/example-client-component.tsx" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export default function Page() {
+  const router = useRouter()
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      Dashboard
+    </button>
+  )
+}
+```
+
+```jsx filename="app/example-client-component.js" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export default function Page() {
+  const router = useRouter()
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      Dashboard
+    </button>
+  )
+}
+```
+
+## `useRouter()`
+
+- `router.push(href: string, { scroll: boolean })`: 指定したルートにクライアントサイドでナビゲーションを実行します。ブラウザの[履歴](https://developer.mozilla.org/docs/Web/API/History_API)スタックに新しいエントリを追加します
+- `router.replace(href: string, { scroll: boolean })`: 指定したルートにクライアントサイドでナビゲーションを実行しますが、ブラウザの[履歴スタック](https://developer.mozilla.org/docs/Web/API/History_API)に新しいエントリは追加しません
+- `router.refresh()`: 現在のルートをリフレッシュします。サーバーへの新しいリクエストを行い、データリクエストを再取得し、サーバーコンポーネントを再レンダリングします。クライアントは影響を受けていないクライアントサイドのReact（例：`useState`）やブラウザの状態（例：スクロール位置）を失うことなく、更新されたReactサーバーコンポーネントのペイロードをマージします
+- `router.prefetch(href: string)`: クライアントサイドの遷移をより速くするために指定したルートを[事前取得](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)します
+- `router.back()`: ブラウザの履歴スタックで前のルートに戻ります
+- `router.forward()`: ブラウザの履歴スタックで次のページに進みます
+
+> **Good to know**:
+>
+> - `<Link>`コンポーネントは、ビューポートで表示されると自動的にルートを事前取得します
+> - `refresh()`を呼び出して同じ結果を再現することができますが、フェッチリクエストがキャッシュされている場合です。`cookies`や`headers`などの他の動的な関数もレスポンスを変更する可能性があります
+
+### `next/router`からの移行
+
+- App Routerを使用する場合、`useRouter`フックは`next/router`ではなく`next/navigation`からインポートする必要があります
+- `pathname`文字列は削除され、[`usePathname()`](/docs/app/api-reference/functions/use-pathname)に置き換えられています
+- `query`オブジェクトは削除され、[`useSearchParams()`](/docs/app/api-reference/functions/use-search-params)に置き換えられています
+- `router.events`は置き換えられました。[以下を参照してください。](#router-events)
+
+[完全な移行ガイドを見る](/docs/app/building-your-application/upgrading/app-router-migration).
+
+## 例
+
+### ルーターイベント
+
+`usePathname`や`useSearchParams`などの他のクライアントコンポーネントフックを組み合わせて、ページの変更をリッスンすることができます。
+
+```jsx filename="app/components/navigation-events.js"
+'use client'
+
+import { useEffect } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+
+export function NavigationEvents() {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const url = `${pathname}?${searchParams}`
+    console.log(url)
+    // 現在のURLを使用できます
+    // ...
+  }, [pathname, searchParams])
+
+  return '...'
+}
+```
+
+これはレイアウトにインポートできます。
+
+```jsx filename="app/layout.js" highlight={2,10-12}
+import { Suspense } from 'react'
+import { NavigationEvents } from './components/navigation-events'
+
+export default function Layout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+
+        <Suspense fallback={null}>
+          <NavigationEvents />
+        </Suspense>
+      </body>
+    </html>
+  )
+}
+```
+
+> **Good to know**: `<NavigationEvents>`は[statick rendering](/docs/app/building-your-application/rendering/server-components#static-rendering-default)中にクライアントサイドレンダリングを一番近い`Suspense`境界まで引き起こすため、[`Suspense`境界](/docs/app/building-your-application/routing/loading-ui-and-streaming#example)でラップされます。[詳しくはこちら](/docs/app/api-reference/functions/use-search-params#behavior).
+
+### ページトップへのスクロールを無効化
+
+デフォルトでは、Next.jsは新しいルートに移動した際にページのトップにスクロールします。この動作を無効にするには、`router.push()`または`router.replace()`に`scroll: false`を渡します。
+
+```tsx filename="app/example-client-component.tsx" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export default function Page() {
+  const router = useRouter()
+
+  return (
+    <button
+      type="button"
+      onClick={() => router.push('/dashboard', { scroll: false })}
+    >
+      Dashboard
+    </button>
+  )
+}
+```
+
+```jsx filename="app/example-client-component.jsx" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export default function Page() {
+  const router = useRouter()
+
+  return (
+    <button
+      type="button"
+      onClick={() => router.push('/dashboard', { scroll: false })}
+    >
+      Dashboard
+    </button>
+  )
+}
+```
+
+## バージョン履歴
+
+| バージョン   | 変更内容                                      |
+| --------- | ---------------------------------------------- |
+| `v13.0.0` | `next/navigation`から`useRouter`が導入されました。 | 

@@ -1,0 +1,126 @@
+---
+title: turbo
+description: Turbopack用のオプションでNext.jsを設定する
+version: experimental
+---
+
+{/* このドキュメントの内容はアプリとページルーターの間で共有されています。`<PagesOnly>Content</PagesOnly>` コンポーネントを使用して、ページルーターに特有のコンテンツを追加できます。共有コンテンツはコンポーネントでラップしないようにしてください。 */}
+
+Turbopackは、さまざまなファイルを変換したり、モジュールの解決方法を変更するためにカスタマイズできます。
+
+> **Good to know**:
+>
+> - これらの機能は実験的なものであり、`next --turbo` でのみ動作します。
+> - Next.js用のTurbopackは、組み込みの機能に対してローダーやローダーの設定を必要としません。Turbopackはcssや最新のJavaScriptのコンパイルに対応しているため、`@babel/preset-env` を使用している場合に `css-loader` 、`postcss-loader` または `babel-loader` は必要ありません。
+
+## webpackローダー
+
+組み込み以上のローダーサポートが必要な場合、多くのWebpackローダーはすでにTurbopackと連携しています。現在、いくつかの制限があります：
+
+- WebpackローダーAPIのコアサブセットのみが実装されています。現在はいくつかの人気のあるローダーに対応するだけのカバレッジがあり、将来的にAPIサポートを拡大していきます。
+- JavaScriptコードを返すローダーのみがサポートされています。スタイルシートや画像のようなファイルを変換するローダーは現在サポートされていません。
+- Webpackローダーに渡されるオプションは、純粋なJavaScriptプリミティブ、オブジェクト、および配列である必要があります。例えば、`require()`されたプラグインモジュールをオプション値として渡すことはできません。
+
+ローダーを設定するには、インストールしたローダーの名前と任意のオプションを `next.config.js` に追加し、ファイル拡張子をローダーのリストにマッピングします：
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+  },
+}
+```
+
+> **Good to know**: Next.jsバージョン13.4.4より前では、`experimental.turbo.rules` は `experimental.turbo.loaders` として名前が付けられ、ファイル拡張子のみを受け入れていました（例：`.mdx`ではなく`*.mdx`）。
+
+### サポートされているローダー
+
+以下のローダーは、Turbopackのwebpackローダー実装とともに動作することがテストされています：
+
+- [`babel-loader`](https://www.npmjs.com/package/babel-loader)
+- [`@svgr/webpack`](https://www.npmjs.com/package/@svgr/webpack)
+- [`svg-inline-loader`](https://www.npmjs.com/package/svg-inline-loader)
+- [`yaml-loader`](https://www.npmjs.com/package/yaml-loader)
+- [`string-replace-loader`](https://www.npmjs.com/package/string-replace-loader)
+- [`raw-loader`](https://www.npmjs.com/package/raw-loader)
+- [`sass-loader`](https://www.npmjs.com/package/sass-loader)
+
+## エイリアス解決
+
+`next.config.js`によって、Turbopackはモジュールの解決をエイリアスを使って変更するように設定できます。これはwebpackの [`resolve.alias`](https://webpack.js.org/configuration/resolve/#resolvealias) 設定に似ています。
+
+エイリアス解決を設定するには、インポートされるパターンを新しい宛先に `next.config.js` でマッピングします：
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        underscore: 'lodash',
+        mocha: { browser: 'mocha/browser-entry.js' },
+      },
+    },
+  },
+}
+```
+
+これは、`underscore` パッケージのインポートを `lodash` パッケージにエイリアスします。つまり、`import underscore from 'underscore'` は `underscore` の代わりに `lodash` モジュールを読み込みます。
+
+Turbopackは、このフィールドを通じてNode.jsの [条件付きエクスポート](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports) に似た条件付きエイリアスもサポートしています。現時点では「browser」条件のみがサポートされています。上記の場合、`mocha` モジュールのインポートは、Turbopackがブラウザ環境を対象とする場合に `mocha/browser-entry.js` にエイリアスされます。
+
+## 拡張子の解決
+
+`next.config.js`を通じて、Turbopackはwebpackの [`resolve.extensions`](https://webpack.js.org/configuration/resolve/#resolveextensions) 設定に似て、カスタム拡張子でモジュールを解決するように設定できます。
+
+解決拡張子を設定するには、`next.config.js` の `resolveExtensions` フィールドを使用します：
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    turbo: {
+      resolveExtensions: [
+        '.mdx',
+        '.tsx',
+        '.ts',
+        '.jsx',
+        '.js',
+        '.mjs',
+        '.json',
+      ],
+    },
+  },
+}
+```
+
+これにより、元の解決拡張子が提供されたリストで上書きされます。デフォルトの拡張子を含めることを忘れないでください。
+
+WebpackからTurbopackにアプリを移行する方法の詳細とガイダンスについては、[Turbopackのwebpack互換性に関するドキュメント](https://turbo.build/pack/docs/migrating-from-webpack) を参照してください。
+
+## モジュールID戦略
+
+Turbopackは現在、モジュールIDを割り当てるための2つの戦略をサポートしています： `'named'` と `'deterministic'`。
+
+`'named'` は、モジュールのパスと機能に基づいて読みやすいモジュールIDを割り当てます。
+
+`'deterministic'` は、小さなハッシュ付きの数値モジュールIDを割り当て、ビルド間で一貫性があるため、長期キャッシュに役立ちます。
+
+設定されていない場合、Turbopackは開発ビルドには `'named'` を、プロダクションビルドには `'deterministic'` を使用します。
+
+モジュールIDの戦略を設定するには、`next.config.js` の `moduleIdStrategy` フィールドを使用します：
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    turbo: {
+      moduleIdStrategy: 'deterministic',
+    },
+  },
+}
+```

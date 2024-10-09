@@ -1,0 +1,517 @@
+---
+title: Codemods
+description: Next.jsの新機能がリリースされた際にコードベースをアップグレードするためにcodemodを利用する方法
+---
+
+Codemodは、コードベースをプログラム的に変換する手法です。これにより、大量の変更を手動でファイルを一つ一つ修正することなく、プログラム的に適用することができます。
+
+Next.jsでは、APIが更新または非推奨になった際に、コードベースをアップグレードするのを助けるためのCodemod変換を提供しています。
+
+## 使用方法
+
+ターミナルであなたのプロジェクトフォルダに移動し（`cd`）、次のコマンドを実行します：
+
+```bash filename="Terminal"
+npx @next/codemod <transform> <path>
+```
+
+`<transform>`と`<path>`を適切な値に置き換えてください。
+
+- `transform` - 変換の名前
+- `path` - 変換対象のファイルまたはディレクトリ
+- `--dry` - ドライラン実行で、コードは編集されません
+- `--print` - 変更された出力を比較のために表示
+
+## Next.jsのCodemod
+
+### 15.0
+
+#### 非同期ダイナミックAPIへの移行
+
+##### `next-async-request-api`
+
+```bash filename="Terminal"
+npx @next/codemod@latest next-async-request-api .
+```
+
+このcodemodは、`next/headers`のAPIである`cookies()`、`headers()`、`draftMode()`が適切にawaitされるか、必要に応じて`React.use()`でラッピングされるように変換します。
+移行できない場合は、そのファイルがTypeScriptかJavaScriptかに基づいて、型キャストを追加するかTODOコメントを追加します。
+
+例えば：
+
+```tsx
+import { cookies, headers } from 'next/headers'
+const token = cookies().get('token')
+
+function useToken() {
+  const token = cookies().get('token')
+  return token
+}
+
+export default function Page() {
+  const name = cookies().get('name')
+}
+
+function getHeader() {
+  return headers().get('x-foo')
+}
+```
+
+次のように変換されます：
+
+```tsx
+import { use } from 'react'
+import { cookies, headers, type UnsafeUnwrappedCookies } from 'next/headers'
+
+const token = (await cookies()).get('token')
+
+function useToken() {
+  const token = use(cookies()).get('token')
+  return token
+}
+
+export default function Page() {
+  const name = (await cookies()).get('name')
+}
+
+function getHeader() {
+  return (headers() as UnsafeUnwrappedCookies).get('x-foo')
+}
+```
+
+ルートエントリのデフォルトハンドラ（`page.js`、`layout.js`、`route.js`またはMetadata APIルート）または`generateMetadata`エクスポートAPIにアクセスがある場合は、同期から非同期へのプロパティアクセスを変換し、必要に応じて`React.use()`でそれらのプロパティをawaitまたはラップします。
+
+例えば：
+
+```tsx
+// page.tsx
+export default function Page({
+  params,
+  searchParams,
+}: {
+  params: { slug: string }
+  searchParams: { [key: string]: string | undefined }
+}) {
+  const { value } = searchParams
+  if (value === 'foo') {
+    // ...
+  }
+}
+
+export function generateMetadata({ params }: { params: { slug: string } }) {
+  return {
+    title: `My Page - ${slug}`,
+  }
+}
+```
+
+次のように変換されます：
+
+```tsx
+// page.tsx
+export default function Page(props: {
+  params: { slug: string }
+  searchParams: { [key: string]: string | undefined }
+}) {
+  const { value } = await props.searchParams
+  if (value === 'foo') {
+    // ...
+  }
+}
+
+export function generateMetadata(props: { params: { slug: string } }) {
+  const { slug } = await props.params
+  return {
+    title: `My Page - ${slug}`,
+  }
+}
+```
+
+#### `NextRequest`の`geo`および`ip`プロパティを`@vercel/functions`で置換
+
+##### `next-request-geo-ip`
+
+```bash filename="Terminal"
+npx @next/codemod@latest next-request-geo-ip .
+```
+
+このcodemodは、`@vercel/functions`をインストールし、`NextRequest`の`geo`および`ip`プロパティを対応する`@vercel/functions`の機能に変換します。
+
+例えば：
+
+```ts
+import type { NextRequest } from 'next/server'
+
+export function GET(req: NextRequest) {
+  const { geo, ip } = req
+}
+```
+
+次のように変換されます：
+
+```ts
+import type { NextRequest } from 'next/server'
+import { geolocation, ipAddress } from '@vercel/functions'
+
+export function GET(req: NextRequest) {
+  const geo = geolocation(req)
+  const ip = ipAddress(req)
+}
+```
+
+### 14.0
+
+#### `ImageResponse`のインポートを移行
+
+##### `next-og-import`
+
+```bash filename="Terminal"
+npx @next/codemod@latest next-og-import .
+```
+
+このcodemodは、[ダイナミックOGイメージ生成](/docs/app/building-your-application/optimizing/metadata#dynamic-image-generation)の利用を目的として、`next/server`から`next/og`へのインポートを変換します。
+
+例えば：
+
+```js
+import { ImageResponse } from 'next/server'
+```
+
+次のように変換されます：
+
+```js
+import { ImageResponse } from 'next/og'
+```
+
+#### `viewport`のエクスポートを使用
+
+##### `metadata-to-viewport-export`
+
+```bash filename="Terminal"
+npx @next/codemod@latest metadata-to-viewport-export .
+```
+
+このcodemodは特定のビューポートメタデータを`viewport`のエクスポートに移行します。
+
+例えば：
+
+```js
+export const metadata = {
+  title: 'My App',
+  themeColor: 'dark',
+  viewport: {
+    width: 1,
+  },
+}
+```
+
+次のように変換されます：
+
+```js
+export const metadata = {
+  title: 'My App',
+}
+
+export const viewport = {
+  width: 1,
+  themeColor: 'dark',
+}
+```
+
+### 13.2
+
+#### 組み込みフォントの利用
+
+##### `built-in-next-font`
+
+```bash filename="Terminal"
+npx @next/codemod@latest built-in-next-font .
+```
+
+このcodemodは`@next/font`パッケージをアンインストールし、`@next/font`のインポートを組み込みの`next/font`に変換します。
+
+例えば：
+
+```js
+import { Inter } from '@next/font/google'
+```
+
+次のように変換されます：
+
+```js
+import { Inter } from 'next/font/google'
+```
+
+### 13.0
+
+#### Nextイメージインポートのリネーム
+
+##### `next-image-to-legacy-image`
+
+```bash filename="Terminal"
+npx @next/codemod@latest next-image-to-legacy-image .
+```
+
+既存のNext.js 10、11、または12アプリケーションでの`next/image`インポートを安全に`next/legacy/image`にリネームします。また、`next/future/image`をNext.js 13では`next/image`にリネームします。
+
+例えば：
+
+```jsx filename="pages/index.js"
+import Image1 from 'next/image'
+import Image2 from 'next/future/image'
+
+export default function Home() {
+  return (
+    <div>
+      <Image1 src="/test.jpg" width="200" height="300" />
+      <Image2 src="/test.png" width="500" height="400" />
+    </div>
+  )
+}
+```
+
+次のように変換されます：
+
+```jsx filename="pages/index.js"
+// 'next/image'が'next/legacy/image'に変更される
+import Image1 from 'next/legacy/image'
+// 'next/future/image'が'next/image'に変更される
+import Image2 from 'next/image'
+
+export default function Home() {
+  return (
+    <div>
+      <Image1 src="/test.jpg" width="200" height="300" />
+      <Image2 src="/test.png" width="500" height="400" />
+    </div>
+  )
+}
+```
+
+#### 新しい画像コンポーネントへの移行
+
+##### `next-image-experimental`
+
+```bash filename="Terminal"
+npx @next/codemod@latest next-image-experimental .
+```
+
+インラインスタイルを追加し、使用されていないプロップを削除することで、`next/legacy/image`から新しい`next/image`へ危険な移行を行います。
+
+- `layout`プロップを削除し、`style`を追加
+- `objectFit`プロップを削除し、`style`を追加
+- `objectPosition`プロップを削除し、`style`を追加
+- `lazyBoundary`プロップを削除
+- `lazyRoot`プロップを削除
+
+#### リンクコンポーネントから`<a>`タグを削除
+
+##### `new-link`
+
+```bash filename="Terminal"
+npx @next/codemod@latest new-link .
+```
+
+<AppOnly>
+
+[リンクコンポーネント](/docs/app/api-reference/components/link)内の`<a>`タグを削除するか、自動修正できないリンクに`legacyBehavior`プロップを追加します。
+
+</AppOnly>
+
+<PagesOnly>
+
+[リンクコンポーネント](/docs/pages/api-reference/components/link)内の`<a>`タグを削除するか、自動修正できないリンクに`legacyBehavior`プロップを追加します。
+
+</PagesOnly>
+
+例えば：
+
+```jsx
+<Link href="/about">
+  <a>About</a>
+</Link>
+// 次のように変換されます
+<Link href="/about">
+  About
+</Link>
+
+<Link href="/about">
+  <a onClick={() => console.log('clicked')}>About</a>
+</Link>
+// 次のように変換されます
+<Link href="/about" onClick={() => console.log('clicked')}>
+  About
+</Link>
+```
+
+自動修正が適用できない場合は、`legacyBehavior`プロップが追加されます。これにより、その特定のリンクに対して、古い動作でアプリを引き続き動作させることができます。
+
+```jsx
+const Component = () => <a>About</a>
+
+<Link href="/about">
+  <Component />
+</Link>
+// 次のように変換されます
+<Link href="/about" legacyBehavior>
+  <Component />
+</Link>
+```
+
+### 11
+
+#### CRAからの移行
+
+##### `cra-to-next`
+
+```bash filename="Terminal"
+npx @next/codemod cra-to-next
+```
+
+Create React AppプロジェクトをNext.jsに移行し、ページルーターと必要な設定を作成して動作を一致させます。当初はクライアントサイドのみのレンダリングが利用され、SSR中の`window`使用による互換性の破壊を防ぎ、Next.js特有の機能を段階的に採用できるようにします。
+
+この変換に関するフィードバックを[このディスカッション](https://github.com/vercel/next.js/discussions/25858)で共有してください。
+
+### 10
+
+#### Reactのインポートを追加
+
+##### `add-missing-react-import`
+
+```bash filename="Terminal"
+npx @next/codemod add-missing-react-import
+```
+
+`React`をインポートしていないファイルを変換して、[ReactのJSX変換](https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html)が動作するようにします。
+
+例えば：
+
+```jsx filename="my-component.js"
+export default class Home extends React.Component {
+  render() {
+    return <div>Hello World</div>
+  }
+}
+```
+
+次のように変換されます：
+
+```jsx filename="my-component.js"
+import React from 'react'
+export default class Home extends React.Component {
+  render() {
+    return <div>Hello World</div>
+  }
+}
+```
+
+### 9
+
+#### 無名コンポーネントを名前付きコンポーネントに変換
+
+##### `name-default-component`
+
+```bash filename="Terminal"
+npx @next/codemod name-default-component
+```
+
+**バージョン9以上**
+
+無名コンポーネントを名前付きコンポーネントに変換し、[Fast Refresh](https://nextjs.org/blog/next-9-4#fast-refresh)で動作するようにします。
+
+例えば：
+
+```jsx filename="my-component.js"
+export default function () {
+  return <div>Hello World</div>
+}
+```
+
+次のように変換されます：
+
+```jsx filename="my-component.js"
+export default function MyComponent() {
+  return <div>Hello World</div>
+}
+```
+
+コンポーネントはファイル名に基づいてキャメルケースの名前が付き、アロー関数でも動作します。
+
+### 8
+
+#### AMP HOCをページ設定に変換
+
+##### `withamp-to-config`
+
+```bash filename="Terminal"
+npx @next/codemod withamp-to-config
+```
+
+`withAmp` HOCをNext.js 9ページ設定に変換します。
+
+例えば：
+
+```js
+// 変換前
+import { withAmp } from 'next/amp'
+
+function Home() {
+  return <h1>My AMP Page</h1>
+}
+
+export default withAmp(Home)
+```
+
+次のように変換されます：
+
+```js
+// 変換後
+export default function Home() {
+  return <h1>My AMP Page</h1>
+}
+
+export const config = {
+  amp: true,
+}
+```
+
+### 6
+
+#### `withRouter`の使用
+
+##### `url-to-withrouter`
+
+```bash filename="Terminal"
+npx @next/codemod url-to-withrouter
+```
+
+トップレベルページで自動的に注入されていた廃止された`url`プロパティを、`withRouter`とそれが注入する`router`プロパティを使用するように変換します。詳しくはこちらを参照してください：[https://nextjs.org/docs/messages/url-deprecated](/docs/messages/url-deprecated)
+
+例えば：
+
+```js filename="From"
+import React from 'react'
+export default class extends React.Component {
+  render() {
+    const { pathname } = this.props.url
+    return <div>Current pathname: {pathname}</div>
+  }
+}
+```
+
+次のように変換されます：
+
+```js filename="To"
+import React from 'react'
+import { withRouter } from 'next/router'
+export default withRouter(
+  class extends React.Component {
+    render() {
+      const { pathname } = this.props.router
+      return <div>Current pathname: {pathname}</div>
+    }
+  }
+)
+```
+
+これは1つのケースに過ぎません。変換される全てのケースは、[`__testfixtures__`ディレクトリ](https://github.com/vercel/next.js/tree/canary/packages/next-codemod/transforms/__testfixtures__/url-to-withrouter)にあります。
