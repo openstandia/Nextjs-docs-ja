@@ -13,6 +13,10 @@ import { configs } from './configs.mts'
 
 const { projectRootDir, submoduleName, docsDir } = configs
 
+const defaults = {
+  versionFilePath: 'version.json',
+}
+
 const log = createLogger(basename(import.meta.url))
 
 /**
@@ -83,6 +87,28 @@ const { values: args } = parseArgs({
 })
 
 await $`git submodule update --remote`
+
+const submodule = (await $`git submodule`).text()
+
+const submoduleHash = submodule.match(/[0-9a-z]{40}/)
+if (submoduleHash == null || submoduleHash.length !== 1) {
+  throw Error('failed to resolve submodule hash.')
+}
+
+log(
+  'normal',
+  `writing Next.js Git commit hash to "${defaults.versionFilePath}"`
+)
+await fs.writeFile(
+  defaults.versionFilePath,
+  JSON.stringify(
+    {
+      version: submoduleHash[0].substring(0, 40),
+    },
+    null,
+    '\t'
+  )
+)
 
 const diffLines = args.all ? resolveAllAsDiff() : await resolveDiff()
 
