@@ -12,6 +12,11 @@ import { createLogger, parseMdxDiff, MdxFilePath } from './utils.mts'
 import { configs } from './configs.mts'
 import { parseArgs } from 'node:util'
 
+const defaults = {
+  nextjsUrl: 'https://nextjs.org/',
+  docsVersion: 'canary',
+} as const
+
 /**
  * Modifies the input string by replacing 'filename' attributes with 'title'
  * and wrapping code blocks with tabs for the switcher functionality.
@@ -180,10 +185,79 @@ function wrapSwitcherWithTabs(input: string): string {
   }
 }
 
+/**
+ * Replaces links in Markdown text based on specific conditions.
+ *
+ * This function modifies URLs to point to official documentation links
+ * based on defined rules.
+ *
+ * @param {string} input - The Markdown text to be processed.
+ * @returns {string} - The Markdown text with replaced links.
+ *
+ */
+function modLinks(input: string): string {
+  const defs: {
+    condition: (url: string) => boolean
+    replace: (url: string) => string
+  }[] = [
+    {
+      condition: (url: string) => {
+        return url.startsWith(`/${configs.docsDir}/pages`)
+      },
+      replace: (url: string) => {
+        return new URL(
+          path.join(
+            configs.docsDir,
+            defaults.docsVersion,
+            url.replace(configs.docsDir, '')
+          ),
+          defaults.nextjsUrl
+        ).toString()
+      },
+    },
+
+    {
+      condition: (url: string) => {
+        return url.startsWith(`/${configs.docsDir}/messages/`)
+      },
+      replace: (url: string) => {
+        return new URL(url, defaults.nextjsUrl).toString()
+      },
+    },
+
+    {
+      condition: (url: string) => {
+        return (
+          url.startsWith(`/learn/`) ||
+          url.startsWith(`/blog/`) ||
+          url === '/telemetry'
+        )
+      },
+      replace: (url: string) => {
+        return new URL(url, defaults.nextjsUrl).toString()
+      },
+    },
+  ]
+
+  const regex = /\[(.+?)\]\(([^)]+)\)/g
+
+  return input.replace(regex, (match, linkText, url) => {
+    let replacedUrl = undefined
+    defs.forEach((d) => {
+      if (d.condition(url)) {
+        replacedUrl = d.replace(url)
+        return
+      }
+    })
+
+    return `[${linkText}](${replacedUrl ?? url})`
+  })
+}
+
 const { projectRootDir } = configs
 const log = createLogger(basename(import.meta.url))
 
-log('important', '🚀 started to codemod !')
+log('important', '🚀 started to mod !')
 
 const {
   positionals: [diffFilePath],
@@ -216,7 +290,7 @@ const commands = mdPathList.map(async (diff) => {
     throw new Error(`Unsupported status: ${status}`)
   }
 
-  const modifiedContent = modCodeblock(content.toString())
+  const modifiedContent = modLinks(modCodeblock(content.toString()))
   const pathToWrite = path.resolve(projectRootDir, filePath)
 
   log('normal', `writing modified files to "${pathToWrite}"`)
@@ -226,4 +300,4 @@ const commands = mdPathList.map(async (diff) => {
 
 await Promise.all(commands)
 
-log('important', '✅ codemod finished successfully!')
+log('important', '✅ mod finished successfully!')
