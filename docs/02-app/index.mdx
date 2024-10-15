@@ -1,51 +1,39 @@
 ---
 title: 'App Router'
-description: '新しいApp Routerを使用して、Next.jsとReactの最新機能を活用する。これには、レイアウト、Server Components、Suspenseなどが含まれます。'
+description: '新しい App Router を使用して、Next.js と React の最新機能、Layouts、Server Components、Suspense などを活用しましょう。'
 ---
 
-{/* NOTE: このinfoは手動で追加しています。自動翻訳等で更新され消えてしまった場合、必要に応じて再度追加しなおしてください */}
+Next.js の App Router は、[Server Components](/docs/app/building-your-application/rendering/server-components)、[Suspense を使用したストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense)、および [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations) といった React の最新機能を活用したアプリケーション構築のための新しいモデルを導入します。
 
-:::info
+[最初のページを作成すること](https://codesandbox.io/s/nextjs-app-router-getting-started-example-05u8z0)から App Router の利用を開始しましょう。
 
-本ページは以下のページを翻訳したものになります。
+## よくある質問 {#frequently-asked-questions}
 
-https://nextjs.org/docs/canary/app
+### レイアウトでリクエストオブジェクトにアクセスする方法は？ {#how-can-i-access-the-request-object-in-a-layout}
 
-公式ドキュメントのサイドバーのメニューには表示されおりませんが、上記URLから本ページの翻訳元のページを確認することができます。
+意図的に生のリクエストオブジェクトにアクセスすることはできませんが、サーバー関数を通じて[`headers`](/docs/app/api-reference/functions/headers)と[`cookies`](/docs/app/api-reference/functions/cookies)にアクセスできます。また、[クッキーを設定](#how-can-i-set-cookies)することもできます。
 
-:::
+[Layouts](/docs/app/building-your-application/routing/layouts-and-templates#layouts)は再レンダリングされません。ページ間を移動する際に無駄な計算を避けるためにキャッシュされ、再利用されることがあります。レイアウトで生のリクエストにアクセスすることを制限することにより、Next.jsはレイアウト内でユーザーコードの実行を防ぎ、それによりパフォーマンスへの悪影響を防ぎます。
 
-Next.jsのApp Routerは、Reactの最新機能である[Server Components](/docs/app/building-your-application/rendering/server-components)、[Suspenseを用いたストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense)、および[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)を使用してアプリケーションを構築するための新しいモデルを提供します。
+この設計により、異なるページでのレイアウトの一貫した予測可能な動作が保証され、開発とデバッグが簡素化されます。
 
-App Routerを使用するには、[最初のページを作成](/docs/app/building-your-application/routing/layouts-and-templates)してみてください。
+構築するUIパターンに応じて、[Parallel Routes](/docs/app/building-your-application/routing/parallel-routes)を使用すると、同じレイアウトで複数のページをレンダリングでき、ページはルートセグメントやURL検索パラメータにもアクセスできます。
 
-## よくある質問
+### ページ上のURLにアクセスする方法は？ {#how-can-i-access-the-url-on-a-page}
 
-### レイアウトでリクエストオブジェクトにアクセスするにはどうすればよいですか？
+デフォルトでは、ページは Server Component です。指定されたページのルートセグメントには[`params`](/docs/app/api-reference/file-conventions/page#params-optional)プロップを通じて、URL検索パラメータには[`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional)プロップを通じてアクセスできます。
 
-生のリクエストオブジェクトにアクセスすることは意図的にできません。しかし、[`headers`](/docs/app/api-reference/functions/headers)や[`cookies`](/docs/app/api-reference/functions/cookies)を経由してサーバー専用の関数を通じてアクセスできます。また、[cookieを設定](#how-can-i-set-cookies)することも可能です。
+Client Component を使用している場合、より複雑なルートのために [`usePathname`](/docs/app/api-reference/functions/use-pathname)、[`useSelectedLayoutSegment`](/docs/app/api-reference/functions/use-selected-layout-segment)、および [`useSelectedLayoutSegments`](/docs/app/api-reference/functions/use-selected-layout-segments) を使用できます。
 
-[Layouts](/docs/app/building-your-application/routing/layouts-and-templates#layouts)は再レンダリングされません。ページ間を移動する際に不要な計算を回避するためにキャッシュされて再利用されます。レイアウトを生のリクエストからアクセスすることを制限することで、Next.jsはレイアウト内での遅延やコストが大きいと考えられるユーザーコードの実行を防ぎ、性能に悪影響を与えることを避けることができます。
+さらに、構築するUIパターンに応じて、[Parallel Routes](/docs/app/building-your-application/routing/parallel-routes)を使用すると、同じレイアウトで複数のページをレンダリングでき、ページはルートセグメントやURL検索パラメータにもアクセスできます。
 
-この設計は、異なるページ間でのレイアウトの一貫した予測可能な挙動を保証し、開発とデバッグを簡素化します。
+### Server Component からリダイレクトする方法は？ {#how-can-i-redirect-from-a-server-component}
 
-構築しているUIパターンによっては、[Parallel Routes](/docs/app/building-your-application/routing/parallel-routes)を使って同じレイアウト内に複数のページをレンダリングでき、ルートセグメントやURLの検索パラメーターにアクセスできます。
+ページから相対または絶対URLへのリダイレクトには[`redirect`](/docs/app/api-reference/functions/redirect)を使用できます。[`redirect`](/docs/app/api-reference/functions/redirect)は一時（307）リダイレクトで、[`permanentRedirect`](/docs/app/api-reference/functions/permanentRedirect)は永続的な（308）リダイレクトです。UIをストリーミングしている間にこれらの関数が使用されると、クライアント側でリダイレクトを発行するためにメタタグが挿入されます。
 
-### ページでURLにアクセスするにはどうすればよいですか？
+### App Routerを使用して認証を扱う方法は？ {#how-can-i-handle-authentication-with-the-app-router}
 
-デフォルトでは、ページはServer Componentsです。指定されたページに対して[`params`](/docs/app/api-reference/file-conventions/page#params-optional)プロップを通じてルートセグメントにアクセスすることができ、[`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional)プロップを通じてURLの検索パラメーターにアクセスできます。
-
-もしClient Componentsを使用する場合は、より複雑なルートのために[`usePathname`](/docs/app/api-reference/functions/use-pathname)、[`useSelectedLayoutSegment`](/docs/app/api-reference/functions/use-selected-layout-segment)、および[`useSelectedLayoutSegments`](/docs/app/api-reference/functions/use-selected-layout-segments)を使用できます。
-
-さらに、構築しているUIパターンによっては、[Parallel Routes](/docs/app/building-your-application/routing/parallel-routes)を使用して同じレイアウトに複数のページをレンダリングでき、ルートセグメントやURLの検索パラメーターにアクセスできます。
-
-### Server Componentからリダイレクトするにはどうすればよいですか？
-
-ページから相対または絶対URLにリダイレクトするには、[`redirect`](/docs/app/api-reference/functions/redirect)を使用します。[`redirect`](/docs/app/api-reference/functions/redirect)は一時的な（307）リダイレクトであり、[`permanentRedirect`](/docs/app/api-reference/functions/permanentRedirect)は永久的な（308）リダイレクトです。これらの関数はUIのストリーミング中に使用されると、クライアント側でリダイレクトを発生させるためのmetaタグを挿入します。
-
-### App Routerで認証を処理するにはどうすればよいですか？
-
-App Routerをサポートする一般的な認証ソリューションは次のとおりです：
+以下に、App Routerをサポートする一般的な認証ソリューションを示します：
 
 - [NextAuth.js](https://next-auth.js.org/configuration/nextjs#in-app-router)
 - [Clerk](https://clerk.com/docs/quickstarts/nextjs)
@@ -54,37 +42,33 @@ App Routerをサポートする一般的な認証ソリューションは次の�
 - [Stytch](https://stytch.com/docs/example-apps/frontend/nextjs)
 - [Kinde](https://kinde.com/docs/developer-tools/nextjs-sdk/)
 - [WorkOS](https://workos.com/docs/user-management)
-- またはセッションやJWTを手動で処理する
+- または、セッションやJWTを手動で取り扱う方法もあります
 
-### Cookieを設定するにはどうすればよいですか？
+### クッキーを設定する方法は？ {#how-can-i-set-cookies}
 
-[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations#cookies)や[Route Handlers](/docs/app/building-your-application/routing/route-handlers)内で[`cookies`](/docs/app/api-reference/functions/cookies)関数を使用してcookieを設定できます。
+クッキーは、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations#cookies)または[Route Handlers](/docs/app/building-your-application/routing/route-handlers)を使用して、[`cookies`](/docs/app/api-reference/functions/cookies)関数を利用して設定できます。
 
-HTTPはストリーミングが始まった後にcookieを設定することを許可していないため、ページやレイアウトから直接cookieを設定することはできません。[ミドルウェア](/docs/app/building-your-application/routing/middleware#using-cookies)からcookieを設定することも可能です。
+HTTPはストリーミング開始後にクッキーを設定することを許可しないため、ページやレイアウトから直接クッキーを設定することはできません。[Middleware](/docs/app/building-your-application/routing/middleware#using-cookies)からクッキーを設定することもできます。
 
-### マルチテナントアプリを構築するにはどうすればよいですか？
+### マルチテナントアプリを構築する方法は？ {#how-can-i-build-multi-tenant-apps}
 
-複数のテナントに対応する単一のNext.jsアプリケーションを構築したい場合、推奨のアーキテクチャを示す[例を構築](https://vercel.com/templates/next.js/platforms-starter-kit)しました。
+複数のテナントに対応する単一の Next.js アプリケーションを構築しようとしている場合、推奨アーキテクチャを示した[例](https://vercel.com/templates/next.js/platforms-starter-kit)を作成しています。
 
-### App Routerのキャッシュを無効にするにはどうすればよいですか？
+### App Routerキャッシュを無効化する方法は？ {#how-can-i-invalidate-the-app-router-cache}
 
-Next.jsには複数のキャッシュレイヤがあり、キャッシュの異なる部分を無効にするための複数の方法があります。[キャッシュについてもっと学びましょう](/docs/app/building-your-application/caching)。
+Next.jsには複数のキャッシュレイヤーが存在するため、キャッシュの異なる部分を無効化するためのさまざまな方法があります。[キャッシュについて詳しく学ぶ](/docs/app/building-your-application/caching)。
 
-### App Routerを使用して構築された包括的なオープンソースアプリケーションはありますか？
+### App Routerを基に構築された包括的でオープンソースのアプリケーションはありますか？ {#are-there-any-comprehensive-open-source-applications-built-on-the-app-router}
 
-はい。[Next.js Commerce](https://vercel.com/templates/next.js/nextjs-commerce)や[Platforms Starter Kit](https://vercel.com/templates/next.js/platforms-starter-kit)は、App Routerを使用した大規模なオープンソースの例を2つご覧いただけます。
+はい。[Next.js Commerce](https://vercel.com/templates/next.js/nextjs-commerce) や [Platforms Starter Kit](https://vercel.com/templates/next.js/platforms-starter-kit) を見ることができ、これらはオープンソースで利用できる App Router を使用した大規模な例です。
 
-## さらに学ぶ
+## さらに詳しく学ぶ {#learn-more}
 
 - [ルーティングの基礎](/docs/app/building-your-application/routing)
 - [データフェッチとキャッシング](/docs/app/building-your-application/data-fetching/fetching)
 - [インクリメンタル静的再生成](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)
-- [フォームとミューテーション](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)
+- [フォームと変更操作](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)
 - [キャッシング](/docs/app/building-your-application/caching)
 - [レンダリングの基礎](/docs/app/building-your-application/rendering)
 - [Server Components](/docs/app/building-your-application/rendering/server-components)
 - [Client Components](/docs/app/building-your-application/rendering/client-components)
-
-{/* NOTE: この <DocCardList /> は手動で追加しています。自動翻訳等で更新され消えてしまった場合、必要に応じて再度追加しなおしてください */}
-
-<DocCardList />

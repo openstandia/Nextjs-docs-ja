@@ -1,9 +1,9 @@
 /**
  * @fileoverview
- * This script processes markdown (MDX) files by modifying code blocks.
- * It identifies code blocks with switcher functionality, wraps them in <Tabs> component,
- * and converts 'filename' attributes to 'title'.
- * Additionally, it updates files based on changes detected in a git diff.
+ * This script processes Markdown (MDX) files by modifying code blocks, links, and headings.
+ * It identifies code blocks with switcher functionality, wraps them in <Tabs> components,
+ * converts 'filename' attributes to 'title', updates links to official documentation,
+ * adds IDs to headings, and processes files based on changes detected in a git diff.
  */
 
 import path, { basename, dirname } from 'node:path'
@@ -140,7 +140,7 @@ function wrapSwitcherWithTabs(input: string): string {
   /**
    * Adds a new <TabItem> component for the given code block.
    *
-   * @param {object} params - The parameters for adding a tab item.
+   * @param {Object} params - The parameters for adding a tab item.
    * @param {string[]} params.tabItems - The list of current tab items to append to.
    * @param {string} params.language - The programming language of the code block.
    * @param {string} params.label - The label to display for the tab (based on the language).
@@ -186,14 +186,10 @@ function wrapSwitcherWithTabs(input: string): string {
 }
 
 /**
- * Replaces links in Markdown text based on specific conditions.
- *
- * This function modifies URLs to point to official documentation links
- * based on defined rules.
+ * Replaces links in Markdown text to point to official documentation based on defined rules.
  *
  * @param {string} input - The Markdown text to be processed.
  * @returns {string} - The Markdown text with replaced links.
- *
  */
 function modLinks(input: string): string {
   const defs: {
@@ -254,6 +250,35 @@ function modLinks(input: string): string {
   })
 }
 
+/**
+ * Modifies headings in the input string by adding IDs to them.
+ *
+ * @param {string} input - The input string containing headings.
+ * @returns {string} The modified string with IDs added to the headings.
+ */
+function modHeadings(input: string): string {
+  const headingRegex = /^(#{1,6})\s+(.*)$/gm
+
+  return input.replace(headingRegex, (match, hashes, headingText) => {
+    const id = headingText
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+
+    return `${hashes} ${headingText} {#${id}}`
+  })
+}
+
+/**
+ * Main function that processes the input Markdown string through various modifications.
+ *
+ * @param {string} input - The input Markdown string to be modified.
+ * @returns {string} The modified Markdown string with code blocks, links, and headings adjusted.
+ */
+function mod(input: string): string {
+  return modHeadings(modLinks(modCodeblock(input)))
+}
+
 const { projectRootDir } = configs
 const log = createLogger(basename(import.meta.url))
 
@@ -270,12 +295,14 @@ const mdPathList = await parseMdxDiff(
 )
 
 /**
- * Processes each markdown file in the diff and modifies the code blocks if necessary.
+ * Processes each Markdown file in the diff and modifies the content if necessary.
+ * Handles different file statuses (Added, Modified, Renamed, Deleted) appropriately.
  */
 const commands = mdPathList.map(async (diff) => {
   let filePath: MdxFilePath | undefined
   let content: Buffer | undefined
   const { status } = diff
+
   if (status === 'A' || status === 'M') {
     filePath = diff.filePath
     content = await fs.readFile(path.resolve(projectRootDir, filePath))
@@ -286,11 +313,19 @@ const commands = mdPathList.map(async (diff) => {
     content = await fs.readFile(path.resolve(projectRootDir, filePath))
   }
 
+  if (status === 'D') {
+    log(
+      'normal',
+      `skipping mod because this file is deleted : "${diff.filePath}"`
+    )
+    return
+  }
+
   if (!content || !filePath) {
     throw new Error(`Unsupported status: ${status}`)
   }
 
-  const modifiedContent = modLinks(modCodeblock(content.toString()))
+  const modifiedContent = mod(content.toString())
   const pathToWrite = path.resolve(projectRootDir, filePath)
 
   log('normal', `writing modified files to "${pathToWrite}"`)
