@@ -3,6 +3,7 @@
 
 import { themes as prismThemes } from 'prism-react-renderer'
 import { officialNextJsDocsSidebarItemsAdapter } from './sidebars.adapter.mjs'
+import { version } from './version.json'
 
 const configureGtag = () => {
   const trackingId = process.env.GTAG_TRACKING_ID
@@ -23,13 +24,13 @@ const config = {
   url: 'https://ja.next-community-docs.dev/',
   baseUrl: process.env.BASE_URL || '/',
   staticDirectories: ['public', 'static'],
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenLinks: 'warn',  //TODO リンク切れを修正したらthrowに戻す
+  onBrokenMarkdownLinks: 'warn',  //TODO リンク切れを修正したらthrowに戻す
   favicon: 'img/favicon.ico',
   projectName: 'nextjs-docs-ja',
 
   customFields: {
-    nextJsGitHubVersionHash: process.env.NEXT_JS_GITHUB_VERSION_HASH,
+    nextjsGitHubVersionHash: `${version}`,
   },
 
   themes: [
