@@ -24,8 +24,8 @@ const config = {
   url: 'https://ja.next-community-docs.dev/',
   baseUrl: process.env.BASE_URL || '/',
   staticDirectories: ['public', 'static'],
-  onBrokenLinks: 'warn', //TODO fix
-  onBrokenMarkdownLinks: 'warn', //TODO fix
+  onBrokenLinks: 'throw',
+  onBrokenMarkdownLinks: 'throw',
   onBrokenAnchors: 'warn', //TODO fix
   favicon: 'img/favicon.ico',
   projectName: 'nextjs-docs-ja',
