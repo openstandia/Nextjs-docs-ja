@@ -1,0 +1,252 @@
+---
+title: 'Lazy Loading'
+description: 'インポートされたライブラリとReactコンポーネントを遅延ロードして、アプリケーションの読み込みパフォーマンスを向上させます。'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerの間で共有されています。ページルーターに特化したコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有コンテンツはコンポーネントでラップしないでください。 */}
+
+[Lazy loading](https://developer.mozilla.org/docs/Web/Performance/Lazy_loading) は、ルートをレンダリングするために必要なJavaScriptの量を減らすことで、アプリケーションの初期読み込みパフォーマンスを向上させます。
+
+これにより、**Client Components** およびインポートされたライブラリのロードを延期し、必要になったときにのみクライアントバンドルに含めることができます。例えば、モーダルをユーザーが開くまでロードを延期することが考えられます。
+
+Next.jsで遅延ロードを実装するには、2つの方法があります：
+
+1. `next/dynamic` を使用する[ダイナミックインポート](#nextdynamic)
+2. [Suspense](https://react.dev/reference/react/Suspense)を使用する[`React.lazy()`](https://react.dev/reference/react/lazy)
+
+デフォルトで、Server Componentsは自動的に[コード分割](https://developer.mozilla.org/docs/Glossary/Code_splitting)され、サーバーからクライアントにUIの断片を逐次的に送信するための[ストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming)を使用できます。Lazy loadingはClient Componentsに適用されます。
+
+## `next/dynamic`
+
+`next/dynamic` は [`React.lazy()`](https://react.dev/reference/react/lazy) と [Suspense](https://react.dev/reference/react/Suspense) の複合体であり、インクリメンタルな移行を可能にするために`app`ディレクトリと`pages`ディレクトリ内で同じ動作をします。
+
+## 例
+
+<AppOnly>
+### クライアントコンポーネントのインポート
+
+```jsx filename="app/page.js"
+'use client'
+
+import { useState } from 'react'
+import dynamic from 'next/dynamic'
+
+// クライアントコンポーネント：
+const ComponentA = dynamic(() => import('../components/A'))
+const ComponentB = dynamic(() => import('../components/B'))
+const ComponentC = dynamic(() => import('../components/C'), { ssr: false })
+
+export default function ClientComponentExample() {
+  const [showMore, setShowMore] = useState(false)
+
+  return (
+    <div>
+      {/* 即座にロードされるが、別のクライアントバンドルで */}
+      <ComponentA />
+
+      {/* 条件が満たされた場合にのみオンデマンドでロード */}
+      {showMore && <ComponentB />}
+      <button onClick={() => setShowMore(!showMore)}>Toggle</button>
+
+      {/* クライアント側でのみ読み込み */}
+      <ComponentC />
+    </div>
+  )
+}
+```
+
+### SSRのスキップ
+
+`React.lazy()`とSuspenseを使用すると、クライアントコンポーネントはデフォルトでプリレンダリング（SSR）されます。
+
+> **Note:** `ssr: false` オプションはクライアントコンポーネントでのみ機能し、クライアントのコードスプリッティングが適切に動作するように、それをクライアントコンポーネントに移動することを確認してください。
+
+クライアントコンポーネントのプリレンダリングを無効にしたい場合は、`ssr`オプションを`false`に設定できます：
+
+```jsx
+const ComponentC = dynamic(() => import('../components/C'), { ssr: false })
+```
+
+### サーバーコンポーネントのインポート
+
+サーバーコンポーネントを動的にインポートすると、サーバーコンポーネント自体ではなく、その子供であるクライアントコンポーネントのみが遅延ロードされます。
+また、サーバーコンポーネントでのCSSなどの静的アセットのプリロードにも役立ちます。
+
+```jsx filename="app/page.js"
+import dynamic from 'next/dynamic'
+
+// サーバーコンポーネント：
+const ServerComponent = dynamic(() => import('../components/ServerComponent'))
+
+export default function ServerComponentExample() {
+  return (
+    <div>
+      <ServerComponent />
+    </div>
+  )
+}
+```
+
+> **Note:** サーバーコンポーネントでは`ssr: false`オプションはサポートされていません。これをサーバーコンポーネントで使用しようとするとエラーが発生します。
+> サーバーコンポーネントでの`next/dynamic`に`ssr: false`は許可されていません。それをクライアントコンポーネントに移動してください。
+
+### 外部ライブラリのロード
+
+外部ライブラリは、[`import()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Operators/import) 関数を使用してオンデマンドでロードできます。この例では曖昧検索用の外部ライブラリ `fuse.js` を使用しています。このモジュールは、ユーザーが検索入力に文字を入力した後、クライアントにのみロードされます。
+
+```jsx filename="app/page.js"
+'use client'
+
+import { useState } from 'react'
+
+const names = ['Tim', 'Joe', 'Bel', 'Lee']
+
+export default function Page() {
+  const [results, setResults] = useState()
+
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Search"
+        onChange={async (e) => {
+          const { value } = e.currentTarget
+          // fuse.jsを動的にロード
+          const Fuse = (await import('fuse.js')).default
+          const fuse = new Fuse(names)
+
+          setResults(fuse.search(value))
+        }}
+      />
+      <pre>Results: {JSON.stringify(results, null, 2)}</pre>
+    </div>
+  )
+}
+```
+
+### カスタムローディングコンポーネントの追加
+
+```jsx filename="app/page.js"
+import dynamic from 'next/dynamic'
+
+const WithCustomLoading = dynamic(
+  () => import('../components/WithCustomLoading'),
+  {
+    loading: () => <p>Loading...</p>,
+  }
+)
+
+export default function Page() {
+  return (
+    <div>
+      {/* カスタムローディングコンポーネントは <WithCustomLoading/> がロードされている間にレンダリングされます */}
+      <WithCustomLoading />
+    </div>
+  )
+}
+```
+
+### 名前付きエクスポートのインポート
+
+名前付きエクスポートを動的にインポートするには、[`import()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Operators/import) 関数から返されるPromiseからそれを返すことができます：
+
+```jsx filename="components/hello.js"
+'use client'
+
+export function Hello() {
+  return <p>Hello!</p>
+}
+```
+
+```jsx filename="app/page.js"
+import dynamic from 'next/dynamic'
+
+const ClientComponent = dynamic(() =>
+  import('../components/hello').then((mod) => mod.Hello)
+)
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+`next/dynamic` を使用することで、ヘッダーコンポーネントはページの初期JavaScriptバンドルに含まれません。ページは最初にSuspenseの`fallback`をレンダリングし、その後`Suspense`の境界が解決されると`Header`コンポーネントをレンダリングします。
+
+```jsx
+import dynamic from 'next/dynamic'
+
+const DynamicHeader = dynamic(() => import('../components/header'), {
+  loading: () => <p>Loading...</p>,
+})
+
+export default function Home() {
+  return <DynamicHeader />
+}
+```
+
+> **Good to know**: `import('path/to/component')` のパスは明示的に書かれなければなりません。テンプレート文字列や変数にはできません。また、`import()`は `dynamic()` 呼び出しの内側に配置する必要があります。これにより、Next.jsはwebpackバンドル/モジュールIDを特定の `dynamic()` 呼び出しと一致させ、それらをレンダリング前にプリロードできます。`dynamic()` は、Reactレンダリング内で使用することはできません。プリロードが機能するためには、モジュールのトップレベルにマークする必要があり、`React.lazy` と同様です。
+
+## 名前付きエクスポートの場合
+
+名前付きエクスポートを動的にインポートするには、[`import()`](https://github.com/tc39/proposal-dynamic-import#example) 関数から返される[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)からそれを返すことができます：
+
+```jsx filename="components/hello.js"
+export function Hello() {
+  return <p>Hello!</p>
+}
+
+// pages/index.js
+import dynamic from 'next/dynamic'
+
+const DynamicComponent = dynamic(() =>
+  import('../components/hello').then((mod) => mod.Hello)
+)
+```
+
+## SSRを使用しない場合
+
+クライアント側でコンポーネントを動的にロードするには、`ssr`オプションを使用してサーバーレンダリングを無効にできます。これは、ブラウザAPI（`window`など）に依存する外部依存関係やコンポーネントに役立ちます。
+
+```jsx
+'use client'
+
+import dynamic from 'next/dynamic'
+
+const DynamicHeader = dynamic(() => import('../components/header'), {
+  ssr: false,
+})
+```
+
+## 外部ライブラリの場合
+
+この例では、曖昧検索用の外部ライブラリ `fuse.js` を使用しています。ユーザーが検索入力に文字を入力した後、ブラウザでのみモジュールがロードされます。
+
+```jsx
+import { useState } from 'react'
+
+const names = ['Tim', 'Joe', 'Bel', 'Lee']
+
+export default function Page() {
+  const [results, setResults] = useState()
+
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Search"
+        onChange={async (e) => {
+          const { value } = e.currentTarget
+          // fuse.jsを動的にロード
+          const Fuse = (await import('fuse.js')).default
+          const fuse = new Fuse(names)
+
+          setResults(fuse.search(value))
+        }}
+      />
+      <pre>Results: {JSON.stringify(results, null, 2)}</pre>
+    </div>
+  )
+}
+```
+
+</PagesOnly>

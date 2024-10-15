@@ -1,0 +1,244 @@
+---
+title: 'Partial Prerendering'
+description: '静的レンダリングと動的レンダリングの利点を組み合わせたPartial Prerenderingの学習'
+---
+
+Partial Prerendering（PPR）は、静的コンポーネントと動的コンポーネントを同じルート内で組み合わせることを可能にします。
+
+ビルド中に、Next.jsは可能な限り多くのルートをプリレンダリングします。仮に、リクエストからの読み取りのような[dynamic](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)コードが検出された場合は、関連するコンポーネントを[React Suspense](https://react.dev/reference/react/Suspense)境界でラップすることができます。Suspense境界のフォールバックは、プリレンダリングされたHTMLに含まれます。
+
+> **注:** Partial Prerenderingは**実験的**な機能であり、変更される可能性があります。プロダクションでの使用には適していません。
+
+<Image
+  alt="静的ナビゲーションと製品情報、動的カートと推奨製品を示す部分的にプリレンダリングされた製品ページ"
+  srcLight="/learn/light/thinking-in-ppr.png"
+  srcDark="/learn/dark/thinking-in-ppr.png"
+  width="1600"
+  height="632"
+/>
+
+> **🎥 視聴:** なぜPPRが重要で、どのように機能するか → [YouTube（10分）](https://www.youtube.com/watch?v=MTcPrTIBkpA).
+
+## 背景
+
+PPRは、Next.jsサーバーがプリレンダリング済みのコンテンツを即座に送信できるようにします。
+
+クライアントからサーバーへのウォーターフォールを防ぐために、動的コンポーネントは、初期プリレンダを提供しながら、サーバーから並行してストリーミングを開始します。これは、クライアントのJavaScriptがブラウザに読み込まれる前に、動的コンポーネントがレンダリングを開始できることを保証します。
+
+各動的コンポーネントごとに多数のHTTPリクエストを作成しないようにするために、PPRは静的プリレンダーと動的コンポーネントを単一のHTTPリクエストにまとめることができます。これにより、各動的コンポーネントに対して複数のネットワーク往復が必要になることはありません。
+
+## Partial Prerenderingの使用
+
+### インクリメンタルな導入（バージョン15）
+
+Next.js 15では、[`ppr`](/docs/app/api-reference/next-config-js/ppr)オプションを`next.config.js`で`incremental`に設定し、ファイルの上部で`experimental_ppr`の[ルート設定オプション](/docs/app/api-reference/file-conventions/route-segment-config)をエクスポートすることで、[layouts](/docs/app/building-your-application/routing/layouts-and-templates)と[pages](/docs/app/building-your-application/routing/pages)でPartial Prerenderingをインクリメンタルに導入できます：
+
+```ts filename="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    ppr: 'incremental',
+  },
+}
+
+export default nextConfig
+```
+
+```js filename="next.config.js" switcher
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    ppr: 'incremental',
+  },
+}
+
+module.exports = nextConfig
+```
+
+```tsx filename="app/page.tsx" switcher
+import { Suspense } from "react"
+import { StaticComponent, DynamicComponent, Fallback } from "@/app/ui"
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return {
+     <>
+      <StaticComponent />
+      <Suspense fallback={<Fallback />}>
+        <DynamicComponent />
+      </Suspense>
+     </>
+  };
+}
+```
+
+```jsx filename="app/page.js" switcher
+import { Suspense } from "react"
+import { StaticComponent, DynamicComponent, Fallback } from "@/app/ui"
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return {
+     <>
+      <StaticComponent />
+      <Suspense fallback={<Fallback />}>
+        <DynamicComponent />
+      </Suspense>
+     </>
+  };
+}
+```
+
+> **知っておくと良いこと**:
+>
+> - `experimental_ppr`を持たないルートはデフォルトで`false`となり、PPRを使用したプリレンダリングはされません。各ルートごとに明示的にPPRにオプトインする必要があります
+> - `experimental_ppr`はルートセグメントのすべての子、ネストされたレイアウトやページに適用されます。すべてのファイルに追加する必要はなく、ルートのトップセグメントにだけ追加すればよいです
+> - 子セグメントに対してPPRを無効にするには、子セグメント内で`experimental_ppr`を`false`に設定できます
+
+### PPRの有効化（バージョン14）
+
+バージョン14では、`next.config.js`ファイルに[`ppr`](/docs/app/api-reference/next-config-js/ppr)オプションを追加することで、すべてのルートに適用できます：
+
+```ts filename="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    ppr: true,
+  },
+}
+
+export default nextConfig
+```
+
+```js filename="next.config.js" switcher
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    ppr: true,
+  },
+}
+
+module.exports = nextConfig
+```
+
+## 動的コンポーネント
+
+`next build`中にルートのプリレンダーを作成する際、Next.jsは動的APIがReact Suspenseでラップされていることを要求します。`fallback`はその際、プリレンダーに含まれます。
+
+例えば、`cookies`や`headers`のような関数を使用する場合：
+
+```jsx filename="app/user.js" switcher
+import { cookies } from 'next/headers'
+
+export async function User() {
+  const session = (await cookies()).get('session')?.value
+  return '...'
+}
+```
+
+```tsx filename="app/user.tsx" switcher
+import { cookies } from 'next/headers'
+
+export async function User() {
+  const session = (await cookies()).get('session')?.value
+  return '...'
+}
+```
+
+このコンポーネントはリクエストを見てcookieを読み取る必要があります。これをPPRと共に使用するには、コンポーネントをSuspenseでラップする必要があります：
+
+```tsx filename="app/page.tsx" switcher
+import { Suspense } from 'react'
+import { User, AvatarSkeleton } from './user'
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return (
+    <section>
+      <h1>これはプリレンダリングされます</h1>
+      <Suspense fallback={<AvatarSkeleton />}>
+        <User />
+      </Suspense>
+    </section>
+  )
+}
+```
+
+```jsx filename="app/page.js" switcher
+import { Suspense } from 'react'
+import { User, AvatarSkeleton } from './user'
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return (
+    <section>
+      <h1>これはプリレンダリングされます</h1>
+      <Suspense fallback={<AvatarSkeleton />}>
+        <User />
+      </Suspense>
+    </section>
+  )
+}
+```
+
+コンポーネントは値がアクセスされるときにのみ動的レンダリングを選択します。
+
+例えば、`page`から`searchParams`を読み取って、それをpropとして別のコンポーネントに渡す場合：
+
+```tsx filename="app/page.tsx" switcher
+import { Table } from './table'
+
+export default function Page({
+  searchParams,
+}: {
+  searchParams: { sort: string }
+}) {
+  return (
+    <section>
+      <h1>これはプリレンダリングされます</h1>
+      <Table searchParams={searchParams} />
+    </section>
+  )
+}
+```
+
+```jsx filename="app/page.js" switcher
+import { Table } from './table'
+
+export default function Page({ searchParams }) {
+  return (
+    <section>
+      <h1>これはプリレンダリングされます</h1>
+      <Table searchParams={searchParams} />
+    </section>
+  )
+}
+```
+
+tableコンポーネント内部で、`searchParams`から値を取得すると、そのコンポーネントは動的に実行されます：
+
+```tsx filename="app/table.tsx" switcher
+export async function Table({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort: string }>
+}) {
+  const sort = (await searchParams).sort === 'true'
+  return '...'
+}
+```
+
+```jsx filename="app/table.js" switcher
+export async function Table({ searchParams }: {
+  searchParams: Promise<{ sort: string }>
+}) {
+  const sort = (await searchParams).sort === 'true';
+  return '...'
+}
+```

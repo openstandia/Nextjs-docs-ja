@@ -1,0 +1,621 @@
+---
+title: 'リダイレクト'
+description: 'Next.jsでリダイレクトを処理するさまざまな方法を学びましょう。'
+related:
+  links:
+    - 'app/api-reference/functions/redirect'
+    - 'app/api-reference/functions/permanentRedirect'
+    - 'app/building-your-application/routing/middleware'
+    - 'app/api-reference/next-config-js/redirects'
+---
+
+Next.jsでは、リダイレクトを処理する方法がいくつかあります。このページでは、利用可能な各オプション、ユースケース、および多数のリダイレクトを管理する方法について説明します。
+
+<AppOnly>
+
+| API                                                            | 目的                                        | 場所                                             | ステータスコード                       |
+| -------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------- | -------------------------------------- |
+| [`redirect`](#redirect-function)                               | ミューテーションまたはイベント後のユーザーリダイレクト | Server Components, Server Actions, Route Handlers | 307 (Temporary) または 303 (Server Action) |
+| [`permanentRedirect`](#permanentredirect-function)             | ミューテーションまたはイベント後のユーザーリダイレクト | Server Components, Server Actions, Route Handlers | 308 (永久)                            |
+| [`useRouter`](#userouter-hook)                                 | クライアント側のナビゲーションを実行                | Event Handlers in Client Components               | 該当なし                              |
+| [`next.config.js`の`redirects`](#redirects-in-nextconfigjs)  | パスに基づいて着信要求をリダイレクトする            | `next.config.js`ファイル                         | 307 (Temporary) または 308 (永久)    |
+| [`NextResponse.redirect`](#nextresponseredirect-in-middleware) | 条件に基づいて着信要求をリダイレクトする            | Middleware                                        | 任意                                   |
+
+</AppOnly>
+
+<PagesOnly>
+
+| API                                                            | 目的                                        | 場所           | ステータスコード                |
+| -------------------------------------------------------------- | ----------------------------------------- | ------------- | ------------------------------ |
+| [`useRouter`](#userouter-hook)                                 | クライアント側のナビゲーションを実行                | Components    | 該当なし                      |
+| [`next.config.js`の`redirects`](#redirects-in-nextconfigjs)  | パスに基づいて着信要求をリダイレクトする            | `next.config.js`ファイル | 307 (Temporary) または 308 (永久) |
+| [`NextResponse.redirect`](#nextresponseredirect-in-middleware) | 条件に基づいて着信要求をリダイレクトする            | Middleware    | 任意                         |
+
+</PagesOnly>
+
+<AppOnly>
+
+## `redirect` 関数
+
+`redirect` 関数を使用すると、ユーザーを別のURLにリダイレクトできます。`redirect` は、[Server Components](/docs/app/building-your-application/rendering/server-components)や[Route Handlers](/docs/app/building-your-application/routing/route-handlers)、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で呼び出せます。
+
+`redirect` は、ミューテーションやイベントの後によく使用されます。たとえば、投稿を作成する場合:
+
+```tsx filename="app/actions.tsx" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
+
+export async function createPost(id: string) {
+  try {
+    // データベースを呼び出す
+  } catch (error) {
+    // エラーを処理する
+  }
+
+  revalidatePath('/posts') // キャッシュされた投稿を更新
+  redirect(`/post/${id}`) // 新しい投稿ページに移動
+}
+```
+
+```jsx filename="app/actions.js" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
+
+export async function createPost(id) {
+  try {
+    // データベースを呼び出す
+  } catch (error) {
+    // エラーを処理する
+  }
+
+  revalidatePath('/posts') // キャッシュされた投稿を更新
+  redirect(`/post/${id}`) // 新しい投稿ページに移動
+}
+```
+
+> **Good to know**:
+>
+> - `redirect` はデフォルトで307 (一時的なリダイレクト) ステータスコードを返します。Server Actionで使用される場合は、POSTリクエストの結果として成功ページにリダイレクトするために一般的に使用される303 (See Other) を返します。
+> - `redirect` は内部的にエラーをスローするため、`try/catch`ブロックの外で呼ばれるべきです。
+> - `redirect` はClient Componentsのレンダリングプロセス中に呼び出すことができますが、イベントハンドラ内では呼び出せません。代わりに[`useRouter` hook](#userouter-hook)を使用できます。
+> - `redirect` は絶対URLも受け入れ、外部リンクへのリダイレクトにも使用できます。
+> - レンダリングプロセスの前にリダイレクトしたい場合は、[`next.config.js`](#redirects-in-nextconfigjs) または [Middleware](#nextresponseredirect-in-middleware) を使用してください。
+
+詳細については、[`redirect` APIリファレンス](/docs/app/api-reference/functions/redirect)を参照してください。
+
+## `permanentRedirect` 関数
+
+`permanentRedirect` 関数を使用すると、ユーザーを**永久に**別のURLにリダイレクトできます。`permanentRedirect` は、[Server Components](/docs/app/building-your-application/rendering/server-components)や[Route Handlers](/docs/app/building-your-application/routing/route-handlers)、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で呼び出せます。
+
+`permanentRedirect` は、エンティティの正規URLが変更された後によく使用されます。たとえば、ユーザーがユーザー名を変更した後にユーザープロフィールURLを更新する場合:
+
+```tsx filename="app/actions.ts" switcher
+'use server'
+
+import { permanentRedirect } from 'next/navigation'
+import { revalidateTag } from 'next/cache'
+
+export async function updateUsername(username: string, formData: FormData) {
+  try {
+    // データベースを呼び出す
+  } catch (error) {
+    // エラーを処理する
+  }
+
+  revalidateTag('username') // ユーザー名のすべての参照を更新
+  permanentRedirect(`/profile/${username}`) // 新しいユーザープロフィールに移動
+}
+```
+
+```jsx filename="app/actions.js" switcher
+'use server'
+
+import { permanentRedirect } from 'next/navigation'
+import { revalidateTag } from 'next/cache'
+
+export async function updateUsername(username, formData) {
+  try {
+    // データベースを呼び出す
+  } catch (error) {
+    // エラーを処理する
+  }
+
+  revalidateTag('username') // ユーザー名のすべての参照を更新
+  permanentRedirect(`/profile/${username}`) // 新しいユーザープロフィールに移動
+}
+```
+
+> **Good to know**:
+>
+> - `permanentRedirect` はデフォルトで308 (永久リダイレクト) ステータスコードを返します。
+> - `permanentRedirect` は絶対URLも受け入れ、外部リンクへのリダイレクトにも使用できます。
+> - レンダリングプロセスの前にリダイレクトしたい場合は、[`next.config.js`](#redirects-in-nextconfigjs) または [Middleware](#nextresponseredirect-in-middleware) を使用してください。
+
+詳細については、[`permanentRedirect` APIリファレンス](/docs/app/api-reference/functions/permanentRedirect)を参照してください。
+
+</AppOnly>
+
+## `useRouter()` フック
+
+<AppOnly>
+
+Client Componentのイベントハンドラ内でリダイレクトが必要な場合、`useRouter` フックの `push` メソッドを使用できます。たとえば:
+
+```tsx filename="app/page.tsx" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export default function Page() {
+  const router = useRouter()
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      ダッシュボード
+    </button>
+  )
+}
+```
+
+```jsx filename="app/page.js" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export default function Page() {
+  const router = useRouter()
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      ダッシュボード
+    </button>
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+コンポーネント内でリダイレクトが必要な場合、`useRouter` フックの `push` メソッドを使用できます。たとえば:
+
+```tsx filename="app/page.tsx" switcher
+import { useRouter } from 'next/router'
+
+export default function Page() {
+  const router = useRouter()
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      ダッシュボード
+    </button>
+  )
+}
+```
+
+```jsx filename="app/page.js" switcher
+import { useRouter } from 'next/router'
+
+export default function Page() {
+  const router = useRouter()
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      ダッシュボード
+    </button>
+  )
+}
+```
+
+</PagesOnly>
+
+> **Good to know**:
+>
+> - プログラム的にユーザーをナビゲートする必要がない場合は、[`<Link>`](/docs/app/api-reference/components/link) コンポーネントを使用するべきです。
+
+<AppOnly>
+
+詳細については、[`useRouter` APIリファレンス](/docs/app/api-reference/functions/use-router)を参照してください。
+
+</AppOnly>
+
+<PagesOnly>
+
+詳細については、[`useRouter` APIリファレンス](/docs/pages/api-reference/functions/use-router)を参照してください。
+
+</PagesOnly>
+
+## `next.config.js` の `redirects`
+
+`next.config.js` ファイルの `redirects` オプションを使用すると、着信要求のパスを別の宛先パスにリダイレクトできます。これは、ページのURL構造を変更したり、事前に把握されているリダイレクトのリストがある場合に便利です。
+
+`redirects` は [path](/docs/app/api-reference/next-config-js/redirects#path-matching)、[header、cookie、およびクエリのマッチング](/docs/app/api-reference/next-config-js/redirects#header-cookie-and-query-matching)をサポートしており、着信要求に基づいてユーザーをリダイレクトするための柔軟性を提供します。
+
+`redirects` を使用するには、`next.config.js` ファイルにオプションを追加します:
+
+```js filename="next.config.js"
+module.exports = {
+  async redirects() {
+    return [
+      // 基本的なリダイレクト
+      {
+        source: '/about',
+        destination: '/',
+        permanent: true,
+      },
+      // ワイルドカードパスのマッチング
+      {
+        source: '/blog/:slug',
+        destination: '/news/:slug',
+        permanent: true,
+      },
+    ]
+  },
+}
+```
+
+詳細については、[`redirects` APIリファレンス](/docs/app/api-reference/next-config-js/redirects)を参照してください。
+
+> **Good to know**:
+>
+> - `redirects` は `permanent` オプションを使用して307 (一時的なリダイレクト) または308 (永久リダイレクト) ステータスコードを返すことができます。
+> - `redirects` はプラットフォーム上で制限がある場合があります。たとえば、Vercelでは1,024件のリダイレクトの制限があります。大規模なリダイレクト（1000+）を管理するために、[Middleware](/docs/app/building-your-application/routing/middleware)を使用したカスタムソリューションの作成を検討してください。詳細については、[大規模なリダイレクトの管理](#managing-redirects-at-scale-advanced)を参照してください。
+> - `redirects` は**Middlewareより前に**実行されます。
+
+## Middlewareにおける`NextResponse.redirect`
+
+Middlewareを使用すると、リクエストが完了する前にコードを実行できます。すると、着信要求に基づいて`NextResponse.redirect`を使用して、別のURLにリダイレクトされます。これは、認証、セッション管理などに基づいてユーザーをリダイレクトしたり、[多数のリダイレクト](#managing-redirects-at-scale-advanced)を抱えている場合に役立ちます。
+
+たとえば、認証されていない場合にユーザーを`/login`ページにリダイレクトするには以下のようにします:
+
+```tsx filename="middleware.ts" switcher
+import { NextResponse, NextRequest } from 'next/server'
+import { authenticate } from 'auth-provider'
+
+export function middleware(request: NextRequest) {
+  const isAuthenticated = authenticate(request)
+
+  // ユーザーが認証されている場合は通常どおり続行
+  if (isAuthenticated) {
+    return NextResponse.next()
+  }
+
+  // 認証されていない場合はログインページにリダイレクト
+  return NextResponse.redirect(new URL('/login', request.url))
+}
+
+export const config = {
+  matcher: '/dashboard/:path*',
+}
+```
+
+```js filename="middleware.js" switcher
+import { NextResponse } from 'next/server'
+import { authenticate } from 'auth-provider'
+
+export function middleware(request) {
+  const isAuthenticated = authenticate(request)
+
+  // ユーザーが認証されている場合は通常どおり続行
+  if (isAuthenticated) {
+    return NextResponse.next()
+  }
+
+  // 認証されていない場合はログインページにリダイレクト
+  return NextResponse.redirect(new URL('/login', request.url))
+}
+
+export const config = {
+  matcher: '/dashboard/:path*',
+}
+```
+
+> **Good to know**:
+>
+> - Middlewareは `next.config.js` の`redirects`の**後に**、レンダリングの**前に**実行されます。
+
+詳細については、[Middlewareのドキュメント](/docs/app/building-your-application/routing/middleware)を参照してください。
+
+## 大規模なリダイレクトの管理（高度な内容）
+
+多数のリダイレクト（1000+）を管理するには、Middlewareを使用したカスタムソリューションの作成を検討してください。これにより、アプリケーションを再デプロイすることなく、プログラム的にリダイレクトを処理できます。
+
+これを行うには、次のことを考慮する必要があります:
+
+1. リダイレクトマップを作成し、保存する。
+2. データ参照パフォーマンスを最適化する。
+
+> **Next.js の例**: 以下の推奨事項を実装する例として、[Middleware with Bloom filter](https://redirects-bloom-filter.vercel.app/) を参照してください。
+
+### 1. リダイレクトマップを作成し、保存する
+
+リダイレクトマップは、データベース（通常はキー・バリュー・ストア）またはJSONファイルに保存できるリダイレクトのリストです。
+
+以下のデータ構造を考慮してください:
+
+```json
+{
+  "/old": {
+    "destination": "/new",
+    "permanent": true
+  },
+  "/blog/post-old": {
+    "destination": "/blog/post-new",
+    "permanent": true
+  }
+}
+```
+
+[Middleware](/docs/app/building-your-application/routing/middleware)では、Vercelの[Edge Config](https://vercel.com/docs/storage/edge-config/get-started?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)や[Redis](https://vercel.com/docs/storage/vercel-kv?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)などのデータベースから読み取り、着信要求に基づいてユーザーをリダイレクトできます:
+
+```tsx filename="middleware.ts" switcher
+import { NextResponse, NextRequest } from 'next/server'
+import { get } from '@vercel/edge-config'
+
+type RedirectEntry = {
+  destination: string
+  permanent: boolean
+}
+
+export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  const redirectData = await get(pathname)
+
+  if (redirectData && typeof redirectData === 'string') {
+    const redirectEntry: RedirectEntry = JSON.parse(redirectData)
+    const statusCode = redirectEntry.permanent ? 308 : 307
+    return NextResponse.redirect(redirectEntry.destination, statusCode)
+  }
+
+  // リダイレクトが見つからない場合は、リダイレクトせずに続行
+  return NextResponse.next()
+}
+```
+
+```js filename="middleware.js" switcher
+import { NextResponse } from 'next/server'
+import { get } from '@vercel/edge-config'
+
+export async function middleware(request) {
+  const pathname = request.nextUrl.pathname
+  const redirectData = await get(pathname)
+
+  if (redirectData) {
+    const redirectEntry = JSON.parse(redirectData)
+    const statusCode = redirectEntry.permanent ? 308 : 307
+    return NextResponse.redirect(redirectEntry.destination, statusCode)
+  }
+
+  // リダイレクトが見つからない場合は、リダイレクトせずに続行
+  return NextResponse.next()
+}
+```
+
+### 2. データ参照パフォーマンスを最適化する
+
+着信要求ごとに大量のデータセットを読み込むと遅く高価になる可能性があります。データ参照パフォーマンスを最適化するためには、以下の2つの方法があります:
+
+- [Vercel Edge Config](https://vercel.com/docs/storage/edge-config/get-started?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)や[Redis](https://vercel.com/docs/storage/vercel-kv?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)などの高速な読み取りに最適化されたデータベースを使用します。
+- [ブルームフィルタ](https://ja.wikipedia.org/wiki/Bloom%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF)などのデータ参照戦略を使用して、リダイレクトが存在するかどうかを効率的に確認し、より大きなリダイレクトファイルやデータベースを読み込む**前に**確認します。
+
+前の例を考慮して、作成されたブルームフィルタファイルをMiddlewareにインポートし、その後、着信要求のパス名がブルームフィルタに存在するかどうかを確認します。
+
+存在する場合は、要求を <AppOnly>[Route Handler](/docs/app/building-your-application/routing/route-handlers)</AppOnly> <PagesOnly>[API Route](/docs/pages/building-your-application/routing/api-routes)</PagesOnly> に転送し、実際のファイルを確認して、適切なURLにリダイレクトします。これにより、大きなリダイレクトファイルをMiddlewareにインポートする必要がなくなり、着信要求ごとに遅延するのを回避します。
+
+```tsx filename="middleware.ts" switcher
+import { NextResponse, NextRequest } from 'next/server'
+import { ScalableBloomFilter } from 'bloom-filters'
+import GeneratedBloomFilter from './redirects/bloom-filter.json'
+
+type RedirectEntry = {
+  destination: string
+  permanent: boolean
+}
+
+// 作成されたJSONファイルからブルームフィルタを初期化
+const bloomFilter = ScalableBloomFilter.fromJSON(GeneratedBloomFilter as any)
+
+export async function middleware(request: NextRequest) {
+  // 着信要求のパスを取得
+  const pathname = request.nextUrl.pathname
+
+  // パスがブルームフィルタに存在するかを確認
+  if (bloomFilter.has(pathname)) {
+    // Route Handlerにパス名を転送
+    const api = new URL(
+      `/api/redirects?pathname=${encodeURIComponent(request.nextUrl.pathname)}`,
+      request.nextUrl.origin
+    )
+
+    try {
+      // Route Handlerからリダイレクトデータを取得
+      const redirectData = await fetch(api)
+
+      if (redirectData.ok) {
+        const redirectEntry: RedirectEntry | undefined =
+          await redirectData.json()
+
+        if (redirectEntry) {
+          // ステータスコードを決定
+          const statusCode = redirectEntry.permanent ? 308 : 307
+
+          // 宛先にリダイレクト
+          return NextResponse.redirect(redirectEntry.destination, statusCode)
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // リダイレクトが見つからない場合は、リダイレクトせずに続行
+  return NextResponse.next()
+}
+```
+
+```js filename="middleware.js" switcher
+import { NextResponse } from 'next/server'
+import { ScalableBloomFilter } from 'bloom-filters'
+import GeneratedBloomFilter from './redirects/bloom-filter.json'
+
+// 作成されたJSONファイルからブルームフィルタを初期化
+const bloomFilter = ScalableBloomFilter.fromJSON(GeneratedBloomFilter)
+
+export async function middleware(request) {
+  // 着信要求のパスを取得
+  const pathname = request.nextUrl.pathname
+
+  // パスがブルームフィルタに存在するかを確認
+  if (bloomFilter.has(pathname)) {
+    // Route Handlerにパス名を転送
+    const api = new URL(
+      `/api/redirects?pathname=${encodeURIComponent(request.nextUrl.pathname)}`,
+      request.nextUrl.origin
+    )
+
+    try {
+      // Route Handlerからリダイレクトデータを取得
+      const redirectData = await fetch(api)
+
+      if (redirectData.ok) {
+        const redirectEntry = await redirectData.json()
+
+        if (redirectEntry) {
+          // ステータスコードを決定
+          const statusCode = redirectEntry.permanent ? 308 : 307
+
+          // 宛先にリダイレクト
+          return NextResponse.redirect(redirectEntry.destination, statusCode)
+        }
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // リダイレクトが見つからない場合は、リダイレクトせずに続行
+  return NextResponse.next()
+}
+```
+
+<AppOnly>
+
+その後、Route Handler内で:
+
+```tsx filename="app/redirects/route.ts" switcher
+import { NextRequest, NextResponse } from 'next/server'
+import redirects from '@/app/redirects/redirects.json'
+
+type RedirectEntry = {
+  destination: string
+  permanent: boolean
+}
+
+export function GET(request: NextRequest) {
+  const pathname = request.nextUrl.searchParams.get('pathname')
+  if (!pathname) {
+    return new Response('Bad Request', { status: 400 })
+  }
+
+  // redirects.jsonファイルからリダイレクトエントリを取得
+  const redirect = (redirects as Record<string, RedirectEntry>)[pathname]
+
+  // ブルームフィルタの偽陽性を考慮
+  if (!redirect) {
+    return new Response('No redirect', { status: 400 })
+  }
+
+  // リダイレクトエントリを返す
+  return NextResponse.json(redirect)
+}
+```
+
+```js filename="app/redirects/route.js" switcher
+import { NextResponse } from 'next/server'
+import redirects from '@/app/redirects/redirects.json'
+
+export function GET(request) {
+  const pathname = request.nextUrl.searchParams.get('pathname')
+  if (!pathname) {
+    return new Response('Bad Request', { status: 400 })
+  }
+
+  // redirects.jsonファイルからリダイレクトエントリを取得
+  const redirect = redirects[pathname]
+
+  // ブルームフィルタの偽陽性を考慮
+  if (!redirect) {
+    return new Response('No redirect', { status: 400 })
+  }
+
+  // リダイレクトエントリを返す
+  return NextResponse.json(redirect)
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+その後、API Route内で:
+
+```tsx filename="pages/api/redirects.ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+import redirects from '@/app/redirects/redirects.json'
+
+type RedirectEntry = {
+  destination: string
+  permanent: boolean
+}
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  const pathname = req.query.pathname
+  if (!pathname) {
+    return res.status(400).json({ message: 'Bad Request' })
+  }
+
+  // redirects.jsonファイルからリダイレクトエントリを取得
+  const redirect = (redirects as Record<string, RedirectEntry>)[pathname]
+
+  // ブルームフィルタの偽陽性を考慮
+  if (!redirect) {
+    return res.status(400).json({ message: 'No redirect' })
+  }
+
+  // リダイレクトエントリを返す
+  return res.json(redirect)
+}
+```
+
+```js filename="pages/api/redirects.js" switcher
+import redirects from '@/app/redirects/redirects.json'
+
+export default function handler(req, res) {
+  const pathname = req.query.pathname
+  if (!pathname) {
+    return res.status(400).json({ message: 'Bad Request' })
+  }
+
+  // redirects.jsonファイルからリダイレクトエントリを取得
+  const redirect = redirects[pathname]
+
+  // ブルームフィルタの偽陽性を考慮
+  if (!redirect) {
+    return res.status(400).json({ message: 'No redirect' })
+  }
+
+  // リダイレクトエントリを返す
+  return res.json(redirect)
+}
+```
+
+</PagesOnly>
+
+> **Good to know:**
+>
+> - ブルームフィルタを生成するには、[`bloom-filters`](https://www.npmjs.com/package/bloom-filters) のようなライブラリを使用できます。
+> - 悪意のあるリクエストを防ぐために、Route Handlerに向けたリクエストを検証する必要があります。

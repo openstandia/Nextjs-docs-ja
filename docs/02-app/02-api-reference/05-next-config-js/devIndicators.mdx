@@ -1,0 +1,132 @@
+---
+title: 'devIndicators'
+description: '最適化されたページには、静的に最適化されているかどうかを知らせるインジケーターが含まれています。ここでオプトアウトできます。'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerの間で共有されます。Pages Routerに特有のコンテンツを追加する場合は、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用してください。共有コンテンツはコンポーネントでラップしないでください。 */}
+
+<AppOnly>
+
+`devIndicators`を使用すると、開発中に現在表示しているルートに関するコンテキストを提供するオンスクリーンインジケーターを設定できます。
+
+```ts filename="Types"
+  devIndicators: {
+    appIsrStatus?: boolean, // デフォルトはtrueです
+    buildActivity?: boolean, // デフォルトはtrueです
+    buildActivityPosition?: 'bottom-right'
+    | 'bottom-left'
+    | 'top-right'
+    | 'top-left', // デフォルトは'bottom-right'です
+  },
+```
+
+## `appIsrStatus`（静的インジケーター）
+
+> このオプションはNext.jsのcanaryで利用できます。
+
+Next.jsは、ビルド時にルートがプレンダリングされるかどうかを示す静的なインジケーターを画面の下隅に表示します。これにより、ルートが静的か動的かを簡単に理解でき、ルートが[静的レンダリングからオプトアウトしているかどうか](#static-route-not-showing-the-indicator)を特定できます。
+
+<Image
+  alt="App Folder Structure"
+  srcLight="/docs/light/static-indicator.png"
+  srcDark="/docs/dark/static-indicator.png"
+  width="1600"
+  height="208"
+/>
+
+インジケーターを一時的に非表示にするには、閉じるインジケーターをクリックします。これは`localStorage`に1時間の間お好みを記憶します。これを永久的に無効にするには、`next.config.js`にある設定オプションを使用します：
+
+```ts filename="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  devIndicators: {
+    appIsrStatus: false,
+  },
+}
+
+export default nextConfig
+```
+
+```js filename="next.config.js" switcher
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  devIndicators: {
+    appIsrStatus: false,
+  },
+}
+
+module.exports = nextConfig
+```
+
+## `buildActivity`（コンパイルインジケーター）
+
+コードを編集し、Next.jsがアプリケーションをコンパイルしている際に、コンパイルインジケーターがページの右下隅に表示されます。
+
+> **Good to know**: このインジケーターは開発モードでのみ存在し、本番モードでアプリをビルドまたは実行するときには表示されません。
+
+このインジケーターがページ上で他の要素と競合している場合は、`next.config.js`を開き、`devIndicators`オブジェクト内で`buildActivityPosition`を`bottom-right`（デフォルト）、`bottom-left`、`top-right`または`top-left`に設定します：
+
+```js filename="next.config.js"
+module.exports = {
+  devIndicators: {
+    buildActivityPosition: 'bottom-right',
+  },
+}
+```
+
+このインジケーターが役に立たない場合もあります。削除するには、`next.config.js`を開き、`devIndicators`オブジェクト内で`buildActivity`設定を無効にします：
+
+```js filename="next.config.js"
+module.exports = {
+  devIndicators: {
+    buildActivity: false,
+  },
+}
+```
+
+## トラブルシューティング
+
+### 静的ルートがインジケーターを表示しない
+
+ルートが静的であり、インジケーターが有効になっているにもかかわらず表示されない場合、ルートが静的レンダリングからオプトアウトしている可能性があります。
+
+ルートが[静的](/docs/app/building-your-application/rendering/server-components#static-rendering-default)か[動的](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)かを確認するには、アプリケーションを`next build --debug`でビルドし、ターミナルの出力を確認します。静的（またはプレンダリングされた）ルートは`○`シンボルを表示し、動的ルートは`ƒ`シンボルを表示します。例：
+
+```bash filename="Build Output"
+Route (app)                              Size     First Load JS
+┌ ○ /_not-found                          0 B               0 kB
+└ ƒ /products/[id]                       0 B               0 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+```
+
+ルートが静的レンダリングからオプトアウトする理由は2つあります：
+
+- 実行時情報に依存する[Dynamic APIs](/docs/app/building-your-application/rendering/server-components#dynamic-apis)の存在。
+- ORMやデータベースドライバへの呼び出しなどの[キャッシュされていないデータリクエスト](/docs/app/building-your-application/data-fetching/fetching)。
+
+これらの条件をルートで確認し、静的にレンダリングできない場合は、[`loading.js`](/docs/app/api-reference/file-conventions/loading)または[`<Suspense />`](https://react.dev/reference/react/Suspense)を使用して[ストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#what-is-streaming)を活用することを検討してください。
+
+</AppOnly>
+
+<PagesOnly>
+
+> **Good to know**: このインジケーターはNext.jsバージョン10.0.1で削除されました。最新バージョンのNext.jsへのアップグレードをお勧めします。
+
+ページが[自動静的最適化](/docs/pages/building-your-application/rendering/automatic-static-optimization)の資格を満たす場合、インジケーターが表示されます。
+
+これは、自動静的最適化が非常に有益であるため、開発中にページが資格を満たすかどうかをすぐに知ることが役立つからです。
+
+このインジケーターが便利でない場合もあります。例えば、electronアプリケーションで作業しているときなどです。これを削除するには、`next.config.js`を開き、`devIndicators`内で`autoPrerender`設定を無効にします：
+
+```js filename="next.config.js"
+module.exports = {
+  devIndicators: {
+    autoPrerender: false,
+  },
+}
+```
+
+</PagesOnly>

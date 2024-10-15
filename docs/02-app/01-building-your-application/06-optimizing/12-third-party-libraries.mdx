@@ -1,0 +1,432 @@
+---
+title: 'Third Party Libraries'
+description: 'アプリケーションのサードパーティライブラリのパフォーマンスを`@next/third-parties`パッケージで最適化します。'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerに共通しています。Pages Router固有の内容を追加するには、 `<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有されるコンテンツはコンポーネントでラップされないようにしてください。 */}
+
+**`@next/third-parties`**は、Next.jsアプリケーションで人気のサードパーティライブラリの読み込みを改善するためのコンポーネントとユーティリティを提供するライブラリです。
+
+`@next/third-parties`が提供するすべてのサードパーティライブラリとの統合は、パフォーマンスと使いやすさが最適化されています。
+
+## 始めに
+
+まず、`@next/third-parties`ライブラリをインストールします：
+
+```bash filename="Terminal"
+npm install @next/third-parties@latest next@latest
+```
+
+{/* To do: パッケージが安定したらこの段落を削除 */}
+
+`@next/third-parties`は現在、開発中の**実験的**ライブラリです。インストール時には**latest**または**canary**フラグを使用することを推奨します。さらなるサードパーティの統合の追加に取り組んでいます。
+
+## Googleサードパーティのライブラリ
+
+Googleがサポートするすべてのサードパーティライブラリは、`@next/third-parties/google`からインポートできます。
+
+### Google Tag Manager
+
+`GoogleTagManager`コンポーネントを使用すると、[Google Tag Manager](https://developers.google.com/tag-platform/tag-manager)コンテナをページにインスタンス化できます。デフォルトでは、ページのハイドレーション後、元のインラインスクリプトをフェッチします。
+
+<AppOnly>
+
+すべてのルートでGoogle Tag Managerを読み込むには、root レイアウト内にコンポーネントを直接追加し、GTMコンテナIDを渡します：
+
+```tsx filename="app/layout.tsx" switcher
+import { GoogleTagManager } from '@next/third-parties/google'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <GoogleTagManager gtmId="GTM-XYZ" />
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import { GoogleTagManager } from '@next/third-parties/google'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <GoogleTagManager gtmId="GTM-XYZ" />
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+すべてのルートでGoogle Tag Managerを読み込むには、コンポーネントをカスタム`_app`に直接追加し、GTMコンテナIDを渡します：
+
+```jsx filename="pages/_app.js"
+import { GoogleTagManager } from '@next/third-parties/google'
+
+export default function MyApp({ Component, pageProps }) {
+  return (
+    <>
+      <Component {...pageProps} />
+      <GoogleTagManager gtmId="GTM-XYZ" />
+    </>
+  )
+}
+```
+
+</PagesOnly>
+
+特定のルートでGoogle Tag Managerを読み込むには、コンポーネントをページファイルに追加します：
+
+<AppOnly>
+
+```jsx filename="app/page.js"
+import { GoogleTagManager } from '@next/third-parties/google'
+
+export default function Page() {
+  return <GoogleTagManager gtmId="GTM-XYZ" />
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx filename="pages/index.js"
+import { GoogleTagManager } from '@next/third-parties/google'
+
+export default function Page() {
+  return <GoogleTagManager gtmId="GTM-XYZ" />
+}
+```
+
+</PagesOnly>
+
+#### イベントの送信
+
+`sendGTMEvent`関数は、`dataLayer`オブジェクトを使用してイベントを送信することで、ページ上のユーザーのインタラクションを追跡するために使用できます。この関数を利用するには、`<GoogleTagManager />`コンポーネントが親レイアウト、ページ、またはコンポーネント、もしくは直接同じファイル内に含まれている必要があります。
+
+<AppOnly>
+
+```jsx filename="app/page.js"
+'use client'
+
+import { sendGTMEvent } from '@next/third-parties/google'
+
+export function EventButton() {
+  return (
+    <div>
+      <button
+        onClick={() => sendGTMEvent({ event: 'buttonClicked', value: 'xyz' })}
+      >
+        Send Event
+      </button>
+    </div>
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx filename="pages/index.js"
+import { sendGTMEvent } from '@next/third-parties/google'
+
+export function EventButton() {
+  return (
+    <div>
+      <button
+        onClick={() => sendGTMEvent({ event: 'buttonClicked', value: 'xyz' })}
+      >
+        Send Event
+      </button>
+    </div>
+  )
+}
+```
+
+</PagesOnly>
+
+渡すことができるさまざまな変数やイベントについては、Tag Managerの[開発者ドキュメント](https://developers.google.com/tag-platform/tag-manager/datalayer)を参照してください。
+
+#### サーバーサイドのタグ付け
+
+サーバーサイドのタグマネージャーを使用し、`gtm.js`スクリプトをタグ付けサーバーから配信する場合は、`gtmScriptUrl`オプションを使用してスクリプトのURLを指定できます。
+
+#### オプション
+
+Google Tag Managerに渡すオプションです。オプションの全リストについては、[Google Tag Managerドキュメント](https://developers.google.com/tag-platform/tag-manager/datalayer)をお読みください。
+
+| 名前             | 型      | 説明                                                                              |
+| ---------------- | ------- | --------------------------------------------------------------------------------- |
+| `gtmId`          | 必須    | GTMコンテナID 通常`GTM-`で始まります                                               |
+| `gtmScriptUrl`   | オプション | GTMスクリプトのURL デフォルトは`https://www.googletagmanager.com/gtm.js`             |
+| `dataLayer`      | オプション | コンテナを初期化するためのデータレイヤーオブジェクト                               |
+| `dataLayerName`  | オプション | データレイヤーの名前 デフォルトは`dataLayer`                                       |
+| `auth`           | オプション | 環境スニペット用の認証パラメータ（`gtm_auth`）の値                                 |
+| `preview`        | オプション | 環境スニペット用のプレビューパラメータ（`gtm_preview`）の値                         |
+
+### Google Analytics
+
+`GoogleAnalytics`コンポーネントを使用すると、Googleタグ（`gtag.js`）を介してページに[Google Analytics 4](https://developers.google.com/analytics/devguides/collection/ga4)を含めることができます。デフォルトでは、ページのハイドレーション後に元のスクリプトをフェッチします。
+
+> **おすすめ**: アプリケーションにすでにGoogle Tag Managerが含まれている場合は、Google Analyticsを直接構成し、別個のコンポーネントとして含めるのではなく、Google Tag Managerを使用してください。違いについては、[ドキュメント](https://developers.google.com/analytics/devguides/collection/ga4/tag-options#what-is-gtm)を参照してください。
+
+<AppOnly>
+
+すべてのルートでGoogle Analyticsを読み込むには、root レイアウト内にコンポーネントを直接追加し、測定IDを渡します：
+
+```tsx filename="app/layout.tsx" switcher
+import { GoogleAnalytics } from '@next/third-parties/google'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+      <GoogleAnalytics gaId="G-XYZ" />
+    </html>
+  )
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import { GoogleAnalytics } from '@next/third-parties/google'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+      <GoogleAnalytics gaId="G-XYZ" />
+    </html>
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+すべてのルートでGoogle Analyticsを読み込むには、コンポーネントをカスタム`_app`に直接追加し、測定IDを渡します：
+
+```jsx filename="pages/_app.js"
+import { GoogleAnalytics } from '@next/third-parties/google'
+
+export default function MyApp({ Component, pageProps }) {
+  return (
+    <>
+      <Component {...pageProps} />
+      <GoogleAnalytics gaId="G-XYZ" />
+    </>
+  )
+}
+```
+
+</PagesOnly>
+
+特定のルートでGoogle Analyticsを読み込むには、コンポーネントをページファイルに追加します：
+
+<AppOnly>
+
+```jsx filename="app/page.js"
+import { GoogleAnalytics } from '@next/third-parties/google'
+
+export default function Page() {
+  return <GoogleAnalytics gaId="G-XYZ" />
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx filename="pages/index.js"
+import { GoogleAnalytics } from '@next/third-parties/google'
+
+export default function Page() {
+  return <GoogleAnalytics gaId="G-XYZ" />
+}
+```
+
+</PagesOnly>
+
+#### イベントの送信
+
+`sendGAEvent`関数を使用して、`dataLayer`オブジェクトを使用してイベントを送信することで、ページ上のユーザーインタラクションを測定することができます。この関数を利用するには、`<GoogleAnalytics />`コンポーネントが親レイアウト、ページ、またはコンポーネント、もしくは直接同じファイル内に含まれている必要があります。
+
+<AppOnly>
+
+```jsx filename="app/page.js"
+'use client'
+
+import { sendGAEvent } from '@next/third-parties/google'
+
+export function EventButton() {
+  return (
+    <div>
+      <button
+        onClick={() => sendGAEvent('event', 'buttonClicked', { value: 'xyz' })}
+      >
+        Send Event
+      </button>
+    </div>
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx filename="pages/index.js"
+import { sendGAEvent } from '@next/third-parties/google'
+
+export function EventButton() {
+  return (
+    <div>
+      <button
+        onClick={() => sendGAEvent('event', 'buttonClicked', { value: 'xyz' })}
+      >
+        Send Event
+      </button>
+    </div>
+  )
+}
+```
+
+</PagesOnly>
+
+イベントパラメータの詳細については、Google Analyticsの[開発者ドキュメント](https://developers.google.com/analytics/devguides/collection/ga4/event-parameters)を参照してください。
+
+#### ページビューの追跡
+
+Google Analyticsは、ブラウザの履歴の状態が変化すると、自動的にページビューを追跡します。つまり、Next.jsルート間のクライアントサイドのナビゲーションは、設定なしでページビューデータを送信します。
+
+クライアントサイドのナビゲーションが正しく測定されていることを確認するには、管理パネルで [_「拡張計測」_](https://support.google.com/analytics/answer/9216061#enable_disable)プロパティが有効で、「ブラウザ履歴イベントに基づくページ変更」チェックボックスが選択されていることを確認してください。
+
+> **注意**: 手動でページビューイベントを送信することを選択した場合、重複データを避けるためにデフォルトのページビューメジャーメントを無効にしてください。詳細については、Google Analyticsの[開発者ドキュメント](https://developers.google.com/analytics/devguides/collection/ga4/views?client_type=gtag#manual_pageviews)を参照してください。
+
+#### オプション
+
+`<GoogleAnalytics>`コンポーネントに渡すオプションです。
+
+| 名前             | 型      | 説明                                                                                              |
+| ---------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `gaId`           | 必須    | [測定ID](https://support.google.com/analytics/answer/12270356) 通常`G-`で始まります                |
+| `dataLayerName`  | オプション | データレイヤーの名前 デフォルトは`dataLayer`                                                      |
+| `nonce`          | オプション | [nonce](/docs/app/building-your-application/configuring/content-security-policy#nonces)         |
+
+### Google Maps Embed
+
+`GoogleMapsEmbed`コンポーネントを使用すると、ページに[Google Maps Embed](https://developers.google.com/maps/documentation/embed/embedding-map)を追加できます。デフォルトでは、`loading`属性を使ってファーストビューの下で埋め込む埋め込みを遅延ロードします。
+
+<AppOnly>
+
+```jsx filename="app/page.js"
+import { GoogleMapsEmbed } from '@next/third-parties/google'
+
+export default function Page() {
+  return (
+    <GoogleMapsEmbed
+      apiKey="XYZ"
+      height={200}
+      width="100%"
+      mode="place"
+      q="Brooklyn+Bridge,New+York,NY"
+    />
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx filename="pages/index.js"
+import { GoogleMapsEmbed } from '@next/third-parties/google'
+
+export default function Page() {
+  return (
+    <GoogleMapsEmbed
+      apiKey="XYZ"
+      height={200}
+      width="100%"
+      mode="place"
+      q="Brooklyn+Bridge,New+York,NY"
+    />
+  )
+}
+```
+
+</PagesOnly>
+
+#### オプション
+
+Google Maps Embedに渡すオプションです。オプションの全リストについては、[Google Map Embedドキュメント](https://developers.google.com/maps/documentation/embed/embedding-map)をお読みください。
+
+| 名前               | 型      | 説明                                                                                                          |
+| ------------------ | ------- | ---------------------------------------------------------------------------------------------------------- |
+| `apiKey`           | 必須    | APIキー                                                                                                     |
+| `mode`             | 必須    | [マップモード](https://developers.google.com/maps/documentation/embed/embedding-map#choosing_map_modes)      |
+| `height`           | オプション | 埋め込みの高さ デフォルトは`auto`                                                                          |
+| `width`            | オプション | 埋め込みの幅 デフォルトは`auto`                                                                            |
+| `style`            | オプション | iframeにスタイルを適用するためのものであります                                                               |
+| `allowfullscreen`  | オプション | マップの特定の部分を全画面表示することを許可するプロパティ                                                  |
+| `loading`          | オプション | デフォルトでは遅延 デフォルトでファーストビュー下にバインディングする場合は変更を考慮してください             |
+| `q`                | オプション | 地図マーカーの位置を定義します _マップモードによっては必要となる場合があります_                              |
+| `center`           | オプション | 地図ビューの中心点を定義                                                                                     |
+| `zoom`             | オプション | 地図の初期ズームレベルを設定                                                                                 |
+| `maptype`          | オプション | 読み込む地図タイルの種類を定義                                                                               |
+| `language`         | オプション | UI要素や地図タイルに表示されるラベルに使用する言語を定義                                                     |
+| `region`           | オプション | 地政学的センシティビティに基づいた、適切な国境やラベルの表示を定義                                           |
+
+### YouTube Embed
+
+`YouTubeEmbed`コンポーネントは、YouTube埋め込みを読み込み表示するために使えます。このコンポーネントは、内部で[`lite-youtube-embed`](https://github.com/paulirish/lite-youtube-embed)を使用しており、より高速に読み込みます。
+
+<AppOnly>
+
+```jsx filename="app/page.js"
+import { YouTubeEmbed } from '@next/third-parties/google'
+
+export default function Page() {
+  return <YouTubeEmbed videoid="ogfYd705cRs" height={400} params="controls=0" />
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx filename="pages/index.js"
+import { YouTubeEmbed } from '@next/third-parties/google'
+
+export default function Page() {
+  return <YouTubeEmbed videoid="ogfYd705cRs" height={400} params="controls=0" />
+}
+```
+
+</PagesOnly>
+
+#### オプション
+
+| 名前        | 型      | 説明                                                                                                                                                                          |
+| ----------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `videoid`   | 必須    | YouTube動画ID                                                                                                                                                                |
+| `width`     | オプション | ビデオコンテナの幅 デフォルトは`auto`                                                                                                                                          |
+| `height`    | オプション | ビデオコンテナの高さ デフォルトは`auto`                                                                                                                                       |
+| `playlabel` | オプション | アクセシビリティのための再生ボタンの視覚的に隠されたラベル                                                                                                                       |
+| `params`    | オプション | [ビデオプレーヤーパラメータ](https://developers.google.com/youtube/player_parameters#Parameters)が定義されています <br/> パラメータはクエリパラメータ文字列として渡されます <br/> 例：`params="controls=0&start=10&end=30"` |
+| `style`     | オプション | ビデオコンテナにスタイルを適用するために使用                                                                                                                                    |

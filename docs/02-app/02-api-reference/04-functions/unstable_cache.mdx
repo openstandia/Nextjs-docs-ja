@@ -1,0 +1,91 @@
+---
+title: 'unstable_cache'
+description: 'unstable_cache関数のAPIリファレンス。'
+version: '不安定'
+---
+
+`unstable_cache`を使用すると、データベースクエリのような高価な操作の結果をキャッシュして、複数のリクエストで再利用できます。
+
+```jsx
+import { getUser } from './data';
+import { unstable_cache } from 'next/cache';
+
+const getCachedUser = unstable_cache(
+  async (id) => getUser(id),
+  ['my-app-user']
+);
+
+export default async function Component({ userID }) {
+  const user = await getCachedUser(userID);
+  ...
+}
+```
+
+> **Good to know**:
+>
+> - キャッシュスコープ内で `headers` や `cookies` などの動的なデータソースにアクセスすることはサポートされていません。キャッシュされた関数内でこれらのデータが必要な場合は、キャッシュされた関数外で `headers` を使用し、必要な動的データを引数として渡してください。
+> - このAPIはNext.jsの組み込み [Data Cache](/docs/app/building-your-application/caching#data-cache) を使用して、結果をリクエストやデプロイメントをまたいで保持します。
+
+> **警告**: このAPIは不安定であり、将来的に変更される可能性があります。このAPIが安定した場合には、必要に応じて移行ドキュメントやコードモッドを提供します。
+
+## パラメーター
+
+```jsx
+const data = unstable_cache(fetchData, keyParts, options)()
+```
+
+- `fetchData`: これはキャッシュしたいデータを取得する非同期関数です。`Promise` を返す関数でなければなりません。
+- `keyParts`: これはキャッシュの識別をさらに追加するためのキーの配列です。デフォルトで、`unstable_cache` はすでに引数と関数の文字列化されたバージョンをキャッシュキーとして使用します。多くの場合、これはオプションであり、外部変数をパラメーターとして渡さずに使用するときにのみ必要です。ただし、パラメーターとして渡さない場合は、関数内で使用するクロージャを追加することが重要です。
+- `options`: これはキャッシュがどのように動作するかを制御するオブジェクトです。以下のプロパティを含むことができます：
+  - `tags`: キャッシュの無効化を制御するために使用できるタグの配列です。Next.js はこれを関数を一意に識別するためには使用しません。
+  - `revalidate`: キャッシュを再検証するまでの秒数です。省略するか `false` を渡すと、`revalidateTag()` または `revalidatePath()` メソッドが一致するまでキャッシュが無期限に保持されます。
+
+## 戻り値
+
+`unstable_cache` は関数を返します。その関数が呼び出されると、キャッシュされたデータに解決するPromiseを返します。データがキャッシュにない場合、提供された関数が呼び出され、その結果がキャッシュされて返されます。
+
+## 例
+
+```tsx filename="app/page.tsx" switcher
+import { unstable_cache } from 'next/cache'
+
+export default async function Page({ params }: { params: { userId: string } }) {
+  const getCachedUser = unstable_cache(
+    async () => {
+      return { id: params.userId }
+    },
+    [params.userId], // ユーザーIDをキャッシュキーに追加
+    {
+      tags: ['users'],
+      revalidate: 60,
+    }
+  )
+
+  //...
+}
+```
+
+```jsx filename="app/page.jsx" switcher
+import { unstable_cache } from 'next/cache';
+
+export default async function Page({ params } }) {
+  const getCachedUser = unstable_cache(
+    async () => {
+      return { id: params.userId };
+    },
+    [params.userId], // ユーザーIDをキャッシュキーに追加
+    {
+      tags: ["users"],
+      revalidate: 60,
+    }
+  );
+
+  //...
+}
+```
+
+## バージョン履歴
+
+| バージョン   | 変更点                         |
+| --------- | ---------------------------- |
+| `v14.0.0` | `unstable_cache` が導入されました。 |

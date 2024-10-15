@@ -1,0 +1,478 @@
+---
+title: 'Parallel Routes'
+description: '独立にナビゲートできる同じビュー内で同時に1つ以上のページをレンダリングする、非常に動的なアプリケーションのためのパターンです。'
+related:
+  links:
+    - 'app/api-reference/file-conventions/default'
+---
+
+Parallel Routesは、同じレイアウト内で1つ以上のページを同時または条件に応じてレンダリングできます。これは、ダッシュボードやソーシャルサイトのフィードなど、アプリの非常に動的なセクションに役立ちます。
+
+例えば、ダッシュボードを考えると、Parallel Routesを使用して`team`と`analytics`ページを同時にレンダリングできます。
+
+<Image
+  alt="Parallel Routes Diagram"
+  srcLight="/docs/light/parallel-routes.png"
+  srcDark="/docs/dark/parallel-routes.png"
+  width="1600"
+  height="942"
+/>
+
+## スロット
+
+Parallel Routesは、名前付き**スロット**を使用して作成されます。スロットは`@folder`規約で定義されます。例えば、次のファイル構造では、2つのスロット`@analytics`と`@team`が定義されています：
+
+<Image
+  alt="Parallel Routes File-system Structure"
+  srcLight="/docs/light/parallel-routes-file-system.png"
+  srcDark="/docs/dark/parallel-routes-file-system.png"
+  width="1600"
+  height="687"
+/>
+
+スロットは共有された親レイアウトにpropsとして渡されます。上記の例では、`app/layout.js`のコンポーネントが`@analytics`と`@team`のスロットpropsを受け入れ、`children` propsと並行してレンダリングできます：
+
+```tsx filename="app/layout.tsx" switcher
+export default function Layout({
+  children,
+  team,
+  analytics,
+}: {
+  children: React.ReactNode
+  analytics: React.ReactNode
+  team: React.ReactNode
+}) {
+  return (
+    <>
+      {children}
+      {team}
+      {analytics}
+    </>
+  )
+}
+```
+
+```jsx filename="app/layout.js" switcher
+export default function Layout({ children, team, analytics }) {
+  return (
+    <>
+      {children}
+      {team}
+      {analytics}
+    </>
+  )
+}
+```
+
+ただし、スロットは[route segments](/docs/app/building-your-application/routing#route-segments)ではなく、URL構造には影響しません。例えば、`/@analytics/views`の場合、URLは`/views`になります。スロットは、route segmentに関連付けられた最終ページを形成するための通常の[Page](/docs/app/api-reference/file-conventions/page)コンポーネントと組み合わされます。このため、同じroute segmentレベルで[static](/docs/app/building-your-application/rendering/server-components#static-rendering-default)と[dynamic](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)のスロットを分けて持つことはできません。一つのスロットが動的である場合、そのレベルの全てのスロットが動的でなければなりません。
+
+> **Good to know**:
+>
+> - `children` propは、フォルダにマップする必要のない暗黙のスロットです。これはつまり、`app/page.js`は`app/@children/page.js`と同等です。
+
+## アクティブな状態とナビゲーション
+
+デフォルトでは、Next.jsは各スロットのアクティブな_状態_（またはサブページ）を追跡します。ただし、スロット内でレンダリングされるコンテンツはナビゲーションのタイプによって異なります：
+
+- [**ソフトナビゲーション**](/docs/app/building-your-application/routing/linking-and-navigating#5-soft-navigation)：クライアントサイドナビゲーション中、Next.jsは[部分レンダリング](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)を行い、現在のURLに一致しなくても他のスロットのアクティブなサブページを維持しながらスロット内のサブページを変更します。
+- **ハードナビゲーション**：完全なページロード（ブラウザのリフレッシュ）後、Next.jsは現在のURLに一致しないスロットのアクティブ状態を判別できません。その代わり、`default.js`ファイルを一致しないスロットにレンダリングし、`default.js`が存在しない場合は`404`をレンダリングします。
+
+> **Good to know**:
+>
+> - 一致しないルートに対する`404`は、意図していないページで並列ルートを誤ってレンダリングしないようにするのに役立ちます。
+
+### `default.js`
+
+`default.js`ファイルを定義すると、初期ロードや完全なページリロード中に一致しないスロットのフォールバックとしてレンダリングされます。
+
+次のフォルダ構造を考えてみます。`@team`スロットには`/settings`ページがありますが、`@analytics`にはありません。
+
+<Image
+  alt="Parallel Routes unmatched routes"
+  srcLight="/docs/light/parallel-routes-unmatched-routes.png"
+  srcDark="/docs/dark/parallel-routes-unmatched-routes.png"
+  width="1600"
+  height="930"
+/>
+
+`/settings`にナビゲートすると、`@team`スロットが`/settings`ページをレンダリングし、`@analytics`スロットの現在アクティブなページを維持します。
+
+リフレッシュ時には、Next.jsが`@analytics`に対して`default.js`をレンダリングします。`default.js`が存在しない場合は、代わりに`404`がレンダリングされます。
+
+また、`children`も暗黙のスロットであるため、Next.jsが親ページのアクティブ状態を復元できない場合にフォールバックとしてレンダリングするための`default.js`ファイルを作成する必要があります。
+
+### `useSelectedLayoutSegment(s)`
+
+[`useSelectedLayoutSegment`](/docs/app/api-reference/functions/use-selected-layout-segment)および[`useSelectedLayoutSegments`](/docs/app/api-reference/functions/use-selected-layout-segments)は`parallelRoutesKey`パラメータを受け取り、スロット内のアクティブなルートセグメントを読むことができます。
+
+```tsx filename="app/layout.tsx" switcher
+'use client'
+
+import { useSelectedLayoutSegment } from 'next/navigation'
+
+export default function Layout({ auth }: { auth: React.ReactNode }) {
+  const loginSegment = useSelectedLayoutSegment('auth')
+  // ...
+}
+```
+
+```jsx filename="app/layout.js" switcher
+'use client'
+
+import { useSelectedLayoutSegment } from 'next/navigation'
+
+export default function Layout({ auth }) {
+  const loginSegment = useSelectedLayoutSegment('auth')
+  // ...
+}
+```
+
+ユーザーが`app/@auth/login`（またはURLバーで`/login`に）ナビゲートしたとき、`loginSegment`は文字列`"login"`と等しくなります。
+
+## 例
+
+### 条件付きルート
+
+Parallel Routesを使用して、ユーザーの役割など特定の条件に基づいてルートを条件付きでレンダリングできます。例えば、`/admin`または`/user`役割に対して異なるダッシュボードページをレンダリングする場合：
+
+<Image
+  alt="Conditional routes diagram"
+  srcLight="/docs/light/conditional-routes-ui.png"
+  srcDark="/docs/dark/conditional-routes-ui.png"
+  width="1600"
+  height="898"
+/>
+
+```tsx filename="app/dashboard/layout.tsx" switcher
+import { checkUserRole } from '@/lib/auth'
+
+export default function Layout({
+  user,
+  admin,
+}: {
+  user: React.ReactNode
+  admin: React.ReactNode
+}) {
+  const role = checkUserRole()
+  return <>{role === 'admin' ? admin : user}</>
+}
+```
+
+```jsx filename="app/dashboard/layout.js" switcher
+import { checkUserRole } from '@/lib/auth'
+
+export default function Layout({ user, admin }) {
+  const role = checkUserRole()
+  return <>{role === 'admin' ? admin : user}</>
+}
+```
+
+### タブグループ
+
+スロット内に`layout`を追加することで、ユーザーがスロットを独立してナビゲートすることができるようになります。これはタブを作成するのに便利です。
+
+例えば、`@analytics`スロットには`/page-views`と`/visitors`の2つのサブページがあります。
+
+<Image
+  alt="Analytics slot with two subpages and a layout"
+  srcLight="/docs/light/parallel-routes-tab-groups.png"
+  srcDark="/docs/dark/parallel-routes-tab-groups.png"
+  width="1600"
+  height="768"
+/>
+
+`@analytics`内で、[`layout`](/docs/app/building-your-application/routing/layouts-and-templates)ファイルを作成して、2つのページ間でタブを共有します：
+
+```tsx filename="app/@analytics/layout.tsx" switcher
+import Link from 'next/link'
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <nav>
+        <Link href="/page-views">Page Views</Link>
+        <Link href="/visitors">Visitors</Link>
+      </nav>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+```jsx filename="app/@analytics/layout.js" switcher
+import Link from 'next/link'
+
+export default function Layout({ children }) {
+  return (
+    <>
+      <nav>
+        <Link href="/page-views">Page Views</Link>
+        <Link href="/visitors">Visitors</Link>
+      </nav>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+### モーダル
+
+Parallel Routesは[Intercepting Routes](/docs/app/building-your-application/routing/intercepting-routes)と組み合わせて使用し、深いリンクをサポートするモーダルを作成できます。これにより、モーダルを構築する際の一般的な課題を解決できます：
+
+- モーダルの内容を**URLで共有可能**にする
+- ページをリフレッシュしたときにコンテキストを**保持**し、モーダルを閉じないようにする
+- **逆方向ナビゲーション時にモーダルを閉じる**（前のルートに戻るのではなく）
+- **前方向ナビゲーション時にモーダルを再び開く**
+
+次のUIパターンを考えてみます。ユーザーがクライアントサイドナビゲーションを使ってレイアウトからログインモーダルを開くか、別の`/login`ページにアクセスできます：
+
+<Image
+  alt="Parallel Routes Diagram"
+  srcLight="/docs/light/parallel-routes-auth-modal.png"
+  srcDark="/docs/dark/parallel-routes-auth-modal.png"
+  width="1600"
+  height="687"
+/>
+
+このパターンを実装するには、まず**メイン**のログインページをレンダリングする`/login`ルートを作成します。
+
+<Image
+  alt="Parallel Routes Diagram"
+  srcLight="/docs/light/parallel-routes-modal-login-page.png"
+  srcDark="/docs/dark/parallel-routes-modal-login-page.png"
+  width="1600"
+  height="768"
+/>
+
+```tsx filename="app/login/page.tsx" switcher
+import { Login } from '@/app/ui/login'
+
+export default function Page() {
+  return <Login />
+}
+```
+
+```jsx filename="app/login/page.js" switcher
+import { Login } from '@/app/ui/login'
+
+export default function Page() {
+  return <Login />
+}
+```
+
+次に、`@auth`スロット内に`null`を返す[`default.js`](/docs/app/api-reference/file-conventions/default)ファイルを追加します。これにより、モーダルがアクティブでないときにレンダリングされないようにします。
+
+```tsx filename="app/@auth/default.tsx" switcher
+export default function Default() {
+  return '...'
+}
+```
+
+```jsx filename="app/@auth/default.js" switcher
+export default function Default() {
+  return '...'
+}
+```
+
+`@auth`スロット内で、`/(.)login`フォルダを更新して`/login`ルートをインターセプトします。`<(Modal)>`コンポーネントとその子要素を`/(.)login/page.tsx`ファイルにインポートします：
+
+```tsx filename="app/@auth/(.)login/page.tsx" switcher
+import { Modal } from '@/app/ui/modal'
+import { Login } from '@/app/ui/login'
+
+export default function Page() {
+  return (
+    <Modal>
+      <Login />
+    </Modal>
+  )
+}
+```
+
+```jsx filename="app/@auth/(.)login/page.js" switcher
+import { Modal } from '@/app/ui/modal'
+import { Login } from '@/app/ui/login'
+
+export default function Page() {
+  return (
+    <Modal>
+      <Login />
+    </Modal>
+  )
+}
+```
+
+> **Good to know:**
+>
+> - ルートをインターセプトするために使用される規約（例： `(.)`）はファイルシステムの構造に依存します。[Intercepting Routesの規約](/docs/app/building-your-application/routing/intercepting-routes#convention)をご覧ください。
+> - `<Modal>`の機能をモーダルの内容（`<Login>`）から分離することで、モーダル内の任意のコンテンツ（例： [forms](/docs/app/building-your-application/data-fetching/server-actions-and-mutations#forms)）がServer Componentsになることを保証できます。[Interleaving Client and Server Components](/docs/app/building-your-application/rendering/composition-patterns#supported-pattern-passing-server-components-to-client-components-as-props)をご覧ください。
+
+#### モーダルを開く
+
+これで、Next.jsのルーターを利用してモーダルを開閉できます。モーダルが開かれているときのURLが適切に更新され、逆方向および前方向のナビゲーション時に正しく動作します。
+
+モーダルを開くためには、`@auth`スロットをpropsとして親レイアウトに渡し、`children` propと一緒にレンダリングします。
+
+```tsx filename="app/layout.tsx" switcher
+import Link from 'next/link'
+
+export default function Layout({
+  auth,
+  children,
+}: {
+  auth: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <>
+      <nav>
+        <Link href="/login">Open modal</Link>
+      </nav>
+      <div>{auth}</div>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import Link from 'next/link'
+
+export default function Layout({ auth, children }) {
+  return (
+    <>
+      <nav>
+        <Link href="/login">Open modal</Link>
+      </nav>
+      <div>{auth}</div>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+ユーザーが`<Link>`をクリックすると、モーダルが開き、`/login`ページに遷移するのではなくモーダルが開きます。ただし、リフレッシュや初回ロード時に`/login`にナビゲートすると、メインのログインページが表示されます。
+
+#### モーダルを閉じる
+
+`router.back()`を呼び出すか、`Link`コンポーネントを使用することでモーダルを閉じることができます。
+
+```tsx filename="app/ui/modal.tsx" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export function Modal({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          router.back()
+        }}
+      >
+        Close modal
+      </button>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+```jsx filename="app/ui/modal.js" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export function Modal({ children }) {
+  const router = useRouter()
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          router.back()
+        }}
+      >
+        Close modal
+      </button>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+`Link`コンポーネントを使用して、もはや`@auth`スロットをレンダリングしないべきページからナビゲーションする場合、並列ルートが`null`を返すコンポーネントに一致することを確認する必要があります。例えば、ルートページに戻る際に、`@auth/page.tsx`コンポーネントを作成します：
+
+```tsx filename="app/ui/modal.tsx" switcher
+import Link from 'next/link'
+
+export function Modal({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <Link href="/">Close modal</Link>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+```jsx filename="app/ui/modal.js" switcher
+import Link from 'next/link'
+
+export function Modal({ children }) {
+  return (
+    <>
+      <Link href="/">Close modal</Link>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+```tsx filename="app/@auth/page.tsx" switcher
+export default function Page() {
+  return '...'
+}
+```
+
+```jsx filename="app/@auth/page.js" switcher
+export default function Page() {
+  return '...'
+}
+```
+
+または、他のページ（例えば`/foo`、`/foo/bar`など）にナビゲートする場合、catch-allスロットを使用できます：
+
+```tsx filename="app/@auth/[...catchAll]/page.tsx" switcher
+export default function CatchAll() {
+  return '...'
+}
+```
+
+```jsx filename="app/@auth/[...catchAll]/page.js" switcher
+export default function CatchAll() {
+  return '...'
+}
+```
+
+> **Good to know:**
+>
+> - クライアントサイドナビゲーションの場合、スロットに一致しなくなるルートには残ることを示すために、`@auth`スロットでcatch-allルートを使用してモーダルを閉じます。スロットを`null`を返すルートに一致させてモーダルを閉じる必要があります。
+> - 他の例としては、ギャラリーで写真モーダルを開くと同時に専用の`/photo/[id]`ページを持つ、またはサイドモーダルでショッピングカートを開くなどがあります。
+> - [例を表示](https://github.com/vercel-labs/nextgram)するには、InterceptedおよびParallel Routesを使用したモーダルがあります。
+
+### ローディングとエラーUI
+
+Parallel Routesは独立してストリーム配信できるため、各ルートに対して独立したエラーとローディング状態を定義できます：
+
+<Image
+  alt="Parallel routes enable custom error and loading states"
+  srcLight="/docs/light/parallel-routes-cinematic-universe.png"
+  srcDark="/docs/dark/parallel-routes-cinematic-universe.png"
+  width="1600"
+  height="1218"
+/>
+
+詳細については、[Loading UI](/docs/app/building-your-application/routing/loading-ui-and-streaming)および[Error Handling](/docs/app/building-your-application/routing/error-handling)ドキュメントを参照してください。

@@ -1,0 +1,63 @@
+---
+title: 'permanentRedirect'
+description: 'permanentRedirect 関数の API リファレンス。'
+related:
+  links:
+    - 'app/api-reference/functions/redirect'
+---
+
+`permanentRedirect` 関数は、ユーザーを別の URL にリダイレクトするためのものです。`permanentRedirect` は Server Components、Client Components、[Route Handlers](/docs/app/building-your-application/routing/route-handlers)、および [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で使用できます。
+
+ストリーミングコンテキストで使用すると、クライアント側でリダイレクトを実行するためのメタタグが挿入されます。server action で使用すると、呼び出し元に 303 HTTP リダイレクトレスポンスを提供します。それ以外の場合は、呼び出し元に 308（Permanent）HTTP リダイレクトレスポンスを提供します。
+
+リソースが存在しない場合、代わりに [`notFound` 関数](/docs/app/api-reference/functions/not-found)を使用できます。
+
+> **知っておきたいこと**: 308（Permanent）ではなく 307（Temporary）の HTTP リダイレクトを返すことを好む場合、代わりに [`redirect` 関数](/docs/app/api-reference/functions/redirect)を使用できます。
+
+## パラメーター
+
+`permanentRedirect` 関数は2つの引数を受け取ります：
+
+```js
+permanentRedirect(path, type)
+```
+
+| パラメーター | 型                                                            | 説明                                               |
+| ----------- | ------------------------------------------------------------- | ------------------------------------------------- |
+| `path`      | `string`                                                      | リダイレクト先の URL。相対パスまたは絶対パスが可能です。 |
+| `type`      | `'replace'`（デフォルト） もしくは `'push'`（Server Actions のデフォルト） | 実行するリダイレクトのタイプです。                          |
+
+デフォルトでは、`permanentRedirect` は [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で `push`（ブラウザの履歴スタックに新しいエントリを追加）を使用し、他の場所では `replace`（ブラウザの履歴スタックの現在の URL を置き換える）を使用します。この動作は、`type` パラメーターを指定することで上書きすることができます。
+
+`type` パラメーターは Server Components で使用された場合に効果はありません。
+
+## 戻り値
+
+`permanentRedirect` は値を返しません。
+
+## 例
+
+`permanentRedirect()` 関数を呼び出すと、`NEXT_REDIRECT` エラーがスローされ、そのスローされたルートセグメントのレンダリングが終了します。
+
+```jsx filename="app/team/[id]/page.js"
+import { permanentRedirect } from 'next/navigation'
+
+async function fetchTeam(id) {
+  const res = await fetch('https://...')
+  // レスポンスがOKでない場合、undefinedを返す
+  if (!res.ok) return undefined
+  return res.json()
+}
+
+export default async function Profile({ params }) {
+  const team = await fetchTeam(params.id)
+  // チームが存在しなければ、/login にリダイレクト
+  if (!team) {
+    permanentRedirect('/login')
+  }
+
+  // ...
+}
+```
+
+> **知っておきたいこと**: `permanentRedirect` は `return permanentRedirect()` を使用する必要はありません。これは TypeScript の [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never) 型を使用するためです。

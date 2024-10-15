@@ -1,0 +1,364 @@
+---
+title: 'メタデータ'
+description: 'Metadata APIを使用して、任意のレイアウトやページでメタデータを定義します。'
+related:
+  description: 'すべてのMetadata APIオプションを表示します。'
+  links:
+    - 'app/api-reference/functions/generate-metadata'
+    - 'app/api-reference/file-conventions/metadata'
+    - 'app/api-reference/functions/generate-viewport'
+---
+
+Next.jsにはMetaデータAPIがあり、アプリケーションのメタデータ（例: HTMLの`head`要素内の`meta`や`link`タグ）を定義してSEOとウェブシェアの向上を図ることができます。
+
+アプリケーションにメタデータを追加する方法は2つあります:
+
+- **設定ベースのメタデータ**: `layout.js`や`page.js`ファイルの中で[静的な`metadata`オブジェクト](/docs/app/api-reference/functions/generate-metadata#metadata-object)または動的な[`generateMetadata`関数](/docs/app/api-reference/functions/generate-metadata#generatemetadata-function)をエクスポートします。
+- **ファイルベースのメタデータ**: 静的または動的に生成された特殊なファイルをルートセグメントに追加します。
+
+これらのオプションのいずれかで、Next.jsは自動的にページの関連する`<head>`要素を生成します。 また、[`ImageResponse`](/docs/app/api-reference/functions/image-response)コンストラクタを使用して動的なOG画像を作成することもできます。
+
+## 静的メタデータ
+
+静的メタデータを定義するには、`layout.js`または静的`page.js`ファイルから[`Metadata`オブジェクト](/docs/app/api-reference/functions/generate-metadata#metadata-object)をエクスポートします。
+
+```tsx filename="layout.tsx | page.tsx" switcher
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: '...',
+  description: '...',
+}
+
+export default function Page() {}
+```
+
+```jsx filename="layout.js | page.js" switcher
+export const metadata = {
+  title: '...',
+  description: '...',
+}
+
+export default function Page() {}
+```
+
+利用可能なすべてのオプションについては、[APIリファレンス](/docs/app/api-reference/functions/generate-metadata)を参照してください。
+
+## 動的メタデータ
+
+動的値が必要なメタデータを取得するためには、`generateMetadata`関数を使用できます。
+
+```tsx filename="app/products/[id]/page.tsx" switcher
+import type { Metadata, ResolvingMetadata } from 'next'
+
+type Props = {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  // ルートのパラメータを読み込む
+  const id = (await params).id
+
+  // データを取得する
+  const product = await fetch(`https://.../${id}`).then((res) => res.json())
+
+  // オプションで親メタデータにアクセスして拡張する（置き換えるのではなく）
+  const previousImages = (await parent).openGraph?.images || []
+
+  return {
+    title: product.title,
+    openGraph: {
+      images: ['/some-specific-page-image.jpg', ...previousImages],
+    },
+  }
+}
+
+export default function Page({ params, searchParams }: Props) {}
+```
+
+```jsx filename="app/products/[id]/page.js" switcher
+export async function generateMetadata({ params, searchParams }, parent) {
+  // ルートのパラメータを読み込む
+  const id = (await params).id
+
+  // データを取得する
+  const product = await fetch(`https://.../${id}`).then((res) => res.json())
+
+  // オプションで親メタデータにアクセスして拡張する（置き換えるのではなく）
+  const previousImages = (await parent).openGraph?.images || []
+
+  return {
+    title: product.title,
+    openGraph: {
+      images: ['/some-specific-page-image.jpg', ...previousImages],
+    },
+  }
+}
+
+export default function Page({ params, searchParams }) {}
+```
+
+利用可能なすべてのパラメータについては、[APIリファレンス](/docs/app/api-reference/functions/generate-metadata)を参照してください。
+
+> **Good to know**:
+>
+> - 静的および`generateMetadata`を介した動的メタデータは、**Server Componentsでのみサポート**されています。
+> - `fetch`リクエストは、`generateMetadata`、`generateStaticParams`、Layouts、Pages、Server Components間で同じデータに対して自動的に[キャッシュされます](/docs/app/building-your-application/caching#request-memoization)。`fetch`が利用できない場合はReact[`cache`関数を使用できます](/docs/app/building-your-application/caching#react-cache-function)。
+> - Next.jsは、クライアントにUIをストリーミングする前に、`generateMetadata`内のデータ取得が完了するまで待機します。これにより、[ストリームされたレスポンス](/docs/app/building-your-application/routing/loading-ui-and-streaming)の最初の部分に`<head>`タグが含まれることが保証されます。
+
+## ファイルベースのメタデータ
+
+メタデータ用の特殊なファイルが利用可能です:
+
+- [favicon.ico, apple-icon.jpg, icon.jpg](/docs/app/api-reference/file-conventions/metadata/app-icons)
+- [opengraph-image.jpg, twitter-image.jpg](/docs/app/api-reference/file-conventions/metadata/opengraph-image)
+- [robots.txt](/docs/app/api-reference/file-conventions/metadata/robots)
+- [sitemap.xml](/docs/app/api-reference/file-conventions/metadata/sitemap)
+
+これらは静的なメタデータに使用することもできますし、プログラムでこれらのファイルをコードで生成することもできます。
+
+実装と例については、[メタデータファイル](/docs/app/api-reference/file-conventions/metadata) APIリファレンスおよび[動的画像生成](#dynamic-image-generation)を参照してください。
+
+## 動作
+
+ファイルベースのメタデータは優先順位が高く、設定ベースのメタデータを上書きします。
+
+### デフォルトフィールド
+
+メタデータを定義しないルートでも、常に追加される2つのデフォルトの`meta`タグがあります:
+
+- [meta charsetタグ](https://developer.mozilla.org/docs/Web/HTML/Element/meta#attr-charset)は、ウェブサイトの文字エンコーディングを設定します。
+- [meta viewportタグ](https://developer.mozilla.org/docs/Web/HTML/Viewport_meta_tag)は、さまざまなデバイスに合わせてウェブサイトのビューポートの幅とスケールを設定します。
+
+```html
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+```
+
+> **Good to know**: デフォルトの[`viewport`](/docs/app/api-reference/functions/generate-metadata#viewport)メタタグを上書きすることができます。
+
+### 順序
+
+メタデータは、rootセグメントから最終的な`page.js`セグメントに最も近いセグメントまで順に評価されます。例:
+
+1. `app/layout.tsx` (Root Layout)
+2. `app/blog/layout.tsx` (ネストされたブログレイアウト)
+3. `app/blog/[slug]/page.tsx` (ブログページ)
+
+### マージ
+
+[評価の順序](#ordering)に従って、同じルート内の複数のセグメントからエクスポートされたメタデータオブジェクトは**浅く**マージされて、ルートの最終的なメタデータ出力が形成されます。重複するキーは、順序に基づいて**置き換えられます**。
+
+これは、[`openGraph`](/docs/app/api-reference/functions/generate-metadata#opengraph)や[`robots`](/docs/app/api-reference/functions/generate-metadata#robots)のようなネストされたフィールドを持つメタデータが、以前のセグメントで定義されている場合、それらが最後のセグメントによって**上書き**されることを意味します。
+
+#### フィールドの上書き
+
+```jsx filename="app/layout.js"
+export const metadata = {
+  title: 'Acme',
+  openGraph: {
+    title: 'Acme',
+    description: 'Acme is a...',
+  },
+}
+```
+
+```jsx filename="app/blog/page.js"
+export const metadata = {
+  title: 'Blog',
+  openGraph: {
+    title: 'Blog',
+  },
+}
+
+// 出力:
+// <title>Blog</title>
+// <meta property="og:title" content="Blog" />
+```
+
+上記の例では:
+
+- `app/layout.js`の`title`は、`app/blog/page.js`の`title`によって**置き換えられます**。
+- `app/layout.js`のすべての`openGraph`フィールドは、`app/blog/page.js`で`openGraph`メタデータを設定しているため、`app/blog/page.js`で**置き換えられます**。`openGraph.description`がないことに注意してください。
+
+一部のネストされたフィールドをセグメント間で共有しつつ、他を上書きしたい場合は、それらを別の変数に出力できます:
+
+```jsx filename="app/shared-metadata.js"
+export const openGraphImage = { images: ['http://...'] }
+```
+
+```jsx filename="app/page.js"
+import { openGraphImage } from './shared-metadata'
+
+export const metadata = {
+  openGraph: {
+    ...openGraphImage,
+    title: 'Home',
+  },
+}
+```
+
+```jsx filename="app/about/page.js"
+import { openGraphImage } from '../shared-metadata'
+
+export const metadata = {
+  openGraph: {
+    ...openGraphImage,
+    title: 'About',
+  },
+}
+```
+
+上記の例では、OGイメージが`app/layout.js`と`app/about/page.js`の間で共有されている一方で、タイトルは異なります。
+
+#### フィールドの継承
+
+```jsx filename="app/layout.js"
+export const metadata = {
+  title: 'Acme',
+  openGraph: {
+    title: 'Acme',
+    description: 'Acme is a...',
+  },
+}
+```
+
+```jsx filename="app/about/page.js"
+export const metadata = {
+  title: 'About',
+}
+
+// 出力:
+// <title>About</title>
+// <meta property="og:title" content="Acme" />
+// <meta property="og:description" content="Acme is a..." />
+```
+
+**注意事項**
+
+- `app/layout.js`の`title`は、`app/about/page.js`の`title`によって**置き換えられます**。
+- `app/about/page.js`が`openGraph`メタデータを設定していないため、`app/layout.js`からのすべての`openGraph`フィールドが`app/about/page.js`で**継承**されます。
+
+## 動的画像生成
+
+`ImageResponse`コンストラクタを使用すると、JSXとCSSを使用して動的な画像を生成できます。 これは、Open Graph画像、Twitterカードなどのソーシャルメディア画像を作成するのに役立ちます。
+
+使用するには、`next/og`から`ImageResponse`をインポートします:
+
+```jsx filename="app/about/route.js"
+import { ImageResponse } from 'next/og'
+
+export async function GET() {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          fontSize: 128,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          textAlign: 'center',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Hello world!
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 600,
+    }
+  )
+}
+```
+
+`ImageResponse`は、他のNext.js APIとよく統合され、例えば、[Route Handlers](/docs/app/building-your-application/routing/route-handlers)やファイルベースのメタデータと連携します。 例えば、`opengraph-image.tsx`ファイル内で`ImageResponse`を使用して、ビルド時またはリクエスト時に動的にOpen Graph画像を生成できます。
+
+`ImageResponse`は、フレックスボックスや絶対位置、自社フォント、テキストラッピング、センタリング、ネストされた画像など、共通のCSSプロパティをサポートしています。[サポートされているCSSプロパティの完全なリストを参照してください](/docs/app/api-reference/functions/image-response)。
+
+> **Good to know**:
+>
+> - [Vercel OG Playground](https://og-playground.vercel.app/)で利用可能な例があります。
+> - `ImageResponse`は、[@vercel/og]https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)、[Satori](https://github.com/vercel/satori)、Resvgを使用して、HTMLおよびCSSをPNGに変換します。
+> - `Edge Runtime`のみがサポートされています。デフォルトの`Node.js runtime`は動作しません。
+> - フレックスボックスおよびCSSプロパティのサブセットのみがサポートされています。 高度なレイアウト（例: `display: grid`）は動作しません。
+> - 最大バンドルサイズは`500KB`です。バンドルサイズには、 JSX、CSS、フォント、画像、その他のアセットが含まれます。 制限を超える場合は、アセットのサイズを減らすか、ランタイムに取得することを検討してください。
+> - `ttf`、`otf`、および`woff`フォント形式のみがサポートされています。 フォントの解析速度を最大化するために、`ttf`または`otf`が`woff`よりも推奨されます。
+
+## JSON-LD
+
+[JSON-LD](https://json-ld.org/)は、検索エンジンがコンテンツを理解するために使用できる構造化データのフォーマットです。 例えば、人物、イベント、組織、映画、書籍、レシピなどのさまざまなエンティティを記述するために使用できます。
+
+JSON-LDの現在の推奨事項は、構造化データを`layout.js`または`page.js`コンポーネント内の`<script>`タグとしてレンダリングすることです。 例えば:
+
+```tsx filename="app/products/[id]/page.tsx" switcher
+export default async function Page({ params }) {
+  const product = await getProduct(params.id)
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.image,
+    description: product.description,
+  }
+
+  return (
+    <section>
+      {/* JSON-LDをページに追加 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      {/* ... */}
+    </section>
+  )
+}
+```
+
+```jsx filename="app/products/[id]/page.js" switcher
+export default async function Page({ params }) {
+  const product = await getProduct(params.id)
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.image,
+    description: product.description,
+  }
+
+  return (
+    <section>
+      {/* JSON-LDをページに追加 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      {/* ... */}
+    </section>
+  )
+}
+```
+
+構造化データの検証とテストは、Google用の[リッチリザルトテスト](https://search.google.com/test/rich-results)または、汎用の[スキーママークアップバリデータ](https://validator.schema.org/)を使用して行えます。
+
+JSON-LDは、`schema-dts`のようなコミュニティパッケージを使用してTypeScriptで型付けできます:
+
+```tsx
+import { Product, WithContext } from 'schema-dts'
+
+const jsonLd: WithContext<Product> = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'Next.js Sticker',
+  image: 'https://nextjs.org/imgs/sticker.png',
+  description: 'Dynamic at the speed of static.',
+}
+```

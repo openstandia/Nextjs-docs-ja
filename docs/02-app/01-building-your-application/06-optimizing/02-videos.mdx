@@ -1,0 +1,275 @@
+---
+title: 'Video Optimization'
+nav_title: 'Videos'
+description: 'Next.jsアプリケーションで動画を最適化するための推奨事項とベストプラクティス。'
+---
+
+このページでは、Next.jsアプリケーションで動画を使用する方法について説明し、パフォーマンスに影響を与えずに動画ファイルを保存および表示する方法を示します。
+
+## `<video>` と `<iframe>` の使用
+
+動画は、直接の動画ファイルにはHTMLの **`<video>`** タグを、外部プラットフォームにホストされた動画には **`<iframe>`** を使用してページに埋め込むことができます。
+
+### `<video>`
+
+HTMLの [`<video>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video) タグは、セルフホストまたは直接提供された動画コンテンツを埋め込み、再生と外観を完全に制御できます。
+
+```jsx filename="app/ui/video.jsx"
+export function Video() {
+  return (
+    <video width="320" height="240" controls preload="none">
+      <source src="/path/to/video.mp4" type="video/mp4" />
+      <track
+        src="/path/to/captions.vtt"
+        kind="subtitles"
+        srcLang="en"
+        label="English"
+      />
+      お使いのブラウザーは video タグをサポートしていません。
+    </video>
+  )
+}
+```
+
+### `<video>` タグの一般的な属性
+
+| 属性           | 説明                                                                                                   | 例                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| `src`          | 動画ファイルのソースを指定します                                                                       | `<video src="/path/to/video.mp4" />`    |
+| `width`        | 動画プレーヤーの幅を設定します                                                                         | `<video width="320" />`                 |
+| `height`       | 動画プレーヤーの高さを設定します                                                                       | `<video height="240" />`                |
+| `controls`     | 指定すると、デフォルトの再生コントロールが表示されます                                                 | `<video controls />`                    |
+| `autoPlay`     | ページロード時に自動的に動画を再生します。注意：オートプレイポリシーはブラウザーによって異なります             | `<video autoPlay />`                    |
+| `loop`         | 動画の再生をループします                                                                               | `<video loop />`                        |
+| `muted`        | デフォルトで音声をミュートにします。通常、`autoPlay`と一緒に使用されます                               | `<video muted />`                       |
+| `preload`      | 動画のプリロード方法を指定します。値：`none`、`metadata`、`auto`                                      | `<video preload="none" />`              |
+| `playsInline`  | iOSデバイスでのインライン再生を有効にします。通常、iOS Safariでのオートプレイを機能させるために必要です  | `<video playsInline />`                 |
+
+> **Good to know**: `autoPlay`属性を使用する場合、ビデオがほとんどのブラウザで自動的に再生されるようにするために、`muted`属性を追加し、iOSデバイスとの互換性のために`playsInline`属性を含めることが重要です。
+
+動画属性の詳細なリストについては、[MDNのドキュメント](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attributes)を参照してください。
+
+### 動画のベストプラクティス
+
+- **フォールバックコンテンツ:** `<video>` タグを使用する場合、動画再生をサポートしていないブラウザ向けにタグ内にフォールバックコンテンツを含めます
+- **字幕やキャプション:** 聴覚障がい者のために字幕やキャプションを含めます。`<video>`要素で `<track>` タグを使用してキャプションファイルのソースを指定します
+- **アクセシブルなコントロール:** キーボード操作とスクリーンリーダーとの互換性のために標準のHTML5動画コントロールを推奨します。高度なニーズには、[react-player](https://github.com/cookpete/react-player)や[video.js](https://videojs.com/)などのサードパーティプレーヤーを考慮し、アクセシブルなコントロールや一貫したブラウザエクスペリエンスを提供します
+
+### `<iframe>`
+
+HTMLの `<iframe>` タグは、YouTubeやVimeoなどの外部プラットフォームからのビデオを埋め込むことができます。
+
+```jsx filename="app/page.jsx"
+export default function Page() {
+  return (
+    <iframe
+      src="https://www.youtube.com/watch?v=gfU1iZnjRZM"
+      frameborder="0"
+      allowfullscreen
+    />
+  )
+}
+```
+
+### `<iframe>` タグの一般的な属性
+
+| 属性               | 説明                                                       | 例                                       |
+| ------------------ | ---------------------------------------------------------- | ---------------------------------------- |
+| `src`              | 埋め込むページのURLです                                    | `<iframe src="https://example.com" />`   |
+| `width`            | iframeの幅を設定します                                     | `<iframe width="500" />`                 |
+| `height`           | iframeの高さを設定します                                   | `<iframe height="300" />`                |
+| `frameborder`      | iframeの周りに境界線を表示するかどうかを指定します         | `<iframe frameborder="0" />`             |
+| `allowfullscreen`  | iframeコンテンツを全画面表示することを許可します            | `<iframe allowfullscreen />`             |
+| `sandbox`          | iframe内のコンテンツに対する制限を追加で有効にします        | `<iframe sandbox />`                     |
+| `loading`          | ローディングの動作を最適化します（例:遅延読み込み）        | `<iframe loading="lazy" />`              |
+| `title`            | アクセシビリティのためにiframeにタイトルを提供します       | `<iframe title="Description" />`         |
+
+iframe属性の詳細なリストについては、[MDNのドキュメント](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attributes)を参照してください。
+
+### 動画埋め込み方法の選択
+
+Next.jsアプリケーションで動画を埋め込む方法は2つあります：
+
+- **セルフホストまたは直接の動画ファイル:** `<video>` タグを使用してセルフホストの動画を埋め込み、プレーヤーの機能と外観を詳細に制御する必要があるシナリオに対応します。この統合方法により、動画コンテンツをカスタマイズし、制御可能です
+- **動画ホスティングサービス（YouTube、Vimeoなど）の利用:** YouTubeやVimeoなどの動画ホスティングサービスを利用する場合、`<iframe>` タグを使用してこれらのiframeベースのプレーヤーを埋め込みます。この方法はプレーヤーの制御を限定しますが、使いやすさやこれらのプラットフォームが提供する機能を提供します
+
+アプリケーションの要件と目指すユーザーエクスペリエンスに合致する埋め込み方法を選択してください。
+
+### 外部プラットフォームにホストされた動画の埋め込み
+
+外部プラットフォームから動画を埋め込むには、Next.jsを使用して動画情報を取得し、React Suspenseを使って読み込み時のフォールバック状態を処理できます。
+
+**1. 動画埋め込み用のServer Componentを作成**
+
+最初のステップは、動画を埋め込むための適切なiframeを生成する [Server Component](https://nextjs.org/docs/app/building-your-application/rendering/server-components) を作成することです。このコンポーネントは動画のソースURLを取得し、iframeをレンダリングします。
+
+```jsx filename="app/ui/video-component.jsx"
+export default async function VideoComponent() {
+  const src = await getVideoSrc()
+
+  return <iframe src={src} frameborder="0" allowfullscreen />
+}
+```
+
+**2. React Suspenseを使って動画コンポーネントをストリーミング**
+
+動画を埋め込むためのServer Componentを作成したら、次のステップは [React Suspense](https://react.dev/reference/react/Suspense) を使用して[コンポーネントをストリーム](https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming)することです。
+
+```jsx filename="app/page.jsx"
+import { Suspense } from 'react'
+import VideoComponent from '../ui/VideoComponent.jsx'
+
+export default function Page() {
+  return (
+    <section>
+      <Suspense fallback={<p>Loading video...</p>}>
+        <VideoComponent />
+      </Suspense>
+      {/* ページの他のコンテンツ */}
+    </section>
+  )
+}
+```
+
+> **Good to know**: 外部プラットフォームから動画を埋め込む際には、以下のベストプラクティスを考慮してください：
+>
+> - 動画の埋め込みがレスポンシブであることを確認します。CSSを使用してiframeまたはビデオプレーヤーをさまざまな画面サイズに適応させます。
+> - ネットワーク条件に基づいた[動画の読み込み戦略](https://yoast.com/site-speed-tips-for-faster-video/)を実装し、特にデータプランが限られているユーザーに配慮します。
+
+このアプローチにより、ページのブロックを防ぎ、ユーザーが動画コンポーネントがストリーミングされている間もページと対話できるため、より良いユーザーエクスペリエンスを提供することができます。
+
+より魅力的で有益な読み込み体験を提供するために、フォールバックUIとしてロードスケルトンを使用することを検討してください。単純な読み込みメッセージを表示する代わりに、次のようにビデオプレーヤーに似たスケルトンを表示できます：
+
+```jsx filename="app/page.jsx"
+import { Suspense } from 'react'
+import VideoComponent from '../ui/VideoComponent.jsx'
+import VideoSkeleton from '../ui/VideoSkeleton.jsx'
+
+export default function Page() {
+  return (
+    <section>
+      <Suspense fallback={<VideoSkeleton />}>
+        <VideoComponent />
+      </Suspense>
+      {/* ページの他のコンテンツ */}
+    </section>
+  )
+}
+```
+
+## セルフホスト動画
+
+セルフホスト動画を選択する理由はいくつかあります：
+
+- **完全なコントロールと独立性**: セルフホスティングにより、再生から外観まで動画コンテンツを直接管理でき、外部プラットフォーム制約のない完全な所有権とコントロールを確保します
+- **特定のニーズに合わせたカスタマイズ**: 動的な背景動画など、特別な要件に対応する際に理想的であり、デザインや機能のニーズに合わせたカスタマイズが可能です
+- **パフォーマンスとスケーラビリティの考慮事項**: トラフィックとコンテンツサイズの増加を効果的にサポートするために、高パフォーマンスでスケーラブルなストレージソリューションを選択します
+- **コストと統合**: Next.jsフレームワークと広範な技術エコシステムへの簡単な統合とともに、ストレージと帯域幅のコストを考慮します
+
+### Vercel Blobを使った動画ホスティング
+
+[Vercel Blob](https://vercel.com/docs/storage/vercel-blob?utm_source=next-site&utm_medium=docs&utm_campaign=next-website) は効率的な動画ホスティング方法を提供し、Next.jsとよく連携するスケーラブルなクラウドストレージソリューションを提供します。以下に示すのはVercel Blobを使用して動画をホストする方法です：
+
+**1. Vercel Blobへ動画をアップロード**
+
+Vercelのダッシュボードで「ストレージ」タブに移動し、[Vercel Blob](https://vercel.com/docs/storage/vercel-blob?utm_source=next-site&utm_medium=docs&utm_campaign=next-website) ストアを選択します。Blobテーブルの右上にある「アップロード」ボタンをクリックし、アップロードしたい動画ファイルを選択します。アップロードが完了すると、Blobテーブルに動画ファイルが表示されます。
+
+また、サーバーアクションを使用して動画をアップロードすることもできます。詳細な手順については、サーバーサイドアップロードに関するVercelのドキュメントを参照してください。Vercelは[クライアントサイドアップロード](https://vercel.com/docs/storage/vercel-blob/client-upload)もサポートしています。この方法は特定のユースケースに適しているかもしれません。
+
+**2. Next.jsで動画を表示**
+
+動画がアップロードされ、保存された後は、Next.jsアプリケーションで表示することができます。以下は、`<video>`タグとReact Suspenseを使用してこれを行う方法の例です：
+
+```jsx filename="app/page.jsx"
+import { Suspense } from 'react'
+import { list } from '@vercel/blob'
+
+export default function Page() {
+  return (
+    <Suspense fallback={<p>Loading video...</p>}>
+      <VideoComponent fileName="my-video.mp4" />
+    </Suspense>
+  )
+}
+
+async function VideoComponent({ fileName }) {
+  const { blobs } = await list({
+    prefix: fileName,
+    limit: 1,
+  })
+  const { url } = blobs[0]
+
+  return (
+    <video controls preload="none" aria-label="Video player">
+      <source src={url} type="video/mp4" />
+      お使いのブラウザーは video タグをサポートしていません。
+    </video>
+  )
+}
+```
+
+このアプローチでは、ページはビデオの `@vercel/blob` URL を使用して `VideoComponent` を使ってビデオを表示します。React Suspenseを使用して、ビデオのURLが取得されてビデオが表示可能になるまでフォールバックを表示します。
+
+### 動画に字幕を追加
+
+動画に字幕がある場合、 `<video>` タグ内の `<track>` 要素を使用して簡単に追加できます。字幕ファイルを動画ファイルと同様に[Vercel Blob](https://vercel.com/docs/storage/vercel-blob?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)から取得できます。以下に `<VideoComponent>` に字幕を含める方法を示しています。
+
+```jsx filename="app/page.jsx"
+async function VideoComponent({ fileName }) {
+  const { blobs } = await list({
+    prefix: fileName,
+    limit: 2,
+  })
+  const { url } = blobs[0]
+  const { url: captionsUrl } = blobs[1]
+
+  return (
+    <video controls preload="none" aria-label="Video player">
+      <source src={url} type="video/mp4" />
+      <track src={captionsUrl} kind="subtitles" srcLang="en" label="English" />
+      お使いのブラウザーは video タグをサポートしていません。
+    </video>
+  )
+}
+```
+
+この方法に従うことで、Next.jsアプリケーションに動画を効果的にセルフホストして統合できます。
+
+## リソース
+
+動画の最適化とベストプラクティスについてさらに学ぶためには、次のリソースを参照してください：
+
+- **動画フォーマットとコーデックの理解**: MP4の互換性やWebMのウェブ最適化など、ニーズに合ったフォーマットとコーデックを選びます。詳細は[Mozillaの動画コーデックに関するガイド](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Video_codecs)を参照してください
+- **動画圧縮**: FFmpegなどのツールを使用して動画を効果的に圧縮し、品質とファイルサイズをバランスさせます。圧縮技術についての詳細は[FFmpegの公式サイト](https://www.ffmpeg.org/)を参照してください
+- **解像度とビットレートの調整**: [解像度とビットレート](https://www.dacast.com/blog/bitrate-vs-resolution/#:~:text=The%20two%20measure%20different%20aspects,yield%20different%20qualities%20of%20video) を視聴プラットフォームに基づいて調整し、モバイルデバイスには低い設定を使用します
+- **コンテンツ配信ネットワーク（CDN）**:動画配信の速度を向上させ、高トラフィックを管理するためにCDNを利用します。一部のストレージソリューション、例えばVercel Blobを使用する場合、CDN機能は自動的に処理されます。CDNの利点について[さらに学ぶ](https://vercel.com/docs/edge-network/overview?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)。
+
+Next.jsプロジェクトに動画を統合するための以下の動画ストリーミングプラットフォームを探索してください：
+
+### オープンソース `next-video` コンポーネント
+
+- Vercel Blob、S3、Backblaze、Muxなどさまざまなホスティングサービスと互換性のある Next.js 用の `<Video>` コンポーネントを提供
+- 異なるホスティングサービスで `next-video.dev` を使用するための[詳細なドキュメント](https://next-video.dev/docs)
+
+### Cloudinary統合
+
+- Next.jsと共にCloudinaryを使用するための公式[ドキュメントと統合ガイド](https://next.cloudinary.dev/)
+- [簡易動画サポート](https://next.cloudinary.dev/cldvideoplayer/basic-usage)のための `<CldVideoPlayer>` コンポーネントを含む
+- [Adaptive Bitrate Streaming](https://github.com/cloudinary-community/cloudinary-examples/tree/main/examples/nextjs-cldvideoplayer-abr) を含むNext.jsへのCloudinary統合の[例](https://github.com/cloudinary-community/cloudinary-examples/?tab=readme-ov-file#nextjs)
+- その他の[Cloudinaryライブラリ](https://cloudinary.com/documentation)には、Node.js SDKも利用可能
+
+### Mux Video API
+
+- MuxとNext.jsでビデオコースを作成するための [スターターテンプレート](https://github.com/muxinc/video-course-starter-kit) を提供
+- Next.jsアプリケーション向けの[高パフォーマンスの動画埋め込み](https://www.mux.com/for/nextjs)に関するMuxの推奨事項を学ぶ
+- Next.jsとMuxを示す[サンプルプロジェクト](https://with-mux-video.vercel.app/)を探索
+
+### Fastly
+
+- ストリーミングメディアやビデオオンデマンド用のFastlyのソリューションをNext.jsに統合する方法についての詳細を[学ぶ](https://www.fastly.com/products/streaming-media/video-on-demand)
+
+### ImageKit.io統合
+
+- Next.jsとのImageKitを統合するための[公式クイックスタートガイド](https://imagekit.io/docs/integration/nextjs) を確認
+- 統合は、[シームレスな動画サポート](https://imagekit.io/docs/integration/nextjs#rendering-videos) を提供する `<IKVideo>` コンポーネントを提供
+- Node.js SDKのような他の[ImageKitライブラリ](https://imagekit.io/docs)を探索することも可能です

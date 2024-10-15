@@ -1,0 +1,587 @@
+---
+title: 'ヘッダー'
+description: 'Next.jsアプリにカスタムHTTPヘッダーを追加します。'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerの間で共有されています。`<PagesOnly>Content</PagesOnly>` コンポーネントを使用してPages Routerに特化したコンテンツを追加できます。共有されたコンテンツは、コンポーネントにラップしないでください。 */}
+
+ヘッダーは、特定のパスへのリクエストに応じて、レスポンスにカスタムHTTPヘッダーを設定することを可能にします。
+
+カスタムHTTPヘッダーを設定するには、`next.config.js`の中で`headers`キーを使用します:
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/about',
+        headers: [
+          {
+            key: 'x-custom-header',
+            value: 'my custom header value',
+          },
+          {
+            key: 'x-another-custom-header',
+            value: 'my other custom header value',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+`headers`は`source`と`headers`プロパティを持つオブジェクトを保持する配列を返す非同期関数です。
+
+- `source`は、受信リクエストのパスパターンです
+- `headers`は、`key`と`value`プロパティを持つレスポンスヘッダーオブジェクトの配列です
+- `basePath`: `false`または`undefined` - `false`の場合、マッチング時にbasePathは含まれません。外部のリダイレクト専用に使用できます
+- `locale`: `false`または`undefined` - マッチング時にロケールを含めないかどうか
+- `has`は[type](#header-cookie-and-query-matching)、`key`、`value`プロパティを持つ[hasオブジェクト](#header-cookie-and-query-matching)の配列です
+- `missing`は[type](#header-cookie-and-query-matching)、`key`、`value`プロパティを持つ[missingオブジェクト](#header-cookie-and-query-matching)の配列です
+
+ヘッダーは、ページや`/public`ファイルを含むファイルシステムの前にチェックされます。
+
+## ヘッダーの上書き動作
+
+2つのヘッダーが同じパスにマッチし、同じヘッダーキーを設定する場合、最後のヘッダーキーが最初のキーを上書きします。以下のヘッダーでは、`/hello`パスが`x-hello`ヘッダーの`world`で終わるのは、最後に設定されたヘッダー値が`world`だからです。
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'there',
+          },
+        ],
+      },
+      {
+        source: '/hello',
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'world',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+## パスマッチング
+
+パスマッチングが許可されています。例えば、`/blog/:slug`は`/blog/hello-world`にマッチします（入れ子のパスはありません）。
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/blog/:slug',
+        headers: [
+          {
+            key: 'x-slug',
+            value: ':slug', // マッチしたパラメータは値に使用できます
+          },
+          {
+            key: 'x-slug-:slug', // マッチしたパラメータはキーに使用できます
+            value: 'my other custom header value',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+### ワイルドカードパスマッチング
+
+ワイルドカードパスをマッチするには、パラメータの後に`*`を使用できます。例えば、`/blog/:slug*`は`/blog/a/b/c/d/hello-world`にマッチします。
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/blog/:slug*',
+        headers: [
+          {
+            key: 'x-slug',
+            value: ':slug*', // マッチしたパラメータは値に使用できます
+          },
+          {
+            key: 'x-slug-:slug*', // マッチしたパラメータはキーに使用できます
+            value: 'my other custom header value',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+### 正規表現パスマッチング
+
+正規表現パスをマッチするには、パラメータの後に正規表現を括弧で囲むことができます。例えば、`/blog/:slug(\\d{1,})`は`/blog/123`にはマッチしますが、`/blog/abc`にはマッチしません。
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/blog/:post(\\d{1,})',
+        headers: [
+          {
+            key: 'x-post',
+            value: ':post',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+以下の文字 `(`, `)`, `{`, `}`, `:`, `*`, `+`, `?`は正規表現パスマッチングに使用されるため、`source`内で特殊な値として使用しない場合は`\\`を前につけてエスケープする必要があります。
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        // これは `/english(default)/something` のリクエストにマッチします
+        source: '/english\\(default\\)/:slug',
+        headers: [
+          {
+            key: 'x-header',
+            value: 'value',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+## ヘッダー、クッキー、クエリマッチング
+
+ヘッダー、クッキー、またはクエリの値も`has`フィールドとマッチするか、`missing`フィールドとマッチしない場合にのみヘッダーを適用したい場合、`source`とすべての`has`項目がマッチし、すべての`missing`項目がマッチしない場合にのみ、ヘッダーが適用されます。
+
+`has`および`missing`項目は、以下のようなフィールドを持つことができます。
+
+- `type`: `String` - `header`, `cookie`, `host`, `query`のいずれかである必要があります
+- `key`: `String` - マッチ対象の選択されたタイプからのキーです
+- `value`: `String`または`undefined` - チェック対象の値で、`undefined`の場合は任意の値でマッチします。値の特定の部分をキャプチャするために正規表現のような文字列を使用できます 例えば、`first-(?<paramName>.*)`を`first-second`に使用すると、`second`は`:paramName`で目的地で使用できます
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      // ヘッダー `x-add-header` が存在する場合、
+      // `x-another-header` ヘッダーが適用されます
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'x-add-header',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-another-header',
+            value: 'hello',
+          },
+        ],
+      },
+      // ヘッダー `x-no-header` が存在しない場合、
+      // `x-another-header` ヘッダーが適用されます
+      {
+        source: '/:path*',
+        missing: [
+          {
+            type: 'header',
+            key: 'x-no-header',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-another-header',
+            value: 'hello',
+          },
+        ],
+      },
+      // ソース、クエリ、クッキーが一致する場合、
+      // `x-authorized` ヘッダーが適用されます
+      {
+        source: '/specific/:path*',
+        has: [
+          {
+            type: 'query',
+            key: 'page',
+            // ページの値はヘッダーキー/値で利用できません。
+            // 名前付きキャプチャグループを使用していないためです
+            value: 'home',
+          },
+          {
+            type: 'cookie',
+            key: 'authorized',
+            value: 'true',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-authorized',
+            value: ':authorized',
+          },
+        ],
+      },
+      // ヘッダー `x-authorized` が存在し、
+      // 一致する値が含まれている場合、`x-another-header` が適用されます
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'x-authorized',
+            value: '(?<authorized>yes|true)',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-another-header',
+            value: ':authorized',
+          },
+        ],
+      },
+      // ホストが `example.com` の場合、
+      // このヘッダーが適用されます
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'example.com',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-another-header',
+            value: ':authorized',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+## basePath対応のヘッダー
+
+ヘッダーで[`basePath`のサポート](/docs/app/api-reference/next-config-js/basePath)を活用すると、各`source`は自動的に`basePath`をプレフィックスします。ただし、ヘッダーに`basePath: false`を追加するとプレフィックスされません。
+
+```js filename="next.config.js"
+module.exports = {
+  basePath: '/docs',
+
+  async headers() {
+    return [
+      {
+        source: '/with-basePath', // /docs/with-basePathになります
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'world',
+          },
+        ],
+      },
+      {
+        source: '/without-basePath', // basePath: falseが設定されているため変更されません
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'world',
+          },
+        ],
+        basePath: false,
+      },
+    ]
+  },
+}
+```
+
+## i18n対応のヘッダー
+
+<AppOnly>
+
+ヘッダーで[`i18n`サポート](/docs/app/building-your-application/routing/internationalization)を活用すると、各`source`は設定された`locales`を処理するために自動的にプレフィックスされます。ただし、`locale: false`をヘッダーに追加するとプレフィックスされません。`locale: false`を使用する場合、マッチさせるために`source`にロケールをプレフィックスする必要があります。
+
+</AppOnly>
+
+<PagesOnly>
+
+ヘッダーで[`i18n`サポート](/docs/pages/building-your-application/routing/internationalization)を活用すると、各`source`は設定された`locales`を処理するために自動的にプレフィックスされます。ただし、`locale: false`をヘッダーに追加するとプレフィックスされません。`locale: false`を使用する場合、マッチさせるために`source`にロケールをプレフィックスする必要があります。
+
+</PagesOnly>
+
+```js filename="next.config.js"
+module.exports = {
+  i18n: {
+    locales: ['en', 'fr', 'de'],
+    defaultLocale: 'en',
+  },
+
+  async headers() {
+    return [
+      {
+        source: '/with-locale', // すべてのロケールを自動的に処理します
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'world',
+          },
+        ],
+      },
+      {
+        // 適用ロケールを自動的に処理しません。locale: falseが設定されているためです
+        source: '/nl/with-locale-manual',
+        locale: false,
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'world',
+          },
+        ],
+      },
+      {
+        // `en`がdefaultLocaleのため、これは ' にマッチします
+        source: '/en',
+        locale: false,
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'world',
+          },
+        ],
+      },
+      {
+        // これは /(en|fr|de)/(.*) に変換され、トップレベルの
+        // `/`または`/fr`のルートにはマッチしません
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'world',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+## Cache-Control
+
+Next.jsは、`public, max-age=31536000, immutable`の`Cache-Control`ヘッダーを本当にイミュータブルなアセットに対して設定しています。このヘッダーは上書きできません。これらのイミュータブルなファイルはSHAハッシュをファイル名に含むため、安全に無期限にキャッシュできます。例として、[静的な画像インポート](/docs/app/building-your-application/optimizing/images#local-images)があります。これらのアセットに対して`next.config.js`で`Cache-Control`ヘッダーを設定することはできません。
+
+ただし、他のレスポンスやデータに対して`Cache-Control`ヘッダーを設定することは可能です。
+
+<AppOnly>
+
+App Routerを使用した[キャッシュ](/docs/app/building-your-application/caching)について詳細を学びましょう。
+
+</AppOnly>
+
+<PagesOnly>
+
+[静的に生成された](/docs/pages/building-your-application/rendering/static-site-generation)ページのキャッシュを再検証する必要がある場合、ページの[`getStaticProps`](/docs/pages/building-your-application/data-fetching/get-static-props)関数で`revalidate`propを設定することで実行できます。
+
+[API Route](/docs/pages/building-your-application/routing/api-routes)のレスポンスをキャッシュするには、`res.setHeader`を使用できます。
+
+```ts filename="pages/api/hello.ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+type ResponseData = {
+  message: string
+}
+
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ResponseData>
+) {
+  res.setHeader('Cache-Control', 's-maxage=86400')
+  res.status(200).json({ message: 'Hello from Next.js!' })
+}
+```
+
+```js filename="pages/api/hello.js" switcher
+export default function handler(req, res) {
+  res.setHeader('Cache-Control', 's-maxage=86400')
+  res.status(200).json({ message: 'Hello from Next.js!' })
+}
+```
+
+また、`getServerSideProps`内でキャッシュヘッダー（`Cache-Control`）を使用して、動的なレスポンスをキャッシュすることもできます。たとえば、[`stale-while-revalidate`](https://web.dev/stale-while-revalidate/)を使用します。
+
+```ts filename="pages/index.tsx" switcher
+import { GetStaticProps, GetStaticPaths, GetServerSideProps } from 'next'
+
+// この値は10秒間(秒単位)新鮮とみなされます(s-maxage=10)。
+// 次の10秒以内にリクエストが繰り返される場合、以前にキャッシュされた値はまだ新鮮です。
+// 59秒以内にリクエストが繰り返された場合、キャッシュされた値は古くなりますが、
+// まだ正常に表示されます (stale-while-revalidate=59)。
+//
+// バックグラウンドで、キャッシュを新鮮な値で更新するための再検証リクエストが行われます。
+// ページを更新すると、新しい値が表示されます。
+export const getServerSideProps = (async (context) => {
+  context.res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=10, stale-while-revalidate=59'
+  )
+
+  return {
+    props: {},
+  }
+}) satisfies GetServerSideProps
+```
+
+```js filename="pages/index.js" switcher
+// この値は10秒間(秒単位)新鮮とみなされます(s-maxage=10)。
+// 次の10秒以内にリクエストが繰り返される場合、以前にキャッシュされた値はまだ新鮮です。
+// 59秒以内にリクエストが繰り返された場合、キャッシュされた値は古くなりますが、
+// まだ正常に表示されます (stale-while-revalidate=59)。
+//
+// バックグラウンドで、キャッシュを新鮮な値で更新するための再検証リクエストが行われます。
+// ページを更新すると、新しい値が表示されます。
+export async function getServerSideProps({ req, res }) {
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=10, stale-while-revalidate=59'
+  )
+
+  return {
+    props: {},
+  }
+}
+```
+
+</PagesOnly>
+
+## オプション
+
+### CORS
+
+[クロスオリジンリソース共有 (CORS)](https://developer.mozilla.org/docs/Web/HTTP/CORS)は、どのサイトがリソースにアクセスできるかを制御するセキュリティ機能です。`Access-Control-Allow-Origin`ヘッダーを設定して、特定のオリジンが<PagesOnly>APIエンドポイント</PagesOnly><AppOnly>Route Handlers</AppOnly>にアクセスできるようにすることができます。
+
+```js
+async headers() {
+    return [
+      {
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "*", // オリジンを設定
+          },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET, POST, PUT, DELETE, OPTIONS",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization",
+          },
+        ],
+      },
+    ];
+  },
+```
+
+### X-DNS-Prefetch-Control
+
+[このヘッダー](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control)はDNSのプリフェッチを制御し、ブラウザが外部リンク、画像、CSS、JavaScriptなどのドメイン名の解決を積極的に行うことを可能にします。このプリフェッチはバックグラウンドで行われるため、[DNS](https://developer.mozilla.org/docs/Glossary/DNS)は参照された項目が必要になる時までに解決されている可能性が高くなります。これにより、ユーザーがリンクをクリックする際の待ち時間が減少します。
+
+```js
+{
+  key: 'X-DNS-Prefetch-Control',
+  value: 'on'
+}
+```
+
+### Strict-Transport-Security
+
+[このヘッダー](https://developer.mozilla.org/docs/Web/HTTP/Headers/Strict-Transport-Security)は、ブラウザに対してHTTPSのみでアクセスすべきであることを通知します。この構成を使用すると、現在および将来のすべてのサブドメインが2年間の`max-age`の間、HTTPSを使用します。これにより、HTTPでのみ提供されるページやサブドメインへのアクセスがブロックされます。
+
+もし[Vercel](https://vercel.com/docs/concepts/edge-network/headers#strict-transport-security?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)にデプロイしている場合、このヘッダーは必須ではありません。`next.config.js`で`headers`を宣言しない限り、すべてのデプロイメントに自動的に追加されます。
+
+```js
+{
+  key: 'Strict-Transport-Security',
+  value: 'max-age=63072000; includeSubDomains; preload'
+}
+```
+
+### X-Frame-Options
+
+[このヘッダー](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Frame-Options)は、サイトが`iframe`内で表示されることを許可すべきかどうかを示します。これによりクリックジャッキング攻撃から保護できます。
+
+**このヘッダーはCSPの`frame-ancestors`オプションによって置き換えられました。**これは、現代のブラウザでより良いサポートを提供しています（設定の詳細については[コンテンツセキュリティポリシー](/docs/app/building-your-application/configuring/content-security-policy)を参照してください）。
+
+```js
+{
+  key: 'X-Frame-Options',
+  value: 'SAMEORIGIN'
+}
+```
+
+### Permissions-Policy
+
+[このヘッダー](https://developer.mozilla.org/docs/Web/HTTP/Headers/Permissions-Policy)は、ブラウザで使用できる機能やAPIを制御することを可能にします。以前は`Feature-Policy`と呼ばれていました。
+
+```js
+{
+  key: 'Permissions-Policy',
+  value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()'
+}
+```
+
+### X-Content-Type-Options
+
+[このヘッダー](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Content-Type-Options)は、`Content-Type`ヘッダーが明示的に設定されていない場合に、ブラウザがコンテンツのタイプを推測しようとするのを防ぎます。これは、ファイルのアップロードと共有を許可しているウェブサイトでのXSS攻撃を防ぐことができます。
+
+たとえば、ユーザーが画像をダウンロードしようとしたときに、別の`Content-Type`として扱われることがある場合、これが悪意のあるものとなる可能性があります。このヘッダーはブラウザ拡張機能のダウンロードにも適用されます。このヘッダーに設定可能な唯一の有効な値は`nosniff`です。
+
+```js
+{
+  key: 'X-Content-Type-Options',
+  value: 'nosniff'
+}
+```
+
+### Referrer-Policy
+
+[このヘッダー](https://developer.mozilla.org/docs/Web/HTTP/Headers/Referrer-Policy)は、現在のウェブサイト（起点）から別のウェブサイトに移動する際に、ブラウザが含める情報の量を制御します。
+
+```js
+{
+  key: 'Referrer-Policy',
+  value: 'origin-when-cross-origin'
+}
+```
+
+### Content-Security-Policy
+
+アプリケーションに[コンテンツセキュリティポリシー](/docs/app/building-your-application/configuring/content-security-policy)を追加する方法について詳しく学びましょう。
+
+## バージョン履歴
+
+| バージョン   | 変更点      |
+| ----------- | ------------ |
+| `v13.3.0`   | `missing`追加 |
+| `v10.2.0`   | `has`追加 |
+| `v9.5.0`    | ヘッダー追加 |

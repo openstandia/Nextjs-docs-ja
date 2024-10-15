@@ -1,0 +1,732 @@
+---
+title: 'Authentication'
+description: 'Next.jsアプリケーションで認証を実装する方法を学びます。'
+---
+
+アプリケーションのデータを保護するためには、認証を理解することが重要です。このページでは、認証を実装するためにReactとNext.jsのどの機能を使用するかについてガイドします。
+
+開始する前に、プロセスを3つの概念に分けて考えると便利です：
+
+1. **[Authentication](#authentication)**: ユーザーが自分であることを確認します。ユーザーにユーザー名とパスワードのようなもので自分の身元を証明してもらいます。
+2. **[Session Management](#session-management)**: リクエスト間でユーザーの認証状態を追跡します。
+3. **[Authorization](#authorization)**: ユーザーがアクセスできるルートやデータを決定します。
+
+この図は、ReactとNext.jsの機能を使用した認証フローを示しています：
+
+<Image
+  alt="ReactとNext.jsの機能を使った認証フローを示す図"
+  srcLight="/docs/light/authentication-overview.png"
+  srcDark="/docs/dark/authentication-overview.png"
+  width="1600"
+  height="1383"
+/>
+
+このページの例では、教育目的のために基本的なユーザー名とパスワードによる認証を説明します。カスタム認証ソリューションを実装することもできますが、セキュリティとシンプルさを向上させるために、認証ライブラリを使用することをお勧めします。これらは、認証、セッション管理、認可などの組み込みソリューションを提供し、ソーシャルログイン、多要素認証、ロールベースのアクセス制御などの追加機能も提供します。[Auth Libraries](#auth-libraries)セクションでリストを見つけることができます：
+
+## Authentication
+
+<AppOnly>
+
+### サインアップとログイン機能
+
+[`<form>`](https://react.dev/reference/react-dom/components/form)要素を使って、Reactの[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)と`useFormState`を組み合わせてユーザーの認証情報をキャプチャし、フォームフィールドを検証し、認証プロバイダーのAPIやデータベースを呼び出すことができます。
+
+Server Actionsは常にサーバーで実行されるので、認証ロジックを安全に扱うための環境を提供します。
+
+サインアップ/ログイン機能を実装する手順は以下の通りです：
+
+#### 1. ユーザーの認証情報をキャプチャ
+
+ユーザーの認証情報をキャプチャするには、送信時にServer Actionを呼び出すフォームを作成します。例えば、ユーザーの名前、メールアドレス、パスワードを受け入れるサインアップフォーム：
+
+```tsx filename="app/ui/signup-form.tsx" switcher
+import { signup } from '@/app/actions/auth'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```jsx filename="app/ui/signup-form.js" switcher
+import { signup } from '@/app/actions/auth'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```tsx filename="app/actions/auth.tsx" switcher
+export async function signup(formData: FormData) {}
+```
+
+```jsx filename="app/actions/auth.js" switcher
+export async function signup(formData) {}
+```
+
+#### 2. サーバーでフォームフィールドを検証
+
+Server Actionを使用してフォームフィールドをサーバーで検証します。認証プロバイダーがフォーム検証を提供していない場合、[Zod](https://zod.dev/)や[Yup](https://github.com/jquense/yup)のようなスキーマ検証ライブラリを使用できます。
+
+Zodを例にすると、適切なエラーメッセージとともにフォームスキーマを定義できます：
+
+```ts filename="app/lib/definitions.ts" switcher
+import { z } from 'zod'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/lib/definitions.js" switcher
+import { z } from 'zod'
+
+// コメント部分は翻訳不要のため省略
+```
+
+フォームフィールドが定義されたスキーマと一致しない場合、Server Actionで早めに`return`して、認証プロバイダーのAPIやデータベースへの不必要な呼び出しを防ぐことができます：
+
+```ts filename="app/actions/auth.ts" switcher
+import { SignupFormSchema, FormState } from '@/app/lib/definitions'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/actions/auth.js" switcher
+import { SignupFormSchema } from '@/app/lib/definitions'
+
+// コメント部分は翻訳不要のため省略
+```
+
+`<SignupForm />`で、Reactの`useFormState`フックを使用して、フォームが送信されている間に検証エラーを表示できます：
+
+```tsx filename="app/ui/signup-form.tsx" switcher highlight={7,15,21,27-39}
+'use client'
+
+import { useFormState, useFormStatus } from 'react-dom'
+import { signup } from '@/app/actions/auth'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```jsx filename="app/ui/signup-form.js" switcher highlight={7,15,21,27-39}
+'use client'
+
+import { useFormState, useFormStatus } from 'react-dom'
+import { signup } from '@/app/actions/auth'
+
+// コメント部分は翻訳不要のため省略
+```
+
+> **Good to know:**
+>
+> - これらの例はNext.js App RouterにバンドルされているReactの`useFormState`フックを使用しています。React 19を使用している場合は、代わりに`useActionState`を使用してください。詳しくは[Reactドキュメント](https://react.dev/reference/react/useActionState)をご覧ください。
+> - React 19では、`useFormStatus`にはdata、method、actionなど、追加のキーが返されるオブジェクトに含まれています。React 19を使用していない場合は、`pending`キーのみが利用可能です。
+> - React 19では、`useActionState`にも返される状態に`pending`キーが含まれています。
+> - データを変更する前に、常にユーザーがアクションを実行する権限を持っていることを確認するべきです。[Authentication and Authorization](#authorization)を参照してください。
+
+#### 3. ユーザーを作成するか、ユーザーの資格情報を確認する
+
+フォームフィールドの検証が完了したら、認証プロバイダーのAPIやデータベースを呼び出して、新しいユーザーアカウントを作成するか、ユーザーが存在するかを確認することができます。
+
+前の例から続けて：
+
+```tsx filename="app/actions/auth.tsx" switcher
+// コメント部分は翻訳不要のため省略
+```
+
+```jsx filename="app/actions/auth.js" switcher
+// コメント部分は翻訳不要のため省略
+```
+
+ユーザーアカウントの作成やユーザーの資格情報の検証が成功した後、セッションを作成してユーザーの認証状態を管理します。セッション管理戦略によっては、cookieまたはデータベース、またはその両方にセッションを保存することができます。[Session Management](#session-management)セクションに進んで詳細を学んでください。
+
+> **Tips:**
+>
+> - 上記の例は教育目的のために認証手順を詳しく説明しています。独自のセキュアソリューションを実装することがすぐに複雑になることを強調しています。プロセスを簡略化するために、[Auth Library](#auth-libraries)を使用することをお勧めします。
+> - ユーザーエクスペリエンスを向上させるために、登録フローの早い段階で重複するメールアドレスやユーザー名のチェックを行いたいかもしれません。例えば、ユーザーがユーザー名を入力中や入力フィールドがフォーカスを失った場合に。この方法で、不必要なフォーム送信を防ぎ、ユーザーに即時フィードバックを提供することができます。[use-debounce](https://www.npmjs.com/package/use-debounce)などのライブラリを使用して、これらのチェックの頻度を管理することができます。
+
+</AppOnly>
+
+<PagesOnly>
+
+サインアップ または/かつログインフォームを実装するための手順は以下のとおりです：
+
+1. ユーザーはフォームを通じて認証情報を送信します。
+2. フォームはAPIルートによって処理されるリクエストを送信します。
+3. 検証が成功すると、プロセスが完了し、ユーザーの認証の成功を示します。
+4. 検証が失敗した場合、エラーメッセージが表示されます。
+
+ユーザーが認証情報を入力できるログインフォームを考えます：
+
+```tsx filename="pages/login.tsx" switcher
+import { FormEvent } from 'react'
+import { useRouter } from 'next/router'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```jsx filename="pages/login.jsx" switcher
+import { FormEvent } from 'react'
+import { useRouter } from 'next/router'
+
+// コメント部分は翻訳不要のため省略
+```
+
+上記のフォームには、ユーザーのメールアドレスとパスワードをキャプチャするための2つの入力フィールドがあります。送信時に、`/api/auth/login`APIルートへのPOSTリクエストを送信する関数をトリガーします。
+
+次に、APIルートで認証処理を行うために、認証プロバイダーのAPIを呼び出すことができます：
+
+```ts filename="pages/api/auth/login.ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { signIn } from '@/auth'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="pages/api/auth/login.js" switcher
+import { signIn } from '@/auth'
+
+// コメント部分は翻訳不要のため省略
+```
+
+</PagesOnly>
+
+## Session Management
+
+セッション管理は、ユーザーの認証された状態をリクエスト間で保持することを保証します。セッションやトークンの作成、保存、リフレッシュ、削除が含まれます。
+
+セッションには2種類あります：
+
+1. [**Stateless**](#stateless-sessions): セッションデータ（またはトークン）がブラウザのcookieに保存されます。cookieは各リクエストと共に送信され、サーバーでセッションを検証できるようにします。この方法はシンプルですが、正しく実装しないとセキュリティに問題があります。
+2. [**Database**](#database-sessions): セッションデータがデータベースに保存され、ユーザーのブラウザには暗号化されたセッションIDのみが付与されます。この方法はより安全ですが、複雑でサーバーリソースを多く使用することがあります。
+
+> **Good to know:** セッション管理ライブラリとして[iron-session](https://github.com/vvo/iron-session)や[Jose](https://github.com/panva/jose)を使用することをお勧めします。
+
+### Stateless Sessions
+
+<AppOnly>
+
+ステートレスセッションを作成および管理するためには、以下の手順を実行する必要があります：
+
+1. セッションを署名するために使われる秘密鍵を生成し、[環境変数](/docs/app/building-your-application/configuring/environment-variables)として保存します。
+2. セッション管理ライブラリを使用してセッションデータを暗号化/復号化するロジックを記述します。
+3. Next.jsの[`cookies`](/docs/app/api-reference/functions/cookies)APIを使用してcookieを管理します。
+
+上記に加えて、ユーザーがアプリケーションに戻ったときにセッションを[更新（またはリフレッシュ）する](#updating-or-refreshing-sessions)機能を追加し、ユーザーがログアウトしたときにセッションを[削除](#deleting-the-session)することを考慮します。
+
+> **Good to know:** [auth library](#auth-libraries)がセッション管理を含んでいるかどうかを確認してください。
+
+#### 1. 秘密鍵の生成
+
+セッションを署名するための秘密鍵を生成する方法はいくつかあります。たとえば、ターミナルで`openssl`コマンドを使用することを選択できます：
+
+```bash filename="terminal"
+openssl rand -base64 32
+```
+
+このコマンドは、秘密鍵として使用できる32文字のランダムな文字列を生成し、[環境変数ファイル](/docs/app/building-your-application/configuring/environment-variables)に保存できます：
+
+```bash filename=".env"
+SESSION_SECRET=your_secret_key
+```
+
+この鍵をセッション管理ロジックで参照できます：
+
+```js filename="app/lib/session.js"
+const secretKey = process.env.SESSION_SECRET
+```
+
+#### 2. セッションの暗号化と復号化
+
+次に、お好みの[session management library](#session-management-libraries)を使用して、セッションを暗号化および復号化します。前の例から続けて、[Jose](https://www.npmjs.com/package/jose)（[Edge Runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)と互換性があります）そしてReactの[`server-only`](https://www.npmjs.com/package/server-only)パッケージを使用して、セッション管理ロジックがサーバー上でのみ実行されるようにします。
+
+```tsx filename="app/lib/session.ts" switcher
+import 'server-only'
+import { SignJWT, jwtVerify } from 'jose'
+import { SessionPayload } from '@/app/lib/definitions'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```jsx filename="app/lib/session.js" switcher
+import 'server-only'
+import { SignJWT, jwtVerify } from 'jose'
+
+// コメント部分は翻訳不要のため省略
+```
+
+> **Tips**:
+>
+> - ペイロードには、ユーザーIDやロールなど、後続のリクエストで使用される最小限で一意なユーザーデータを含めるべきです。電話番号、メールアドレス、クレジットカード情報などの個人を特定できる情報や、パスワードなどの機密データは含めないでください。
+
+#### 3. Cookieの設定（推奨オプション）
+
+セッションをcookieに保存するには、Next.jsの[`cookies`](/docs/app/api-reference/functions/cookies)APIを使用します。cookieはサーバー上で設定され、以下の推奨オプションを含めます：
+
+- **HttpOnly**: クライアント側のJavaScriptからcookieへのアクセスを防ぎます。
+- **Secure**: httpsを使用してcookieを送信します。
+- **SameSite**: cookieがクロスサイトリクエストで送信されるかどうかを指定します。
+- **Max-Age または Expires**: 一定期間後にcookieを削除します。
+- **Path**: cookieの有効URLパスを定義します。
+
+これらのオプションの詳細については、[MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)をご参照ください。
+
+```ts filename="app/lib/session.ts" switcher
+import 'server-only'
+import { cookies } from 'next/headers'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/lib/session.js" switcher
+import 'server-only'
+import { cookies } from 'next/headers'
+
+// コメント部分は翻訳不要のため省略
+```
+
+Server Actionに戻って、`createSession()`関数を呼び出し、[`redirect()`](/docs/app/building-your-application/routing/redirecting)APIを使用してユーザーを適切なページにリダイレクトできます：
+
+```ts filename="app/actions/auth.ts" switcher
+import { createSession } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/actions/auth.js" switcher
+import { createSession } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+> **Tips**:
+>
+> - **cookieはサーバー上で設定されるべきです**。これにより、クライアント側の改ざんを防ぎます。
+> - 🎥 学習: Next.jsを使ったステートレスセッションと認証について詳しくはこちら → [YouTube (11分間)](https://www.youtube.com/watch?v=DJvM2lSPn6w)。
+
+#### セッションの更新（またはリフレッシュ）
+
+セッションの有効期限を延ばすこともできます。これは、ユーザーがアプリケーションに再度アクセスしたときにログイン状態を保持するのに役立ちます。以下に例を示します：
+
+```ts filename="app/lib/session.ts" switcher
+import 'server-only'
+import { cookies } from 'next/headers'
+import { decrypt } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/lib/session.js" switcher
+import 'server-only'
+import { cookies } from 'next/headers'
+import { decrypt } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+> **Tip:** 認証ライブラリがリフレッシュトークンをサポートしているかどうかを確認します。これによりユーザーのセッションを延長することができます。
+
+#### セッションの削除
+
+セッションを削除するには、cookieを削除します：
+
+```ts filename="app/lib/session.ts" switcher
+import 'server-only'
+import { cookies } from 'next/headers'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/lib/session.js" switcher
+import 'server-only'
+import { cookies } from 'next/headers'
+
+// コメント部分は翻訳不要のため省略
+```
+
+その後、ログアウトなどで`deleteSession()`関数を再利用することができます：
+
+```ts filename="app/actions/auth.ts" switcher
+import { cookies } from 'next/headers'
+import { deleteSession } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/actions/auth.js" switcher
+import { cookies } from 'next/headers'
+import { deleteSession } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+#### Cookieの設定と削除
+
+[API Routes](/docs/pages/building-your-application/routing/api-routes)を使用して、サーバー上でcookieとしてセッションを設定できます：
+
+```ts filename="pages/api/login.ts" switcher
+import { serialize } from 'cookie'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { encrypt } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="pages/api/login.js" switcher
+import { serialize } from 'cookie'
+import { encrypt } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+</PagesOnly>
+
+### Database Sessions
+
+データベースセッションを作成および管理するには、以下の手順に従う必要があります：
+
+1. セッションとデータを保存するためのテーブルをデータベースに作成します（またはAuth Libraryがこれを処理しているか確認します）。
+2. セッションを挿入、更新、削除する機能を実装します
+3. ユーザーのブラウザに保存する前にセッションIDを暗号化し、データベースとcookieが同期されていることを確認します（これはオプションですが、[ミドルウェア](#optimistic-checks-with-middleware-optional)で楽観的な認証チェックを行うために推奨されます）。
+
+<AppOnly>
+
+例えば：
+
+```ts filename="app/lib/session.ts" switcher
+import cookies from 'next/headers'
+import { db } from '@/app/lib/db'
+import { encrypt } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/lib/session.js" switcher
+import cookies from 'next/headers'
+import { db } from '@/app/lib/db'
+import { encrypt } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+> **Tips**:
+>
+> - 記述の高速化のために、[Vercel Redis](https://vercel.com/docs/storage/vercel-kv)のようなデータベースを使用することを検討してください。ただし、セッションデータをプライマリデータベースに保持し、データ要求を統合してクエリ数を減らすこともできます。
+> - デバイスのアクティブな数の追跡や、すべてのデバイスからユーザーをログアウトさせる機能を持たせるためなど、より高度な利用ケースにはデータベースセッションを使用することをお勧めします。
+
+セッション管理を実装した後、アプリケーション内でユーザーがアクセスできる内容と操作できることを制御するための認可ロジックを追加する必要があります。[Authorization](#authorization)セクションに進んで詳細を学んでください。
+
+</AppOnly>
+
+<PagesOnly>
+
+**サーバーでのセッションの作成**：
+
+```ts filename="pages/api/create-session.ts" switcher
+import db from '../../lib/db'
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="pages/api/create-session.js" switcher
+import db from '../../lib/db'
+
+// コメント部分は翻訳不要のため省略
+```
+
+</PagesOnly>
+
+## Authorization
+
+ユーザーが認証され、セッションが作成されたら、アプリケーション内でユーザーがアクセスできる内容と操作できることを制御するための認可を実装できます。
+
+認可チェックには2つの主なタイプがあります：
+
+1. **楽観的**: クッキーに保存されているセッションデータを使用して、ユーザーがルートにアクセスしたりアクションを行ったりする権限があるかどうかをチェックします。これらのチェックは、UI要素の表示/非表示や権限や役割に基づいてユーザーのリダイレクトを行うなど、迅速な操作に便利です。
+2. **セキュア**: ユーザーがルートにアクセスしたりアクションを実行できるかどうかをデータベースに保存されているセッションデータを使用してチェックします。これらのチェックはより安全で、機密データへのアクセスやアクションを実行する必要がある操作に使用されます。
+
+どちらの場合も以下をお勧めします：
+
+- 認可ロジックを集中するための[Data Access Layer](#creating-a-data-access-layer-dal)の作成
+- 必要なデータのみを返すための[Data Transfer Objects (DTO)](#using-data-transfer-objects-dto)の使用
+- オプションとして[Middlware](#optimistic-checks-with-middleware-optional)を使用して楽観的なチェックを行う。
+
+### 楽観的なチェックをミドルウェアで行う（オプション）
+
+場合によっては、[Middleware](/docs/app/building-your-application/routing/middleware)を使用して権限に基づいてユーザーをリダイレクトすることを検討します：
+
+- 楽観的なチェックを行うため。Middlewareはすべてのルートで動作するため、リダイレクトのロジックを集中させ、未承認ユーザーを事前にフィルタリングする良い方法です。
+- ユーザー間でデータを共有する静的ルートを保護するため（例：ペイウォールの背後のコンテンツ）。
+
+ただし、Middlewareはすべてのルートで動作するため、[prefetched](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)ルート、cookieからセッションを読むのみで（楽観的なチェック）、パフォーマンスの問題を避けるためにデータベースチェックは避けることが重要です。
+
+例：
+
+```tsx filename="middleware.ts" switcher
+import { NextRequest, NextResponse } from 'next/server'
+import { decrypt } from '@/app/lib/session'
+import { cookies } from 'next/headers'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="middleware.js" switcher
+import { NextResponse } from 'next/server'
+import { decrypt } from '@/app/lib/session'
+import { cookies } from 'next/headers'
+
+// コメント部分は翻訳不要のため省略
+```
+
+Middlewareは初期チェックに有用ですが、データ保護の唯一の防御線として使用するべきではありません。セキュリティの大部分のチェックはデータソースに可能な限り近い場所で実行されるべきです。詳細は[Data Access Layer](#creating-a-data-access-layer-dal)をご覧ください。
+
+> **Tips**:
+>
+> - Middlewareでは`req.cookies.get('session').value`を使ってcookieを読むこともできます。
+> - Middlewareは[Edge Runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)を使用しており、認証ライブラリとセッション管理ライブラリの互換性を確認してください。
+> - Middlewareを実行するルートを指定するには、Middlewareの`matcher`プロパティを使用できます。ただし、認証には、Middlewareをすべてのルートで動作するようにすることを推奨します。
+
+<AppOnly>
+
+### Data Access Layer (DAL) の作成
+
+データ要求と認可ロジックを集中するためのDALを作成することをお勧めします。
+
+DALには、アプリケーションと対話する際にユーザーのセッションを検証する関数を含めるべきです。最低限、この関数はセッションが有効かどうかをチェックし、リダイレクトするか、さらにリクエストを行うために必要なユーザー情報を返します。
+
+例として、DAL用の別ファイルを作成し、`verifySession()`関数を含めます。次に、Reactの[cache](https://react.dev/reference/react/cache)APIを使用して、Reactレンダーパス中に関数の返り値をメモ化します：
+
+```tsx filename="app/lib/dal.ts" switcher
+import 'server-only'
+
+import { cookies } from 'next/headers'
+import { decrypt } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/lib/dal.js" switcher
+import 'server-only'
+
+import { cookies } from 'next/headers'
+import { decrypt } from '@/app/lib/session'
+
+// コメント部分は翻訳不要のため省略
+```
+
+その後、データ要求、Server Actions、Route Handlersで`verifySession()`関数を呼び出すことができます：
+
+```tsx filename="app/lib/dal.ts" switcher
+// コメント部分は翻訳不要のため省略
+```
+
+```jsx filename="app/lib/dal.js" switcher
+// コメント部分は翻訳不要のため省略
+```
+
+> **Tip**:
+>
+> - DALはリクエスト時にデータをフェッチする際にデータを保護するために使用できます。しかし、ユーザー間でデータを共有する静的ルートの場合、データはリクエスト時ではなくビルド時にフェッチされます。静的ルートを保護するために[Middleware](#optimistic-checks-with-middleware-optional)を使用してください。
+> - セキュリティチェックには、セッションIDをデータベースと比較することでセッションが有効であるかどうかをチェックできます。Reactの[cache](https://react.dev/reference/react/cache)関数を使用して、レンダリング パス中にデータベースへの不要な重複リクエストを回避します。
+> - 関連するデータ要求を統合し JavaScript クラスで`verifySession()`を実行することを考慮してもよいかもしれません。
+
+### Data Transfer Objects (DTO) の使用
+
+データを取得する場合、アプリケーションで使用される必要最低限のデータのみを返し、全体のオブジェクトを返さないことをお勧めします。たとえば、ユーザーデータを取得する場合、ユーザーIDと名前だけを返すかもしれません。ユーザーオブジェクト全体には、パスワード、電話番号などが含まれ、そのままでは返したくない情報だからです。
+
+ただし、返されたデータ構造を制御できない場合や、チームで作業している場合などには、クライアントに公開するのに安全なフィールドが何かを指定する戦略を使用できます。
+
+```tsx filename="app/lib/dto.ts" switcher
+import 'server-only'
+import { getUser } from '@/app/lib/dal'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/lib/dto.js" switcher
+import 'server-only'
+import { getUser } from '@/app/lib/dal'
+
+// コメント部分は翻訳不要のため省略
+```
+
+データ要求と認可ロジックをDALとDTOを使用して中央集権化することで、アプリケーションがスケーリングするにつれて、すべてのデータ要求が安全で一貫していることを確認でき、保守、監査、デバッグが容易になります。
+
+> **Good to know**:
+>
+> - DTOを定義する方法はいくつかあります。`toJSON()`を使用する方法から、上記の例のように個々の関数を使用する方法や JavaScript クラスを使用する方法まであります。これらは JavaScript のパターンであり、React または Next.js の機能ではないため、アプリケーションに最適なパターンを見つけるために調査することをお勧めします。
+> - [Security in Next.js article](/blog/security-nextjs-server-components-actions)でセキュリティのベストプラクティスについてのさらなる情報を学びましょう。
+
+### Server Components
+
+[Server Components](/docs/app/building-your-application/rendering/server-components)での認証チェックは、役割ベースのアクセスに使用すると便利です。例えば、ユーザーの役割に基づいてコンポーネントを条件付きレンダリングする：
+
+```tsx filename="app/dashboard/page.tsx" switcher
+import { verifySession } from '@/app/lib/dal'
+
+export default function Dashboard() {
+  // コメント部分は翻訳不要のため省略
+}
+```
+
+```jsx filename="app/dashboard/page.jsx" switcher
+import { verifySession } from '@/app/lib/dal'
+
+// コメント部分は翻訳不要のため省略
+```
+
+例では、DALの`verifySession()`関数を使用して'admin'、'user'、未承認の役割を確認します。このパターンは、各ユーザーが自分の役割に応じたコンポーネントとしかやり取りしないことを保証します。
+
+### レイアウトと認証チェック
+
+[Partial Rendering](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)のため、[Layouts](/docs/app/building-your-application/routing/layouts-and-templates)でチェックを行う際には注意が必要です。これらはナビゲーション時に再レンダリングされないため、ユーザーセッションはすべてのルート変更でチェックされません。
+
+代わりに、データソースや条件付きでレンダリングされるコンポーネントに近い場所でチェックを行う必要があります。
+
+例えば、ナビ内でユーザーデータを取得してユーザー画像を表示する共有レイアウトを考えます。レイアウト内で認証チェックを行う代わりに、レイアウト内でユーザーデータを取得し（`getUser()`を使用）、DAL内で認証チェックを行います。
+
+これは、アプリケーション内で`getUser()`が呼び出される場所ならどこでも認証チェックが行われることを保証し、データにアクセスするためのユーザーの認可を確認するのを開発者が忘れることを防ぎます。
+
+```tsx filename="app/layout.tsx" switcher
+// コメント部分は翻訳不要のため省略
+```
+
+```jsx filename="app/layout.js" switcher
+// コメント部分は翻訳不要のため省略
+```
+
+```ts filename="app/lib/dal.ts" switcher
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/lib/dal.js" switcher
+// コメント部分は翻訳不要のため省略
+```
+
+> **Good to know:**
+>
+> - SPAで一般的なパターンは、ユーザーが認可されていない場合にレイアウトまたはトップレベルコンポーネント内で`null`を返すことです。このパターンはNext.jsアプリケーションには推奨されませんこれらには複数のエントリーポイントがあるため、ネストされたルートセグメントやサーバーアクションへのアクセスを防ぐことはできません。
+
+### Server Actions
+
+[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)は、公開APIエンドポイントと同じセキュリティ上の考慮事項で扱い、ユーザーが操作を行う権限があるかどうかを確認します。
+
+以下の例では、アクションを開始する前にユーザーの役割を確認します：
+
+```ts filename="app/lib/actions.ts" switcher
+'use server'
+import { verifySession } from '@/app/lib/dal'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/lib/actions.js" switcher
+'use server'
+import { verifySession } from '@/app/lib/dal'
+
+// コメント部分は翻訳不要のため省略
+```
+
+### Route Handlers
+
+[Route Handlers](/docs/app/building-your-application/routing/route-handlers)は公開APIエンドポイントと同じセキュリティ上の考慮事項で扱い、ユーザーがRoute Handlerへのアクセス権を持っているかどうかを確認します。
+
+例えば：
+
+```ts filename="app/api/route.ts" switcher
+import { verifySession } from '@/app/lib/dal'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="app/api/route.js" switcher
+import { verifySession } from '@/app/lib/dal'
+
+// コメント部分は翻訳不要のため省略
+```
+
+上記の例は、2段階のセキュリティチェックを持つRoute Handlerを示しています。まず、アクティブなセッションを確認し、その後、ログインしたユーザーが'admin'であるかどうかを確認します。
+
+## Context Providers
+
+認証のためにコンテキストプロバイダーを使用することは[interleaving](/docs/app/building-your-application/rendering/composition-patterns#interleaving-server-and-client-components)によって機能します。ただし、Reactの`context`はServer Componentsではサポートされていないため、クライアントコンポーネントでのみ適用されます。
+
+これは機能しますが、子サーバーコンポーネントは最初にサーバー上でレンダリングされ、コンテキストプロバイダーのセッションデータにはアクセスできません：
+
+```tsx filename="app/layout.ts" switcher
+import { ContextProvider } from 'auth-lib'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```tsx filename="app/ui/profile.ts switcher
+"use client";
+
+import { useSession } from "auth-lib";
+
+// コメント部分は翻訳不要のため省略
+```
+
+```jsx filename="app/ui/profile.js switcher
+"use client";
+
+import { useSession } from "auth-lib";
+
+// コメント部分は翻訳不要のため省略
+```
+
+クライアントコンポーネントでセッションデータが必要な場合（例：クライアント側データフェッチ）、セッションデータがクライアントに公開されないようにReactの[`taintUniqueValue`](https://react.dev/reference/react/experimental_taintUniqueValue)APIを使用して保護します。
+
+</AppOnly>
+
+<PagesOnly>
+
+### Data Access Layer (DAL) の作成
+
+#### API ルートを保護する
+
+Next.jsのAPIルートは、サーバー側のロジックとデータ管理を扱うために不可欠です。これらのルートを保護することが重要であり、特定の機能にアクセスできるのは認証されたユーザーのみであることを確認します。これは通常、ユーザーの認証状態と役割ベースの権限を確認することを含みます。
+
+以下にAPIルートを保護する例を示します：
+
+```ts filename="pages/api/route.ts" switcher
+import { NextApiRequest, NextApiResponse } from 'next'
+
+// コメント部分は翻訳不要のため省略
+```
+
+```js filename="pages/api/route.js" switcher
+// コメント部分は翻訳不要のため省略
+```
+
+この例では、認証と認可のための2層のセキュリティチェックを備えたAPIルートを示しています。最初にアクティブなセッションを確認し、その後、ログインしたユーザーが'admin'であるかどうかを確認します。このアプローチは、認証されたユーザーおよび権限を持っているユーザーに限られた、安全なアクセスを提供し、要求処理のための堅牢なセキュリティを維持します。
+
+</PagesOnly>
+
+## Resources
+
+Next.jsでの認証について学んだので、安全な認証とセッション管理を実装するためのNext.js互換のライブラリとリソースをご紹介します：
+
+### Auth Libraries
+
+- [Auth0](https://auth0.com/docs/quickstart/webapp/nextjs/01-login)
+- [Clerk](https://clerk.com/docs/quickstarts/nextjs)
+- [Kinde](https://kinde.com/docs/developer-tools/nextjs-sdk)
+- [NextAuth.js](https://authjs.dev/getting-started/installation?framework=next.js)
+- [Stack Auth](https://docs.stack-auth.com/getting-started/setup)
+- [Supabase](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)
+- [Stytch](https://stytch.com/docs/guides/quickstarts/nextjs)
+- [WorkOS](https://workos.com/docs/user-management)
+
+### Session Management Libraries
+
+- [Iron Session](https://github.com/vvo/iron-session)
+- [Jose](https://github.com/panva/jose)
+
+## Further Reading
+
+認証とセキュリティについての学習を続けるために、以下のリソースをチェックしてください：
+
+- [How to think about security in Next.js](/blog/security-nextjs-server-components-actions)
+- [Understanding XSS Attacks](https://vercel.com/guides/understanding-xss-attacks)
+- [Understanding CSRF Attacks](https://vercel.com/guides/understanding-csrf-attacks)
+- [The Copenhagen Book](https://thecopenhagenbook.com/)

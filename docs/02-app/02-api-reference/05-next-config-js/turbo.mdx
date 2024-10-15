@@ -1,0 +1,155 @@
+---
+title: 'turbo'
+description: 'Turbopack専用のオプションを使用して、Next.jsを設定します。'
+---
+
+{/* このドキュメントの内容はapp routerとpages routerの間で共有されています。Pages Routerに特有のコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有コンテンツはコンポーネントでラップしないでください。 */}
+
+`turbo`オプションは、さまざまなファイルを変換し、モジュールの解決方法を変更するために[Turbopack](/docs/architecture/turbopack)をカスタマイズできます。
+
+```ts filename="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  turbo: {
+    // ...
+  },
+}
+
+export default nextConfig
+```
+
+```js filename="next.config.js" switcher
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  turbo: {
+    // ...
+  },
+}
+
+module.exports = nextConfig
+```
+
+> **Good to know**:
+>
+> - Next.js向けのTurbopackは、ビルトイン機能用のローダーやローダー設定を必要としません。TurbopackはCSSとモダンJavaScriptのコンパイルをサポートしているため、`css-loader`、`postcss-loader`、または`babel-loader`を使用する必要はありません。
+
+## 参照
+
+### オプション
+
+`turbo`設定で利用可能なオプションは次のとおりです：
+
+| Option              | Description                                                                 |
+| ------------------- | --------------------------------------------------------------------------- |
+| `rules`             | Turbopackを使用する際に実行される非サポートのwebpackローダーのリスト                                           |
+| `resolveAlias`      | 別名としてインポートするモジュールをマップして置き換える                                                     |
+| `resolveExtensions` | ファイルをインポートする際に解決される拡張子のリスト                                                     |
+| `moduleIdStrategy`  | モジュールIDを割り当てる                                                    |
+| `useSwcCss`         | Turbopackでは`lightningcss`の代わりに`swc_css`を使用する                     |
+| `treeshaking`       | Turbopackの開発サーバーとビルドでツリーシェーキングを有効にする                     |
+| `memoryLimit`       | turboの目標メモリ制限（バイト数）                                           |
+
+### サポートされるローダー
+
+次のローダーは、Turbopackのwebpackローダー実装で動作することがテストされています：
+
+- [`babel-loader`](https://www.npmjs.com/package/babel-loader)
+- [`@svgr/webpack`](https://www.npmjs.com/package/@svgr/webpack)
+- [`svg-inline-loader`](https://www.npmjs.com/package/svg-inline-loader)
+- [`yaml-loader`](https://www.npmjs.com/package/yaml-loader)
+- [`string-replace-loader`](https://www.npmjs.com/package/string-replace-loader)
+- [`raw-loader`](https://www.npmjs.com/package/raw-loader)
+- [`sass-loader`](https://www.npmjs.com/package/sass-loader)
+
+## 例
+
+### webpackローダーの設定
+
+ビルトイン機能を超えるローダーサポートが必要な場合、多くのwebpackローダーはすでにTurbopackと互換性があります。現在いくつかの制限があります：
+
+- webpackローダーAPIのコアサブセットのみが実装されています。現在、一部の人気ローダーに十分なカバレッジがありますが、将来的にAPIサポートを拡大する予定です。
+- JavaScriptコードを返すローダーのみがサポートされています。スタイルシートや画像のようなファイルを変換するローダーは現在サポートされていません。
+- webpackローダーに渡すオプションは、素のJavaScriptプリミティブ、オブジェクト、および配列でなければなりません。たとえば、オプション値として`require()`プラグインモジュールを渡すことはできません。
+
+ローダーを設定するには、インストールしたローダーの名前と任意のオプションを`next.config.js`に追加し、ファイル拡張子をローダーのリストにマッピングします：
+
+```js filename="next.config.js"
+module.exports = {
+  turbo: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
+}
+```
+
+> **Good to know**: Next.jsバージョン13.4.4以前では、`turbo.rules`は`turbo.loaders`として名付けられ、`.mdx`のようなファイル拡張子のみを受け入れていました。
+
+### エイリアスの解決
+
+Turbopackは、webpackの[`resolve.alias`](https://webpack.js.org/configuration/resolve/#resolvealias)設定に似た方法で、モジュール解決をエイリアスを使用して変更することができます。
+
+エイリアスを解決するために、`next.config.js`でインポートパターンを新しい宛先にマッピングします：
+
+```js filename="next.config.js"
+module.exports = {
+  turbo: {
+    resolveAlias: {
+      underscore: 'lodash',
+      mocha: { browser: 'mocha/browser-entry.js' },
+    },
+  },
+}
+```
+
+これは、`underscore`パッケージのインポートを`lodash`パッケージにエイリアスします。つまり、`import underscore from 'underscore'`は、`underscore`の代わりに`lodash`モジュールをロードします。
+
+また、Node.jsの[条件付きエクスポート](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports)と同様に、Turbopackはこのフィールドを通じて条件付きエイリアシングをサポートしています。現在サポートされているのは`browser`条件のみです。上記の場合、Turbopackがブラウザ環境を対象とする場合、`mocha`モジュールのインポートは`mocha/browser-entry.js`にエイリアスされます。
+
+### カスタム拡張子の解決
+
+Turbopackは、webpackの[`resolve.extensions`](https://webpack.js.org/configuration/resolve/#resolveextensions)設定に似て、カスタム拡張子を持つモジュールを解決するように構成できます。
+
+拡張子を解決するために、`next.config.js`で`resolveExtensions`フィールドを使用します：
+
+```js filename="next.config.js"
+module.exports = {
+  turbo: {
+    resolveExtensions: ['.mdx', '.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
+  },
+}
+```
+
+これにより、元の解決拡張子が提供されたリストで上書きされます。デフォルトの拡張子も含めてください。
+
+Turbopackへのアプリの移行方法に関する詳細情報とガイダンスについては、[TurbopackのWebpack互換性に関するドキュメント](https://turbo.build/pack/docs/migrating-from-webpack)を参照してください。
+
+### モジュールIDの割り当て
+
+Turbopackでは、モジュールIDを割り当てるための2つの戦略がサポートされています：
+
+- `'named'`：モジュールのパスと機能に基づいて読みやすいモジュールIDを割り当てます
+- `'deterministic'`：小さなハッシュ化された数値のモジュールIDを割り当てます。これはビルド間でほとんど一貫しており、長期的なキャッシングに役立ちます
+
+設定されていない場合、Turbopackは開発ビルドに対して`'named'`を使用し、本番ビルドに対して`'deterministic'`を使用します。
+
+モジュールID戦略を設定するには、`next.config.js`で`moduleIdStrategy`フィールドを使用します：
+
+```js filename="next.config.js"
+module.exports = {
+  turbo: {
+    moduleIdStrategy: 'deterministic',
+  },
+}
+```
+
+## バージョン履歴
+
+| Version     | Changes                                      |
+| ----------- | -------------------------------------------- |
+| `15.0.0-RC` | `turbo`は安定版となり、もはや実験的ではありません                       |
+| `13.0.0`    | `experimental.turbo`が導入されました                                   |

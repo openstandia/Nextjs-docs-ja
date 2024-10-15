@@ -1,0 +1,123 @@
+---
+title: 'revalidatePath'
+description: 'revalidatePath関数のAPIリファレンス。'
+---
+
+`revalidatePath`は、特定のパスに対して[キャッシュされたデータ](/docs/app/building-your-application/caching)をオンデマンドで無効化することができます。
+
+> **Good to know**:
+>
+> - `revalidatePath`は、[Node.jsとEdgeランタイムの両方](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)で利用可能です。
+> - `revalidatePath`は含められたパスが次に訪問されるときにのみキャッシュを無効化します。したがって、`revalidatePath`を動的ルートセグメントで呼び出しても、すぐに多くの再検証がトリガーされるわけではありません。無効化はパスが次に訪問されるときにのみ発生します。
+> - 現時点では、`revalidatePath`は[クライアントサイドルーターキャッシュ](/docs/app/building-your-application/caching#client-side-router-cache)内のすべてのルートを無効化します。この動作は一時的であり、将来的には特定のパスにのみ適用されるように更新されます。
+> - `revalidatePath`を使用することで、[サーバーサイドルートキャッシュ](/docs/app/building-your-application/caching#full-route-cache)の**特定のパスのみ**が無効化されます。
+
+## パラメーター
+
+```tsx
+revalidatePath(path: string, type?: 'page' | 'layout'): void;
+```
+
+- `path`: 再検証したいデータに関連付けられているファイルシステムパスを表す文字列（例: `/product/[slug]/page`）または、文字通りのルートセグメント（例: `/product/123`）。1024文字以下である必要があります。この値は大文字と小文字を区別します。
+- `type`: （オプション）再検証するパスの種類を変更するための文字列 `'page'` または `'layout'` を指定します。`path`が動的セグメントを含む場合（例: `/product/[slug]/page`）、このパラメーターが必要です。pathが文字通りのルートセグメントを指している場合（例: `/product/1`）、typeを指定する必要はありません。
+
+## 戻り値
+
+`revalidatePath`は値を返しません。
+
+## 例
+
+### 特定のURLを再検証する
+
+```ts
+import { revalidatePath } from 'next/cache'
+revalidatePath('/blog/post-1')
+```
+
+これは、次のページ訪問時に特定のURLを再検証します。
+
+### ページパスを再検証する
+
+```ts
+import { revalidatePath } from 'next/cache'
+revalidatePath('/blog/[slug]', 'page')
+// ルートグループを使用する場合
+revalidatePath('/(main)/blog/[slug]', 'page')
+```
+
+これは、次のページ訪問時に指定された`page`ファイルに一致する任意のURLを再検証します。特定のページの下にあるページは再検証されません。たとえば、`/blog/[slug]`は`/blog/[slug]/[author]`を無効にしません。
+
+### レイアウトパスを再検証する
+
+```ts
+import { revalidatePath } from 'next/cache'
+revalidatePath('/blog/[slug]', 'layout')
+// ルートグループを使用する場合
+revalidatePath('/(main)/post/[slug]', 'layout')
+```
+
+これは、次のページ訪問時に指定された`layout`ファイルに一致する任意のURLを再検証します。同じレイアウトを持つ下位のページも次回の訪問時に再検証されます。たとえば、上記の場合では、`/blog/[slug]/[another]`も次の訪問時に再検証されます。
+
+### すべてのデータを再検証する
+
+```ts
+import { revalidatePath } from 'next/cache'
+
+revalidatePath('/', 'layout')
+```
+
+これは、クライアントサイドルーターキャッシュをパージし、次のページ訪問時にデータキャッシュを再検証します。
+
+### サーバーアクション
+
+```ts filename="app/actions.ts" switcher
+'use server'
+
+import { revalidatePath } from 'next/cache'
+
+export default async function submit() {
+  await submitForm()
+  revalidatePath('/')
+}
+```
+
+### ルートハンドラ
+
+```ts filename="app/api/revalidate/route.ts" switcher
+import { revalidatePath } from 'next/cache'
+import type { NextRequest } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const path = request.nextUrl.searchParams.get('path')
+
+  if (path) {
+    revalidatePath(path)
+    return Response.json({ revalidated: true, now: Date.now() })
+  }
+
+  return Response.json({
+    revalidated: false,
+    now: Date.now(),
+    message: 'Missing path to revalidate',
+  })
+}
+```
+
+```js filename="app/api/revalidate/route.js" switcher
+import { revalidatePath } from 'next/cache'
+
+export async function GET(request) {
+  const path = request.nextUrl.searchParams.get('path')
+
+  if (path) {
+    revalidatePath(path)
+    return Response.json({ revalidated: true, now: Date.now() })
+  }
+
+  return Response.json({
+    revalidated: false,
+    now: Date.now(),
+    message: 'Missing path to revalidate',
+  })
+}
+```
