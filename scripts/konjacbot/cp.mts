@@ -16,7 +16,7 @@ const log = createLogger(basename(import.meta.filename))
 
 const { projectRootDir, submoduleName } = configs
 
-log('important', '🚀 mv started !')
+log('important', '🚀 cp started !')
 
 const {
   positionals: [diffFilePath],
@@ -72,4 +72,4 @@ log('important', `${commands.length} files found.`)
 
 await Promise.all(commands)
 
-log('important', '✅ mv finished successfully !')
+log('important', '✅ cp finished successfully !')
