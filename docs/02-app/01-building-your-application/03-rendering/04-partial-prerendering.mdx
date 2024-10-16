@@ -1,0 +1,305 @@
+---
+title: 'Partial Prerendering'
+description: '静的レンダリングと動的レンダリングの利点を組み合わせる方法をPartial Prerenderingで学ぼう。'
+---
+
+Partial Prerendering（PPR）は、静的コンポーネントと動的コンポーネントを同一のルート内で組み合わせることを可能にします。
+
+ビルド中に、Next.jsはできる限りルートをプレンダリングします。[dynamic](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)コード、たとえば入力されたリクエストからデータを読み取る場合は、関連するコンポーネントを[React Suspense](https://react.dev/reference/react/Suspense)境界でラップすることができます。Suspense境界のフォールバックはプレンダリングされたHTMLに含まれます。
+
+> **Note:** Partial Prerenderingは**実験的**な機能であり、変更される可能性があります。本番環境での使用にはまだ適していません。
+
+<Image
+  alt="静的なナビゲーションと製品情報、動的なカートとおすすめ製品を表示している部分的にプレンダリングされた製品ページ"
+  srcLight="/learn/light/thinking-in-ppr.png"
+  srcDark="/learn/dark/thinking-in-ppr.png"
+  width="1600"
+  height="632"
+/>
+
+> **🎥 視聴:** なぜPPRを使用するのかとその動作原理 → [YouTube (10分)](https://www.youtube.com/watch?v=MTcPrTIBkpA)．
+
+## 背景 {#background}
+
+PPRはNext.jsサーバーにプレンダリングされたコンテンツを即座に送信させることを可能にします。
+
+クライアントからサーバーへのウォーターフォールを防ぐために、動的コンポーネントは初期プレンダリングを提供する際に並行してサーバーからストリーミングを開始します。これにより、動的コンポーネントはクライアントJavaScriptがブラウザで読み込まれる前にレンダリングを開始できます。
+
+各動的コンポーネントごとに多数のHTTPリクエストを生成することを防ぐために、PPRは静的なプレンダリングと動的コンポーネントを単一のHTTPリクエストに統合することができます。これにより、各動的コンポーネントに対するネットワークの往復が複数回必要になることがありません。
+
+## 部分的プレンダリングの使用 {#using-partial-prerendering}
+
+### インクリメンタル導入（バージョン15） {#incremental-adoption-version-15}
+
+Next.js 15では、`next.config.js`内の[`ppr`](/docs/app/api-reference/next-config-js/ppr)オプションを`incremental`に設定し、ファイルの先頭で`experimental_ppr` [route config option](/docs/app/api-reference/file-conventions/route-segment-config)をエクスポートすることで、[layouts](/docs/app/building-your-application/routing/layouts-and-templates)および[pages](/docs/app/building-your-application/routing/pages)で部分的プレンダリングを段階的に採用できます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    ppr: 'incremental',
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    ppr: 'incremental',
+  },
+}
+
+module.exports = nextConfig
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { Suspense } from "react"
+import { StaticComponent, DynamicComponent, Fallback } from "@/app/ui"
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return {
+     <>
+      <StaticComponent />
+      <Suspense fallback={<Fallback />}>
+        <DynamicComponent />
+      </Suspense>
+     </>
+  };
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { Suspense } from "react"
+import { StaticComponent, DynamicComponent, Fallback } from "@/app/ui"
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return {
+     <>
+      <StaticComponent />
+      <Suspense fallback={<Fallback />}>
+        <DynamicComponent />
+      </Suspense>
+     </>
+  };
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - `experimental_ppr`がないルートはデフォルトで`false`になり、PPRを使用してプレンダリングされません。各ルートに対してPPRを明示的に選択する必要があります。
+> - `experimental_ppr`は、ネストしたlayoutsやページを含むルートセグメントのすべての子に適用されます。すべてのファイルに追加する必要はなく、ルートのトップセグメントだけに追加します。
+> - 子セグメントのPPRを無効にするには、子セグメントで`experimental_ppr`を`false`に設定することができます。
+
+### PPRの有効化（バージョン14） {#enabling-ppr-version-14}
+
+バージョン14では、`next.config.js`ファイルに[`ppr`](/docs/app/api-reference/next-config-js/ppr)オプションを追加することで有効にできます。これはアプリケーション内のすべてのルートに適用されます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    ppr: true,
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    ppr: true,
+  },
+}
+
+module.exports = nextConfig
+```
+
+</TabItem>
+</Tabs>
+
+## 動的コンポーネント {#dynamic-components}
+
+`next build`中にルートのプレンダリングを作成する際に、Next.jsは動的なAPIがReact Suspenseでラップされていることを要求します。`fallback`はその後プレンダリングに含まれます。
+
+例えば、`cookies`や`headers`のような関数を使用する場合：
+
+<Tabs>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/user.js" switcher
+import { cookies } from 'next/headers'
+
+export async function User() {
+  const session = (await cookies()).get('session')?.value
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/user.tsx" switcher
+import { cookies } from 'next/headers'
+
+export async function User() {
+  const session = (await cookies()).get('session')?.value
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+このコンポーネントは、cookieを読み取るために入力されたリクエストを確認する必要があります。これをPPRで使用するには、コンポーネントをSuspenseでラップする必要があります：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { Suspense } from 'react'
+import { User, AvatarSkeleton } from './user'
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return (
+    <section>
+      <h1>これはプレンダリングされます</h1>
+      <Suspense fallback={<AvatarSkeleton />}>
+        <User />
+      </Suspense>
+    </section>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { Suspense } from 'react'
+import { User, AvatarSkeleton } from './user'
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return (
+    <section>
+      <h1>これはプレンダリングされます</h1>
+      <Suspense fallback={<AvatarSkeleton />}>
+        <User />
+      </Suspense>
+    </section>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+コンポーネントは、値がアクセスされたときのみ動的レンダリングにオプトインします。
+
+例えば、`page`から`searchParams`を読み取っている場合、この値をpropsとして他のコンポーネントに渡すことができます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { Table } from './table'
+
+export default function Page({
+  searchParams,
+}: {
+  searchParams: { sort: string }
+}) {
+  return (
+    <section>
+      <h1>これはプレンダリングされます</h1>
+      <Table searchParams={searchParams} />
+    </section>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { Table } from './table'
+
+export default function Page({ searchParams }) {
+  return (
+    <section>
+      <h1>これはプレンダリングされます</h1>
+      <Table searchParams={searchParams} />
+    </section>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+テーブルコンポーネント内で、`searchParams`からの値にアクセスすることで、コンポーネントは動的に動作します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/table.tsx" switcher
+export async function Table({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort: string }>
+}) {
+  const sort = (await searchParams).sort === 'true'
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/table.js" switcher
+export async function Table({ searchParams }) {
+  const sort = (await searchParams).sort === 'true'
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>

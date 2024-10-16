@@ -6,7 +6,7 @@ export const NextJsVersion = ({ label }: { label: string }) => {
     siteConfig: { customFields },
   } = useDocusaurusContext()
 
-  const version = (customFields?.nextJsGitHubVersionHash ?? '') as string
+  const version = (customFields?.nextjsGitHubVersionHash ?? '') as string
 
   return (
     <>

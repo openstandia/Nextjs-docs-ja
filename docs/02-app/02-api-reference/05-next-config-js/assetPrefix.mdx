@@ -1,0 +1,75 @@
+---
+title: 'assetPrefix'
+description: 'CDNを設定するためのassetPrefix設定オプションの使用方法を学びます。'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerの間で共有されています。Pages Routerに特化したコンテンツを追加するには、`<PagesOnly>コンテンツ</PagesOnly>`コンポーネントを使用できます。共有コンテンツはコンポーネントにラップしないでください。 */}
+
+<AppOnly>
+
+> **注意**: [Vercelへデプロイする](/docs/app/building-your-application/deploying)と、Next.jsプロジェクトのためのグローバルCDNが自動的に構成されます。
+> 手動でAsset Prefixを設定する必要はありません。
+
+</AppOnly>
+
+<PagesOnly>
+
+> **注意**: [Vercelへデプロイする](https://nextjs.org/docs/canary/pages/building-your-application/deploying)と、Next.jsプロジェクトのためのグローバルCDNが自動的に構成されます。
+> 手動でAsset Prefixを設定する必要はありません。
+
+</PagesOnly>
+
+> **Good to know**: Next.js 9.5以降では、カスタマイズ可能な[Base Path](/docs/app/api-reference/next-config-js/basePath)のサポートが追加され、この機能は`/docs`のようなサブパスにアプリケーションをホスティングするのに適しています。
+> このユースケースのためにカスタムAsset Prefixを使うことはお勧めしません。
+
+## CDNを設定する {#set-up-a-cdn}
+
+[CDN](https://en.wikipedia.org/wiki/Content_delivery_network)を設定するには、アセットプレフィックスを設定し、Next.jsがホストされているドメインを解決するようにCDNのオリジンを構成します。
+
+`next.config.mjs`を開いて、[フェーズ](/docs/app/api-reference/next-config-js#async-configuration)に基づいた`assetPrefix`設定を追加します：
+
+```js title="next.config.mjs"
+// @ts-check
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants'
+
+export default (phase) => {
+  const isDev = phase === PHASE_DEVELOPMENT_SERVER
+  /**
+   * @type {import('next').NextConfig}
+   */
+  const nextConfig = {
+    assetPrefix: isDev ? undefined : 'https://cdn.mydomain.com',
+  }
+  return nextConfig
+}
+```
+
+Next.jsは`/_next/`パス（`.next/static/`フォルダ）のJavaScriptおよびCSSファイルを読み込む際に、自動的にアセットプレフィックスを使用します。例えば、上記の設定を使用すると、以下のJSチャンクのリクエスト：
+
+```
+/_next/static/chunks/4b9b41aaa062cbbfeff4add70f256968c51ece5d.4d708494b3aed70c04f0.js
+```
+
+は以下のようになります：
+
+```
+https://cdn.mydomain.com/_next/static/chunks/4b9b41aaa062cbbfeff4add70f256968c51ece5d.4d708494b3aed70c04f0.js
+```
+
+特定のCDNへのファイルのアップロード設定は選択したCDNに依存します。CDN上にホストする必要のある唯一のフォルダは、`.next/static/`の内容であり、これは上記のURLリクエストに示されているように`_next/static/`としてアップロードされるべきです。**残りの`.next/`フォルダをアップロードしないでください**。サーバーコードやその他の設定を公開するべきではありません。
+
+`assetPrefix`が`_next/static`へのリクエストをカバーしている間、以下のパスには影響しません：
+
+<AppOnly>
+
+- [public](/docs/app/building-your-application/optimizing/static-assets)フォルダ内のファイル。これらのアセットをCDN経由で提供したい場合は、独自にプレフィックスを導入する必要があります
+
+</AppOnly>
+
+<PagesOnly>
+
+- [public](https://nextjs.org/docs/canary/pages/building-your-application/optimizing/static-assets)フォルダ内のファイル。これらのアセットをCDN経由で提供したい場合は、独自にプレフィックスを導入する必要があります
+- `getServerSideProps`ページのための`/_next/data/`リクエスト。これらのリクエストは常にメインドメインに対して行われます。静的ではないためです。
+- `getStaticProps`ページのための`/_next/data/`リクエスト。これらのリクエストは、[incremental static regeneration](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/incremental-static-regeneration)をサポートするため、たとえそれを使用していない場合でも、一貫性のために常にメインドメインに対して行われます。
+
+</PagesOnly>

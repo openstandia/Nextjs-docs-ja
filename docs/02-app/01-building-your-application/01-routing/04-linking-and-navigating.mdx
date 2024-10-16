@@ -1,0 +1,326 @@
+---
+title: 'リンクとナビゲーション'
+description: 'Next.jsにおけるナビゲーションの仕組みと、LinkコンポーネントおよびuseRouterフックの使用方法を学びましょう。'
+related:
+  links:
+    - 'app/building-your-application/caching'
+    - 'app/building-your-application/configuring/typescript'
+---
+
+Next.jsでルート間をナビゲートする方法は4つあります：
+
+- [`<Link>`コンポーネントを使用する](#link-component)
+- [`useRouter`フックを使用する](#userouter-hook)（[Client Components](/docs/app/building-your-application/rendering/client-components)）
+- [`redirect`関数を使用する](#redirect-function)（[Server Components](/docs/app/building-your-application/rendering/server-components)）
+- ネイティブの[History APIを使用する](#using-the-native-history-api)
+
+このページでは、これらの各オプションの使用方法を説明し、ナビゲーションがどのように機能するかを詳しく見ていきます。
+
+## `<Link>`コンポーネント {#link-component}
+
+`<Link>`はHTMLの`<a>`タグを拡張した組み込みコンポーネントであり、[プリフェッチ](#2-prefetching)とルート間のクライアントサイドナビゲーションを提供します。それは、Next.jsでルート間をナビゲートする際の主要かつ推奨される方法です。
+
+`next/link`からインポートし、このコンポーネントに`href` prop を渡して使用できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import Link from 'next/link'
+
+export default function Page() {
+  return <Link href="/dashboard">Dashboard</Link>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import Link from 'next/link'
+
+export default function Page() {
+  return <Link href="/dashboard">Dashboard</Link>
+}
+```
+
+</TabItem>
+</Tabs>
+
+`<Link>`に渡すことができるその他のオプションの props もあります。詳細は[APIリファレンス](/docs/app/api-reference/components/link)を参照してください。
+
+## `useRouter()`フック {#userouter-hook}
+
+`useRouter`フックを利用すると、[Client Components](/docs/app/building-your-application/rendering/client-components)からプログラム的にルートを変更できます。
+
+```jsx title="app/page.js"
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export default function Page() {
+  const router = useRouter()
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      Dashboard
+    </button>
+  )
+}
+```
+
+`useRouter`メソッドの完全なリストについては、[APIリファレンス](/docs/app/api-reference/functions/use-router)を参照してください。
+
+> **おすすめ:** `useRouter`を使用する特定の要件がない限り、ルート間をナビゲートするには`<Link>`コンポーネントを使用してください。
+
+## `redirect`関数 {#redirect-function}
+
+[Server Components](/docs/app/building-your-application/rendering/server-components)の場合、`redirect`関数を使用してください。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/team/[id]/page.tsx" switcher
+import { redirect } from 'next/navigation'
+
+async function fetchTeam(id: string) {
+  const res = await fetch('https://...')
+  if (!res.ok) return undefined
+  return res.json()
+}
+
+export default async function Profile({ params }: { params: { id: string } }) {
+  const team = await fetchTeam(params.id)
+  if (!team) {
+    redirect('/login')
+  }
+
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/team/[id]/page.js" switcher
+import { redirect } from 'next/navigation'
+
+async function fetchTeam(id) {
+  const res = await fetch('https://...')
+  if (!res.ok) return undefined
+  return res.json()
+}
+
+export default async function Profile({ params }) {
+  const team = await fetchTeam(params.id)
+  if (!team) {
+    redirect('/login')
+  }
+
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - `redirect`はデフォルトで307（Temporary Redirect）ステータスコードを返します。Server Actionで使用すると、303（See Other）を返します。これはPOSTリクエストの結果として成功ページにリダイレクトする際によく使用されます。
+> - `redirect`は内部でエラーをスローしますので、`try/catch`ブロックの外部で呼び出す必要があります。
+> - `redirect`はClient Componentsのレンダリングプロセス中には呼び出せますが、イベントハンドラー内では呼び出せません。その場合は[`useRouter`フック](#userouter-hook)を使用できます。
+> - `redirect`は絶対URLも受け付け、外部リンクへのリダイレクトにも使用できます。
+> - レンダリングプロセスの前にリダイレクトしたい場合、[`next.config.js`](/docs/app/building-your-application/routing/redirecting#redirects-in-nextconfigjs)または[Middleware](/docs/app/building-your-application/routing/redirecting#nextresponseredirect-in-middleware)を使用してください。
+
+詳細については、[`redirect` APIリファレンス](/docs/app/api-reference/functions/redirect)を参照してください。
+
+## ネイティブのHistory APIを使用する {#using-the-native-history-api}
+
+Next.jsでは、ネイティブの[`window.history.pushState`](https://developer.mozilla.org/en-US/docs/Web/API/History/pushState)と[`window.history.replaceState`](https://developer.mozilla.org/en-US/docs/Web/API/History/replaceState)メソッドを使用して、ページをリロードすることなくブラウザの履歴スタックを更新できます。
+
+`pushState`と`replaceState`の呼び出しはNext.js Routerに統合されており、[`usePathname`](/docs/app/api-reference/functions/use-pathname)や[`useSearchParams`](/docs/app/api-reference/functions/use-search-params)と同期できます。
+
+### `window.history.pushState` {#window-history-pushstate}
+
+これを使用して、ブラウザの履歴スタックに新しいエントリを追加します。ユーザーは前の状態に戻ることができます。たとえば、製品のリストをソートするには次のようにします：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/sort-products.tsx" switcher
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
+export default function SortProducts() {
+  const searchParams = useSearchParams()
+
+  function updateSorting(sortOrder: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('sort', sortOrder)
+    window.history.pushState(null, '', `?${params.toString()}`)
+  }
+
+  return (
+    <>
+      <button onClick={() => updateSorting('asc')}>Sort Ascending</button>
+      <button onClick={() => updateSorting('desc')}>Sort Descending</button>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/sort-products.js" switcher
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
+export default function SortProducts() {
+  const searchParams = useSearchParams()
+
+  function updateSorting(sortOrder) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('sort', sortOrder)
+    window.history.pushState(null, '', `?${params.toString()}`)
+  }
+
+  return (
+    <>
+      <button onClick={() => updateSorting('asc')}>Sort Ascending</button>
+      <button onClick={() => updateSorting('desc')}>Sort Descending</button>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### `window.history.replaceState` {#window-history-replacestate}
+
+これを使用して、ブラウザの履歴スタック上の現在のエントリを置き換えます。ユーザーは前の状態に戻ることはできません。たとえば、アプリケーションのロケールを切り替えるには次のようにします：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/locale-switcher.tsx" switcher
+'use client'
+
+import { usePathname } from 'next/navigation'
+
+export function LocaleSwitcher() {
+  const pathname = usePathname()
+
+  function switchLocale(locale: string) {
+    // 例: '/en/about' または '/fr/contact'
+    const newPath = `/${locale}${pathname}`
+    window.history.replaceState(null, '', newPath)
+  }
+
+  return (
+    <>
+      <button onClick={() => switchLocale('en')}>English</button>
+      <button onClick={() => switchLocale('fr')}>French</button>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/locale-switcher.js" switcher
+'use client'
+
+import { usePathname } from 'next/navigation'
+
+export function LocaleSwitcher() {
+  const pathname = usePathname()
+
+  function switchLocale(locale) {
+    // 例: '/en/about' または '/fr/contact'
+    const newPath = `/${locale}${pathname}`
+    window.history.replaceState(null, '', newPath)
+  }
+
+  return (
+    <>
+      <button onClick={() => switchLocale('en')}>English</button>
+      <button onClick={() => switchLocale('fr')}>French</button>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+## ルーティングとナビゲーションの動作 {#how-routing-and-navigation-works}
+
+App Routerは、ルーティングとナビゲーションにハイブリッドアプローチを採用しています。サーバーでは、アプリケーションコードがルートセグメントによって自動的に[コード分割](#1-code-splitting)されます。そしてクライアントでは、Next.jsはルートセグメントを[プリフェッチ](#2-prefetching)し、[キャッシュ](#3-caching)します。これにより、ユーザーが新しいルートにナビゲートするとき、ブラウザはページをリロードせず、変化するルートセグメントのみが再レンダリングされるため、ナビゲーション体験とパフォーマンスが向上します。
+
+### 1. コードスプリッティング {#1-code-splitting}
+
+コードスプリッティングは、アプリケーションコードを小さなバンドルに分割してブラウザにダウンロードおよび実行することができます。これにより、データ転送量と各リクエストの実行時間が削減され、パフォーマンスが向上します。
+
+[Server Components](/docs/app/building-your-application/rendering/server-components)は、アプリケーションコードをルートセグメントによって自動的にコード分割することを可能にします。これにより、ナビゲーション時には現在のルートに必要なコードのみがロードされます。
+
+### 2. プリフェッチ {#2-prefetching}
+
+プリフェッチとは、ユーザーが訪れる前にバックグラウンドでルートを事前にロードする方法です。
+
+Next.jsではルートは次の2つの方法でプリフェッチされます：
+
+- **`<Link>`コンポーネント**：ルートはユーザーのビューポートに表示されると自動的にプリフェッチされます。プリフェッチは、ページが最初に読み込まれたときやスクロールを通じてビューポートに表示されるときに行われます。
+- **`router.prefetch()`**：`useRouter`フックを使用してルートをプログラム的にプリフェッチできます。
+
+`<Link>`のデフォルトのプリフェッチ動作（つまり、`prefetch`プロップが未指定または`null`に設定されている場合）は、[`loading.js`](/docs/app/api-reference/file-conventions/loading)の使用状況によって異なります。共有レイアウトのみが、最初の`loading.js`ファイルまでのレンダリング「tree」の下にプリフェッチされ、`30s`間キャッシュされます。これにより、動的ルート全体をフェッチするコストが削減され、ユーザーにより良いビジュアルフィードバックを提供するための[即時読み込み状態](/docs/app/building-your-application/routing/loading-ui-and-streaming#instant-loading-states)を表示することができます。
+
+プリフェッチを無効にするには、`prefetch`プロップを`false`に設定します。代わりに、プリフェッチを`true`に設定することにより、ロード境界を超えた完全なページデータをプリフェッチすることができます。
+
+詳細については、[`<Link>`APIリファレンス](/docs/app/api-reference/components/link)を参照してください。
+
+> **Good to know**:
+>
+> - プリフェッチは、開発時には無効で、プロダクションのみで有効です。
+
+### 3. キャッシング {#3-caching}
+
+Next.jsには、[Router Cache](/docs/app/building-your-application/caching#client-side-router-cache)と呼ばれる**メモリ内クライアントサイドキャッシュ**があります。ユーザーがアプリをナビゲートすると、[プリフェッチ](#2-prefetching)されたルートセグメントと訪問したルートのReact Server Component Payloadがキャッシュに保存されます。
+
+これは、ナビゲーション時に新たにサーバーにリクエストを送るのではなく、キャッシュができるだけ再利用されることを意味し、リクエスト数やデータ転送量を削減することでパフォーマンスを向上させます。
+
+[Router Cache](/docs/app/building-your-application/caching#client-side-router-cache) の動作と構成方法について詳しく学んでください。
+
+### 4. 部分レンダリング {#4-partial-rendering}
+
+部分レンダリングとは、ナビゲーション時に変更されるルートセグメントのみがクライアント側で再レンダリングされ、共有セグメントは保持されることを意味します。
+
+たとえば、2つの兄弟ルート`/dashboard/settings`と`/dashboard/analytics`の間でナビゲートする場合、`settings`ページはアンマウントされ、`analytics`ページは新しい状態でマウントされ、共有の`dashboard`レイアウトは保持されます。この動作は、同じ動的セグメント上の2つのルート間でも見られます。たとえば、`/blog/[slug]/page`で、`/blog/first`から`/blog/second`へのナビゲーション。
+
+<Image
+  alt="部分レンダリングの仕組み"
+  srcLight="/docs/light/partial-rendering.png"
+  srcDark="/docs/dark/partial-rendering.png"
+  width="1600"
+  height="945"
+/>
+
+部分レンダリングがなければ、それぞれのナビゲーションでページ全体がクライアント側で再レンダリングされます。変更されるセグメントのみをレンダリングすることで、データ転送量と実行時間が削減され、パフォーマンスが向上します。
+
+### 5. ソフトナビゲーション {#5-soft-navigation}
+
+ブラウザはページ間のナビゲーション時に「ハードナビゲーション」を行います。Next.jsのApp Routerはページ間の「ソフトナビゲーション」を有効にし、変更されたルートセグメントだけが再レンダリングされるようにします（部分レンダリング）。これにより、ナビゲーション中のクライアント側React状態が保持されます。
+
+### 6. 戻ると進むのナビゲーション {#6-back-and-forward-navigation}
+
+デフォルトでは、Next.jsはバックワードおよびフォワードナビゲーションの際にスクロール位置を維持し、[Router Cache](/docs/app/building-your-application/caching#client-side-router-cache)内のルートセグメントを再利用します。
+
+### 7. `pages/`と`app/`間のルーティング {#7-routing-between-pages-and-app}
+
+`pages/`から`app/`への段階的な移行時に、Next.jsのルーターは2つの間でのハードナビゲーションを自動的に処理します。`pages/`から`app/`への移行を検出するために、appルートの確率的なチェックを活用するクライアントルーターフィルターがありますが、これにより間違ったポジティブが発生する可能性があります。デフォルトでは、そのような発生は非常にまれであるべきであり、我々は誤ったポジティブの発生率を0.01％に設定しています。この発生率は、`next.config.js`の`experimental.clientRouterFilterAllowedRate`オプションを使用してカスタマイズできます。誤ったポジティブ率を下げると、クライアントバンドルで生成されるフィルタのサイズが増加することに注意してください。
+
+また、`experimental.clientRouterFilter`を`false`に設定して、この処理を完全に無効化し、`pages/`と`app/`間のルーティングを手動で管理することを好む場合もあります。この機能が無効になっている場合、appルートと重なるpages内の動的ルートはデフォルトで適切にナビゲートされません。

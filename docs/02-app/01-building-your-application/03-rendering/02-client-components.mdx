@@ -1,0 +1,115 @@
+---
+title: 'Client Components'
+description: 'クライアントでアプリケーションの一部をレンダーするためにClient Componentsの使用方法を学びます'
+---
+
+Client Componentsを使用すると、インタラクティブなUIを作成できます。これは[サーバーでプリレンダリング](https://github.com/reactwg/server-components/discussions/4)され、クライアントJavaScriptを使用してブラウザで実行できます。
+
+このページでは、Client Componentsがどのように機能するか、どのようにレンダリングされるか、いつそれらを使用するのかを解説します。
+
+## クライアントレンダリングの利点 {#benefits-of-client-rendering}
+
+クライアントでレンダリング作業を行うことには、いくつかの利点があります：
+
+- **インタラクティビティ**：Client Componentsは状態、エフェクト、およびイベントリスナーを使用できるため、ユーザーに即時フィードバックを提供し、UIを更新できます
+- **ブラウザのAPI**：Client Componentsは[geolocation](https://developer.mozilla.org/docs/Web/API/Geolocation_API)や[localStorage](https://developer.mozilla.org/docs/Web/API/Window/localStorage)などのブラウザAPIにアクセスできます
+
+## Next.jsでのClient Componentsの使用 {#using-client-components-in-next-js}
+
+Client Componentsを使用するには、ファイルの上部、インポートの前にReactの[`"use client"`ディレクティブ](https://react.dev/reference/react/use-client)を追加します。
+
+`"use client"`は、サーバーとClient Componentモジュール間の[境界](/docs/app/building-your-application/rendering#network-boundary)を宣言するために使用されます。つまり、ファイル内で`"use client"`を定義することで、それにインポートされるすべてのモジュール、子コンポーネントも含めて、クライアントバンドルの一部と見なされます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/counter.tsx" highlight={1} switcher
+'use client'
+
+import { useState } from 'react'
+
+export default function Counter() {
+  const [count, setCount] = useState(0)
+
+  return (
+    <div>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>Click me</button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/counter.js" highlight={1} switcher
+'use client'
+
+import { useState } from 'react'
+
+export default function Counter() {
+  const [count, setCount] = useState(0)
+
+  return (
+    <div>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>Click me</button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+以下の図は、ネストされたコンポーネント(`toggle.js`)で`onClick`や`useState`を使用することが`"use client"`ディレクティブが定義されていない場合にエラーを引き起こすことを示しています。これはデフォルトでは、App Router内のすべてのコンポーネントがこれらのAPIが利用できないServer Componentsだからです。`toggle.js`内で`"use client"`ディレクティブを定義することで、これらのAPIを利用できるクライアントの境界にReactを入れることができます。
+
+<Image
+  alt="Use Client Directive and Network Boundary"
+  srcLight="/docs/light/use-client-directive.png"
+  srcDark="/docs/dark/use-client-directive.png"
+  width="1600"
+  height="1320"
+/>
+
+> **複数の`use client`エントリーポイントを定義する**：
+>
+> React Component treeに複数の"use client"エントリーポイントを定義することができます。これにより、アプリケーションを複数のクライアントバンドルに分割できます。
+>
+> しかし、クライアントでレンダリングされる必要があるすべてのコンポーネントに`"use client"`を定義する必要はありません。一度境界を定義すると、それにインポートされるすべての子コンポーネントとモジュールは、クライアントバンドルの一部と見なされます。
+
+## Client Componentsはどのようにレンダリングされるのか？ {#how-are-client-components-rendered}
+
+Next.jsでは、Client Componentsはリクエストがフルページロード（アプリケーションへの初回訪問や、ブラウザのリフレッシュによるページリロード）か、その後のナビゲーションの一部であるかによって、異なる方法でレンダリングされます。
+
+### フルページロード {#full-page-load}
+
+初期ページロードを最適化するために、Next.jsはReactのAPIを使用して、ClientおよびServer Componentsの静的HTMLプレビューをサーバーでレンダリングします。これは、ユーザーが初めてアプリケーションを訪れたとき、クライアントがClient Component JavaScriptバンドルをダウンロード、解析、および実行するのを待つことなく、ページの内容を即座に表示できることを意味します。
+
+サーバー上で：
+
+1. ReactはServer Componentsを、Client Componentsへの参照を含む特別なデータ形式である[**React Server Component Payload (RSC Payload)**](/docs/app/building-your-application/rendering/server-components#what-is-the-react-server-component-payload-rsc)にレンダリングします
+2. Next.jsはRSC PayloadとClient Component JavaScript命令を使用して、サーバー上でルートの**HTML**をレンダリングします
+
+次に、クライアント上で：
+
+1. HTMLが使用され、ルートの迅速で非インタラクティブな初期プレビューが即座に表示されます
+2. React Server Components Payloadが使用され、ClientとServer Component treesが整合し、DOMが更新されます
+3. JavaScript命令が使用され、Client Componentsが[ハイドレート](https://react.dev/reference/react-dom/client/hydrateRoot)され、UIがインタラクティブになります
+
+> **ハイドレーションとは何か？**
+>
+> ハイドレーションは、静的HTMLをインタラクティブにするために、DOMにイベントリスナーをアタッチするプロセスです。裏で、ハイドレーションは[`hydrateRoot`](https://react.dev/reference/react-dom/client/hydrateRoot)React APIで行われます。
+
+### 続いてのナビゲーション {#subsequent-navigations}
+
+その後のナビゲーションでは、Client ComponentsはサーバーレンダリングされたHTMLなしでクライアント上で完全にレンダリングされます。
+
+これは、Client Component JavaScriptバンドルがダウンロードおよび解析されることを意味します。バンドルが準備できたら、Reactは[RSC Payload](/docs/app/building-your-application/rendering/server-components#what-is-the-react-server-component-payload-rsc)を使用してClientとServer Component treesを整合し、DOMを更新します。
+
+## サーバー環境に戻る {#going-back-to-the-server-environment}
+
+場合によっては、`"use client"`の境界を宣言した後でもサーバー環境に戻りたいことがあります。たとえば、クライアントバンドルのサイズを削減したい場合や、サーバーでしか利用できないAPIを使用したい場合です。
+
+Client Components内に理論的にはネストされている場合でも、ClientとServer Componentsおよび[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)を交互に組み合わせることでコードをサーバーに保持できます。詳細は[Composition Patterns](/docs/app/building-your-application/rendering/composition-patterns)のページを参照してください。

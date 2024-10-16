@@ -1,0 +1,233 @@
+---
+title: 'error.js'
+description: 'error.js 特殊ファイルの API リファレンス'
+related:
+  title: 'エラー処理について詳しく学ぶ'
+  links:
+    - 'app/building-your-application/routing/error-handling'
+---
+
+**error** ファイルは、予期しないランタイムエラーを処理し、フォールバック UI を表示することができます。
+
+<Image
+  alt="error.js 特殊ファイル"
+  srcLight="/docs/light/error-special-file.png"
+  srcDark="/docs/dark/error-special-file.png"
+  width="1600"
+  height="606"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/error.tsx" switcher
+'use client' // Error boundaries は Client Components である必要があります
+
+import { useEffect } from 'react'
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  useEffect(() => {
+    // エラーをエラーレポートサービスにログします
+    console.error(error)
+  }, [error])
+
+  return (
+    <div>
+      <h2>何か問題が発生しました！</h2>
+      <button
+        onClick={
+          // セグメントの再レンダーを試みて回復を図る
+          () => reset()
+        }
+      >
+        もう一度試す
+      </button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/error.js" switcher
+'use client' // Error boundaries は Client Components である必要があります
+
+import { useEffect } from 'react'
+
+export default function Error({ error, reset }) {
+  useEffect(() => {
+    // エラーをエラーレポートサービスにログします
+    console.error(error)
+  }, [error])
+
+  return (
+    <div>
+      <h2>何か問題が発生しました！</h2>
+      <button
+        onClick={
+          // セグメントの再レンダーを試みて回復を図る
+          () => reset()
+        }
+      >
+        もう一度試す
+      </button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+## `error.js` の仕組み {#how-error-js-works}
+
+`error.js` は、ルートセグメントとそのネストされた子要素を [React Error Boundary](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary) でラップします。boundary 内でエラーがスローされると、`error` コンポーネントがフォールバック UI として表示されます。
+
+<Image
+  alt="error.js の仕組み"
+  srcLight="/docs/light/error-overview.png"
+  srcDark="/docs/dark/error-overview.png"
+  width="1600"
+  height="903"
+/>
+
+> **Good to know**:
+>
+> - [React DevTools](https://react.dev/learn/react-developer-tools) を使うと、エラーバウンダリを切り替えてエラーステートをテストできます。
+
+## Props {#props}
+
+### `error` {#error}
+
+`error.js` Client Component に転送される [`Error`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Error) オブジェクトのインスタンスです。
+
+> **Good to know:** 開発中にクライアントに転送される `Error` オブジェクトはシリアライズされ、デバッグを簡単にするために元のエラーメッセージが含まれます。ただし、この動作は、エラーに含まれる潜在的に機密性の高い詳細がクライアントに漏れるのを防ぐため、**本番環境では異なります**。
+
+#### `error.message` {#error-message}
+
+- Client Components から転送されたエラーは、元の `Error` メッセージを表示します。
+- Server Components から転送されたエラーは、識別子を含む一般的なメッセージを表示します。これは、機密性の高い詳細が漏れるのを防ぐためです。対応するサーバー側のログを一致させるために、`errors.digest` 下の識別子を使用できます。
+
+#### `error.digest` {#error-digest}
+
+スローされたエラーの自動生成されたハッシュです。これを使用して、サーバー側のログ内の対応するエラーを一致させることができます。
+
+### `reset` {#reset}
+
+エラーの原因が一時的である場合があります。このような場合、再試行すると問題が解決する可能性があります。
+
+エラーコンポーネントは `reset()` 関数を使用してユーザーにエラーからの回復を試みるよう促すことができます。関数が実行されると、エラーバウンダリの内容を再レンダーしようとします。成功すると、フォールバックエラーコンポーネントが再レンダーの結果に置き換えられます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/error.tsx" switcher
+'use client' // Error boundaries は Client Components である必要があります
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  return (
+    <div>
+      <h2>何か問題が発生しました！</h2>
+      <button onClick={() => reset()}>もう一度試す</button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/error.js" switcher
+'use client' // Error boundaries は Client Components である必要があります
+
+export default function Error({ error, reset }) {
+  return (
+    <div>
+      <h2>何か問題が発生しました！</h2>
+      <button onClick={() => reset()}>もう一度試す</button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+## `global-error.js` {#global-error-js}
+
+一般的ではありませんが、`app/global-error.js` を使用して root レイアウトまたはテンプレートでエラーを処理することができます。このファイルは、[国際化](/docs/app/building-your-application/routing/internationalization)を活用している場合でも、root アプリディレクトリに配置されます。グローバルエラーファイルは、独自の `<html>` および `<body>` タグを定義する必要があります。このファイルは有効なときに root レイアウトまたはテンプレートを置き換えます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/global-error.tsx" switcher
+'use client' // Error boundaries は Client Components である必要があります
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  return (
+    // global-error には html と body タグを含める必要があります
+    <html>
+      <body>
+        <h2>何か問題が発生しました！</h2>
+        <button onClick={() => reset()}>もう一度試す</button>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/global-error.js" switcher
+'use client' // Error boundaries は Client Components である必要があります
+
+export default function GlobalError({ error, reset }) {
+  return (
+    // global-error には html と body タグを含める必要があります
+    <html>
+      <body>
+        <h2>何か問題が発生しました！</h2>
+        <button onClick={() => reset()}>もう一度試す</button>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - `global-error.js` は本番環境でのみ有効です。開発中は、エラーオーバーレイが代わりに表示されます。
+
+## not-found.js {#not-found-js}
+
+[`not-found`](https://nextjs.org/docs/app/api-reference/file-conventions/not-found) ファイルは、ルートセグメント内で `notFound()` 関数を呼び出したときに UI を表示します。
+
+## バージョン履歴 {#version-history}
+
+| バージョン | 変更点                          |
+| ---------- | ------------------------------- |
+| `v13.1.0`  | `global-error` が導入されました |
+| `v13.0.0`  | `error` が導入されました        |

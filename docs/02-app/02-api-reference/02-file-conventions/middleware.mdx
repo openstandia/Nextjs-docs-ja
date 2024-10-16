@@ -1,0 +1,153 @@
+---
+title: 'middleware.js'
+description: 'middleware.jsファイルのAPIリファレンス'
+related:
+  title: 'Middlewareについて詳しく知る'
+  links:
+    - 'app/building-your-application/routing/middleware'
+---
+
+`middleware.js|ts` ファイルは、リクエストが完了する前にサーバー上でコードを実行するために [Middleware](/docs/app/building-your-application/routing/middleware) を記述するために使用されます。そして、受信したリクエストに基づいて、レスポンスをリライト、リダイレクト、リクエストまたはレスポンスヘッダーの変更、または直接レスポンスを返すことで変更できます。
+
+Middlewareはルートがレンダリングされる前に実行されます。特に、認証、ログ記録、リダイレクト処理といったカスタムサーバーサイドのロジックを実装するのに便利です。
+
+Middlewareを定義するには、プロジェクトのrootに `middleware.ts` （または.js）ファイルを使用します。例えば、`app`や`pages`と同じレベル、または`src`内に配置します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="middleware.ts" switcher
+import { NextResponse, NextRequest } from 'next/server'
+
+// この関数は、内部で`await`を使用する場合、`async`としてマークできます
+export function middleware(request: NextRequest) {
+  return NextResponse.redirect(new URL('/home', request.url))
+}
+
+export const config = {
+  matcher: '/about/:path*',
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="middleware.js" switcher
+import { NextResponse } from 'next/server'
+
+// この関数は、内部で`await`を使用する場合、`async`としてマークできます
+export function middleware(request) {
+  return NextResponse.redirect(new URL('/home', request.url))
+}
+
+export const config = {
+  matcher: '/about/:path*',
+}
+```
+
+</TabItem>
+</Tabs>
+
+## エクスポート {#exports}
+
+### Middleware関数 {#middleware-function}
+
+ファイルは、デフォルトエクスポートまたは `middleware` として単一の関数をエクスポートする必要があります。同じファイルから複数のMiddlewareをエクスポートすることはサポートされていないのでご注意ください。
+
+```js title="middleware.js"
+// デフォルトエクスポートの例
+export default function middleware(request) {
+  // Middleware ロジック
+}
+```
+
+### Configオブジェクト（オプション） {#config-object-optional}
+
+オプションとして、Middleware関数と一緒にConfigオブジェクトをエクスポートできます。このオブジェクトには、Middlewareが適用されるパスを指定するための [matcher](#matcher) が含まれています。
+
+#### マッチャー {#matcher}
+
+`matcher` オプションを使用すると、Middlewareを実行する特定のパスをターゲットにできます。これらのパスを指定する方法はいくつかあります：
+
+- 単一のパスの場合：文字列を直接使用してパスを定義します。例：`'/about'`
+- 複数のパスの場合：配列を使用して複数のパスを一覧表示します。例：`matcher: ['/about', '/contact']` 、 `/about`と`/contact`の両方にMiddlewareが適用されます。
+
+さらに、`matcher` は正規表現を使用した複雑なパス指定をサポートしており、例えば `matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)']` のようにすると、含めるべきパスや除外するべきパスを正確に制御できます。
+
+`matcher` オプションは、以下のキーを持つオブジェクトの配列も受け付けます：
+
+- `source`: リクエストパスをマッチするために使用されるパスやパターン。直接パスをマッチングするための文字列、またはより複雑なマッチングのためのパターンです
+- `regexp` (オプション): ソースに基づくマッチングを微調整するための正規表現文字列です。ここに指定することで、含めるべきパスや除外するべきパスをより詳細に制御可能です
+- `locale` (オプション): `false` に設定すると、パスマッチングにおいてロケールベースのルーティングを無視します
+- `has` (オプション): ヘッダー、クエリパラメータ、またはcookieなど、特定のリクエスト要素の存在に基づく条件を指定します
+- `missing` (オプション): ヘッダーやcookieが欠落しているなど、特定のリクエスト要素が存在しない条件にフォーカスしています
+
+```js title="middleware.js"
+export const config = {
+  matcher: [
+    {
+      source: '/api/*',
+      regexp: '^/api/(.*)',
+      locale: false,
+      has: [
+        { type: 'header', key: 'Authorization', value: 'Bearer Token' },
+        { type: 'query', key: 'userId', value: '123' },
+      ],
+      missing: [{ type: 'cookie', key: 'session', value: 'active' }],
+    },
+  ],
+}
+```
+
+## パラメータ {#params}
+
+### `request` {#request}
+
+Middlewareを定義する際、デフォルトエクスポート関数は `request` という単一のパラメータを受け取ります。このパラメータは `NextRequest` のインスタンスで、受信したHTTPリクエストを表します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="middleware.ts" switcher
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  // Middleware ロジックがここに入ります
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="middleware.js" switcher
+export function middleware(request) {
+  // Middleware ロジックがここに入ります
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - `NextRequest`はNext.js Middlewareにおける受信HTTPリクエストを表す型であり、一方で[`NextResponse`](#nextresponse)はHTTPレスポンスを操作して送り返すために使われるクラスです。
+
+## NextResponse {#nextresponse}
+
+Middlewareは、[Web Response API](https://developer.mozilla.org/en-US/docs/Web/API/Response) を拡張する [`NextResponse`](/docs/app/building-your-application/routing/middleware#nextresponse) オブジェクトを使用できます。`NextResponse` オブジェクトを返すことで、cookie を直接操作したり、ヘッダーを設定したり、リダイレクトを実装したり、パスを書き換えたりすることができます。
+
+> **Good to know**: リダイレクトの場合、`NextResponse.redirect` の代わりに `Response.redirect` を使用することもできます。
+
+## ランタイム {#runtime}
+
+Middlewareは[Edge runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)のみをサポートしています。Node.jsランタイムは使用できません。
+
+## バージョン履歴 {#version-history}
+
+| バージョン | 変更点                                                                                                                           |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `v13.1.0`  | 高度なMiddlewareフラグが追加されました                                                                                           |
+| `v13.0.0`  | Middlewareはリクエストヘッダーとレスポンスヘッダーを変更してレスポンスを送信できます                                             |
+| `v12.2.0`  | Middlewareは安定しています。[アップグレードガイド](https://nextjs.org/docs/messages/middleware-upgrade-guide) を参照してください |
+| `v12.0.9`  | Edge Runtimeでの絶対URLが強制されます ([PR](https://github.com/vercel/next.js/pull/33410))                                       |
+| `v12.0.0`  | Middleware（ベータ版）が追加されました                                                                                           |

@@ -1,0 +1,88 @@
+---
+title: 'カスタム Webpack コンフィグ'
+nav_title: 'webpack'
+description: 'Next.js で使用する webpack コンフィグをカスタマイズする方法を学びましょう'
+---
+
+{/* このドキュメントの内容は、app router と pages router の間で共有されます。Pages Router のみの内容を追加するには、`<PagesOnly>コンテンツ</PagesOnly>` コンポーネントを使用できます。共有されているコンテンツはコンポーネントにラップしないでください。 */}
+
+> **Good to know**: webpack コンフィグへの変更は semver に含まれていないため、自己責任で進めてください。
+
+カスタム webpack コンフィグレーションをアプリケーションに追加する前に、Next.js がすでにあなたの利用ケースをサポートしていないか確認してください：
+
+<AppOnly>
+
+- [CSS インポート](/docs/app/building-your-application/styling/css)
+- [CSS モジュール](/docs/app/building-your-application/styling/css#css-modules)
+- [Sass/SCSS インポート](/docs/app/building-your-application/styling/sass)
+- [Sass/SCSS モジュール](/docs/app/building-your-application/styling/sass)
+
+</AppOnly>
+
+<PagesOnly>
+
+- [CSS インポート](https://nextjs.org/docs/canary/pages/building-your-application/styling)
+- [CSS モジュール](https://nextjs.org/docs/canary/pages/building-your-application/styling/css-modules)
+- [Sass/SCSS インポート](https://nextjs.org/docs/canary/pages/building-your-application/styling/sass)
+- [Sass/SCSS モジュール](https://nextjs.org/docs/canary/pages/building-your-application/styling/sass)
+- [Babel コンフィグのカスタマイズ](https://nextjs.org/docs/canary/pages/building-your-application/configuring/babel)
+
+</PagesOnly>
+
+よく求められる機能の一部はプラグインとして利用可能です：
+
+- [@next/mdx](https://github.com/vercel/next.js/tree/canary/packages/next-mdx)
+- [@next/bundle-analyzer](https://github.com/vercel/next.js/tree/canary/packages/next-bundle-analyzer)
+
+`webpack` の利用を拡張するために、`next.config.js` 内でそのコンフィグを拡張する関数を定義できます。次のようになります：
+
+```js title="next.config.js"
+module.exports = {
+  webpack: (
+    config,
+    { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }
+  ) => {
+    // 重要: 変更したコンフィグを返すこと
+    return config
+  },
+}
+```
+
+> `webpack` 関数は3回実行され、サーバー（nodejs / edge runtime）で2回、クライアントで1回です。これにより `isServer` プロパティを使用してクライアントおよびサーバーのコンフィギュレーションを区別できます。
+
+`webpack` 関数の第2引数は次のプロパティを持つオブジェクトです：
+
+- `buildId`: `String` - ビルド ID、ビルド間のユニークな識別子として使用
+- `dev`: `Boolean` - コンパイルが開発中に行われるかどうかを示す
+- `isServer`: `Boolean` - サーバー側のコンパイルの場合は `true`、クライアント側のコンパイルの場合は `false`
+- `nextRuntime`: `String | undefined` - サーバー側のコンパイルにおけるターゲットランタイム。 `"edge"` または `"nodejs"`、クライアント側のコンパイルでは `undefined`
+- `defaultLoaders`: `Object` - Next.js によって内部的に使用されるデフォルトローダー：
+  - `babel`: `Object` - デフォルトの `babel-loader` コンフィギュレーション
+
+`defaultLoaders.babel` の使用例：
+
+```js
+// babel-loader に依存するローダーを追加するためのサンプルコンフィグ
+// このソースは @next/mdx プラグインのソースから取得されました：
+// https://github.com/vercel/next.js/tree/canary/packages/next-mdx
+module.exports = {
+  webpack: (config, options) => {
+    config.module.rules.push({
+      test: /\.mdx/,
+      use: [
+        options.defaultLoaders.babel,
+        {
+          loader: '@mdx-js/loader',
+          options: pluginOptions.options,
+        },
+      ],
+    })
+
+    return config
+  },
+}
+```
+
+#### `nextRuntime` {#nextruntime}
+
+`nextRuntime` が `"edge"` または `"nodejs"` の場合、`isServer` は `true` になることに注意してください。nextRuntime "`edge`" は現在、ミドルウェアと edge runtime の Server Components のみ対象です。

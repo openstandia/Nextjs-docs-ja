@@ -1,7 +1,16 @@
 /**
- * @fileoverview This script handles the translation of MDX files based on git diffs,
- * utilizing the OpenAI API for language translation. It processes file status changes
- * and applies actions such as translations, deletions, and renamings accordingly.
+ * @fileoverview
+ * This script manages the translation of MDX files based on git diffs using the OpenAI API.
+ * It processes various file status changes (Added, Modified, Deleted, Renamed) and applies
+ * appropriate actions such as translation or deletion. Key features include:
+ * - Utilizes OpenAI API for language translation with customizable prompts
+ * - Handles concurrent API requests with rate limiting
+ * - Supports multiple languages through command-line options
+ * - Processes git diff information to determine which files need translation
+ * - Manages file system operations for reading, writing, and ensuring directories
+ * The script is designed to work within a project structure and uses environment variables
+ * for API authentication. It provides logging for tracking the translation process and
+ * handles different file statuses appropriately.
  */
 
 import OpenAI from 'openai'
@@ -31,7 +40,7 @@ const log = createLogger(basename(import.meta.filename))
 
 const limit = pLimit(defaults.concurrency)
 
-const { projectRootDir, submoduleName, docsDir } = configs
+const { projectRootDir } = configs
 
 log('important', '🚀 translation started !')
 
@@ -71,11 +80,7 @@ const command = await (async () => {
   ).toString()
 
   const translate = async (mdxFilePath: MdxFilePath) => {
-    const targetMdxFile = path.resolve(
-      projectRootDir,
-      submoduleName,
-      mdxFilePath
-    )
+    const targetMdxFile = path.resolve(projectRootDir, mdxFilePath)
     const userContent = (await fs.readFile(targetMdxFile)).toString()
 
     log('normal', `requesting to OpenAI to translate "${targetMdxFile}"`)
@@ -91,12 +96,6 @@ const command = await (async () => {
     await fs.writeFile(pathToWrite, translatedContent)
   }
 
-  const rm = async (mdxFilePath: MdxFilePath) => {
-    const filePath = path.resolve(projectRootDir, mdxFilePath)
-    log('normal', `deleting... ${filePath}`)
-    return await fs.unlink(filePath)
-  }
-
   return async (diff: MdxDiff) => {
     const { status } = diff
 
@@ -105,9 +104,12 @@ const command = await (async () => {
       case 'M':
         return translate(diff.filePath)
       case 'D':
-        return rm(diff.filePath)
+        log(
+          'normal',
+          `skipping translationg because this file is deleted : "${diff.filePath}"`
+        )
+        return
       case 'R': {
-        await rm(diff.fromPath)
         return translate(diff.toPath)
       }
       default:

@@ -1,0 +1,81 @@
+---
+title: 'Turbopack'
+description: 'TurbopackはRustで書かれたJavaScriptとTypeScriptに最適化されたインクリメンタルバンドラーであり、Next.jsに組み込まれています。'
+---
+
+[Turbopack](https://turbo.build/pack)（ベータ版）は、JavaScriptとTypeScriptに最適化されたインクリメンタルバンドラーであり、Rustで書かれ、Next.jsに組み込まれています。
+
+## 使用方法 {#usage}
+
+Turbopackは、`pages`ディレクトリと`app`ディレクトリの両方で利用可能で、ローカルでの開発をスピードアップします。Turbopackを有効にするには、Next.js開発サーバーを実行するときに`--turbo`フラグを使用してください。
+
+```json title="package.json" highlight={3}
+{
+  "scripts": {
+    "dev": "next dev --turbo", // Turbopackを有効化するフラグ
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  }
+}
+```
+
+## サポートされている機能 {#supported-features}
+
+Next.jsのTurbopackは、ほとんどのユーザーに対してゼロコンフィグレーションで動作し、より高度なユースケースに拡張できます。Turbopackで現在サポートされている機能について詳しくは、[APIリファレンス](/docs/app/api-reference/next-config-js/turbo)をご覧ください。
+
+## サポートされていない機能 {#unsupported-features}
+
+Turbopackは現在のところ`next dev`のみをサポートしており、`next build`はサポートしていません。安定性向上に向けてビルドのサポートに取り組んでいます。
+
+以下の機能は現在サポートされていません：
+
+- Turbopackは[Lightning CSS](https://lightningcss.dev/)を活用しており、一部の使用頻度の低いCSSモジュール機能はサポートしていません
+  - 独立した擬似クラスとしての`:local`と`:global`。関数変種のみがサポートされます。例えば、`:global(a)`。
+  - CSS変数に置き換えられた@valueルール。
+  - `:import`と`:export`のICSSルール。
+- [無効なCSSコメント文法](https://stackoverflow.com/questions/51843506/are-double-slash-comments-valid-in-css)（例：`//`）
+  - CSSコメントは、仕様に従って`/* comment */`と書くべきです。
+  - Sassのようなプリプロセッサは、この代替コメント文法をサポートしています。
+- `next.config.js`内の[`webpack()`](/docs/app/api-reference/next-config-js/webpack)設定
+  - TurbopackはWebpackを置換します。したがってwebpackの設定はサポートされていません。
+  - Turbopackを設定するには、[ドキュメント](/docs/app/api-reference/next-config-js/turbo)をご覧ください。
+  - [Webpackローダー](/docs/app/api-reference/next-config-js/turbo#configuring-webpack-loaders)のサブセットがTurbopackでサポートされています。
+- Babel (`.babelrc`)
+  - Turbopackはすべてのトランスパイルと最適化に[SWC](/docs/architecture/nextjs-compiler#why-swc)コンパイラを活用します。これは、Babelがデフォルトでは含まれていないことを意味します。
+  - `.babelrc`ファイルを持っている場合、Next.jsは既存の一般的なBabelプラグインをSWC変換として含んでいるため、不要になった可能性もあります。詳細は[コンパイラドキュメント](/docs/architecture/nextjs-compiler#supported-features)で読むことができます。
+  - まだ特定のユースケースがサポートされていない場合、`babel-loader`を含めるためにTurbopackの[カスタムWebpackローダーのサポート](/docs/app/api-reference/next-config-js/turbo#configuring-webpack-loaders)を活用できます。
+- App Routerでのroot レイアウトの自動作成
+  - 現在、この動作は入力ファイルを変更するためサポートされていません。代わりに、エラーが表示され、目的の場所で手動でroot レイアウトを追加する必要があります。
+- `@next/font`（レガシーなフォントサポート）
+  - `@next/font`は`next/font`に置き換えられて廃止されました。[`next/font`](/docs/app/building-your-application/optimizing/fonts)は、Turbopackで完全にサポートされています。
+- [Relay transforms](/docs/architecture/nextjs-compiler#relay)
+  - 将来的に実装を計画しています。
+- `pages/_document.tsx`での`.css`インポートのブロック
+  - 現在、Webpackを使用してNext.jsで`pages/_document.tsx`に`.css`ファイルをインポートすることがブロックされています。
+  - 将来的にこの警告を実装する予定です。
+- [`experimental.typedRoutes`](https://nextjs.org/docs/app/api-reference/next-config-js/typedRoutes)
+  - 将来的に実装を計画しています。
+- `experimental.nextScriptWorkers`
+  - 将来的に実装を計画しています。
+- `experimental.sri.algorithm`
+  - 将来的に実装を計画しています。
+- `experimental.fallbackNodePolyfills`
+  - 将来的に実装を計画しています。
+- `experimental.esmExternals`
+  - Turbopackを使ったNext.jsでのレガシーなesmExternals設定をサポートする計画はありません。
+- [AMP](https://nextjs.org/docs/canary/pages/building-your-application/configuring/amp)
+  - Turbopackを使ったNext.jsでAMPをサポートする計画はありません。
+- Yarn PnP
+  - Turbopackを使ったNext.jsでYarn PnPをサポートする計画はありません。
+- [`experimental.urlImports`](/docs/app/api-reference/next-config-js/urlImports)
+  - Turbopackを使ったNext.jsで`experimental.urlImports`をサポートする計画はありません。
+- [`:import`と`:export`のICSSルール](https://github.com/css-modules/icss)
+  - Turbopackが使用するCSSパーサである[Lightning CSS](https://lightningcss.dev/css-modules.html)はこれらのルールをサポートしていないため、Next.jsで` :import`と` :export` ICSSルールをサポートする計画はありません。
+- edge runtimeでの`unstable_allowDynamic`設定
+
+## トレースファイルの生成 {#generating-trace-files}
+
+トレースファイルは、Next.jsチームがパフォーマンス指標やメモリ使用量を調査し、改善するために役立ちます。トレースファイルを生成するには、`next dev --turbo` コマンドに`NEXT_TURBOPACK_TRACING=1` を追加します。これにより`.next/trace.log` ファイルが生成されます。
+
+Turbopackのパフォーマンスやメモリ使用量に関連する問題を報告する際は、[GitHub](https://github.com/vercel/next.js)の問題にトレースファイルを添付してください。
