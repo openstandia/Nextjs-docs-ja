@@ -69,7 +69,7 @@ function buildCompareContent({
 
   const comparePath = path.join(
     nextjsGithubBaseUrl.pathname,
-    `compare/${commitHash}`
+    `compare/${previous}..${current}`
   )
 
   const compareUrl = new URL(comparePath, nextjsGithubBaseUrl.origin).toString()
@@ -96,7 +96,7 @@ async function buildPRSummary(): Promise<string> {
 
   const result = await requestAI({
     system:
-      'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を作成してください。',
+      'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を日本語で作成してください。',
     user: diff,
   })
 
@@ -127,7 +127,8 @@ if (!status.trim()) {
 }
 
 const { hash, diffs } = await parseDiffFile(
-  path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
+  path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath),
+  { rawDiff: true }
 )
 
 const currentHash = {
@@ -159,7 +160,7 @@ ${buildVersionContent(hash)}
 ${buildCompareContent(hash) ?? '差分更新ではなく、全てのドキュメントを翻訳しなおしました'}
 
 
-### 翻訳したファイル一覧（計：${diffs.length}ファイル）
+### 翻訳したファイル一覧（計：${diffs.length} ファイル）
 
 <details>
 <summary>翻訳したファイル一覧を見るには展開してください</summary>
@@ -173,7 +174,7 @@ ${diffs.reduce((prev, current, index) => {
 </details>
 
 
-### # 本PRの更新内容のサマリ by OpenAI🤖
+### 本PRの更新内容のサマリ by OpenAI🤖
 
 ${await buildPRSummary()}
 
@@ -185,7 +186,7 @@ log('normal', `PR body:\n${body}`)
 log('normal', `PR label:${defaults.label}`)
 
 if (!dryRun) {
-  await $`gh pr create -B main -t ${title} -b ${body} -l ${defaults.label}`
+  await $`gh pr create -t ${title} -b ${body} -l ${defaults.label}`
 }
 
 log('important', '✅ PR created successfully !')

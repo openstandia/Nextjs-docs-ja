@@ -174,18 +174,31 @@ function createMdxDiff(status: string, data: string): MdxDiff {
 }
 
 /**
- * Parses a file containing MDX diff information.
+ * Parses a diff file and returns its content.
  *
- * @param {string} filePath - Path to the file containing diff information.
- * @returns {Promise<MdxDiff[]>} A promise resolving to an array of MdxDiff objects.
- * @throws Will throw an error for unknown diff or format irregularities.
+ * @template T - A boolean type that determines the return type of the diffs.
+ * @param {string} filePath - The path to the diff file.
+ * @param {Object} [options] - Optional parameters.
+ * @param {T} [options.rawDiff] - If true, returns raw diff strings; otherwise, returns parsed MdxDiff objects.
+ * @returns {Promise<DiffFile<T extends true ? string : MdxDiff>>} - A promise that resolves to the parsed diff file content.
+ * @throws {Error} - Throws an error if a diff line cannot be parsed.
  */
-export async function parseDiffFile(
-  filePath: string
-): Promise<DiffFile<MdxDiff>> {
+export async function parseDiffFile<T extends boolean = false>(
+  filePath: string,
+  options?: {
+    rawDiff?: T
+  }
+): Promise<DiffFile<T extends true ? string : MdxDiff>> {
   const versionFileString = (await fs.readFile(filePath)).toString()
 
   const versionFileObj = JSON.parse(versionFileString) as DiffFile
+
+  if (options?.rawDiff) {
+    return {
+      ...versionFileObj,
+      diffs: [...versionFileObj.diffs] as (T extends true ? string : MdxDiff)[],
+    }
+  }
 
   const diffs = versionFileObj.diffs.map((line, index) => {
     const match = line.match(/^(\S+|\s)\s+(\S.+)$/)
@@ -198,7 +211,7 @@ export async function parseDiffFile(
 
   return {
     ...versionFileObj,
-    diffs: [...diffs],
+    diffs: [...diffs] as (T extends true ? string : MdxDiff)[],
   }
 }
 
