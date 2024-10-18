@@ -8,66 +8,95 @@ import { $, fs, within } from 'zx'
 import path, { basename, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 
-import { createLogger, listMdxFilesRecursively } from './utils.mts'
+import { createLogger, listMdxFilesRecursively, DiffFile } from './utils.mts'
 import { configs } from './configs.mts'
 
 const { projectRootDir, submoduleName, docsDir } = configs
 
-const defaults = {
-  versionFilePath: 'version.json',
-}
+$.verbose = true
 
 const log = createLogger(basename(import.meta.url))
 
 /**
- * Lists all MDX files as added (A) diffs.
+ * Retrieves the hash of the submodule.
  *
- * @returns {string[]} An array of diff strings representing new files.
+ * This function executes the `git submodule` command to get the submodule information,
+ * extracts the hash from the output, and returns it.
+ *
+ * @returns {Promise<string>} A promise that resolves to the submodule hash.
+ * @throws {Error} If the submodule hash cannot be resolved.
  */
-function resolveAllAsDiff(): string[] {
+async function getSubmoduleHash(): Promise<string> {
+  const submodule = (await $`git submodule`).text()
+
+  const submoduleHashFound = submodule.match(/\b[0-9a-f]{40}\b/)
+  if (submoduleHashFound == null || submoduleHashFound.length !== 1) {
+    throw Error('failed to resolve submodule hash.')
+  }
+
+  return submoduleHashFound[0].substring(0, 40)
+}
+
+/**
+ * Resolves all files as a diff based on the provided hash difference.
+ *
+ * @param hashDiff - An object containing the current hash of the diff file.
+ * @returns A promise that resolves to a `DiffFile` object containing the submodule name, current hash, and a list of diffs.
+ */
+function resolveAllAsDiff(hashDiff: DiffFile['hash']): Promise<DiffFile> {
   const submoduleDir = path.resolve(projectRootDir, submoduleName)
-  const enDocsDir = path.resolve(submoduleDir, docsDir)
-  const files = listMdxFilesRecursively(enDocsDir)
-  return files.map((f) => {
-    const filePath = path.relative(submoduleDir, f)
-    return `A\t${filePath}`
+  const sudmobuleDocsDir = path.resolve(submoduleDir, docsDir)
+  const files = listMdxFilesRecursively(sudmobuleDocsDir)
+
+  return Promise.resolve({
+    submodule: submoduleName,
+    hash: {
+      current: hashDiff.current,
+    },
+    diffs: files.map((f) => {
+      const filePath = path.relative(submoduleDir, f)
+      return `A\t${filePath}`
+    }),
   })
 }
 
 /**
- * Resolves differences in the submodule documentation based on commit hashes.
+ * Resolves the git diff for a given hash difference.
  *
- * @returns {Promise<string[]>} A promise resolving to an array of diff strings.
+ * @param hashDiff - An object containing the previous and current hash values.
+ * @returns A promise that resolves to a `DiffFile` object containing the submodule name, hash details, and the list of diffs.
  */
-async function resolveDiff(): Promise<string[]> {
-  const submoduleDiffOutput = await $`git diff -- ${submoduleName}`
-
-  const hash = {
-    before: submoduleDiffOutput
-      .text()
-      .match(/^-Subproject commit ([0-9a-zA-Z]+)$/m)?.[1],
-    after: submoduleDiffOutput
-      .text()
-      .match(/^\+Subproject commit ([0-9a-zA-Z]+)$/m)?.[1],
-  }
-
-  if (!hash.before || !hash.after) {
+async function resolveGitDiff(hashDiff: DiffFile['hash']): Promise<DiffFile> {
+  if (hashDiff.previous === hashDiff.current) {
     log('important', 'submodule is up to date.')
-    return []
+
+    return {
+      submodule: submoduleName,
+      hash: {
+        ...hashDiff,
+      },
+      diffs: [],
+    }
   }
 
-  log('normal', `hash: ${hash.before}..${hash.after}`)
+  log('normal', `hash: ${hashDiff.previous}..${hashDiff.current}`)
 
   return within(async () => {
-    $.cwd = configs.submoduleName
+    $.cwd = submoduleName
 
     const docDiffOutput =
-      await $`git diff -M100% --name-status ${hash.before}..${hash.after} -- ${docsDir}`
+      await $`git diff -M100% --name-status ${hashDiff.previous}..${hashDiff.current} -- ${docsDir}`
 
-    return docDiffOutput
-      .text()
-      .split('\n')
-      .filter((line) => line.trim())
+    return {
+      submodule: submoduleName,
+      hash: {
+        ...hashDiff,
+      },
+      diffs: docDiffOutput
+        .text()
+        .split('\n')
+        .filter((line) => line.trim()),
+    }
   })
 }
 
@@ -86,50 +115,33 @@ const { values: args } = parseArgs({
   },
 })
 
+const submoduleHashPrev = await getSubmoduleHash()
+
 await $`git submodule update --remote`
 
-const submodule = (await $`git submodule`).text()
+const submoduleHashCurrent = await getSubmoduleHash()
 
-const submoduleHash = submodule.match(/[0-9a-z]{40}/)
-if (submoduleHash == null || submoduleHash.length !== 1) {
-  throw Error('failed to resolve submodule hash.')
-}
+const resolveDiff = args.all ? resolveAllAsDiff : resolveGitDiff
 
-log(
-  'normal',
-  `writing Next.js git commit hash to "${defaults.versionFilePath}"`
-)
-await fs.writeFile(
-  defaults.versionFilePath,
-  JSON.stringify(
-    {
-      version: submoduleHash[0].substring(0, 40),
-    },
-    null,
-    '\t'
-  )
-)
-
-const diffLines = args.all ? resolveAllAsDiff() : await resolveDiff()
-
-log('important', `${diffLines.length} different docs found.`)
-
-diffLines.forEach((line) => {
-  log('normal', `diff: ${line}`)
+const versionFileObj = await resolveDiff({
+  previous: submoduleHashPrev,
+  current: submoduleHashCurrent,
 })
+
+log('important', `${versionFileObj.diffs.length} different docs found.`)
+
+const versionFileContentString = JSON.stringify(versionFileObj, null, '\t')
+
+log('important', versionFileContentString)
 
 if (args.outputFilePath) {
   const pathToWrite = path.isAbsolute(args.outputFilePath)
     ? args.outputFilePath
     : path.resolve(args.outputFilePath)
 
-  const content = diffLines.reduce((prev, current, index) => {
-    return `${prev}${index === 0 ? '' : '\n'}${current}`
-  }, '')
-
   log('important', `writing diffs to "${pathToWrite}"`)
   await fs.ensureDir(dirname(pathToWrite))
-  await fs.writeFile(pathToWrite, content)
+  await fs.writeFile(pathToWrite, versionFileContentString)
 }
 
 log('important', '✅ diff docs finished successfully !')

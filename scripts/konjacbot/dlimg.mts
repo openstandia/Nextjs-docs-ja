@@ -6,11 +6,11 @@
 import path, { basename, dirname } from 'node:path'
 import { fs } from 'zx'
 import pLimit from 'p-limit'
-import { asyncFlatMap, createLogger, wait, parseMdxDiff } from './utils.mts'
+import { asyncFlatMap, createLogger, wait, parseDiffFile } from './utils.mts'
 import { configs } from '@site/scripts/konjacbot/configs.mts'
 import { parseArgs } from 'node:util'
 
-const { projectRootDir, submoduleName } = configs
+const { projectRootDir } = configs
 
 const defaults = {
   outputDir: path.resolve(projectRootDir, 'static/img'),
@@ -121,21 +121,19 @@ const {
   allowPositionals: true,
 })
 
-const mdPathList = (
-  await parseMdxDiff(
-    path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
-  )
+const { diffs, submodule } = await parseDiffFile(
+  path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
 )
-  .filter((diff) => ['A', 'M', 'R'].includes(diff.status))
-  .map((diff) => {
-    if (diff.status === 'A' || diff.status === 'M') {
-      return diff.filePath
-    }
-    if (diff.status === 'R') {
-      return diff.toPath
-    }
-    throw Error(`NOT supported diff status: ${JSON.stringify(diff)}`)
-  })
+
+const mdPathList = diffs.map((diff) => {
+  if (diff.status === 'A' || diff.status === 'M') {
+    return diff.filePath
+  }
+  if (diff.status === 'R') {
+    return diff.toPath
+  }
+  throw Error(`NOT supported diff status: ${JSON.stringify(diff)}`)
+})
 
 mdPathList.forEach((mdPath) => {
   log('normal', `📄md(x): ${mdPath}`)
@@ -145,7 +143,7 @@ log('important', `searching images from ${mdPathList.length} md(x) files.`)
 
 const imagePathList = await asyncFlatMap(
   mdPathList.map((mdPath) =>
-    fs.readFile(path.resolve(projectRootDir, submoduleName, mdPath))
+    fs.readFile(path.resolve(projectRootDir, submodule, mdPath))
   ),
   async (content) =>
     parseImageComponent((await content).toString())

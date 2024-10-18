@@ -67,6 +67,15 @@ export function isMdxFilePath(path: string): path is MdxFilePath {
   return path.startsWith(`${configs.docsDir}/`)
 }
 
+export type DiffFile<T = string> = {
+  submodule: string
+  hash: {
+    previous?: string
+    current: string
+  }
+  diffs: T[]
+}
+
 export type MdxDiff = BasicMdxDiff | RenamedMdxDiff | UnknownMdxDiff
 
 export type BasicMdxDiff = {
@@ -171,21 +180,26 @@ function createMdxDiff(status: string, data: string): MdxDiff {
  * @returns {Promise<MdxDiff[]>} A promise resolving to an array of MdxDiff objects.
  * @throws Will throw an error for unknown diff or format irregularities.
  */
-export async function parseMdxDiff(filePath: string): Promise<MdxDiff[]> {
-  const content = (await fs.readFile(filePath)).toString()
+export async function parseDiffFile(
+  filePath: string
+): Promise<DiffFile<MdxDiff>> {
+  const versionFileString = (await fs.readFile(filePath)).toString()
 
-  return content
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line)
-    .map((line, index) => {
-      const match = line.match(/^(\S+|\s)\s+(\S.+)$/)
-      if (match && match.length === 3) {
-        return createMdxDiff(match[1].trim(), match[2].trim())
-      } else {
-        throw new Error(`unknown diff @ line ${index + 1} : ${line}`)
-      }
-    })
+  const versionFileObj = JSON.parse(versionFileString) as DiffFile
+
+  const diffs = versionFileObj.diffs.map((line, index) => {
+    const match = line.match(/^(\S+|\s)\s+(\S.+)$/)
+    if (match && match.length === 3) {
+      return createMdxDiff(match[1].trim(), match[2].trim())
+    } else {
+      throw new Error(`unknown diff @ line ${index + 1} : ${line}`)
+    }
+  })
+
+  return {
+    ...versionFileObj,
+    diffs: [...diffs],
+  }
 }
 
 /**
@@ -217,7 +231,7 @@ export function createLogger(prefix: string) {
  * @param {OpenAI} openai - An instance of the OpenAI API client.
  * @returns {(prompt: { system: string; user: string }) => Promise<string>} A function that takes a prompt and returns the assistant's response as a string.
  */
-export function createAIClient(
+export function createOpenAIClient(
   openai: OpenAI
 ): (prompt: { system: string; user: string }) => Promise<string> {
   async function fetch(prompt: {
@@ -257,4 +271,13 @@ export function createAIClient(
   }
 
   return fetch
+}
+
+/**
+ * Returns the current date and time as a string in the format YYYYMMDDHHMMSS.
+ *
+ * @returns {string} The current date and time as a string in the format YYYYMMDDHHMMSS.
+ */
+export function getCurrentDateTimeString(): string {
+  return new Date().toISOString().replace(/[-:TZ.]/g, '')
 }

@@ -1,16 +1,6 @@
 /**
  * @fileoverview
  * This script manages the translation of MDX files based on git diffs using the OpenAI API.
- * It processes various file status changes (Added, Modified, Deleted, Renamed) and applies
- * appropriate actions such as translation or deletion. Key features include:
- * - Utilizes OpenAI API for language translation with customizable prompts
- * - Handles concurrent API requests with rate limiting
- * - Supports multiple languages through command-line options
- * - Processes git diff information to determine which files need translation
- * - Manages file system operations for reading, writing, and ensuring directories
- * The script is designed to work within a project structure and uses environment variables
- * for API authentication. It provides logging for tracking the translation process and
- * handles different file statuses appropriately.
  */
 
 import OpenAI from 'openai'
@@ -21,11 +11,11 @@ import process from 'node:process'
 import { spinner, fs } from 'zx'
 
 import {
-  parseMdxDiff,
+  parseDiffFile,
   MdxDiff,
   createLogger,
   MdxFilePath,
-  createAIClient,
+  createOpenAIClient,
 } from './utils.mts'
 import { configs } from './configs.mts'
 
@@ -58,18 +48,12 @@ const {
   },
 })
 
-const diffList = await parseMdxDiff(
+const { diffs: diffList } = await parseDiffFile(
   path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
 )
 
-/**
- * A function to handle translation, deletion, and renaming of files based on diff status.
- *
- * Translations are performed using the OpenAI API, which is configured using the user-specific API key
- * and language based prompts.
- */
 const command = await (async () => {
-  const requestAI = createAIClient(
+  const requestAI = createOpenAIClient(
     new OpenAI({
       apiKey: defaults.apiKey,
     })
@@ -79,7 +63,7 @@ const command = await (async () => {
     await fs.readFile(path.resolve(defaults.promptDir, `${lang}.md`))
   ).toString()
 
-  const translate = async (mdxFilePath: MdxFilePath) => {
+  async function translate(mdxFilePath: MdxFilePath): Promise<void> {
     const targetMdxFile = path.resolve(projectRootDir, mdxFilePath)
     const userContent = (await fs.readFile(targetMdxFile)).toString()
 
