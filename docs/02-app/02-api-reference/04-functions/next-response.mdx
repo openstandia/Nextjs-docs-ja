@@ -1,0 +1,155 @@
+---
+title: 'NextResponse'
+description: 'NextResponseのAPIリファレンス。'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerで共有されています。Pages Routerに特化した内容を追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用してください。共有される内容はコンポーネントでラップしないでください。 */}
+
+NextResponseは、追加の便利なメソッドを備えた[Web Response API](https://developer.mozilla.org/docs/Web/API/Response)を拡張しています。
+
+## `cookies` {#cookies}
+
+レスポンスの[`Set-Cookie`](https://developer.mozilla.org/docs/Web/HTTP/Headers/Set-Cookie)ヘッダーを読み取ったり、変更したりします。
+
+### `set(name, value)` {#set-name-value}
+
+指定した名前で、レスポンスにクッキーを設定します。
+
+```ts
+// 受信リクエスト /home
+let response = NextResponse.next()
+// バナーを非表示にするクッキーを設定
+response.cookies.set('show-banner', 'false')
+// レスポンスには`Set-Cookie:show-banner=false;path=/home`ヘッダーが含まれます
+return response
+```
+
+### `get(name)` {#get-name}
+
+クッキー名を指定し、そのクッキーの値を返します。クッキーが見つからない場合は、`undefined`が返されます。複数のクッキーが見つかった場合は、最初のものが返されます。
+
+```ts
+// 受信リクエスト /home
+let response = NextResponse.next()
+// { name: 'show-banner', value: 'false', Path: '/home' }
+response.cookies.get('show-banner')
+```
+
+### `getAll()` {#getall}
+
+クッキー名を指定し、そのクッキーの値を返します。名前が指定されていない場合、レスポンスのすべてのクッキーを返します。
+
+```ts
+// 受信リクエスト /home
+let response = NextResponse.next()
+// [
+//   { name: 'experiments', value: 'new-pricing-page', Path: '/home' },
+//   { name: 'experiments', value: 'winter-launch', Path: '/home' },
+// ]
+response.cookies.getAll('experiments')
+// あるいは、レスポンスのすべてのクッキーを取得します
+response.cookies.getAll()
+```
+
+### `delete(name)` {#delete-name}
+
+クッキー名を指定し、レスポンスからそのクッキーを削除します。
+
+```ts
+// 受信リクエスト /home
+let response = NextResponse.next()
+// 削除された場合はtrue、何も削除されない場合はfalseを返します
+response.cookies.delete('experiments')
+```
+
+## `json()` {#json}
+
+指定されたJSONボディを持つレスポンスを生成します。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+import { NextResponse } from 'next/server'
+
+export async function GET(request: Request) {
+  return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+import { NextResponse } from 'next/server'
+
+export async function GET(request) {
+  return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+}
+```
+
+</TabItem>
+</Tabs>
+
+## `redirect()` {#redirect}
+
+[URL](https://developer.mozilla.org/docs/Web/API/URL)へリダイレクトするレスポンスを生成します。
+
+```ts
+import { NextResponse } from 'next/server'
+
+return NextResponse.redirect(new URL('/new', request.url))
+```
+
+[URL](https://developer.mozilla.org/docs/Web/API/URL)は、`NextResponse.redirect()`メソッドで使用される前に作成および変更することができます。たとえば、`request.nextUrl`プロパティを使用して現在のURLを取得し、それを変更して異なるURLにリダイレクトできます。
+
+```ts
+import { NextResponse } from 'next/server'
+
+// 受信リクエスト...
+const loginUrl = new URL('/login', request.url)
+// /login URLに?from=/incoming-urlを追加
+loginUrl.searchParams.set('from', request.nextUrl.pathname)
+// そして新しいURLにリダイレクトします
+return NextResponse.redirect(loginUrl)
+```
+
+## `rewrite()` {#rewrite}
+
+オリジナルのURLを保持しながら、指定された[URL](https://developer.mozilla.org/docs/Web/API/URL)をリライト（プロキシ）するレスポンスを生成します。
+
+```ts
+import { NextResponse } from 'next/server'
+
+// 受信リクエスト: /about, ブラウザには /about と表示
+// リライトリクエスト: /proxy, ブラウザには /about と表示
+return NextResponse.rewrite(new URL('/proxy', request.url))
+```
+
+## `next()` {#next}
+
+`next()`メソッドは、早期に終了し、ルーティングを続けるためにMiddlewareで便利です。
+
+```ts
+import { NextResponse } from 'next/server'
+
+return NextResponse.next()
+```
+
+レスポンスを生成する際に`headers`を転送することもできます：
+
+```ts
+import { NextResponse } from 'next/server'
+
+// 受信リクエスト...
+const newHeaders = new Headers(request.headers)
+// 新しいヘッダーを追加
+newHeaders.set('x-version', '123')
+// そして新しいヘッダーを持つレスポンスを生成します
+return NextResponse.next({
+  request: {
+    // 新しいリクエストヘッダー
+    headers: newHeaders,
+  },
+})
+```

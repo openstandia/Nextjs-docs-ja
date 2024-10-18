@@ -1,0 +1,35 @@
+name: konjacbot
+on: workflow_dispatch #TODO 運用が始まったらscheduleにする
+defaults:
+  run:
+    shell: bash
+jobs:
+  translate:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+      - run: npm ci
+      - run: npm run kj:diff
+      - run: npm run kj:cp
+      - run: npm run kj:mod
+      - run: npm run kj:ja
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - run: npm run kj:img
+      - run: npm run prettier:fix #TODO txtlintの設定がfixしたらworkflowに追加する
+      - run: npm run kj:pr
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
