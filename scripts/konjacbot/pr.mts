@@ -20,7 +20,7 @@ import {
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
   label: configs.botName,
-  branchPrefix: `${configs.botName}/sync-docs`,
+  branchPrefix: `${configs.botName}/sync_docs`,
   nextjs: {
     github: 'https://github.com/vercel/next.js',
     web: 'https://nextjs.org/docs',
@@ -138,7 +138,7 @@ const currentHash = {
 
 // TODO: 既にPRやブランチが存在するケースの考慮
 
-const branch = `${defaults.branchPrefix}-${currentHash.short}-${getCurrentDateTimeString()}`
+const branch = `${defaults.branchPrefix}_${currentHash.short}-${getCurrentDateTimeString()}`
 
 await $`git checkout -b ${branch}`
 await $`git add .`
