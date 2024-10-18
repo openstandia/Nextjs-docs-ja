@@ -8,7 +8,7 @@
 
 import path, { basename, dirname } from 'node:path'
 import { fs } from 'zx'
-import { createLogger, parseMdxDiff, MdxFilePath } from './utils.mts'
+import { createLogger, parseDiffFile, MdxFilePath } from './utils.mts'
 import { configs } from './configs.mts'
 import { parseArgs } from 'node:util'
 
@@ -17,13 +17,10 @@ const defaults = {
   docsVersion: 'canary',
 } as const
 
-/**
- * Modifies the input string by replacing 'filename' attributes with 'title'
- * and wrapping code blocks with tabs for the switcher functionality.
- *
- * @param {string} input - The input string containing code blocks.
- * @returns {string} The modified input with switcher tabs.
- */
+const { projectRootDir, docsDir } = configs
+
+const log = createLogger(basename(import.meta.url))
+
 function modCodeblock(input: string): string {
   return wrapSwitcherWithTabs(replaceFilenameWithTitle(input))
 }
@@ -198,15 +195,11 @@ function modLinks(input: string): string {
   }[] = [
     {
       condition: (url: string) => {
-        return url.startsWith(`/${configs.docsDir}/pages`)
+        return url.startsWith(`/${docsDir}/pages`)
       },
       replace: (url: string) => {
         return new URL(
-          path.join(
-            configs.docsDir,
-            defaults.docsVersion,
-            url.replace(configs.docsDir, '')
-          ),
+          path.join(docsDir, defaults.docsVersion, url.replace(docsDir, '')),
           defaults.nextjsUrl
         ).toString()
       },
@@ -214,7 +207,7 @@ function modLinks(input: string): string {
 
     {
       condition: (url: string) => {
-        return url.startsWith(`/${configs.docsDir}/messages/`)
+        return url.startsWith(`/${docsDir}/messages/`)
       },
       replace: (url: string) => {
         return new URL(url, defaults.nextjsUrl).toString()
@@ -279,9 +272,6 @@ function mod(input: string): string {
   return modHeadings(modLinks(modCodeblock(input)))
 }
 
-const { projectRootDir } = configs
-const log = createLogger(basename(import.meta.url))
-
 log('important', '🚀 started to mod !')
 
 const {
@@ -290,7 +280,7 @@ const {
   allowPositionals: true,
 })
 
-const mdPathList = await parseMdxDiff(
+const { diffs: mdPathList } = await parseDiffFile(
   path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
 )
 
