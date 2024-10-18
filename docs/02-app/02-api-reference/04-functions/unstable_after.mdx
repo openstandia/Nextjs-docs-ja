@@ -1,13 +1,13 @@
 ---
 title: 'unstable_after'
-description: 'after 関数のAPIリファレンス。'
+description: 'after関数のAPIリファレンス'
 ---
 
-`unstable_after` は、レスポンスが完了した後に実行される作業をスケジュールできるようにします。これはログや分析など、レスポンスをブロックすべきでないタスクやその他の副作用にも有用です。
+`unstable_after`を使用すると、レスポンス（またはプリレンダリング）が終了した後に実行される作業をスケジュールできます。これは、ログや分析など、レスポンスをブロックしないタスクやその他の副作用に役立ちます。
 
 これは、[Server Components](/docs/app/building-your-application/rendering/server-components)（[`generateMetadata`](https://nextjs.org/docs/app/api-reference/functions/generate-metadata)を含む）、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)、[Route Handlers](/docs/app/building-your-application/routing/route-handlers)、および[Middleware](/docs/app/building-your-application/routing/middleware)で使用できます。
 
-この関数は、レスポンスが完了した後に実行されるコールバックを受け取ります：
+この関数は、レスポンス（またはプリレンダリング）が終了した後に実行されるコールバックを受け取ります：
 
 ```tsx title="app/layout.tsx switcher
 import { unstable_after as after } from 'next/server'
@@ -16,7 +16,7 @@ import { log } from '@/app/utils'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   after(() => {
-    // レイアウトがレンダリングされ、ユーザーに送信された後に実行
+    // レイアウトがレンダリングされてユーザーに送信された後に実行されます
     log()
   })
   return <>{children}</>
@@ -30,40 +30,42 @@ import { log } from '@/app/utils'
 
 export default function Layout({ children }) {
   after(() => {
-    // レイアウトがレンダリングされ、ユーザーに送信された後に実行
+    // レイアウトがレンダリングされてユーザーに送信された後に実行されます
     log()
   })
   return <>{children}</>
 }
 ```
 
+> **Good to know:** `unstable_after`は[Dynamic API](/docs/app/building-your-application/rendering/server-components#dynamic-apis)ではなく、これを呼び出してもルートが動的にはなりません。静的ページ内で使用される場合、コールバックはビルド時、またはページが再検証されるたびに実行されます。
+
 ## リファレンス {#reference}
 
-### パラメータ {#parameters}
+### パラメーター {#parameters}
 
-- レスポンスが完了した後に実行されるコールバック関数
+- レスポンス（またはプリレンダリング）が終了した後に実行されるコールバック関数
 
-### サーバーレス関数の実行時間 {#serverless-function-duration}
+### サーバーレス関数の持続時間 {#serverless-function-duration}
 
-`unstable_after` は、プラットフォームのデフォルトまたは設定されたサーバーレス関数の最大実行時間に従って実行されます。プラットフォームが対応している場合、[`maxDuration`](/docs/app/api-reference/file-conventions/route-segment-config#maxduration)ルートセグメントの設定を使用してタイムアウトリミットを設定できます。
+`unstable_after`は、プラットフォームのデフォルトまたは設定されたサーバーレス関数の最大持続時間で実行されます。あなたのプラットフォームが対応している場合、[`maxDuration`](/docs/app/api-reference/file-conventions/route-segment-config#maxduration)ルートセグメント設定を使用してタイムアウト制限を設定できます。
 
-## 知っておくと良いこと {#good-to-know}
+## Good to know {#good-to-know}
 
-- レスポンスが正常に完了しなかった場合にも `unstable_after` が実行されます。エラーが発生したときや、`notFound` や `redirect` が呼び出されたときも含まれます。
-- `unstable_after` はルートを動的レンダリングにオプトインする[動的API](/docs/app/building-your-application/rendering/server-components#dynamic-apis)です。この動作は、[`export dynamic = "force-static"`](/docs/app/api-reference/file-conventions/route-segment-config#dynamic)セグメント設定でオーバーライドできます。
-- `unstable_after`内で呼び出される関数を重複排除するためにReactの `cache` を使用できます。
-- `cookies` は `unstable_after` 内で設定できません。なぜなら、レスポンスはすでに送信されているからです。
-- `unstable_after` は他の `unstable_after` 呼び出しの中にネストすることができます。たとえば、さらなる機能を追加するために `unstable_after` 呼び出しをラップするユーティリティ関数を作成できます。
+- `unstable_after`は、レスポンスが正常に完了しなかった場合でも実行されます。エラーがスローされた場合や`notFound`や`redirect`が呼び出された場合も含みます。
+- Reactの`cache`を使用して、`unstable_after`内で呼び出される関数を重複排除できます。
+- [`cookies`](/docs/app/api-reference/functions/cookies)は`unstable_after`内で設定できません。なぜなら、レスポンスが既に送信されているためです。
+- [Dynamic APIs](/docs/app/building-your-application/rendering/server-components#dynamic-apis)は`unstable_after`内で呼び出すことができません。これらを`unstable_after`の外で呼び出し、その戻りオブジェクトを使用してください。
+- `unstable_after`は、他の`unstable_after`呼び出しの内部にネストできます。たとえば、`unstable_after`呼び出しをラップするユーティリティ関数を作成して追加の機能を追加できます。
 
-## 代替手段 {#alternatives}
+## 代替案 {#alternatives}
 
-`unstable_after` のユースケースは、主要なレスポンスをブロックせずに副次的なタスクを処理することです。プラットフォームの[`waitUntil()`](https://vercel.com/docs/functions/functions-api-reference) を使用するか、promiseから `await` を削除することに似ていますが、以下の違いがあります：
+`unstable_after`の使用例は、主要なレスポンスを妨げずに二次タスクを処理することです。これはプラットフォームの[`waitUntil()`](https://vercel.com/docs/functions/functions-api-reference)を使用するか、promiseから`await`を削除することと似ていますが、次の違いがあります：
 
-- **`waitUntil()`**: promise を受け取り、リクエストのライフサイクル中に実行されるタスクをキューに入れます。`unstable_after` は、レスポンスが完了した**後に**実行されるコールバックを受け取ります。
-- **`await` を削除する**: レスポンス中に実行を開始し、リソースを使用します。また、レスポンスが送信された直後に関数が計算を停止するため、サーバーレス環境では信頼性に欠ける場合があります。
+- **`waitUntil()`**：promiseを受け取り、リクエストのライフサイクル中に実行されるタスクを登録するのに対し、`unstable_after`はレスポンス終了**後に**実行されるコールバックを受け取ります。
+- **`await`を削除**：レスポンス中に実行を開始し、リソースを使用します。さらに、サーバーレス環境ではレスポンス送信後に関数が計算を即座に停止するため、タスクが中断される可能性があります。
 
-その他のNext.jsのAPIやコンテキストを考慮して設計されているため、`unstable_after` の使用を推奨します。
+`unstable_after`は他のNext.js APIやコンテキストを考慮して設計されているため、これを使用することをお勧めします。
 
-| バージョン履歴 | 説明                                |
-| -------------- | ----------------------------------- |
-| `v15.0.0-rc`   | `unstable_after` が導入されました。 |
+| バージョン履歴 | 説明                             |
+| -------------- | -------------------------------- |
+| `v15.0.0-rc`   | `unstable_after`が導入されました |
