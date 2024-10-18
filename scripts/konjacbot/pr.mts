@@ -20,6 +20,7 @@ import {
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
   label: configs.botName,
+  baseBranch: process.env.BASE_BRANCH_NAME ?? 'main',
   branchPrefix: `${configs.botName}/sync_docs`,
   nextjs: {
     github: 'https://github.com/vercel/next.js',
@@ -140,7 +141,7 @@ const currentHash = {
 
 const branch = `${defaults.branchPrefix}_${currentHash.short}-${getCurrentDateTimeString()}`
 
-await $`git checkout -b ${branch}`
+await $`git checkout -b ${branch} ${defaults.baseBranch}`
 await $`git add .`
 await $`git commit -a -m "sync docs@${currentHash.short}"`
 await $`git push origin ${branch}`
@@ -186,7 +187,7 @@ log('normal', `PR body:\n${body}`)
 log('normal', `PR label:${defaults.label}`)
 
 if (!dryRun) {
-  await $`gh pr create -t ${title} -b ${body} -l ${defaults.label}`
+  await $`gh pr create -B ${defaults.baseBranch} -t ${title} -b ${body} -l ${defaults.label}`
 }
 
 log('important', '✅ PR created successfully !')
