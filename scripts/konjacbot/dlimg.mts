@@ -125,15 +125,21 @@ const { diffs, submodule } = await parseDiffFile(
   path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
 )
 
-const mdPathList = diffs.map((diff) => {
-  if (diff.status === 'A' || diff.status === 'M') {
-    return diff.filePath
-  }
-  if (diff.status === 'R') {
-    return diff.toPath
-  }
-  throw Error(`NOT supported diff status: ${JSON.stringify(diff)}`)
-})
+const mdPathList = diffs
+  .map((diff) => {
+    if (diff.status === 'A' || diff.status === 'M') {
+      return diff.filePath
+    }
+    if (diff.status === 'R') {
+      return diff.toPath
+    }
+    if (diff.status === 'D') {
+      log('normal', `skipping download for deleted file: ${diff.filePath}`)
+      return undefined
+    }
+    throw Error(`NOT supported diff status: ${JSON.stringify(diff)}`)
+  })
+  .filter((path) => path != null)
 
 mdPathList.forEach((mdPath) => {
   log('normal', `📄md(x): ${mdPath}`)

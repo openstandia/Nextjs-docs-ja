@@ -24,6 +24,7 @@ const defaults = {
   concurrency: 2, // See https://platform.openai.com/account/rate-limits
   lang: 'ja',
   promptDir: path.join(import.meta.dirname, `prompt`),
+  isCI: process.env.CI ?? false,
 } as const
 
 const log = createLogger(basename(import.meta.filename))
@@ -106,6 +107,10 @@ const commands = diffList.map((diff) => limit(() => command(diff)))
 
 log('important', `${commands.length} files to translate found.`)
 
-await spinner(() => Promise.all(commands))
+const withSpinner = defaults.isCI
+  ? (fn: () => Promise<unknown>) => fn()
+  : spinner
+
+await withSpinner(() => Promise.all(commands))
 
 log('important', '✅ translation finished successfully !')
