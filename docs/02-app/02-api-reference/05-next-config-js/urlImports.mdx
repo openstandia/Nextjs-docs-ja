@@ -1,0 +1,92 @@
+---
+title: 'urlImports'
+description: '外部URLからのモジュールのインポートを許可するようにNext.jsを設定します。'
+version: 'experimental'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerで共有されています。Pages Routerに特化した内容を追加するには、 `<PagesOnly>Content</PagesOnly>` コンポーネントを使用できます。共有された内容はコンポーネントで囲まないでください。 */}
+
+URLインポートは実験的な機能で、ローカルディスクではなく外部サーバからモジュールを直接インポートすることができます。
+
+> **警告**: 信頼できるドメインのみを使用して、マシンでダウンロードおよび実行してください。この機能が安定版として指定されるまで、自身の判断と慎重さをもって利用してください。
+
+オプトインするには、許可するURLプレフィックスを `next.config.js` に追加してください：
+
+```js title="next.config.js"
+module.exports = {
+  experimental: {
+    urlImports: ['https://example.com/assets/', 'https://cdn.skypack.dev'],
+  },
+}
+```
+
+その後、URLからモジュールを直接インポートできます：
+
+```js
+import { a, b, c } from 'https://example.com/assets/some/module.js'
+```
+
+URLインポートは通常のパッケージインポートが可能なすべての場所で使用できます。
+
+## セキュリティモデル {#security-model}
+
+この機能は**セキュリティを最優先**に設計されています。はじめに、URLインポートを許可するドメインを明示的に指定する実験的なフラグを追加しました。今後は、[Edge Runtime](/docs/app/api-reference/edge)を使用してURLインポートをブラウザのサンドボックス内で実行することに限定することで、これをさらに進めていく予定です。
+
+## ロックファイル {#lockfile}
+
+URLインポートを使用する場合、Next.jsは`next.lock`ディレクトリを作成し、ロックファイルと取得したアセットを保存します。
+このディレクトリは、**Gitにコミットする必要があり**、`.gitignore`で無視されてはいけません。
+
+- `next dev`を実行すると、Next.jsは新たに発見されたURLインポートをすべてダウンロードし、ロックファイルに追加します。
+- `next build`を実行すると、Next.jsはロックファイルのみを使用して本番用のアプリケーションをビルドします。
+
+通常、ネットワークリクエストは不要であり、古いロックファイルを使用するとビルドは失敗します。
+ただし、例外として`Cache-Control: no-cache`で応答するリソースがあります。
+これらのリソースはロックファイルに`no-cache`エントリを持ち、ビルドのたびにネットワークから常に取得されます。
+
+## 例 {#examples}
+
+### Skypack {#skypack}
+
+```js
+import confetti from 'https://cdn.skypack.dev/canvas-confetti'
+import { useEffect } from 'react'
+
+export default () => {
+  useEffect(() => {
+    confetti()
+  })
+  return <p>こんにちは</p>
+}
+```
+
+### 静的画像インポート {#static-image-imports}
+
+```js
+import Image from 'next/image'
+import logo from 'https://example.com/assets/logo.png'
+
+export default () => (
+  <div>
+    <Image src={logo} placeholder="blur" />
+  </div>
+)
+```
+
+### CSS内のURL {#urls-in-css}
+
+```css
+.className {
+  background: url('https://example.com/assets/hero.jpg');
+}
+```
+
+### アセットのインポート {#asset-imports}
+
+```js
+const logo = new URL('https://example.com/assets/file.txt', import.meta.url)
+
+console.log(logo.pathname)
+
+// "/_next/static/media/file.a9727b5d.txt" と出力されます
+```

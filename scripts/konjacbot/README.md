@@ -15,12 +15,14 @@ To update translations of the [Next.js documentation](https://nextjs.org/docs) i
 
 - [Detecting Differences](./diff.mts)
   - Retrieves differences from the [Next.js repository](../../next.js) incorporated via git submodule.
+- [Copy Files](./cp.mts)
+  - Copies or deletes files with detected differences from the Next.js repository.
 - [Translation](./translate.mts)
-  - Translates files detected as differing using the OpenAI API.
+  - Translates files identified as differing using the OpenAI API.
 - [Document Modifications](./mod.mts)
-  - Modifies the MDX format so it can be correctly displayed in [Docusaurus](https://docusaurus.io/).
+  - Modifies the MDX format for proper display in [Docusaurus](https://docusaurus.io/).
 - [Image Downloading](./dlimg.mts)
-  - Downloads images from the [public site](https://nextjs.org/docs) as they are not managed in the Next.js Git repository.
+  - Downloads images from the [public site](https://nextjs.org/docs), as they are not managed in the Next.js Git repository.
 - [Creating Pull Requests](./pr.mts)
   - Creates a branch in this repository and submits a Pull Request with the translated content.
 
@@ -28,18 +30,18 @@ To update translations of the [Next.js documentation](https://nextjs.org/docs) i
 
 ## GitHub Actions
 
-- Generally run on GitHub Actions where a reviewer reviews the Pull Request.
+- Generally run on GitHub Actions, where a reviewer reviews the Pull Request.
 - For details, see the [workflow](../../.github/workflows/konjacbot.yml).
 
 ## Developer's Local
 
-- Prerequisites
+- Prerequisites:
   - The following must be installed:
-    - npm - See [package.json](../../package.json) for version.
+    - npm - See [package.json](../../package.json) for the version.
     - git
-    - bash - WSL on Windows is also possible.
+    - bash - WSL on Windows is also an option.
     - GitHub CLI.
-  - You must have acquired the OpenAI API key.
+  - You must have an OpenAI API key.
     - Set it as the environment variable `OPENAI_API_KEY`.
 - Refer to [Details](#Details) for commands.
 
@@ -94,6 +96,37 @@ A  docs/02-app/01-building-your-application/01-routing/04-linking-and-navigating
 - Update the submodule with `git submodule update --remote`.
 - Obtain submodule differences with `git diff --name-status` and output the results.
 
+## [Copy Files](./cp.mts)
+
+### Execution (using tsx)
+
+```bash
+npx tsx run ./scripts/konjacbot/cp.mts <path to diff file>
+```
+
+Example:
+
+```bash
+npx tsx run ./scripts/konjacbot/cp.mts ./my-diff.txt
+```
+
+### Execution (using npm script)
+
+```bash
+npm run kj:cp
+```
+
+This is an alias for:
+
+```bash
+npx tsx ./scripts/konjacbot/cp.mts .kj-diff.txt
+```
+
+### Description
+
+- Copies files that have been changed or added from the Next.js repository using the submodule.
+- Deletes files from the repository if the differences indicate removal.
+
 ## [Translation](./translate.mts)
 
 ### Execution (using tsx)
@@ -128,9 +161,9 @@ npx tsx ./scripts/konjacbot/translate.mts .kj-diff.txt
 
 ### Description
 
-- Acquire the [prompt](./prompt) for the language specified by `-l`.
-- Read the md(x) files listed in the specified diff file and translate using the OpenAI API.
-- Output the translation results to a file.
+- Acquires the [prompt](./prompt) for the specified language using `-l`.
+- Reads the md(x) files listed in the specified diff file and translates them using the OpenAI API.
+- Outputs the translation results to a file.
 
 ## [Document Modifications](./mod.mts)
 
@@ -154,7 +187,9 @@ npx tsx ./scripts/konjacbot/mod.mts .kj-diff.txt
 
 ### Description
 
-- Modifies code blocks within MDX files to a format that can be correctly displayed.
+- Modifies code blocks within MDX files to ensure they are displayed correctly.
+- Modify links to untranslated documents to point to the official site.
+- To prevent anchor links from breaking after translation, IDs will be added to the headings.
 
 ## [Image Downloading](./dlimg.mts)
 
@@ -184,9 +219,9 @@ npx tsx ./scripts/konjacbot/dlimg.mts .kj-diff.txt
 
 ### Description
 
-- Read the md(x) files listed in the specified diff file and obtain the paths to the image files used within.
-- Download images from the [public site](https://nextjs.org/docs).
-- Save the downloaded files.
+- Reads the md(x) files listed in the specified diff file to obtain the paths to the images used.
+- Downloads images from the [public site](https://nextjs.org/docs).
+- Saves the downloaded files.
 
 ## [Creating Pull Requests](./pr.mts)
 
@@ -210,5 +245,5 @@ npx tsx ./scripts/konjacbot/pr.mts
 
 ### Description
 
-- Create a branch, commit, and push.
-- Create a PR (Pull Request).
+- Creates a branch, commits, and pushes changes.
+- Creates a Pull Request (PR).

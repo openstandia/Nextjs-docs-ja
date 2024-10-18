@@ -3,6 +3,7 @@
 
 import { themes as prismThemes } from 'prism-react-renderer'
 import { officialNextJsDocsSidebarItemsAdapter } from './sidebars.adapter.mjs'
+import { version } from './version.json'
 
 const configureGtag = () => {
   const trackingId = process.env.GTAG_TRACKING_ID
@@ -24,12 +25,13 @@ const config = {
   baseUrl: process.env.BASE_URL || '/',
   staticDirectories: ['public', 'static'],
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
+  onBrokenAnchors: 'warn', //TODO fix
   favicon: 'img/favicon.ico',
   projectName: 'nextjs-docs-ja',
 
   customFields: {
-    nextJsGitHubVersionHash: process.env.NEXT_JS_GITHUB_VERSION_HASH,
+    nextjsGitHubVersionHash: `${version}`,
   },
 
   themes: [

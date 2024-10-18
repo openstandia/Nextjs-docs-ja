@@ -66,4 +66,3 @@ The copyright of this project belongs to Nomura Research Institute, Ltd.
 <a href="https://github.com/openstandia/Nextjs-docs-ja/graphs/contributors">
   <img width="500px" src="https://contrib.rocks/image?repo=openstandia/Nextjs-docs-ja" />
 </a>
-
