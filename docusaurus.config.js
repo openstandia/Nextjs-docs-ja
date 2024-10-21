@@ -3,7 +3,7 @@
 
 import { themes as prismThemes } from 'prism-react-renderer'
 import { officialNextJsDocsSidebarItemsAdapter } from './sidebars.adapter.mjs'
-import { version } from './version.json'
+import { hash } from './kj-diff.json'
 
 const configureGtag = () => {
   const trackingId = process.env.GTAG_TRACKING_ID
@@ -31,7 +31,7 @@ const config = {
   projectName: 'nextjs-docs-ja',
 
   customFields: {
-    nextjsGitHubVersionHash: `${version}`,
+    nextjsGitHubVersionHash: `${hash.current}`,
   },
 
   themes: [

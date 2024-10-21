@@ -67,6 +67,15 @@ export function isMdxFilePath(path: string): path is MdxFilePath {
   return path.startsWith(`${configs.docsDir}/`)
 }
 
+export type DiffFile<T = string> = {
+  submodule: string
+  hash: {
+    previous?: string
+    current: string
+  }
+  diffs: T[]
+}
+
 export type MdxDiff = BasicMdxDiff | RenamedMdxDiff | UnknownMdxDiff
 
 export type BasicMdxDiff = {
@@ -165,27 +174,45 @@ function createMdxDiff(status: string, data: string): MdxDiff {
 }
 
 /**
- * Parses a file containing MDX diff information.
+ * Parses a diff file and returns its content.
  *
- * @param {string} filePath - Path to the file containing diff information.
- * @returns {Promise<MdxDiff[]>} A promise resolving to an array of MdxDiff objects.
- * @throws Will throw an error for unknown diff or format irregularities.
+ * @template T - A boolean type that determines the return type of the diffs.
+ * @param {string} filePath - The path to the diff file.
+ * @param {Object} [options] - Optional parameters.
+ * @param {T} [options.rawDiff] - If true, returns raw diff strings; otherwise, returns parsed MdxDiff objects.
+ * @returns {Promise<DiffFile<T extends true ? string : MdxDiff>>} - A promise that resolves to the parsed diff file content.
+ * @throws {Error} - Throws an error if a diff line cannot be parsed.
  */
-export async function parseMdxDiff(filePath: string): Promise<MdxDiff[]> {
-  const content = (await fs.readFile(filePath)).toString()
+export async function parseDiffFile<T extends boolean = false>(
+  filePath: string,
+  options?: {
+    rawDiff?: T
+  }
+): Promise<DiffFile<T extends true ? string : MdxDiff>> {
+  const versionFileString = (await fs.readFile(filePath)).toString()
 
-  return content
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line)
-    .map((line, index) => {
-      const match = line.match(/^(\S+|\s)\s+(\S.+)$/)
-      if (match && match.length === 3) {
-        return createMdxDiff(match[1].trim(), match[2].trim())
-      } else {
-        throw new Error(`unknown diff @ line ${index + 1} : ${line}`)
-      }
-    })
+  const versionFileObj = JSON.parse(versionFileString) as DiffFile
+
+  if (options?.rawDiff) {
+    return {
+      ...versionFileObj,
+      diffs: [...versionFileObj.diffs] as (T extends true ? string : MdxDiff)[],
+    }
+  }
+
+  const diffs = versionFileObj.diffs.map((line, index) => {
+    const match = line.match(/^(\S+|\s)\s+(\S.+)$/)
+    if (match && match.length === 3) {
+      return createMdxDiff(match[1].trim(), match[2].trim())
+    } else {
+      throw new Error(`unknown diff @ line ${index + 1} : ${line}`)
+    }
+  })
+
+  return {
+    ...versionFileObj,
+    diffs: [...diffs] as (T extends true ? string : MdxDiff)[],
+  }
 }
 
 /**
@@ -217,7 +244,7 @@ export function createLogger(prefix: string) {
  * @param {OpenAI} openai - An instance of the OpenAI API client.
  * @returns {(prompt: { system: string; user: string }) => Promise<string>} A function that takes a prompt and returns the assistant's response as a string.
  */
-export function createAIClient(
+export function createOpenAIClient(
   openai: OpenAI
 ): (prompt: { system: string; user: string }) => Promise<string> {
   async function fetch(prompt: {
@@ -257,4 +284,13 @@ export function createAIClient(
   }
 
   return fetch
+}
+
+/**
+ * Returns the current date and time as a string in the format YYYYMMDDHHMMSS.
+ *
+ * @returns {string} The current date and time as a string in the format YYYYMMDDHHMMSS.
+ */
+export function getCurrentDateTimeString(): string {
+  return new Date().toISOString().replace(/[-:TZ.]/g, '')
 }
