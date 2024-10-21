@@ -4,77 +4,92 @@
  */
 
 import { $ } from 'zx'
+import { parseArgs } from 'node:util'
 import process from 'node:process'
+import path, { basename } from 'node:path'
 import OpenAI from 'openai'
-import * as path from 'node:path'
 import { configs } from './configs.mts'
-import { createAIClient, createLogger } from './utils.mts'
-import { basename } from 'node:path'
+import {
+  createOpenAIClient,
+  createLogger,
+  DiffFile,
+  parseDiffFile,
+  getCurrentDateTimeString,
+} from './utils.mts'
 
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
-  enableAISummary: false, // TODO: 運用が始まったらtrueに
   label: configs.botName,
-  branchPrefix: `${configs.botName}/sync-nextjs-docs`,
+  baseBranch: process.env.BASE_BRANCH_NAME ?? 'main',
+  branchPrefix: `${configs.botName}/sync_docs`,
   nextjs: {
     github: 'https://github.com/vercel/next.js',
     web: 'https://nextjs.org/docs',
   },
 } as const
 
+$.verbose = true
+
 const log = createLogger(basename(import.meta.url))
 
 /**
- * Builds GitHub URLs for comparing commits on the Next.js repository.
+ * Generates a markdown link to the specific version of the Next.js repository on GitHub.
  *
- * @param {string} diff - The git diff output.
- * @returns {{compare: {label: string, url: string}, tree: {label: string, url: string}}} Object containing comparison and tree URLs.
- * @throws Will throw an error if it fails to extract commit hashes from the diff.
+ * @param {Object} param - The parameter object.
+ * @param {string} param.current - The current hash of the version.
+ * @returns {string} A markdown string containing a link to the specific version of the repository.
  */
-function buildNextJsGithubUrl(diff: string): {
-  compare: { label: string; url: string }
-  tree: { label: string; url: string }
-} {
-  const hash = {
-    before: diff.match(/^-Subproject commit ([0-9a-zA-Z]+)$/m)?.[1],
-    after: diff.match(/^\+Subproject commit ([0-9a-zA-Z]+)$/m)?.[1],
-  }
-
-  if (!hash.before || !hash.after) {
-    throw Error('failed to resolve submodule commit diffs.')
-  }
-
+function buildVersionContent({ current }: DiffFile['hash']): string {
   const nextjsGithubBaseUrl = new URL(defaults.nextjs.github)
-  const comparePath = path.join(
-    nextjsGithubBaseUrl.pathname,
-    `compare/${hash.before.substring(0, 7)}..${hash.after.substring(0, 7)}`
-  )
-  const treePath = path.join(nextjsGithubBaseUrl.pathname, `tree/${hash.after}`)
 
-  const compareUrl = new URL(comparePath, nextjsGithubBaseUrl.origin).toString()
+  const treePath = path.join(nextjsGithubBaseUrl.pathname, `tree/${current}`)
   const treeUrl = new URL(treePath, nextjsGithubBaseUrl.origin).toString()
 
-  return {
-    compare: {
-      label: `${hash.before.substring(0, 7)}..${hash.after.substring(0, 7)}`,
-      url: compareUrl,
-    },
-    tree: {
-      label: `${hash.after}`,
-      url: treeUrl,
-    },
-  }
+  return `[${current.substring(0, 7)}](${treeUrl})`
 }
 
 /**
- * Uses OpenAI API to create a summary of the given git diff.
+ * Builds a comparison URL for the given commit hashes.
  *
- * @param {string} diff - The git diff output.
- * @returns {Promise<string>} A promise resolving to a summary of the changes.
- * @throws Will throw an error for invalid OpenAI translation results.
+ * @param {Object} params - The parameters for the function.
+ * @param {string} params.current - The current commit hash.
+ * @param {string} params.previous - The previous commit hash.
+ * @returns {string | undefined} A markdown link to the comparison URL if the previous hash is provided, otherwise undefined.
  */
-async function buildAISummary(diff: string): Promise<string> {
-  const requestAI = createAIClient(
+function buildCompareContent({
+  current,
+  previous,
+}: DiffFile['hash']): string | undefined {
+  if (!previous) {
+    return undefined
+  }
+
+  const nextjsGithubBaseUrl = new URL(defaults.nextjs.github)
+
+  const commitHash = `${previous.substring(0, 7)}..${current.substring(0, 7)}`
+
+  const comparePath = path.join(
+    nextjsGithubBaseUrl.pathname,
+    `compare/${previous}..${current}`
+  )
+
+  const compareUrl = new URL(comparePath, nextjsGithubBaseUrl.origin).toString()
+
+  return `[${commitHash}](${compareUrl})`
+}
+
+/**
+ * Generates a summary of the changes in the current Git repository.
+ *
+ * This function retrieves the diff of the current HEAD with its previous commit,
+ * sends the diff to an OpenAI client to generate a summary, and returns the summary as a string.
+ *
+ * @returns {Promise<string>} A promise that resolves to the summary of the changes.
+ */
+async function buildPRSummary(): Promise<string> {
+  const diff = (await $`git diff HEAD^`).text()
+
+  const requestAI = createOpenAIClient(
     new OpenAI({
       apiKey: defaults.apiKey,
     })
@@ -82,14 +97,28 @@ async function buildAISummary(diff: string): Promise<string> {
 
   const result = await requestAI({
     system:
-      'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を作成してください。',
+      'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を日本語で作成してください。',
     user: diff,
   })
 
-  return `# 本PRの更新内容のサマリ by ChatGPT🤖\n  ${result}\n`
+  return result
 }
 
 log('important', '🚀 pr creation started !')
+
+const {
+  positionals: [diffFilePath],
+  values: { dryRun },
+} = parseArgs({
+  allowPositionals: true,
+  options: {
+    dryRun: {
+      short: 'd',
+      type: 'boolean',
+      default: false,
+    },
+  },
+})
 
 const status = (await $`git status -s`).text()
 
@@ -98,46 +127,67 @@ if (!status.trim()) {
   process.exit(0)
 }
 
-const submodule = (await $`git submodule`).text()
+const { hash, diffs } = await parseDiffFile(
+  path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath),
+  { rawDiff: true }
+)
 
-const submoduleHash = submodule.match(/[0-9a-z]{40}/)
-if (submoduleHash == null || submoduleHash.length !== 1) {
-  throw Error('failed to resolve submodule hash.')
+const currentHash = {
+  short: hash.current.substring(0, 7),
+  full: hash.current,
 }
-
-const hash = {
-  short: submoduleHash[0].substring(0, 7),
-  long: submoduleHash[0].substring(0, 40),
-} as const
 
 // TODO: 既にPRやブランチが存在するケースの考慮
 
-const branch = `${defaults.branchPrefix}-${hash.short}`
+const branch = `${defaults.branchPrefix}_${currentHash.short}-${getCurrentDateTimeString()}`
 
-await $`git checkout -b ${branch}`
+await $`git checkout -b ${branch} ${defaults.baseBranch}`
 await $`git add .`
-await $`git commit -a -m "translate next.js @ ${hash.short} into Japanese."`
+await $`git commit -a -m "sync docs@${currentHash.short}"`
 await $`git push origin ${branch}`
 
-const title = `${configs.botName}: translated Next.js docs @ ${hash.short} into Japanese`
-
-const nextjsGitHubUrl = buildNextJsGithubUrl(
-  (await $`git diff HEAD^ -- ${configs.submoduleName}`).text()
-)
+const title = `${configs.botName}: sync docs@${currentHash.short}`
 
 const body = `
-# 翻訳した公式ドキュメントバージョン
-[${nextjsGitHubUrl.tree.label}](${nextjsGitHubUrl.tree.url})
+このPRは[Next.js](${defaults.nextjs.github})のドキュメントを翻訳したものです。
 
-# 翻訳した公式ドキュメントの変更点
-[${nextjsGitHubUrl.compare.label}](${nextjsGitHubUrl.compare.url})
+### Next.jsリポジトリのバージョン
 
-${
-  defaults.enableAISummary
-    ? await buildAISummary((await $`git diff HEAD^`).text())
-    : ''
-}`
+${buildVersionContent(hash)}
 
-await $`gh pr create -B main -t ${title} -b ${body} -l ${defaults.label}`
+
+### 本PRで取り込んだNext.jsの差分
+
+${buildCompareContent(hash) ?? '差分更新ではなく、全てのドキュメントを翻訳しなおしました'}
+
+
+### 翻訳したファイル一覧（計：${diffs.length} ファイル）
+
+<details>
+<summary>翻訳したファイル一覧を見るには展開してください</summary>
+
+\`\`\`txt
+${diffs.reduce((prev, current, index) => {
+  return `${prev}${index === 0 ? '' : '\n'}${current}`
+}, '')}
+\`\`\`
+
+</details>
+
+
+### 本PRの更新内容のサマリ by OpenAI🤖
+
+${await buildPRSummary()}
+
+
+`
+
+log('normal', `PR title: ${title}`)
+log('normal', `PR body:\n${body}`)
+log('normal', `PR label:${defaults.label}`)
+
+if (!dryRun) {
+  await $`gh pr create -B ${defaults.baseBranch} -t ${title} -b ${body} -l ${defaults.label}`
+}
 
 log('important', '✅ PR created successfully !')
