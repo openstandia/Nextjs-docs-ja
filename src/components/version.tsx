@@ -31,7 +31,7 @@ export const NextJsReleaseVersionLink = () => {
     siteConfig: { customFields },
   } = useDocusaurusContext()
 
-  const version = (customFields?.nextjsGitReleaseVersion ?? '') as string
+  const version = (customFields?.nextjsReleaseVersion ?? '') as string
 
   return (
     <a
@@ -39,7 +39,7 @@ export const NextJsReleaseVersionLink = () => {
       target="_blank"
       rel="noopener noreferrer"
     >
-      Canary Version({version})
+      {`Canary Version${version && `(${version})`}`}
     </a>
   )
 }
