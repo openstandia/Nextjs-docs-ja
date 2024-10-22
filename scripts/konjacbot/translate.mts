@@ -22,6 +22,7 @@ import { configs } from './configs.mts'
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
   concurrency: 2, // See https://platform.openai.com/account/rate-limits
+  maxRetries: 3,
   lang: 'ja',
   promptDir: path.join(import.meta.dirname, `prompt`),
   isCI: process.env.CI ?? false,
@@ -57,6 +58,7 @@ const command = await (async () => {
   const requestAI = createOpenAIClient(
     new OpenAI({
       apiKey: defaults.apiKey,
+      maxRetries: defaults.maxRetries,
     })
   )
 

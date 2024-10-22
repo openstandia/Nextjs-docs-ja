@@ -19,6 +19,7 @@ import {
 
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
+  maxRetries: 3,
   label: configs.botName,
   baseBranch: process.env.BASE_BRANCH_NAME ?? 'main',
   branchPrefix: `${configs.botName}/sync_docs`,
@@ -92,6 +93,7 @@ async function buildPRSummary(): Promise<string> {
   const requestAI = createOpenAIClient(
     new OpenAI({
       apiKey: defaults.apiKey,
+      maxRetries: defaults.maxRetries,
     })
   )
 
