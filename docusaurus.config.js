@@ -31,6 +31,7 @@ const config = {
   projectName: 'nextjs-docs-ja',
 
   customFields: {
+    nextjsGitReleaseVersion: 'v15.0.1-canary.0', //TODO 自動化
     nextjsGitHubVersionHash: `${hash.current}`,
   },
 
