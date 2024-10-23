@@ -1,21 +1,21 @@
 ---
 title: 'instrumentation.js'
-description: 'instrumentation.js ファイルの API リファレンス'
+description: 'instrumentation.jsファイルのAPIリファレンス。'
 related:
-  title: 'Instrumentationについてもっと学ぶ'
+  title: 'インスツルメンテーションについてもっと学ぶ'
   links:
     - app/building-your-application/optimizing/instrumentation
 ---
 
-`instrumentation.js|ts`ファイルは、アプリケーションに観測ツールを統合するために使用されます。これにより、パフォーマンスや動作を追跡し、製品環境での問題をデバッグできます。
+`instrumentation.js|ts`ファイルは、アプリケーションに観測ツールを統合するために使用されます。これにより、アプリケーションのパフォーマンスや動作を追跡し、プロダクションでの問題をデバッグできます。
 
-使用するには、アプリケーションの**root**または[`src`フォルダ](/docs/app/building-your-application/configuring/src-directory)の中にこのファイルを配置してください。
+使用するには、ファイルをアプリケーションの**root**に配置するか、[`src`フォルダ](/docs/app/building-your-application/configuring/src-directory)の中に配置します（使用している場合）。
 
 ## エクスポート {#exports}
 
-### `register`（オプション） {#register-optional}
+### `register` (オプショナル) {#register-optional}
 
-このファイルは、新しい Next.js サーバーインスタンスが開始されるときに**一度**呼び出される`register`関数をエクスポートします。`register`は非同期関数にすることもできます。
+ファイルは`register`関数をエクスポートします。この関数は、新しいNext.jsサーバーインスタンスが開始されるときに**一度**呼び出されます。`register`は非同期関数にすることができます。
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -23,9 +23,9 @@ related:
 ```ts title="instrumentation.ts" switcher
 import { registerOTel } from '@vercel/otel'
 
-// register 関数をエクスポート
+// OTelを登録する関数
 export function register() {
-  registerOTel('next-app') // next-app を登録
+  registerOTel('next-app') // next-appという名前で登録
 }
 ```
 
@@ -35,23 +35,21 @@ export function register() {
 ```js title="instrumentation.js" switcher
 import { registerOTel } from '@vercel/otel'
 
-// register 関数をエクスポート
+// OTelを登録する関数
 export function register() {
-  registerOTel('next-app') // next-app を登録
+  registerOTel('next-app') // next-appという名前で登録
 }
 ```
 
 </TabItem>
 </Tabs>
 
-### `onRequestError`（オプション） {#onrequesterror-optional}
+### `onRequestError` (オプショナル) {#onrequesterror-optional}
 
-> このAPIはNext.js canaryで利用可能です。
+`onRequestError`関数をエクスポートして、**サーバー**エラーをカスタムの観測プロバイダーに追跡することができます。
 
-カスタムの観測プロバイダーに**サーバー**エラーを追跡するために、`onRequestError`関数をオプションでエクスポートすることができます。
-
-- `onRequestError`で非同期タスクを実行する場合は、それらが確実に待たれるようにしてください。`onRequestError`は、Next.js サーバーがエラーをキャプチャしたときにトリガーされます。
-- `error` インスタンスは、Server Componentsのレンダリング中に遭遇した場合、Reactによって処理される可能性があるため、元のエラーインスタンスではない場合があります。この場合、エラーに対して`digest`プロパティを使用して実際のエラータイプを識別できます。
+- `onRequestError`で非同期タスクを実行する場合、必ずawaitしてください。`onRequestError`は、Next.jsサーバーがエラーをキャプチャしたときにトリガーされます。
+- `error`インスタンスは、元のエラーインスタンスではない可能性があります。これは、Server Componentsのレンダリング中に発生した場合、Reactによって処理される可能性があるためです。このような場合、`digest`プロパティを使用して実際のエラータイプを識別できます。
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -59,22 +57,22 @@ export function register() {
 ```ts title="instrumentation.ts" switcher
 import { type Instrumentation } from 'next'
 
-// onRequestError 関数を非同期にエクスポート
+// エラーをリクエストする関数
 export const onRequestError: Instrumentation.onRequestError = async (
   err,
   request,
   context
 ) => {
-  // エラーを報告するための非同期フェッチ
+  // エラーレポートを送信
   await fetch('https://.../report-error', {
-    method: 'POST', // HTTP メソッドとしてPOSTを使用
+    method: 'POST',
     body: JSON.stringify({
       message: err.message,
       request,
       context,
     }),
     headers: {
-      'Content-Type': 'application/json', // JSONとして送信
+      'Content-Type': 'application/json',
     },
   })
 }
@@ -84,18 +82,18 @@ export const onRequestError: Instrumentation.onRequestError = async (
 <TabItem value="js" label="JavaScript">
 
 ```js title="instrumentation.js" switcher
-// onRequestError 関数を非同期にエクスポート
+// エラーをリクエストする関数
 export async function onRequestError(err, request, context) {
-  // エラーを報告するための非同期フェッチ
+  // エラーレポートを送信
   await fetch('https://.../report-error', {
-    method: 'POST', // HTTP メソッドとしてPOSTを使用
+    method: 'POST',
     body: JSON.stringify({
       message: err.message,
       request,
       context,
     }),
     headers: {
-      'Content-Type': 'application/json', // JSONとして送信
+      'Content-Type': 'application/json',
     },
   })
 }
@@ -104,65 +102,69 @@ export async function onRequestError(err, request, context) {
 </TabItem>
 </Tabs>
 
-#### パラメータ {#parameters}
+#### パラメーター {#parameters}
 
-この関数は3つのパラメータ：`error`、`request`、および`context`を受け取ります。
+この関数は、3つのパラメーター、`error`、`request`、および`context`を受け取ります。
 
 ```ts title="Types"
-// onRequestError 関数の型定義
+// エラーをリクエストする関数
 export function onRequestError(
-  error: { digest: string } & Error, // digest プロパティを持つエラー
+  error: { digest: string } & Error,
   request: {
-    path: string // リソースのパス e.g. /blog?name=foo
-    method: string // リクエストメソッド e.g. GET, POST など
-    headers: { [key: string]: string } // ヘッダーのキーと値
+    path: string // リソースのパス、例: /blog?name=foo
+    method: string // リクエストメソッド、例: GET, POSTなど
+    headers: { [key: string]: string } // ヘッダー情報
   },
   context: {
-    routerKind: 'Pages Router' | 'App Router' // ルーターのタイプ
-    routePath: string // ルートファイルのパス e.g. /app/blog/[dynamic]
-    routeType: 'render' | 'route' | 'action' | 'middleware' // エラーが発生したコンテキスト
+    routerKind: 'Pages Router' | 'App Router' // ルーターの種類
+    routePath: string // ルートファイルのパス、例: /app/blog/[dynamic]
+    routeType: 'render' | 'route' | 'action' | 'middleware' // エラーが発生する文脈
     renderSource:
       | 'react-server-components'
       | 'react-server-components-payload'
-      | 'server-rendering' // レンダリングのソース
-    revalidateReason: 'on-demand' | 'stale' | undefined // 定期的に再検証される理由 未定義の場合は通常のリクエスト
-    renderType: 'dynamic' | 'dynamic-resume' // PPR の場合は 'dynamic-resume'
+      | 'server-rendering'
+    revalidateReason: 'on-demand' | 'stale' | undefined // revalidationなしの通常リクエストはundefined
+    renderType: 'dynamic' | 'dynamic-resume' // PPRには'dynamic-resume'
   }
-): void | Promise<void> // 関数の戻り値
+): void | Promise<void>
 ```
 
-- `error`: 捕捉されたエラーそのもの（型は常に`Error`）と、エラーのユニークなIDである`digest`プロパティ。
-- `request`: エラーに関連する読み取り専用のリクエスト情報。
-- `context`: エラーが発生したコンテキスト。これには、ルーターのタイプ（App または Pages Router）、サーバーコンポーネント（render）、ルートハンドラー（route）、Server Actions（action）、またはミドルウェア（middleware）が含まれます。
+- `error`: キャッチされたエラー自体（型は常に`Error`）と、エラーの一意のIDである`digest`プロパティです。
+- `request`: エラーに関連付けられたリクエスト情報（読み取り専用）です。
+- `context`: エラーが発生した文脈です。これには、ルーターの種類（AppまたはPages Router）、そして（Server Components（`'render'`）、Route Handlers（`'route'`）、Server Actions（`'action'`）、またはMiddleware（`'middleware'`））が含まれます。
 
 ### ランタイムの指定 {#specifying-the-runtime}
 
-`instrumentation.js`ファイルは、Node.jsおよびEdgeランタイムの両方で動作しますが、特定のランタイムをターゲットにするために`process.env.NEXT_RUNTIME`を使用できます。
+`instrumentation.js`ファイルは、Node.jsとEdgeランタイムの両方で動作します。ただし、`process.env.NEXT_RUNTIME`を使用して特定のランタイムをターゲットにすることができます。
 
 ```js title="instrumentation.js"
-// register 関数のランタイムを特定のものに紐づける
+// ランタイムに基づいてモジュールをロードする関数
 export function register() {
   if (process.env.NEXT_RUNTIME === 'edge') {
-    return require('./register.edge') // edge用の登録ファイル
+    // Edgeランタイム用の登録モジュールをロード
+    return require('./register.edge')
   } else {
-    return require('./register.node') // node用の登録ファイル
+    // Node.jsランタイム用の登録モジュールをロード
+    return require('./register.node')
   }
 }
 
-// onRequestError 関数のランタイムを特定のものに紐づける
+// エラーリクエスト関数のロード
 export function onRequestError() {
   if (process.env.NEXT_RUNTIME === 'edge') {
-    return require('./on-request-error.edge') // edge用のエラーファイル
+    // Edgeランタイム用のエラーハンドラーをロード
+    return require('./on-request-error.edge')
   } else {
-    return require('./on-request-error.node') // node用のエラーファイル
+    // Node.jsランタイム用のエラーハンドラーをロード
+    return require('./on-request-error.node')
   }
 }
 ```
 
 ## バージョン履歴 {#version-history}
 
-| Version      | 変更内容                                                |
-| ------------ | ------------------------------------------------------- |
-| `v15.0.0-RC` | `onRequestError`が導入され、`instrumentation`が安定版に |
-| `v14.0.4`    | `instrumentation`に対するTurbopackサポート              |
-| `v13.2.0`    | `instrumentation`が実験的な機能として導入された         |
+| バージョン   | 変更点                                                            |
+| ------------ | ----------------------------------------------------------------- |
+| `v15.0.0-RC` | `onRequestError`が導入され、`instrumentation`が安定版になりました |
+| `v14.0.4`    | `instrumentation`のTurbopackサポート                              |
+| `v13.2.0`    | `instrumentation`が実験的な機能として導入されました               |
