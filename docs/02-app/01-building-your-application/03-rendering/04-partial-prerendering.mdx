@@ -1,37 +1,37 @@
 ---
 title: 'Partial Prerendering'
-description: '静的レンダリングと動的レンダリングの利点を組み合わせる方法をPartial Prerenderingで学ぼう。'
+description: 'Partial Prerenderingを利用して静的レンダリングと動的レンダリングの利点を組み合わせる方法を学びましょう'
 ---
 
-Partial Prerendering（PPR）は、静的コンポーネントと動的コンポーネントを同一のルート内で組み合わせることを可能にします。
+> **Note:** Partial Prerenderingは、カナリアのみで利用可能な**実験的**な機能であり、変更される可能性があります。プロダクションでの使用にはまだ準備ができていません。
 
-ビルド中に、Next.jsはできる限りルートをプレンダリングします。[dynamic](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)コード、たとえば入力されたリクエストからデータを読み取る場合は、関連するコンポーネントを[React Suspense](https://react.dev/reference/react/Suspense)境界でラップすることができます。Suspense境界のフォールバックはプレンダリングされたHTMLに含まれます。
+Partial Prerendering (PPR) を利用することで、同じルート内で静的コンポーネントと動的コンポーネントを組み合わせることができます。
 
-> **Note:** Partial Prerenderingは**実験的**な機能であり、変更される可能性があります。本番環境での使用にはまだ適していません。
+ビルド時に、Next.jsは可能な限りルートを事前レンダリングします。受信リクエストからの読み取りなどの[動的](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)コードが検出された場合は、該当するコンポーネントを[React Suspense](https://react.dev/reference/react/Suspense)境界でラップすることができます。すると、Suspense境界のフォールバックが事前レンダリングされたHTMLに含まれます。
 
 <Image
-  alt="静的なナビゲーションと製品情報、動的なカートとおすすめ製品を表示している部分的にプレンダリングされた製品ページ"
+  alt="静的なナビゲーションと商品情報、動的なカートとおすすめ商品のある部分的にプレンダリングされた商品ページ"
   srcLight="/learn/light/thinking-in-ppr.png"
   srcDark="/learn/dark/thinking-in-ppr.png"
   width="1600"
   height="632"
 />
 
-> **🎥 視聴:** なぜPPRを使用するのかとその動作原理 → [YouTube (10分)](https://www.youtube.com/watch?v=MTcPrTIBkpA)．
+> **🎥 観る:** なぜPPRを使用するのかとその動作方法 → [YouTube (10 分)](https://www.youtube.com/watch?v=MTcPrTIBkpA)。
 
 ## 背景 {#background}
 
-PPRはNext.jsサーバーにプレンダリングされたコンテンツを即座に送信させることを可能にします。
+PPRは、Next.jsサーバーがすぐに事前レンダリングされたコンテンツを送信できるようにします。
 
-クライアントからサーバーへのウォーターフォールを防ぐために、動的コンポーネントは初期プレンダリングを提供する際に並行してサーバーからストリーミングを開始します。これにより、動的コンポーネントはクライアントJavaScriptがブラウザで読み込まれる前にレンダリングを開始できます。
+クライアントからサーバーへのウォーターフォールを防ぐために、動的コンポーネントは初期事前レンダリングを提供しながらサーバーから並行してストリーミングを開始します。これにより、動的コンポーネントはブラウザでクライアントのJavaScriptがロードされる前にレンダリングを開始できます。
 
-各動的コンポーネントごとに多数のHTTPリクエストを生成することを防ぐために、PPRは静的なプレンダリングと動的コンポーネントを単一のHTTPリクエストに統合することができます。これにより、各動的コンポーネントに対するネットワークの往復が複数回必要になることがありません。
+各動的コンポーネントごとに多くのHTTPリクエストを生成することを防ぐために、PPRは静的事前レンダリングと動的コンポーネントを単一のHTTPリクエストにまとめることができます。これにより、各動的コンポーネントには複数のネットワーク往復が必要ありません。
 
-## 部分的プレンダリングの使用 {#using-partial-prerendering}
+## Partial Prerenderingの使用 {#using-partial-prerendering}
 
-### インクリメンタル導入（バージョン15） {#incremental-adoption-version-15}
+### 増分採用 (Version 15) {#incremental-adoption-version-15}
 
-Next.js 15では、`next.config.js`内の[`ppr`](/docs/app/api-reference/next-config-js/ppr)オプションを`incremental`に設定し、ファイルの先頭で`experimental_ppr` [route config option](/docs/app/api-reference/file-conventions/route-segment-config)をエクスポートすることで、[layouts](/docs/app/building-your-application/routing/layouts-and-templates)および[pages](/docs/app/building-your-application/routing/pages)で部分的プレンダリングを段階的に採用できます：
+Next.js 15では、`next.config.js`で[`ppr`](/docs/app/api-reference/next-config-js/ppr)オプションを`incremental`に設定し、ファイルの先頭で`experimental_ppr` [ルート構成オプション](/docs/app/api-reference/file-conventions/route-segment-config)をエクスポートすることで、[layouts](/docs/app/building-your-application/routing/layouts-and-templates)および[pages](/docs/app/building-your-application/routing/pages)でPartial Prerenderingを増分的に採用できます：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -112,13 +112,13 @@ export default function Page() {
 
 > **Good to know**:
 >
-> - `experimental_ppr`がないルートはデフォルトで`false`になり、PPRを使用してプレンダリングされません。各ルートに対してPPRを明示的に選択する必要があります。
-> - `experimental_ppr`は、ネストしたlayoutsやページを含むルートセグメントのすべての子に適用されます。すべてのファイルに追加する必要はなく、ルートのトップセグメントだけに追加します。
-> - 子セグメントのPPRを無効にするには、子セグメントで`experimental_ppr`を`false`に設定することができます。
+> - `experimental_ppr`がないルートはデフォルトで`false`となり、PPRを使用して事前レンダリングされません。各ルートごとにPPRを明示的に選択する必要があります。
+> - `experimental_ppr`はルートセグメントのすべての子に適用され、ネストされたレイアウトやページも含まれます。すべてのファイルに追加する必要はなく、ルートの上位セグメントにだけ追加すればよいです。
+> - 子セグメントのPPRを無効にするには、子セグメントで`experimental_ppr`を`false`に設定できます。
 
-### PPRの有効化（バージョン14） {#enabling-ppr-version-14}
+### PPR の有効化 (Version 14) {#enabling-ppr-version-14}
 
-バージョン14では、`next.config.js`ファイルに[`ppr`](/docs/app/api-reference/next-config-js/ppr)オプションを追加することで有効にできます。これはアプリケーション内のすべてのルートに適用されます：
+バージョン 14 では、`next.config.js` ファイルに　[`ppr`](/docs/app/api-reference/next-config-js/ppr)　オプションを追加することで有効にできます。これによりアプリケーション内のすべてのルートに適用されます：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -154,7 +154,7 @@ module.exports = nextConfig
 
 ## 動的コンポーネント {#dynamic-components}
 
-`next build`中にルートのプレンダリングを作成する際に、Next.jsは動的なAPIがReact Suspenseでラップされていることを要求します。`fallback`はその後プレンダリングに含まれます。
+`next build`中にルートの事前レンダリングを作成するとき、Next.js はDynamicなAPIがReact Suspenseでラップされることを要求します。`fallback`は事前レンダリングに含まれます。
 
 例えば、`cookies`や`headers`のような関数を使用する場合：
 
@@ -185,7 +185,7 @@ export async function User() {
 </TabItem>
 </Tabs>
 
-このコンポーネントは、cookieを読み取るために入力されたリクエストを確認する必要があります。これをPPRで使用するには、コンポーネントをSuspenseでラップする必要があります：
+このコンポーネントは、cookieを読み取るために受信リクエストを確認する必要があります。これをPPRで使用する場合、コンポーネントをSuspenseでラップする必要があります：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -199,7 +199,7 @@ export const experimental_ppr = true
 export default function Page() {
   return (
     <section>
-      <h1>これはプレンダリングされます</h1>
+      <h1>This will be prerendered</h1>
       <Suspense fallback={<AvatarSkeleton />}>
         <User />
       </Suspense>
@@ -220,7 +220,7 @@ export const experimental_ppr = true
 export default function Page() {
   return (
     <section>
-      <h1>これはプレンダリングされます</h1>
+      <h1>This will be prerendered</h1>
       <Suspense fallback={<AvatarSkeleton />}>
         <User />
       </Suspense>
@@ -232,9 +232,9 @@ export default function Page() {
 </TabItem>
 </Tabs>
 
-コンポーネントは、値がアクセスされたときのみ動的レンダリングにオプトインします。
+コンポーネントは、値にアクセスしたときのみ動的レンダリングを選択します。
 
-例えば、`page`から`searchParams`を読み取っている場合、この値をpropsとして他のコンポーネントに渡すことができます：
+例えば、`page`から`searchParams`を読み取っている場合、この値をpropとして別のコンポーネントに転送することができます：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -245,11 +245,11 @@ import { Table } from './table'
 export default function Page({
   searchParams,
 }: {
-  searchParams: { sort: string }
+  searchParams: Promise<{ sort: string }>
 }) {
   return (
     <section>
-      <h1>これはプレンダリングされます</h1>
+      <h1>This will be prerendered</h1>
       <Table searchParams={searchParams} />
     </section>
   )
@@ -265,7 +265,7 @@ import { Table } from './table'
 export default function Page({ searchParams }) {
   return (
     <section>
-      <h1>これはプレンダリングされます</h1>
+      <h1>This will be prerendered</h1>
       <Table searchParams={searchParams} />
     </section>
   )
@@ -275,7 +275,7 @@ export default function Page({ searchParams }) {
 </TabItem>
 </Tabs>
 
-テーブルコンポーネント内で、`searchParams`からの値にアクセスすることで、コンポーネントは動的に動作します：
+tableコンポーネント内で、`searchParams`から値にアクセスすると、コンポーネントは動的に実行されます：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
