@@ -12,10 +12,10 @@ import { configs } from './configs.mts'
 import {
   createOpenAIClient,
   createLogger,
-  DiffFile,
   parseDiffFile,
   getCurrentDateTimeString,
 } from './utils.mts'
+import { DiffFile } from './types.mts'
 
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
@@ -97,13 +97,18 @@ async function buildPRSummary(): Promise<string> {
     })
   )
 
-  const result = await requestAI({
-    system:
-      'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を日本語で作成してください。',
-    user: diff,
-  })
+  try {
+    const result = await requestAI({
+      system:
+        'これから入力する内容は、Gitリポジトリのdiffコマンドの実行結果です。変更内容の要約を日本語で作成してください。',
+      user: diff,
+    })
 
-  return result
+    return result
+  } catch (e) {
+    log('error', e)
+    return '変更内容のサマリの生成ができませんでした。\n理由は、GitHub Actions Workflowの実行ログをご確認ください。'
+  }
 }
 
 log('important', '🚀 pr creation started !')
@@ -129,10 +134,9 @@ if (!status.trim()) {
   process.exit(0)
 }
 
-const { hash, diffs } = await parseDiffFile(
-  path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath),
-  { rawDiff: true }
-)
+const { hash, diffs } = await parseDiffFile(path.resolve(diffFilePath), {
+  rawDiff: true,
+})
 
 const currentHash = {
   short: hash.current.substring(0, 7),
