@@ -8,9 +8,10 @@
 
 import path, { basename, dirname } from 'node:path'
 import { fs } from 'zx'
-import { createLogger, parseDiffFile, MdxFilePath } from './utils.mts'
+import { createLogger, parseDiffFile } from './utils.mts'
 import { configs } from './configs.mts'
 import { parseArgs } from 'node:util'
+import { MdxFilePath } from './types.mts'
 
 const defaults = {
   nextjsUrl: 'https://nextjs.org/',
@@ -280,9 +281,7 @@ const {
   allowPositionals: true,
 })
 
-const { diffs: mdPathList } = await parseDiffFile(
-  path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
-)
+const { diffs: mdPathList } = await parseDiffFile(path.resolve(diffFilePath))
 
 /**
  * Processes each Markdown file in the diff and modifies the content if necessary.
@@ -291,7 +290,7 @@ const { diffs: mdPathList } = await parseDiffFile(
 const commands = mdPathList.map(async (diff) => {
   let filePath: MdxFilePath | undefined
   let content: Buffer | undefined
-  const { status } = diff
+  const { status, score } = diff
 
   if (status === 'A' || status === 'M') {
     filePath = diff.filePath
@@ -299,6 +298,10 @@ const commands = mdPathList.map(async (diff) => {
   }
 
   if (status === 'R') {
+    if (score === 100) {
+      log('normal', `skipping mod because this file is R100 : "${diff.toPath}"`)
+      return
+    }
     filePath = diff.toPath
     content = await fs.readFile(path.resolve(projectRootDir, filePath))
   }
