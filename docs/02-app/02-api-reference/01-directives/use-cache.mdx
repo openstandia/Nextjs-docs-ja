@@ -1,21 +1,23 @@
 ---
 title: 'use cache'
-description: 'Next.jsアプリケーションでデータをキャッシュするためのuse cacheディレクティブの使い方を学びます。'
-version: 'experimental'
+description: 'Next.jsアプリケーションでuse cacheディレクティブを使用してデータをキャッシュする方法を学びます。'
+version: 'canary'
 related:
-  title: '関連'
-  description: '関連するAPIリファレンスを参照します。'
+  title: 'Related'
+  description: '関連するAPIリファレンスを表示します。'
   links:
     - app/api-reference/next-config-js/dynamicIO
     - app/api-reference/next-config-js/cacheLife
     - app/api-reference/functions/cacheTag
+    - app/api-reference/functions/cacheLife
     - app/api-reference/functions/revalidateTag
-    - app/api-reference/legacy-apis/unstable_cache
 ---
 
-`use cache`ディレクティブは、コンポーネント、関数、またはファイルをキャッシュ対象として指定します。ファイルの先頭に使用することで、そのファイル内のすべての関数がキャッシュ可能であることを示したり、関数の先頭にインラインで使用してその関数をキャッシュ可能としてマークしたりできます。これは実験的なNext.jsの機能であり、`use client`や`use server`のようなネイティブのReact機能ではありません。
+`use cache`ディレクティブは、キャッシュを行うコンポーネントおよび／または関数を指定します。ファイルの冒頭で使用すると、ファイル内のすべてのエクスポートがキャッシュ可能であることを示し、関数やコンポーネントの冒頭で使用すると、Next.jsにリターン値がキャッシュされ、後続のリクエストで再利用されるべきであることを示します。これはNext.jsの実験的な機能であり、Reactのネイティブ機能である`use client`や`use server`のようなものではありません。
 
-`next.config.ts`ファイルで`dynamicIO`フラグを使用して`use cache`ディレクティブのサポートを有効にします：
+## 使用方法 {#usage}
+
+`use cache`ディレクティブのサポートを有効にするために、`next.config.ts`ファイルで`dynamicIO`フラグを有効にしてください：
 
 ```ts title="next.config.ts"
 import type { NextConfig } from 'next'
@@ -29,17 +31,7 @@ const nextConfig: NextConfig = {
 export default nextConfig
 ```
 
-> 将来的に`use cache`ディレクティブは`dynamicIO`フラグとは別に提供されます。
-
-キャッシュは、Webアプリケーションのパフォーマンスを向上させるために、レンダリングやデータリクエストの結果を保存する技術です。非同期関数やリクエスト時のデータに依存するAPIを使用するたびに、Next.jsは自動的に動的レンダリングを選択します。これらの操作の結果を明示的にキャッシュし、`use cache`ディレクティブを使用してアプリケーションのレンダリングパフォーマンスを最適化できます。
-
-`use cache`ディレクティブは[`unstable_cache`](/docs/app/api-reference/legacy-apis/unstable_cache)関数の代替を目的とした実験的な機能です。`unstable_cache`はJSONデータのキャッシュに限られ、再検証期間とタグの手動定義が必要ですが、`use cache`はより柔軟で、React Server Components (RSC) がシリアライズ可能なデータ、データフェッチの出力、コンポーネントの出力をキャッシュできます。
-
-さらに、`use cache`は入力と出力の両方の追跡を行うことでキャッシュの複雑さを自動的に管理し、誤ってキャッシュを汚染するリスクを軽減します。入力と出力の両方をシリアライズするため、誤ったキャッシュ取得に関する問題を回避できます。
-
-## `use cache`ディレクティブ {#use-cache-directive}
-
-Next.jsの`use cache`ディレクティブを使用すると、ルート全体、コンポーネント、および関数の戻り値をキャッシュできます。非同期関数を持つとき、ファイルの先頭または関数スコープ内に`use cache`を追加してキャッシュ可能にマークできます。これにより、Next.jsは戻り値をキャッシュし、後続のレンダリングで再利用できることを認識します。
+その後、`use cache`ディレクティブをファイル、コンポーネント、関数のレベルで使用できます：
 
 ```tsx
 // ファイルレベル
@@ -63,276 +55,63 @@ export async function getData() {
 }
 ```
 
-> **Good to know**: `use cache`ディレクティブを使用する関数は、状態の変更、DOMの直接操作、または一定の間隔でコードを実行するためのタイマーの設定などの副作用を持たない必要があります
-
-## 再検証 {#revalidating}
-
-デフォルトで、Next.jsは`use cache`ディレクティブを使用する際に **[15分の再検証期間](/docs/app/building-your-application/data-fetching/fetching#revalidating-cached-data)** を設定します。Next.jsはほぼ無限の有効期限を持つように設定されており、頻繁な更新が不要なコンテンツに適しています。
-
-この再検証期間は頻繁な変更が不要なコンテンツに便利ですが、`cacheLife`および`cacheTag`APIを使用してキャッシュの挙動を設定できます：
-
-- [`cacheLife`](#time-based-revalidation-with-cachelife): 時間ベースの再検証期間に使用
-- [`cacheTag`](#revalidate-on-demand-with-cachetag): オンデマンドでの再検証に使用
-
-これらのAPIはクライアントとサーバーのキャッシングレイヤ間で統合されているため、キャッシュのセマンティクスを1か所で設定することで、全体に適用できます
-
-**基本的な例**：
-
-以下の例では、関数のレベルで`cacheLife`関数を使用して、関数の出力に1日の再検証期間を設定する方法を示します：
-
-```tsx title="app/components/my-component.tsx" highlight={1,5,6}
-import { unstable_cacheLife as cacheLife } from 'next/cache'
-
-export async function MyComponent() {
-  async function getData() {
-    'use cache'
-    cacheLife('days')
-    const data = await fetch('/api/data')
-    return data
-  }
-
-  return // ここでデータを使用
-}
-```
-
-### キャッシュ再検証の仕組み {#how-cache-revalidation-works}
-
-15分の再検証期間が設定されている場合、以下のようなことが起こります：
-
-1. **Cache HIT**: 15分以内にリクエストが行われると、キャッシュされたデータが提供され、キャッシュHITとなります。
-2. **古いデータ**: 15分後にリクエストがあると、キャッシュされた値は提供されますが、現在は古くなっています。Next.jsはバックグラウンドで新しいキャッシュエントリを再計算します。
-3. **Cache MISS**: キャッシュエントリが期限切れになり、その後にリクエストが行われると、Next.jsはこれをキャッシュMISSとして扱い、データが再計算され、ソースから再度フェッチされます。
-
-## `cacheLife`による時間ベースの再検証 {#time-based-revalidation-with-cachelife}
-
-`cacheLife`関数は`use cache`ディレクティブがある場所でのみ使用でき、キャッシュプロファイルに基づいた時間ベースの再検証期間を定義できます。
-
-`use cache`ディレクティブを使用する際には、キャッシュの挙動を明示的に定義するために、常にキャッシュプロファイルを追加することをお勧めします。
-
-キャッシュプロファイルは次のプロパティを含むオブジェクトです：
-
-| **プロパティ** | **値**   | **説明**                                                                                     | **要件**                                    |
-| -------------- | -------- | -------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `stale`        | `number` | クライアントがサーバーに確認せずに値をキャッシュする期間                                     | 任意                                        |
-| `revalidate`   | `number` | サーバーでキャッシュを更新する頻度; 古い値は再検証中に提供されることがあります               | 任意                                        |
-| `expire`       | `number` | 動的フェッチに切り替える前に古くなった値が残る最大期間; `revalidate`より長くなければならない | 任意 - `revalidate`より長くなければならない |
-
-"stale"プロパティは[`staleTimes`](/docs/app/api-reference/next-config-js/staleTimes)設定とは異なり、クライアント側のルーターキャッシュを特に制御します。`staleTimes`は動的データと静的データのすべてのインスタンスに影響を与えるグローバル設定ですが、`cacheLife`構成は、関数またはルートごとに"古い"時間を定義することができます。
-
-> **Good to know**: “stale”プロパティは`Cache-control: max-age`ヘッダーを設定しません。代わりに、クライアント側のルーターキャッシュを制御します。
-
-### デフォルトのキャッシュプロファイル {#default-cache-profiles}
-
-Next.jsはさまざまな時間軸を基にした一連の名前付きキャッシュプロファイルを提供します。`use cache`ディレクティブと一緒に`cacheLife`関数でキャッシュプロファイルを指定しない場合、Next.jsは自動的に“デフォルト”のキャッシュプロファイルを適用します。
-
-| **プロファイル** | **Stale** | **Revalidate** | **Expire**     | **説明**                                                     |
-| ---------------- | --------- | -------------- | -------------- | ------------------------------------------------------------ |
-| `default`        | undefined | 15分           | INFINITE_CACHE | 頻繁に更新が必要ないコンテンツに適したデフォルトプロファイル |
-| `seconds`        | undefined | 1秒            | 1分            | ほぼリアルタイムの更新が必要な急速に変化するコンテンツ用     |
-| `minutes`        | 5分       | 1分            | 1時間          | 1時間以内に頻繁に更新されるコンテンツ用                      |
-| `hours`          | 5分       | 1時間          | 1日            | 毎日更新されるが少し古くても大丈夫なコンテンツ用             |
-| `days`           | 5分       | 1日            | 1週間          | 毎週更新されるが1日経過しても大丈夫なコンテンツ用            |
-| `weeks`          | 5分       | 1週間          | 1ヶ月          | 毎月更新されるが1週間経過しても大丈夫なコンテンツ用          |
-| `max`            | 5分       | 1ヶ月          | INFINITE_CACHE | 変更がほとんど不要な非常に安定したコンテンツ用               |
-
-**基本的な例**：
-
-```tsx title="app/page.tsx" highlight={4}
-'use cache'
-import { unstable_cacheLife as cacheLife } from 'next/cache'
-
-cacheLife('minutes')
-```
-
-キャッシュプロファイルを参照するために使われる文字列の値は固有の意味を持ちません；それらは意味論的なラベルとして機能します。これにより、コードベース内のキャッシュされたコンテンツをよりよく理解し、管理することができます。
-
-### 再利用可能なキャッシュプロファイルの定義 {#defining-reusable-cache-profiles}
-
-`next.config.ts`ファイルにキャッシュプロファイルを定義することで再利用可能なキャッシュプロファイルを作成できます。使用するケースに適した名前を選択し、`stale`、`revalidate`、`expire`プロパティに値を設定します。必要に応じて任意の数のカスタムキャッシュプロファイルを作成できます。各プロフィールは、`cacheLife`関数に渡す文字列値として名前を使用することで参照できます。
-
-```ts title="next.config.ts"
-const nextConfig = {
-  experimental: {
-    dynamicIO: true,
-    cacheLife: {
-      biweekly: {
-        stale: 60 * 60 * 24 * 14, // 14日
-        revalidate: 60 * 60 * 24, // 1日
-        expire: 60 * 60 * 24 * 14, // 14日
-      },
-    },
-  },
-}
-
-module.exports = nextConfig
-```
-
-上記の例では、14日間キャッシュされ、毎日更新をチェックし、14日後にキャッシュが期限切れになります。このプロフィールはアプリケーション全体で名前を基に参照できます：
-
-```tsx title="app/page.tsx" highlight={4}
-'use cache'
-import { unstable_cacheLife as cacheLife } from 'next/cache'
-
-cacheLife('biweekly')
-
-// 以降のコード
-```
-
-### デフォルトのキャッシュプロファイルのオーバーライド {#overriding-the-default-cache-profiles}
-
-デフォルトのキャッシュプロファイルは、キャッシュ可能な出力の鮮度や古さを考えるのに役立ちますが、アプリケーションのキャッシング戦略により適した異なる名前付きのプロファイルを使用したい場合があります。
-
-デフォルトの名前付きキャッシュプロファイルをオーバーライドするには、デフォルトと同じ名前で新しい構成を作成します。
-
-以下の例は、デフォルトの“days”キャッシュプロファイルをオーバーライドする方法を示しています：
-
-```ts title="next.config.ts"
-const nextConfig = {
-  experimental: {
-    dynamicIO: true,
-    cacheLife: {
-      days: {
-        stale: 3600, // 1時間
-        revalidate: 900, // 15分
-        expire: 86400, // 1日
-      },
-    },
-  },
-}
-
-module.exports = nextConfig
-```
-
-### インラインでのキャッシュプロファイル定義 {#defining-cache-profiles-inline}
-
-特定のユースケースには、`cacheLife`関数にオブジェクトを渡すことでカスタムキャッシュプロファイルを設定できます：
-
-```tsx title="app/page.tsx" highlight={5,6,7}
-'use cache'
-import { unstable_cacheLife as cacheLife } from 'next/cache'
-
-cacheLife({
-  stale: 3600, // 1時間
-  revalidate: 900, // 15分
-  expire: 86400, // 1日
-})
-
-// 以降のコード
-```
-
-このインラインキャッシュプロファイルはそれが作成された関数またはファイルにのみ適用されます。同じプロファイルをアプリケーション全体で再利用したい場合は、`next.config.ts`ファイルの`cacheLife`プロパティに[構成を追加](#defining-reusable-cache-profiles)できます。
-
-### `use cache`と`cacheLife`のネストした使用 {#nested-usage-of-use-cache-and-cachelife}
-
-同じルートまたはコンポーネントツリーで複数のキャッシング動作を定義する場合、内部キャッシュが独自の`cacheLife`プロファイルを指定している場合、外部キャッシュはそれらの中で最も短いキャッシュ期間を尊重します。**これは外部キャッシュが自分の明示的な`cacheLife`プロファイルを持たない場合のみ適用されます。**
-
-**キャッシュ境界の決定階層：**
-
-1. Next.jsは、内部の`use cache`ディレクティブを除いて、`use cache`境界内の最短キャッシュプロファイルを使用します。
-2. キャッシュプロファイルがない場合は、すべての内部`use cache`呼び出しからの最短プロファイル時間がこの`use cache`に適用されます。内部の`use cache`がない場合はデフォルトが使用されます。
-3. 2レベル深くの内部キャッシュは外部キャッシュに影響を与えません；彼らは既に親に自身の期間を提供しているためです。
-
-例として、ページにキャッシュプロファイルを指定せずに`use cache`ディレクティブを追加すると、デフォルトのキャッシュプロファイルが暗黙的に適用されます（`cacheLife("default")`）。ページにインポートされたコンポーネントも`use cache`ディレクティブを使用し、独自のキャッシュプロファイルを持つ場合、外部と内部キャッシュプロファイルが比較され、プロファイルに設定された最短期間が適用されます。
-
-```tsx title="app/components/parent.tsx" highlight={5,6}
-// 親コンポーネント
-import { unstable_cacheLife as cacheLife } from 'next/cache'
-import { ChildComponent } from './child'
-
-export async function ParentComponent() {
-  'use cache'
-  cacheLife('days')
-
-  return (
-    <div>
-      <ChildComponent />
-    </div>
-  )
-}
-```
-
-別のファイルで、インポートされた子コンポーネントを定義します：
-
-```tsx title="app/components/child.tsx" highlight={4,5}
-// 子コンポーネント
-import { unstable_cacheLife as cacheLife } from 'next/cache'
-
-export async function ChildComponent() {
-  'use cache'
-  cacheLife('hours')
-  return <div>Child Content</div>
-
-  // このコンポーネントのキャッシュは、短い"hours"プロファイルを尊重します
-}
-```
-
-## `cacheTag`によるオンデマンド再検証 {#revalidate-on-demand-with-cachetag}
-
-`cacheTag`は[`revalidateTag`](/docs/app/api-reference/functions/revalidateTag)と組み合わせて、必要に応じてキャッシュデータをパージするために使用されます。`cacheTag`関数は単一の文字列値または文字列配列を受け取ります。
-
-次の例では、`getData`関数が“weeks”キャッシュプロファイルを使用し、関数のキャッシュされた出力に`cacheTag`を定義しています：
-
-```tsx title="app/actions.ts" highlight={2,9}
-import {
-  unstable_cacheTag as cacheTag,
-  unstable_cacheLife as cacheLife,
-} from 'next/cache'
-
-export async function getData() {
-  'use cache'
-  cacheLife('weeks')
-  cacheTag('my-data')
-
-  const data = await fetch('/api/data')
-  return data
-}
-```
-
-その後、任意の関数で[`revalidateTag`](/docs/app/api-reference/functions/revalidateTag)APIを使用してオンデマンドでキャッシュをパージできます。たとえば、[route handler](/docs/app/building-your-application/routing/route-handlers)や[Server Action](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)です：
-
-```tsx title="app/submit.ts" highlight={3,7}
-'use server'
-
-import { revalidateTag } from 'next/cache'
-
-export default async function submit() {
-  await addPost()
-  revalidateTag('my-data')
-}
-```
-
-オンデマンドでのキャッシュデータのパージに関する詳細は、[`revalidateTag`](/docs/app/api-reference/functions/revalidateTag)ドキュメントを参照してください。
+## 知っておくと良いこと {#good-to-know}
+
+- `use cache`はNext.jsの実験的な機能であり、[`use client`](/docs/app/api-reference/directives/use-client)や[`use server`](/docs/app/api-reference/directives/use-server)のようなReactネイティブの機能ではありません。
+- キャッシュされた関数に渡される引数（またはprops）は、Reactによって[シリアル化可能](https://react.dev/reference/rsc/use-server#serializable-parameters-and-return-values)でなければなりません。つまり、JSONのような形式に変換できる必要があります。関数やReact要素のような非シリアル化可能なpropsは、引数として使用できません。
+- キャッシュ可能な関数のリターン値もシリアル化可能でなければなりません。これにより、キャッシュされたデータが正しく保存および取得されることを保証します。
+- `use cache`ディレクティブを使用する関数は、状態の変更やDOMの直接操作、インターバルでのコード実行のためのタイマー設定などの副作用を持ってはいけません。
+- [Partial Prerendering](/docs/app/building-your-application/rendering/partial-prerendering)と一緒に使用する場合、`use cache`を持つセグメントは、静的HTMLシェルの一部としてプリレンダリングされます。
+- 将来的には、`use cache`ディレクティブは`dynamicIO`フラグとは別に利用可能になります。
+- [`unstable_cache`](/docs/app/api-reference/legacy-apis/unstable_cache)がJSONデータのみをサポートするのに対して、`use cache`はReactがレンダリングできる任意のシリアル化可能なデータ、コンポーネントのレンダリング出力をキャッシュできます。
 
 ## 例 {#examples}
 
-### `use cache`によるルート全体のキャッシュ {#caching-entire-routes-with-use-cache}
+### `use cache`を使用したルート全体のキャッシュ {#caching-entire-routes-with-use-cache}
 
-アプリケーション内の`Suspense`境界の配置は、コンポーネントの動的性を決定します。`Suspense`境界内のコンポーネントは動的であることが許可されていますが、自動的に動的であるわけではありません。すべてをキャッシュまたはコンテンツが静的である場合、Next.jsは静的なアプリケーションを生成します。`Suspense`を使用することで、境界内で動的な動作が許可されていることを示します。
+ルート全体をプリレンダリングするには、`layout`と`page`ファイルの両方の冒頭に`use cache`を追加します。これらのセグメントはアプリケーション内の個別のエントリーポイントとして扱われ、それぞれ独立してキャッシュされます。
 
-ルートが静的であることを保証するためには、`Suspense`境界を使用しないでください。使用する必要がある場合は、レイアウトとページコンポーネントの両方に`use cache`ディレクティブを追加することで、アプリケーション内での個別のエントリーポイントとして扱うことができます。
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
 
-これは以前[`export const dynamic = "force-cache"`](/docs/app/building-your-application/caching#opting-out-1)オプションを使用していたアプリケーションに推奨され、ルート全体がプリレンダリングされます。
-
-```tsx title="app/layout.tsx"
+```tsx title="app/layout.tsx" switcher
 "use cache"
 import { unstable_cacheLife as cacheLife } from 'next/cache'
-cacheLife('minutes')
 
 export default Layout({children}: {children: ReactNode}) {
   return <div>{children}</div>
 }
 ```
 
-そして、`page.tsx`ファイルでは、ファイルの先頭に`use cache`ディレクティブを追加し、キャッシュプロファイルを定義できます：
+</TabItem>
+</Tabs>
+<Tabs>
+<TabItem value="jsx" label="JavaScript">
 
-```tsx title="app/page.tsx"
+```jsx title="app/page.tsx" switcher
 "use cache"
 import { unstable_cacheLife as cacheLife } from 'next/cache'
-cacheLife('minutes')
+
+export default Layout({ children }) {
+  return <div>{children}</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+`page`ファイルにインポートされネストされるコンポーネントは、`page`のキャッシュ動作を継承します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+"use cache"
+import { unstable_cacheLife as cacheLife } from 'next/cache'
 
 async function Users() {
   const users = await fetch('/api/users');
-  // ユーザーをループ
+  // ユーザーをループする
 }
 
 export default Page() {
@@ -344,23 +123,56 @@ export default Page() {
 }
 ```
 
-### `use cache`によるコンポーネント出力のキャッシュ {#caching-component-output-with-use-cache}
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
 
-コンポーネントレベルで`use cache`を使用して、そのコンポーネント内で行われるフェッチや計算をキャッシュできます。アプリケーション内でコンポーネントを再利用する際、propsの構造が同じであれば、同じキャッシュエントリを共有できます。
-
-propsはシリアライズされ、キャッシュキーの一部を形成します。同じコンポーネントをアプリケーションの複数の箇所で使用する場合、シリアライズされたpropsが各インスタンスで同じ値を生成する限り、キャッシュエントリは再利用されます。
-
-```tsx title="app/components/bookings.tsx" highlight={8,9}
+```jsx title="app/page.js" switcher
+"use cache"
 import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+async function Users() {
+  const users = await fetch('/api/users');
+  // ユーザーをループする
+}
+
+export default Page() {
+  return (
+    <main>
+      <Users/>
+    </main>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> これは、以前に[`export const dynamic = "force-cache"`](/docs/app/building-your-application/caching#opting-out-1)オプションを使用していたアプリケーションにとって推奨され、ルート全体がプリレンダリングされることを保証します。
+
+### `use cache`を使用したコンポーネント出力のキャッシュ {#caching-component-output-with-use-cache}
+
+`use cache`をコンポーネントレベルで使用することで、そのコンポーネント内で行われるフェッチや計算をキャッシュできます。アプリケーション全体でコンポーネントを再利用する際、propsが同じ構造を持つ限り同じキャッシュエントリを共有できます。
+
+propsはシリアル化され、キャッシュキーの一部を形成します。シリアル化されたpropsが各インスタンスで同じ値を生成する限り、キャッシュエントリは再利用されます。
+
+```tsx title="app/components/bookings.tsx" highlight={2}
+export async function Bookings({ type = 'haircut' }: BookingsProps) {
+  'use cache'
+  async function getBookingsData() {
+    const data = await fetch(`/api/bookings?type=${encodeURIComponent(type)}`)
+    return data
+  }
+  return //...
+}
 
 interface BookingsProps {
   type: string
 }
+```
 
-export async function Bookings({ type = 'massage' }: BookingsProps) {
+```jsx title="app/components/bookings.js" highlight={2}
+export async function Bookings({ type = 'haircut' }) {
   'use cache'
-  cacheLife('minutes')
-
   async function getBookingsData() {
     const data = await fetch(`/api/bookings?type=${encodeURIComponent(type)}`)
     return data
@@ -369,18 +181,154 @@ export async function Bookings({ type = 'massage' }: BookingsProps) {
 }
 ```
 
-### `use cache`による関数出力のキャッシュ {#caching-function-output-with-use-cache}
+### `use cache`を使用した関数出力のキャッシュ {#caching-function-output-with-use-cache}
 
-非同期関数ならどこにでも`use cache`を追加できるので、コンポーネントやルートのキャッシュに限定されません。ネットワークリクエストやデータベースクエリをキャッシュしたい場合や、非常に遅い計算を行いたい場合があります。この種の作業を含む関数に`use cache`を追加することでキャッシュ可能になり、再利用されると同じキャッシュエントリを共有します。
+`use cache`を任意の非同期関数に追加できるため、コンポーネントやルートのみに限らずキャッシュできます。ネットワークリクエストやデータベースクエリをキャッシュしたり、非常に遅い計算を行う場合に使用できます。この種の作業を含む関数に`use cache`を追加することで、その関数はキャッシュ可能になり、再利用する際には同じキャッシュエントリを共有します。
 
-```tsx title="app/actions.ts" highlight={4,5}
-import { unstable_cacheLife as cacheLife } from 'next/cache'
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
 
+```tsx title="app/actions.ts" highlight={2} switcher
 export async function getData() {
   'use cache'
-  cacheLife('minutes')
 
   const data = await fetch('/api/data')
   return data
 }
 ```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/actions.js" highlight={2} switcher
+export async function getData() {
+  'use cache'
+
+  const data = await fetch('/api/data')
+  return data
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 再検証 {#revalidating}
+
+デフォルトでは、Next.jsは`use cache`ディレクティブを使用する際に**[再検証期間](/docs/app/building-your-application/data-fetching/fetching#revalidating-cached-data)を15分**に設定します。Next.jsはほぼ無限の有効期限を設定し、頻繁な更新が必要のないコンテンツに適しています。
+
+この再検証期間は、頻繁な変更が予期されないコンテンツに有用ですが、`cacheLife`および`cacheTag`APIを使用してキャッシュ動作を設定することができます：
+
+- [`cacheLife`](/docs/app/api-reference/functions/cacheLife)：時間ベースの再検証期間。
+- [`cacheTag`](/docs/app/api-reference/functions/cacheTag)：オンデマンドの再検証。
+
+これらのAPIは、クライアントとサーバのキャッシング層全体に統合されているため、キャッシュのセマンティクスを一箇所で設定し、全体に適用できます。
+
+詳細は[`cacheLife`](/docs/app/api-reference/functions/cacheLife)および[`cacheTag`](/docs/app/api-reference/functions/cacheTag)のドキュメントを参照してください。
+
+### インターリーブ {#interleaving}
+
+キャッシュ可能な関数に非シリアル化可能な引数を渡す必要がある場合、それらを`children`として渡すことができます。これにより、`children`の参照が変更されてもキャッシュエントリに影響を与えずにすみます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+async function Page() {
+  const uncachedData = await getData()
+  return (
+    <CacheComponent>
+      <DynamicComponent data={uncachedData} />
+    </CacheComponent>
+  )
+}
+
+async function CacheComponent({ children }) {
+  'use cache'
+  const cachedData = await fetch('/api/cached-data')
+  return (
+    <div>
+      <PrerenderedComponent data={cachedData} />
+      {children}
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+キャッシュ済みのコンポーネントを介して、Server ActionsをClient Componentsに渡すこともできますが、それをキャッシュ可能な関数内で呼び出さずに利用できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import ClientComponent from './ClientComponent';
+
+async function Page() {
+  const performUpdate = async () => {
+    "use server"
+    // サーバサイドの更新を実行する
+    await db.update(...);
+  };
+
+  return <CacheComponent performUpdate={performUpdate} />;
+}
+
+async function CachedComponent({ performUpdate }) {
+  "use cache"
+  // ここではperformUpdateを呼び出さないでください
+  return <ClientComponent action={performUpdate} />;
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import ClientComponent from './ClientComponent';
+
+async function Page() {
+  const performUpdate = async () => {
+    "use server"
+    // サーバサイドの更新を実行する
+    await db.update(...);
+  };
+
+  return <CacheComponent performUpdate={performUpdate} />;
+}
+
+async function CachedComponent({ performUpdate }) {
+  "use cache"
+  // ここではperformUpdateを呼び出さないでください
+  return <ClientComponent action={performUpdate} />;
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ClientComponent.tsx" switcher
+'use client'
+
+export default function ClientComponent({ action }) {
+  return <button onClick={action}>Update</button>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ClientComponent.js" switcher
+'use client'
+
+export default function ClientComponent({ action }) {
+  return <button onClick={action}>Update</button>
+}
+```
+
+</TabItem>
+</Tabs>
