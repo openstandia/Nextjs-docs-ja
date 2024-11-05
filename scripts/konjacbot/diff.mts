@@ -100,6 +100,32 @@ async function resolveGitDiff(hashDiff: DiffFile['hash']): Promise<DiffFile> {
   })
 }
 
+/**
+ * Filters out specific diffs from a DiffFile object based on predefined criteria.
+ *
+ * @param {DiffFile} diffFile - The DiffFile object containing diffs to be filtered.
+ * @returns {DiffFile} - A new DiffFile object with the filtered diffs.
+ *
+ */
+function filterDiffs(diffFile: DiffFile): DiffFile {
+  const predicate = (diff: string) => {
+    if (diff.includes('docs/03-pages/')) {
+      log(
+        'normal',
+        `ignore the diff because of the documentation about the pages router: ${diff}`
+      )
+      return false
+    }
+
+    return true
+  }
+
+  return {
+    ...diffFile,
+    diffs: [...diffFile.diffs.filter(predicate)],
+  }
+}
+
 log('important', `🚀 diff docs started !`)
 
 const { values: args } = parseArgs({
@@ -123,10 +149,12 @@ const submoduleHashCurrent = await getSubmoduleHash()
 
 const resolveDiff = args.all ? resolveAllAsDiff : resolveGitDiff
 
-const versionFileObj = await resolveDiff({
-  previous: submoduleHashPrev,
-  current: submoduleHashCurrent,
-})
+const versionFileObj = filterDiffs(
+  await resolveDiff({
+    previous: submoduleHashPrev,
+    current: submoduleHashCurrent,
+  })
+)
 
 log('important', `${versionFileObj.diffs.length} different docs found.`)
 

@@ -10,7 +10,7 @@ Translated Site: https://nextjs.org/docs
 
 Hosted at the following URL.
 
-https://ja.next-community-docs.dev/docs/app-router
+https://ja.next-community-docs.dev
 
 ## Contributing
 
