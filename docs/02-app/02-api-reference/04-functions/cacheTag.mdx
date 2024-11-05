@@ -1,23 +1,27 @@
 ---
 title: 'cacheTag'
-description: 'Next.jsアプリケーションでcacheTag関数を使用して、キャッシュの無効化を管理する方法を学びます。'
-version: 'experimental'
+description: 'Next.jsアプリケーションでcacheTag関数を用いてキャッシュの無効化を管理する方法を学びます'
+version: 'canary'
 related:
-  title: '関連情報'
-  description: '関連するAPIリファレンスを表示します。'
+  title: '関連'
+  description: '関連するAPIリファレンスを参照'
   links:
-    - 'app/api-reference/next-config-js/dynamicIO'
-    - 'app/api-reference/directives/use-cache'
-    - 'app/api-reference/functions/revalidateTag'
+    - app/api-reference/next-config-js/dynamicIO
+    - app/api-reference/directives/use-cache
+    - app/api-reference/functions/revalidateTag
+    - app/api-reference/functions/cacheLife
 ---
 
-`cacheTag`関数を使用すると、キャッシュされたデータにタグを付け、必要に応じて無効化できます。キャッシュエントリにタグを関連付けることで、他のキャッシュデータに影響を与えることなく、特定の部分を選択的に消去したり再検証したりできます。
+`cacheTag`関数を使用すると、キャッシュされたデータにタグ付けを行い、必要に応じて無効化できます。キャッシュエントリにタグを関連付けることで、他のキャッシュデータに影響を与えることなく、特定のキャッシュエントリを選択して削除または再検証できます。
 
-## 使用方法 {#usage}
+## 使用法 {#usage}
 
-`cacheTag`を使用するには、`next.config.js`で[`dynamicIO`フラグ](/docs/app/api-reference/next-config-js/dynamicIO)を有効にし、`next/cache`から`cacheTag`をインポートします：
+`cacheTag`を使用するには、`next.config.js`ファイルで[`dynamicIO`フラグ](/docs/app/api-reference/next-config-js/dynamicIO)を有効にします：
 
-```ts title="next.config.ts"
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
@@ -29,7 +33,28 @@ const nextConfig: NextConfig = {
 export default nextConfig
 ```
 
-```tsx title="app/actions.ts"
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+const nextConfig = {
+  experimental: {
+    dynamicIO: true,
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+</Tabs>
+
+`cacheTag`関数は単一の文字列値、または文字列配列を受け取ります。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/data.ts" switcher
 import { unstable_cacheTag as cacheTag } from 'next/cache'
 
 export async function getData() {
@@ -40,11 +65,29 @@ export async function getData() {
 }
 ```
 
-## `revalidateTag`との併用 {#combining-with-revalidatetag}
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
 
-`cacheTag`を`revalidateTag`と併用することで、必要に応じてタグ付けされたキャッシュエントリを消去できます。これは、データの変更や外部イベントの後にデータを更新するようなシナリオで役立ちます。
+```jsx title="app/data.js" switcher
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 
-```tsx title="app/submit.ts"
+export async function getData() {
+  'use cache'
+  cacheTag('my-data')
+  const data = await fetch('/api/data')
+  return data
+}
+```
+
+</TabItem>
+</Tabs>
+
+[`revalidateTag`](/docs/app/api-reference/functions/revalidateTag) APIを使って、他の関数内で必要に応じてキャッシュを削除できます。例えば、[route handler](/docs/app/building-your-application/routing/route-handlers)や[Server Action](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)が挙げられます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/action.ts" switcher
 'use server'
 
 import { revalidateTag } from 'next/cache'
@@ -55,25 +98,50 @@ export default async function submit() {
 }
 ```
 
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/action.js" switcher
+'use server'
+
+import { revalidateTag } from 'next/cache'
+
+export default async function submit() {
+  await addPost()
+  revalidateTag('my-data')
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 知っておくべきこと {#good-to-know}
+
+- **冪等性タグ**：同じタグを複数回適用しても追加の効果はありません
+- **複数タグ**：`cacheTag`に配列を渡すことで、単一のキャッシュエントリに複数のタグを割り当てることができます
+
+```tsx
+cacheTag('tag-one', 'tag-two')
+```
+
 ## 例 {#examples}
 
-### キャッシュされたデータへのタグ付け {#tagging-cached-data}
+### コンポーネントや関数へのタグ付け {#tagging-components-or-functions}
 
-`cacheTag`をキャッシュされた関数やコンポーネント内で呼び出して、キャッシュされたデータにタグを付けましょう：
+キャッシュされた関数やコンポーネント内で`cacheTag`を呼び出すことで、キャッシュされたデータにタグを付けます：
 
-```tsx title="app/components/bookings.tsx"
-import {
-  unstable_cacheTag as cacheTag,
-  unstable_cacheLife as cacheLife,
-} from 'next/cache'
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/components/bookings.tsx" switcher
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 
 interface BookingsProps {
   type: string
 }
 
-export async function Bookings({ type = 'massage' }: BookingsProps) {
+export async function Bookings({ type = 'haircut' }: BookingsProps) {
   'use cache'
-  cacheLife('minutes')
   cacheTag('bookings-data')
 
   async function getBookingsData() {
@@ -85,24 +153,45 @@ export async function Bookings({ type = 'massage' }: BookingsProps) {
 }
 ```
 
-### データを使用したタグ付け {#tagging-using-data}
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
 
-非同期関数から返されるデータを使用して、キャッシュエントリにタグを付けることができます。
+```jsx title="app/components/bookings.js" switcher
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 
-```tsx title="app/components/bookings.tsx"
-import {
-  unstable_cacheTag as cacheTag,
-  unstable_cacheLife as cacheLife,
-} from 'next/cache'
+export async function Bookings({ type = 'haircut' }) {
+  'use cache'
+  cacheTag('bookings-data')
+
+  async function getBookingsData() {
+    const data = await fetch(`/api/bookings?type=${encodeURIComponent(type)}`)
+    return data
+  }
+
+  return //...
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 外部データからのタグ作成 {#creating-tags-from-external-data}
+
+非同期関数から返されたデータを使用してキャッシュエントリにタグを付けることができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/components/bookings.tsx" switcher
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 
 interface BookingsProps {
   type: string
 }
 
-export async function Bookings({ type = 'massage' }: BookingsProps) {
+export async function Bookings({ type = 'haircut' }: BookingsProps) {
   async function getBookingsData() {
     'use cache'
-    cacheLife('minutes')
     const data = await fetch(`/api/bookings?type=${encodeURIComponent(type)}`)
     cacheTag('bookings-data', data.id)
     return data
@@ -111,11 +200,34 @@ export async function Bookings({ type = 'massage' }: BookingsProps) {
 }
 ```
 
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/components/bookings.js" switcher
+import { unstable_cacheTag as cacheTag } from 'next/cache'
+
+export async function Bookings({ type = 'haircut' }) {
+  async function getBookingsData() {
+    'use cache'
+    const data = await fetch(`/api/bookings?type=${encodeURIComponent(type)}`)
+    cacheTag('bookings-data', data.id)
+    return data
+  }
+  return //...
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### タグ付きキャッシュの無効化 {#invalidating-tagged-cache}
 
-必要に応じて特定のタグのキャッシュを無効化します：
+[`revalidateTag`](/docs/app/api-reference/functions/revalidateTag)を使用して、必要に応じて特定のタグのキャッシュを無効化できます：
 
-```tsx title="app/actions.ts"
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
 'use server'
 
 import { revalidateTag } from 'next/cache'
@@ -126,11 +238,19 @@ export async function updateBookings() {
 }
 ```
 
-## 注意事項 {#notes}
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
 
-- **冪等性のあるタグ**：同じタグを複数回適用しても、追加の効果はありません。
-- **複数のタグ**：`cacheTag`に配列を渡すことで、1つのキャッシュエントリに複数のタグを割り当てることができます。
+```jsx title="app/actions.js" switcher
+'use server'
 
-```tsx
-cacheTag('tag-one', 'tag-two')
+import { revalidateTag } from 'next/cache'
+
+export async function updateBookings() {
+  await updateBookingData()
+  revalidateTag('bookings-data')
+}
 ```
+
+</TabItem>
+</Tabs>
