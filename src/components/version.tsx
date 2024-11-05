@@ -1,7 +1,7 @@
 import React from 'react'
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
 
-export const NextJsVersion = ({ label }: { label: string }) => {
+export const NextJsGitHubHashLink = ({ label }: { label: string }) => {
   const {
     siteConfig: { customFields },
   } = useDocusaurusContext()
@@ -23,5 +23,23 @@ export const NextJsVersion = ({ label }: { label: string }) => {
         </div>
       )}
     </>
+  )
+}
+
+export const NextJsReleaseVersionLink = () => {
+  const {
+    siteConfig: { customFields },
+  } = useDocusaurusContext()
+
+  const version = (customFields?.nextjsReleaseVersion ?? '') as string
+
+  return (
+    <a
+      href="https://nextjs.org/docs/canary"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {`Canary Version${version && `(${version})`}`}
+    </a>
   )
 }

@@ -10,18 +10,14 @@ import { parseArgs } from 'node:util'
 import process from 'node:process'
 import { spinner, fs } from 'zx'
 
-import {
-  parseDiffFile,
-  MdxDiff,
-  createLogger,
-  MdxFilePath,
-  createOpenAIClient,
-} from './utils.mts'
+import { parseDiffFile, createLogger, createOpenAIClient } from './utils.mts'
 import { configs } from './configs.mts'
+import { MdxDiff, MdxFilePath } from './types.mts'
 
 const defaults = {
   apiKey: process.env.OPENAI_API_KEY,
   concurrency: 2, // See https://platform.openai.com/account/rate-limits
+  maxRetries: 3,
   lang: 'ja',
   promptDir: path.join(import.meta.dirname, `prompt`),
   isCI: process.env.CI ?? false,
@@ -49,14 +45,13 @@ const {
   },
 })
 
-const { diffs: diffList } = await parseDiffFile(
-  path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
-)
+const { diffs: diffList } = await parseDiffFile(path.resolve(diffFilePath))
 
 const command = await (async () => {
   const requestAI = createOpenAIClient(
     new OpenAI({
       apiKey: defaults.apiKey,
+      maxRetries: defaults.maxRetries,
     })
   )
 
@@ -82,7 +77,7 @@ const command = await (async () => {
   }
 
   return async (diff: MdxDiff) => {
-    const { status } = diff
+    const { status, score } = diff
 
     switch (status) {
       case 'A':
@@ -95,6 +90,13 @@ const command = await (async () => {
         )
         return
       case 'R': {
+        if (score === 100) {
+          log(
+            'normal',
+            `skipping translationg because this file is R100 : "${diff.toPath}"`
+          )
+          return
+        }
         return translate(diff.toPath)
       }
       default:

@@ -1,0 +1,136 @@
+---
+title: 'cacheTag'
+description: 'Next.jsアプリケーションでcacheTag関数を使用して、キャッシュの無効化を管理する方法を学びます。'
+version: 'experimental'
+related:
+  title: '関連情報'
+  description: '関連するAPIリファレンスを表示します。'
+  links:
+    - 'app/api-reference/next-config-js/dynamicIO'
+    - 'app/api-reference/directives/use-cache'
+    - 'app/api-reference/functions/revalidateTag'
+---
+
+`cacheTag`関数を使用すると、キャッシュされたデータにタグを付け、必要に応じて無効化できます。キャッシュエントリにタグを関連付けることで、他のキャッシュデータに影響を与えることなく、特定の部分を選択的に消去したり再検証したりできます。
+
+## 使用方法 {#usage}
+
+`cacheTag`を使用するには、`next.config.js`で[`dynamicIO`フラグ](/docs/app/api-reference/next-config-js/dynamicIO)を有効にし、`next/cache`から`cacheTag`をインポートします：
+
+```ts title="next.config.ts"
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    dynamicIO: true,
+  },
+}
+
+export default nextConfig
+```
+
+```tsx title="app/actions.ts"
+import { unstable_cacheTag as cacheTag } from 'next/cache'
+
+export async function getData() {
+  'use cache'
+  cacheTag('my-data')
+  const data = await fetch('/api/data')
+  return data
+}
+```
+
+## `revalidateTag`との併用 {#combining-with-revalidatetag}
+
+`cacheTag`を`revalidateTag`と併用することで、必要に応じてタグ付けされたキャッシュエントリを消去できます。これは、データの変更や外部イベントの後にデータを更新するようなシナリオで役立ちます。
+
+```tsx title="app/submit.ts"
+'use server'
+
+import { revalidateTag } from 'next/cache'
+
+export default async function submit() {
+  await addPost()
+  revalidateTag('my-data')
+}
+```
+
+## 例 {#examples}
+
+### キャッシュされたデータへのタグ付け {#tagging-cached-data}
+
+`cacheTag`をキャッシュされた関数やコンポーネント内で呼び出して、キャッシュされたデータにタグを付けましょう：
+
+```tsx title="app/components/bookings.tsx"
+import {
+  unstable_cacheTag as cacheTag,
+  unstable_cacheLife as cacheLife,
+} from 'next/cache'
+
+interface BookingsProps {
+  type: string
+}
+
+export async function Bookings({ type = 'massage' }: BookingsProps) {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag('bookings-data')
+
+  async function getBookingsData() {
+    const data = await fetch(`/api/bookings?type=${encodeURIComponent(type)}`)
+    return data
+  }
+
+  return //...
+}
+```
+
+### データを使用したタグ付け {#tagging-using-data}
+
+非同期関数から返されるデータを使用して、キャッシュエントリにタグを付けることができます。
+
+```tsx title="app/components/bookings.tsx"
+import {
+  unstable_cacheTag as cacheTag,
+  unstable_cacheLife as cacheLife,
+} from 'next/cache'
+
+interface BookingsProps {
+  type: string
+}
+
+export async function Bookings({ type = 'massage' }: BookingsProps) {
+  async function getBookingsData() {
+    'use cache'
+    cacheLife('minutes')
+    const data = await fetch(`/api/bookings?type=${encodeURIComponent(type)}`)
+    cacheTag('bookings-data', data.id)
+    return data
+  }
+  return //...
+}
+```
+
+### タグ付きキャッシュの無効化 {#invalidating-tagged-cache}
+
+必要に応じて特定のタグのキャッシュを無効化します：
+
+```tsx title="app/actions.ts"
+'use server'
+
+import { revalidateTag } from 'next/cache'
+
+export async function updateBookings() {
+  await updateBookingData()
+  revalidateTag('bookings-data')
+}
+```
+
+## 注意事項 {#notes}
+
+- **冪等性のあるタグ**：同じタグを複数回適用しても、追加の効果はありません。
+- **複数のタグ**：`cacheTag`に配列を渡すことで、1つのキャッシュエントリに複数のタグを割り当てることができます。
+
+```tsx
+cacheTag('tag-one', 'tag-two')
+```

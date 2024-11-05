@@ -1,0 +1,170 @@
+---
+title: 'instrumentation.js'
+description: 'instrumentation.jsファイルのAPIリファレンス。'
+related:
+  title: 'インスツルメンテーションについてもっと学ぶ'
+  links:
+    - app/building-your-application/optimizing/instrumentation
+---
+
+`instrumentation.js|ts`ファイルは、アプリケーションに観測ツールを統合するために使用されます。これにより、アプリケーションのパフォーマンスや動作を追跡し、プロダクションでの問題をデバッグできます。
+
+使用するには、ファイルをアプリケーションの**root**に配置するか、[`src`フォルダ](/docs/app/building-your-application/configuring/src-directory)の中に配置します（使用している場合）。
+
+## エクスポート {#exports}
+
+### `register` (オプショナル) {#register-optional}
+
+ファイルは`register`関数をエクスポートします。この関数は、新しいNext.jsサーバーインスタンスが開始されるときに**一度**呼び出されます。`register`は非同期関数にすることができます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="instrumentation.ts" switcher
+import { registerOTel } from '@vercel/otel'
+
+// OTelを登録する関数
+export function register() {
+  registerOTel('next-app') // next-appという名前で登録
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="instrumentation.js" switcher
+import { registerOTel } from '@vercel/otel'
+
+// OTelを登録する関数
+export function register() {
+  registerOTel('next-app') // next-appという名前で登録
+}
+```
+
+</TabItem>
+</Tabs>
+
+### `onRequestError` (オプショナル) {#onrequesterror-optional}
+
+`onRequestError`関数をエクスポートして、**サーバー**エラーをカスタムの観測プロバイダーに追跡することができます。
+
+- `onRequestError`で非同期タスクを実行する場合、必ずawaitしてください。`onRequestError`は、Next.jsサーバーがエラーをキャプチャしたときにトリガーされます。
+- `error`インスタンスは、元のエラーインスタンスではない可能性があります。これは、Server Componentsのレンダリング中に発生した場合、Reactによって処理される可能性があるためです。このような場合、`digest`プロパティを使用して実際のエラータイプを識別できます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="instrumentation.ts" switcher
+import { type Instrumentation } from 'next'
+
+// エラーをリクエストする関数
+export const onRequestError: Instrumentation.onRequestError = async (
+  err,
+  request,
+  context
+) => {
+  // エラーレポートを送信
+  await fetch('https://.../report-error', {
+    method: 'POST',
+    body: JSON.stringify({
+      message: err.message,
+      request,
+      context,
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="instrumentation.js" switcher
+// エラーをリクエストする関数
+export async function onRequestError(err, request, context) {
+  // エラーレポートを送信
+  await fetch('https://.../report-error', {
+    method: 'POST',
+    body: JSON.stringify({
+      message: err.message,
+      request,
+      context,
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### パラメーター {#parameters}
+
+この関数は、3つのパラメーター、`error`、`request`、および`context`を受け取ります。
+
+```ts title="Types"
+// エラーをリクエストする関数
+export function onRequestError(
+  error: { digest: string } & Error,
+  request: {
+    path: string // リソースのパス、例: /blog?name=foo
+    method: string // リクエストメソッド、例: GET, POSTなど
+    headers: { [key: string]: string } // ヘッダー情報
+  },
+  context: {
+    routerKind: 'Pages Router' | 'App Router' // ルーターの種類
+    routePath: string // ルートファイルのパス、例: /app/blog/[dynamic]
+    routeType: 'render' | 'route' | 'action' | 'middleware' // エラーが発生する文脈
+    renderSource:
+      | 'react-server-components'
+      | 'react-server-components-payload'
+      | 'server-rendering'
+    revalidateReason: 'on-demand' | 'stale' | undefined // revalidationなしの通常リクエストはundefined
+    renderType: 'dynamic' | 'dynamic-resume' // PPRには'dynamic-resume'
+  }
+): void | Promise<void>
+```
+
+- `error`: キャッチされたエラー自体（型は常に`Error`）と、エラーの一意のIDである`digest`プロパティです。
+- `request`: エラーに関連付けられたリクエスト情報（読み取り専用）です。
+- `context`: エラーが発生した文脈です。これには、ルーターの種類（AppまたはPages Router）、そして（Server Components（`'render'`）、Route Handlers（`'route'`）、Server Actions（`'action'`）、またはMiddleware（`'middleware'`））が含まれます。
+
+### ランタイムの指定 {#specifying-the-runtime}
+
+`instrumentation.js`ファイルは、Node.jsとEdgeランタイムの両方で動作します。ただし、`process.env.NEXT_RUNTIME`を使用して特定のランタイムをターゲットにすることができます。
+
+```js title="instrumentation.js"
+// ランタイムに基づいてモジュールをロードする関数
+export function register() {
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    // Edgeランタイム用の登録モジュールをロード
+    return require('./register.edge')
+  } else {
+    // Node.jsランタイム用の登録モジュールをロード
+    return require('./register.node')
+  }
+}
+
+// エラーリクエスト関数のロード
+export function onRequestError() {
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    // Edgeランタイム用のエラーハンドラーをロード
+    return require('./on-request-error.edge')
+  } else {
+    // Node.jsランタイム用のエラーハンドラーをロード
+    return require('./on-request-error.node')
+  }
+}
+```
+
+## バージョン履歴 {#version-history}
+
+| バージョン   | 変更点                                                            |
+| ------------ | ----------------------------------------------------------------- |
+| `v15.0.0-RC` | `onRequestError`が導入され、`instrumentation`が安定版になりました |
+| `v14.0.4`    | `instrumentation`のTurbopackサポート                              |
+| `v13.2.0`    | `instrumentation`が実験的な機能として導入されました               |

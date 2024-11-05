@@ -9,8 +9,9 @@ import path, { basename, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { fs } from 'zx'
 
-import { MdxDiff, createLogger, MdxFilePath, parseDiffFile } from './utils.mts'
+import { createLogger, parseDiffFile } from './utils.mts'
 import { configs } from './configs.mts'
+import { MdxDiff, MdxFilePath } from './types.mts'
 
 const log = createLogger(basename(import.meta.filename))
 
@@ -29,20 +30,30 @@ const { projectRootDir } = configs
  * @throws Will throw an error if the status is not supported.
  */
 async function command(diff: MdxDiff): Promise<void> {
-  async function cp(mdxFilePath: MdxFilePath): Promise<void> {
-    const targetMdxFile = path.resolve(projectRootDir, submodule, mdxFilePath)
-    const content = (await fs.readFile(targetMdxFile)).toString()
-
-    const pathToWrite = path.resolve(projectRootDir, mdxFilePath)
-    log('normal', `copying file to "${pathToWrite}"`)
-    await fs.ensureDir(dirname(pathToWrite))
-    await fs.writeFile(pathToWrite, content)
+  const cp = async (mdxFilePath: MdxFilePath) => {
+    const fromPath = path.resolve(projectRootDir, submodule, mdxFilePath)
+    const toPath = path.resolve(projectRootDir, mdxFilePath)
+    log('normal', `copying... "${fromPath}" -> "${toPath}"`)
+    await fs.ensureDir(dirname(toPath))
+    await fs.copyFile(fromPath, toPath)
   }
 
-  async function rm(mdxFilePath: MdxFilePath): Promise<void> {
+  const rm = async (mdxFilePath: MdxFilePath) => {
     const filePath = path.resolve(projectRootDir, mdxFilePath)
     log('normal', `deleting... ${filePath}`)
     return await fs.unlink(filePath)
+  }
+
+  const mv = async (
+    fromMdxFilePath: MdxFilePath,
+    toMdxFilePath: MdxFilePath
+  ) => {
+    const fromPath = path.resolve(projectRootDir, fromMdxFilePath)
+    const toPath = path.resolve(projectRootDir, toMdxFilePath)
+    log('normal', `moving... "${fromPath}" -> "${toPath}"`)
+    await fs.ensureDir(dirname(toPath))
+    await fs.copyFile(fromPath, toPath)
+    await fs.unlink(fromPath)
   }
 
   const { status } = diff
@@ -54,8 +65,12 @@ async function command(diff: MdxDiff): Promise<void> {
     case 'D':
       return rm(diff.filePath)
     case 'R': {
-      await rm(diff.fromPath)
-      return cp(diff.toPath)
+      if (diff.score === 100) {
+        return mv(diff.fromPath, diff.toPath)
+      } else {
+        await rm(diff.fromPath)
+        return cp(diff.toPath)
+      }
     }
     default:
       throw new Error(`NOT supported diff :  ${JSON.stringify(diff)}`)
@@ -71,7 +86,7 @@ const {
 })
 
 const { submodule, diffs: diffList } = await parseDiffFile(
-  path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
+  path.resolve(diffFilePath)
 )
 
 const commands = diffList.map((diff) => command(diff))

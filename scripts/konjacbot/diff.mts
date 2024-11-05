@@ -8,8 +8,9 @@ import { $, fs, within } from 'zx'
 import path, { basename, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 
-import { createLogger, listMdxFilesRecursively, DiffFile } from './utils.mts'
+import { createLogger, listMdxFilesRecursively } from './utils.mts'
 import { configs } from './configs.mts'
+import { DiffFile } from './types.mts'
 
 const { projectRootDir, submoduleName, docsDir } = configs
 
@@ -163,9 +164,7 @@ const versionFileContentString = JSON.stringify(versionFileObj, null, '\t')
 log('important', versionFileContentString)
 
 if (args.outputFilePath) {
-  const pathToWrite = path.isAbsolute(args.outputFilePath)
-    ? args.outputFilePath
-    : path.resolve(args.outputFilePath)
+  const pathToWrite = path.resolve(args.outputFilePath)
 
   log('important', `writing diffs to "${pathToWrite}"`)
   await fs.ensureDir(dirname(pathToWrite))

@@ -4,9 +4,17 @@
  */
 
 import path from 'node:path'
+import OpenAI from 'openai'
 import { chalk, fs } from 'zx'
 import { configs } from './configs.mts'
-import OpenAI from 'openai'
+import {
+  DiffFile,
+  isMdxFilePath,
+  MdxDiff,
+  MultipleFileMdxDiff,
+  SingleFileMdxDiff,
+  UnknownMdxDiff,
+} from './types.mts'
 
 /**
  * Asynchronously applies a callback to each element of an array, then flattens the result by one level.
@@ -55,45 +63,6 @@ export function listMdxFilesRecursively(dir: string): string[] {
     .filter((file) => file.endsWith('.md') || file.endsWith('.mdx'))
 }
 
-export type MdxFilePath = `${(typeof configs)['docsDir']}/${string}`
-
-/**
- * Checks whether the given path is of type MdxFilePath.
- *
- * @param {string} path - The path to check.
- * @returns {path is MdxFilePath} True if the path is an MDX file path.
- */
-export function isMdxFilePath(path: string): path is MdxFilePath {
-  return path.startsWith(`${configs.docsDir}/`)
-}
-
-export type DiffFile<T = string> = {
-  submodule: string
-  hash: {
-    previous?: string
-    current: string
-  }
-  diffs: T[]
-}
-
-export type MdxDiff = BasicMdxDiff | RenamedMdxDiff | UnknownMdxDiff
-
-export type BasicMdxDiff = {
-  status: 'A' | 'D' | 'M'
-  filePath: MdxFilePath
-}
-
-export type RenamedMdxDiff = {
-  status: 'R'
-  fromPath: MdxFilePath
-  toPath: MdxFilePath
-}
-
-export type UnknownMdxDiff = {
-  status: 'C' | 'T' | 'U' | 'X' | 'B' | ' '
-  data: string
-}
-
 /**
  * Creates an MdxDiff object from a status and data string.
  *
@@ -102,11 +71,31 @@ export type UnknownMdxDiff = {
  * @returns {MdxDiff} An object representing the MDX diff.
  * @throws Will throw an error for invalid data or unknown status.
  */
-function createMdxDiff(status: string, data: string): MdxDiff {
-  const createBaseMdxDiff = (
-    status: BasicMdxDiff['status'],
+function createMdxDiff({
+  status,
+  score,
+  data,
+}: {
+  status: string
+  score: string
+  data: string
+}): MdxDiff {
+  const toScore = (score: string) => {
+    if (!score) {
+      return undefined
+    }
+    const scoreNum = Number.parseInt(score, 10)
+    if (scoreNum === Number.NaN) {
+      throw Error(`invalid score : ${scoreNum}`)
+    }
+    return scoreNum
+  }
+
+  const createSingleFileMdxDiff = (
+    status: SingleFileMdxDiff['status'],
+    score: string,
     data: string
-  ): BasicMdxDiff => {
+  ): SingleFileMdxDiff => {
     const items = data.split(/\s+/)
     if (items.length !== 1) {
       throw Error('invalid data') // TODO
@@ -118,14 +107,16 @@ function createMdxDiff(status: string, data: string): MdxDiff {
 
     return {
       status: status,
+      score: toScore(score),
       filePath: items[0],
     }
   }
 
-  const createRenamedMdxDiff = (
-    status: RenamedMdxDiff['status'],
+  const createMultipleFileMdxDiff = (
+    status: MultipleFileMdxDiff['status'],
+    score: string,
     data: string
-  ): RenamedMdxDiff => {
+  ): MultipleFileMdxDiff => {
     const items = data.split(/\s+/)
     if (items.length !== 2) {
       throw Error('invalid data') // TODO
@@ -137,6 +128,7 @@ function createMdxDiff(status: string, data: string): MdxDiff {
 
     return {
       status: status,
+      score: toScore(score),
       fromPath: items[0],
       toPath: items[1],
     }
@@ -144,30 +136,29 @@ function createMdxDiff(status: string, data: string): MdxDiff {
 
   const createUnknownMdxDiff = (
     status: UnknownMdxDiff['status'],
+    score: string,
     data: string
   ): UnknownMdxDiff => {
     return {
       status: status,
+      score: toScore(score),
       data: data,
     }
   }
 
-  const normalizedStatus = status.startsWith('R') ? 'R' : status
-
-  switch (normalizedStatus) {
+  switch (status) {
     case 'A':
     case 'M':
     case 'D':
-      return createBaseMdxDiff(normalizedStatus, data)
-    case 'R':
-      return createRenamedMdxDiff(normalizedStatus, data)
+      return createSingleFileMdxDiff(status, score, data)
     case 'C':
+    case 'R':
+      return createMultipleFileMdxDiff(status, score, data)
     case 'T':
     case 'U':
     case 'X':
     case 'B':
-    case ' ':
-      return createUnknownMdxDiff(normalizedStatus, data)
+      return createUnknownMdxDiff(status, score, data)
     default:
       throw new Error('unknown status') // TODO
   }
@@ -201,11 +192,15 @@ export async function parseDiffFile<T extends boolean = false>(
   }
 
   const diffs = versionFileObj.diffs.map((line, index) => {
-    const match = line.match(/^(\S+|\s)\s+(\S.+)$/)
-    if (match && match.length === 3) {
-      return createMdxDiff(match[1].trim(), match[2].trim())
+    const match = line.match(/^([a-zA-Z])([0-9]{0,3})\s+(.+)$/)
+    if (match && match.length === 4) {
+      return createMdxDiff({
+        status: match[1],
+        score: match[2],
+        data: match[3],
+      })
     } else {
-      throw new Error(`unknown diff @ line ${index + 1} : ${line}`)
+      throw new Error(`unknown diff format @line ${index + 1} : ${line}`)
     }
   })
 

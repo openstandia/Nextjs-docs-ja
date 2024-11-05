@@ -121,9 +121,7 @@ const {
   allowPositionals: true,
 })
 
-const { diffs, submodule } = await parseDiffFile(
-  path.isAbsolute(diffFilePath) ? diffFilePath : path.resolve(diffFilePath)
-)
+const { diffs, submodule } = await parseDiffFile(path.resolve(diffFilePath))
 
 const mdPathList = diffs
   .map((diff) => {
@@ -131,6 +129,10 @@ const mdPathList = diffs
       return diff.filePath
     }
     if (diff.status === 'R') {
+      if (diff.score === 100) {
+        log('normal', `skipping download for R100 file: ${diff.toPath}`)
+        return undefined
+      }
       return diff.toPath
     }
     if (diff.status === 'D') {
