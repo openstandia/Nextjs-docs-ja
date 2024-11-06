@@ -1,0 +1,288 @@
+---
+title: 'cacheLife'
+description: 'キャッシュされた関数またはコンポーネントのキャッシュの有効期限を設定するためのcacheLife関数の使用方法を学びます'
+version: 'canary'
+related:
+  title: 'Related'
+  description: '関連するAPIリファレンスを表示します'
+  links:
+    - app/api-reference/next-config-js/dynamicIO
+    - app/api-reference/directives/use-cache
+    - app/api-reference/functions/revalidateTag
+    - app/api-reference/functions/cacheTag
+---
+
+`cacheLife`関数は、関数やコンポーネントのキャッシュの有効期間を設定するために使用されます。これは、[`use cache`](/docs/app/api-reference/directives/use-cache)ディレクティブと共に使用され、関数またはコンポーネントのスコープ内で使用する必要があります。
+
+## 使用方法 {#usage}
+
+`cacheLife`を使用するには、`next.config.js`ファイルで[`dynamicIO`フラグ](/docs/app/api-reference/next-config-js/dynamicIO)を有効にします：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    dynamicIO: true,
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+const nextConfig = {
+  experimental: {
+    dynamicIO: true,
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+</Tabs>
+
+その後、関数またはコンポーネントのスコープ内で`cacheLife`関数をインポートして呼び出します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" highlight={5} switcher
+'use cache'
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export default async function Page() {
+  cacheLife('hours')
+  return <div>Page</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" highlight={5} switcher
+'use cache'
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export default async function Page() {
+  cacheLife('hours')
+  return <div>Page</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+## リファレンス {#reference}
+
+### デフォルトのキャッシュプロファイル {#default-cache-profiles}
+
+Next.jsは、さまざまな時間スケールに基づいた名前付きキャッシュプロファイルのセットを提供します。`use cache`ディレクティブと共に`cacheLife`関数でキャッシュプロファイルを指定しない場合、Next.jsは自動的に「default」キャッシュプロファイルを適用します。
+
+ただし、`use cache`ディレクティブを使用する場合は、キャッシュの動作を明示的に定義するために、常にキャッシュプロファイルを追加することをお勧めします。
+
+| **プロファイル** | **Stale** | **Revalidate** | **Expire**     | **説明**                                                   |
+| ---------------- | --------- | -------------- | -------------- | ---------------------------------------------------------- |
+| `default`        | undefined | 15 minutes     | INFINITE_CACHE | 頻繁な更新が不要なコンテンツに適したデフォルトプロファイル |
+| `seconds`        | undefined | 1 second       | 1 minute       | リアルタイムに近い更新が必要な急速に変化するコンテンツ     |
+| `minutes`        | 5 minutes | 1 minute       | 1 hour         | 1時間以内に頻繁に更新されるコンテンツ                      |
+| `hours`          | 5 minutes | 1 hour         | 1 day          | 毎日更新されるが多少古い状態でも問題ないコンテンツ         |
+| `days`           | 5 minutes | 1 day          | 1 week         | 毎週更新されるが1日古くても問題ないコンテンツ              |
+| `weeks`          | 5 minutes | 1 week         | 1 month        | 毎月更新されるが1週間古くても問題ないコンテンツ            |
+| `max`            | 5 minutes | 1 month        | INFINITE_CACHE | 更新が滅多に必要ない非常に安定したコンテンツ               |
+
+キャッシュプロファイルを参照するために使用される文字列値には固有の意味はなく、代わりにセマンティックラベルとして機能します。これは、コードベース内でキャッシュされたコンテンツをよりよく理解し、管理するのに役立ちます。
+
+### カスタムキャッシュプロファイル {#custom-cache-profiles}
+
+`next.config.ts`ファイルの[`cacheLife`](/docs/app/api-reference/next-config-js/cacheLife)オプションにカスタムキャッシュプロファイルを追加することによって設定できます。
+
+キャッシュプロファイルは、以下のプロパティを含むオブジェクトです：
+
+| **プロパティ** | **値**   | **説明**                                                                                           | **要件**                                      |
+| -------------- | -------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `stale`        | `number` | クライアントがサーバーを確認せずに値をキャッシュする期間                                           | 任意                                          |
+| `revalidate`   | `number` | キャッシュがサーバーでリフレッシュする頻度。再検証中に古い値が提供されることがある                 | 任意                                          |
+| `expire`       | `number` | 動的なフェッチに切り替える前に値が古くなってもよい最大期間。`revalidate`より長くなければならない。 | 任意 - `revalidate`より長くなければならない。 |
+
+「stale」プロパティは[`staleTimes`](/docs/app/api-reference/next-config-js/staleTimes)設定とは異なり、クライアント側のルーターキャッシュを制御します。`staleTimes`は動的および静的データのすべてのインスタンスに影響するグローバル設定である一方で、`cacheLife`構成は、関数またはルートごとに「stale」時間を定義できるようにします。
+
+> **Good to know**: 「stale」プロパティは、`Cache-control: max-age`ヘッダーを設定しません。代わりに、クライアント側のルーターキャッシュを制御します。
+
+## 例 {#examples}
+
+### 再利用可能なキャッシュプロファイルの定義 {#defining-reusable-cache-profiles}
+
+`next.config.ts`ファイルでそれらを定義することによって、再利用可能なキャッシュプロファイルを作成できます。ユースケースに適した名前を選択し、`stale`、`revalidate`、`expire`プロパティの値を設定します。必要に応じて、カスタムキャッシュプロファイルをいくつでも作成できます。各プロファイルは、`cacheLife`関数に渡す文字列値としてその名前で参照できます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    dynamicIO: true,
+    cacheLife: {
+      biweekly: {
+        stale: 60 * 60 * 24 * 14, // 14 days
+        revalidate: 60 * 60 * 24, // 1 day
+        expire: 60 * 60 * 24 * 14, // 14 days
+      },
+    },
+  },
+}
+
+module.exports = nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+const nextConfig = {
+  experimental: {
+    dynamicIO: true,
+    cacheLife: {
+      biweekly: {
+        stale: 60 * 60 * 24 * 14, // 14 days
+        revalidate: 60 * 60 * 24, // 1 day
+        expire: 60 * 60 * 24 * 14, // 14 days
+      },
+    },
+  },
+}
+
+module.exports = nextConfig
+```
+
+</TabItem>
+</Tabs>
+
+上記の例は、14日間キャッシュし、毎日更新を確認し、14日後にキャッシュの有効期限が切れます。その後、このプロファイルをアプリケーション全体でその名前で参照できます：
+
+```tsx title="app/page.tsx" highlight={5}
+'use cache'
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export default async function Page() {
+  cacheLife('biweekly')
+  return <div>Page</div>
+}
+```
+
+### デフォルトのキャッシュプロファイルの上書き {#overriding-the-default-cache-profiles}
+
+デフォルトのキャッシュプロファイルは、キャッシュ可能な出力の各部分がどれだけ新鮮または古くなれるかを考えるための便利な方法を提供しますが、アプリケーションのキャッシュ戦略により良く合わせるために異なる名前付きプロファイルを好むかもしれません。
+
+新しい構成をデフォルトと同じ名前で作成することにより、デフォルトの名前付きキャッシュプロファイルを上書きできます。
+
+以下の例は、デフォルトの「days」キャッシュプロファイルを上書きする方法を示しています：
+
+```ts title="next.config.ts"
+const nextConfig = {
+  experimental: {
+    dynamicIO: true,
+    cacheLife: {
+      days: {
+        stale: 3600, // 1 hour
+        revalidate: 900, // 15 minutes
+        expire: 86400, // 1 day
+      },
+    },
+  },
+}
+
+module.exports = nextConfig
+```
+
+### インラインでキャッシュプロファイルを定義する {#defining-cache-profiles-inline}
+
+特定のユースケースに対しては、`cacheLife`関数にオブジェクトを渡すことによってカスタムキャッシュプロファイルを設定できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" highlight={5-9} switcher
+'use cache'
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export default async function Page() {
+  cacheLife({
+    stale: 3600, // 1 hour
+    revalidate: 900, // 15 minutes
+    expire: 86400, // 1 day
+  })
+
+  return <div>Page</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" highlight={5-9} switcher
+'use cache'
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export default async function Page() {
+  cacheLife({
+    stale: 3600, // 1 hour
+    revalidate: 900, // 15 minutes
+    expire: 86400, // 1 day
+  })
+
+  return <div>Page</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+このインラインキャッシュプロファイルは作成された関数またはファイルにのみ適用されます。アプリケーション全体で同じプロファイルを再利用したい場合は、`next.config.ts`ファイルの`cacheLife`プロパティに[構成を追加](#defining-reusable-cache-profiles)することができます。
+
+### `use cache`と`cacheLife`のネストされた使用 {#nested-usage-of-use-cache-and-cachelife}
+
+同じルートまたはコンポーネントtreeで複数のキャッシング動作を定義する場合、内部キャッシュが独自の`cacheLife`プロファイルを指定している場合、外部キャッシュはそれらの中で最も短いキャッシュ期間を尊重します。**これは、外部キャッシュが独自の明示的な`cacheLife`プロファイルを持たない場合にのみ適用されます。**
+
+たとえば、キャッシュプロファイルを指定せずにページに`use cache`ディレクティブを追加すると、デフォルトのキャッシュプロファイルが暗黙的に適用されます（`cacheLife(”default”)`）。ページにインポートされたコンポーネントも独自のキャッシュプロファイルを持つ`use cache`ディレクティブを使用している場合、外部および内部のキャッシュプロファイルが比較され、プロファイルに設定された最短期間が適用されます。
+
+```tsx title="app/components/parent.tsx" highlight={5,6}
+// 親コンポーネント
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+import { ChildComponent } from './child'
+
+export async function ParentComponent() {
+  'use cache'
+  cacheLife('days')
+
+  return (
+    <div>
+      <ChildComponent />
+    </div>
+  )
+}
+```
+
+そして、別のファイルで、インポートされた子コンポーネントを定義しました：
+
+```tsx title="app/components/child.tsx" highlight={4,5}
+// 子コンポーネント
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export async function ChildComponent() {
+  'use cache'
+  cacheLife('hours')
+  return <div>Child Content</div>
+
+  // このコンポーネントのキャッシュは短い'時間'プロファイルを尊重します
+}
+```

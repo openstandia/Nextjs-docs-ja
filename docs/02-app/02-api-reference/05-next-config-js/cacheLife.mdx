@@ -1,16 +1,41 @@
 ---
 title: 'cacheLife'
-description: 'Next.jsにおけるcacheLife設定を学びます。'
-version: '実験的'
+description: 'Next.jsでcacheLifeの設定を行う方法を学びます。'
+version: 'canary'
 ---
 
-`cacheLife`オプションを使用すると、コンポーネント、関数、またはファイルのレベルで、[`use cache`ディレクティブ](/docs/app/api-reference/directives/use-cache)と一緒に`cacheLife`関数を使用する際に、キャッシュをより細かく制御するためのカスタム設定を定義できます。
+`cacheLife`オプションを使用すると、コンポーネントや関数内、また[`use cache`ディレクティブ](/docs/app/api-reference/directives/use-cache)の範囲内で[`cacheLife`](/docs/app/api-reference/functions/cacheLife)関数を使用する際に、**カスタムキャッシュプロファイル**を定義できます。
 
-## 使用法 {#usage}
+## 使用方法 {#usage}
 
-`cacheLife`を使用するには、[`dynamicIO`フラグ](/docs/app/api-reference/next-config-js/dynamicIO)を有効にし、次のように`next.config.js`ファイルで設定を定義します：
+プロファイルを定義するには、[`dynamicIO`フラグ](/docs/app/api-reference/next-config-js/dynamicIO)を有効にし、`next.config.js`ファイル内の`cacheLife`オブジェクトにキャッシュプロファイルを追加します。例えば、`blog`プロファイルは次のようになります：
 
-```js title="next.config.js"
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    dynamicIO: true,
+    cacheLife: {
+      blog: {
+        stale: 3600, // 1時間
+        revalidate: 900, // 15分
+        expire: 86400, // 1日
+      },
+    },
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
 module.exports = {
   experimental: {
     dynamicIO: true,
@@ -25,9 +50,15 @@ module.exports = {
 }
 ```
 
-これで、このカスタム`blog`設定をコンポーネント、関数、またはファイルで次のように使用できます：
+</TabItem>
+</Tabs>
 
-```tsx title="app/actions.ts" highlight={4,5}
+これで、このカスタム`blog`設定をコンポーネントや関数内で次のように使用できるようになります：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" highlight={4,5} switcher
 import { unstable_cacheLife as cacheLife } from 'next/cache'
 
 export async function getCachedData() {
@@ -38,12 +69,29 @@ export async function getCachedData() {
 }
 ```
 
-## 設定構造 {#configuration-structure}
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
 
-設定オブジェクトには、次の形式のキー値があります：
+```jsx title="app/actions.js" highlight={4,5} switcher
+import { unstable_cacheLife as cacheLife } from 'next/cache'
 
-| **プロパティ** | **値**   | **説明**                                                                                             | **要件**                                      |
-| -------------- | -------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `stale`        | `number` | クライアントがサーバーを確認せずに値をキャッシュする期間                                             | 任意                                          |
-| `revalidate`   | `number` | キャッシュがサーバーでリフレッシュされる頻度；再検証中に古い値が提供される場合もあります             | 任意                                          |
-| `expire`       | `number` | 動的フェッチに切り替える前に値が古くなることができる最大期間；`revalidate`より長くなければなりません | 任意 - `revalidate`より長くする必要があります |
+export async function getCachedData() {
+  'use cache'
+  cacheLife('blog')
+  const data = await fetch('/api/data')
+  return data
+}
+```
+
+</TabItem>
+</Tabs>
+
+## リファレンス {#reference}
+
+設定オブジェクトは以下の形式でキーと値を持ちます：
+
+| **プロパティ** | **値**   | **説明**                                                                         | **要件** |
+| -------------- | -------- | -------------------------------------------------------------------------------- | -------- |
+| `stale`        | `number` | クライアントがサーバーを確認することなく値をキャッシュする期間                   | 任意     |
+| `revalidate`   | `number` | サーバーでキャッシュを更新する頻度；再検証中は古い値が提供される可能性があります | 任意     |
+| `expire`       | `number` | 値が動的に切り替わる前の最大保存期間；`revalidate`より長くする必要があります     | 任意     |
