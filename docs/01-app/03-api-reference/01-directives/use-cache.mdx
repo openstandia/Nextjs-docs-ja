@@ -1,0 +1,336 @@
+---
+title: 'use cache'
+description: 'Next.jsアプリケーションでデータをキャッシュするためのuse cacheディレクティブの使用方法を学びます。'
+version: 'canary'
+related:
+  title: '関連'
+  description: '関連するAPIリファレンスを表示します。'
+  links:
+    - app/api-reference/next-config-js/dynamicIO
+    - app/api-reference/next-config-js/cacheLife
+    - app/api-reference/functions/cacheTag
+    - app/api-reference/functions/cacheLife
+    - app/api-reference/functions/revalidateTag
+---
+
+`use cache`ディレクティブは、コンポーネントおよび/または関数をキャッシュするための指定を行います。ファイルの先頭で使用すると、そのファイル内のすべてのエクスポートがキャッシュ可能であることを示し、関数やコンポーネントの先頭で使用すると、その返り値がキャッシュされ、後続のリクエストで再利用されるべきであることをNext.jsに知らせます。これは実験的なNext.jsの機能であり、Reactのネイティブ機能である[`use client`](/docs/app/api-reference/directives/use-client)や[`use server`](/docs/app/api-reference/directives/use-server)とは異なるものです。
+
+## 使用法 {#usage}
+
+`use cache`ディレクティブのサポートを有効にするには、`next.config.ts`ファイルで[`dynamicIO`](/docs/app/api-reference/next-config-js/dynamicIO)フラグを有効にします：
+
+```ts title="next.config.ts"
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    dynamicIO: true,
+  },
+}
+
+export default nextConfig
+```
+
+次に、`use cache`ディレクティブをファイル、コンポーネント、または関数レベルで使用できます：
+
+```tsx
+// ファイルレベル
+'use cache'
+
+export default async function Page() {
+  // ...
+}
+
+// コンポーネントレベル
+export async function MyComponent() {
+  'use cache'
+  return <></>
+}
+
+// 関数レベル
+export async function getData() {
+  'use cache'
+  const data = await fetch('/api/data')
+  return data
+}
+```
+
+## Good to know {#good-to-know}
+
+- `use cache`は実験的なNext.jsの機能であり、Reactのネイティブ機能である[`use client`](/docs/app/api-reference/directives/use-client)や[`use server`](/docs/app/api-reference/directives/use-server)とは異なります。
+- キャッシュされた関数に渡される[シリアライズ可能](https://react.dev/reference/rsc/use-server#serializable-parameters-and-return-values)な引数（またはprops）や、親スコープから読み取られるシリアライズ可能な値は、JSONのようなフォーマットに変換され、自動的にキャッシュキーの一部になります。
+- 非シリアライズ可能な引数、props、または閉じた値は、キャッシュされた関数内部で不透明な参照となり、通過するだけで、検査や変更はできません。これらの非シリアライズ可能な値はリクエスト時に入力され、キャッシュキーの一部にはなりません。
+  - 例えば、キャッシュされた関数はJSXを`children`プロップとして受け取り`<div>{children}</div>`を返すことができますが、実際の`children`オブジェクトを洞察することはできません。
+- キャッシュ可能な関数の返り値もシリアライズ可能でなければなりません。これにより、キャッシュされたデータが正しく保存および取得できることが保証されます。
+- `use cache`ディレクティブを使用する関数は、状態の変更、DOMの直接操作、コードを定期的に実行するタイマーの設定などの副作用があってはなりません。
+- [Partial Prerendering](/docs/app/building-your-application/rendering/partial-prerendering)と併用する場合、`use cache`を持つセグメントは静的HTMLシェルの一部として事前レンダリングされます。
+- 将来的には`use cache`ディレクティブは[`dynamicIO`](/docs/app/api-reference/next-config-js/dynamicIO)フラグとは別に利用可能になる予定です。
+- [`unstable_cache`](/docs/app/api-reference/functions/unstable_cache)がJSONデータのみをサポートするのとは異なり、`use cache`はReactがレンダリングできる任意のシリアライズ可能なデータをキャッシュでき、コンポーネントのレンダー出力も含まれます。
+
+## 例 {#examples}
+
+### `use cache`を用いたルート全体のキャッシュ {#caching-entire-routes-with-use-cache}
+
+ルート全体を事前レンダリングするには、`layout`と`page`ファイルのトップに`use cache`を追加します。これらのセグメントはアプリケーション内で独立したエントリーポイントとして扱われ、独立してキャッシュされます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+"use cache"
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export default Layout({children}: {children: ReactNode}) {
+  return <div>{children}</div>
+}
+```
+
+</TabItem>
+</Tabs>
+<Tabs>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.tsx" switcher
+"use cache"
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export default Layout({ children }) {
+  return <div>{children}</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+`page`ファイルにインポートされネストされたコンポーネントは`page`のキャッシュ動作を継承します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+"use cache"
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+async function Users() {
+  const users = await fetch('/api/users');
+  // usersをループする
+}
+
+export default Page() {
+  return (
+    <main>
+      <Users/>
+    </main>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+"use cache"
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+async function Users() {
+  const users = await fetch('/api/users');
+  // usersをループする
+}
+
+export default Page() {
+  return (
+    <main>
+      <Users/>
+    </main>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> これは以前[`export const dynamic = "force-static"`](/docs/app/api-reference/file-conventions/route-segment-config#dynamic)オプションを使用していたアプリケーションに推奨され、ルート全体が事前レンダリングされることを保証します。
+
+### `use cache`を用いたコンポーネント出力のキャッシュ {#caching-component-output-with-use-cache}
+
+コンポーネントレベルで`use cache`を使用して、そのコンポーネント内で行われる取得または計算をキャッシュできます。このコンポーネントをアプリケーション全体で再利用する際、propsの構造が同じである限り、同じキャッシュエントリを共有できます。
+
+propsはシリアライズされキャッシュキーの一部を形成し、シリアライズされると各インスタンスで同じ値を生成する限り、キャッシュエントリが再利用されます。
+
+```tsx title="app/components/bookings.tsx" highlight={2}
+export async function Bookings({ type = 'haircut' }: BookingsProps) {
+  'use cache'
+  async function getBookingsData() {
+    const data = await fetch(`/api/bookings?type=${encodeURIComponent(type)}`)
+    return data
+  }
+  return //...
+}
+
+interface BookingsProps {
+  type: string
+}
+```
+
+```jsx title="app/components/bookings.js" highlight={2}
+export async function Bookings({ type = 'haircut' }) {
+  'use cache'
+  async function getBookingsData() {
+    const data = await fetch(`/api/bookings?type=${encodeURIComponent(type)}`)
+    return data
+  }
+  return //...
+}
+```
+
+### `use cache`を用いた関数出力のキャッシュ {#caching-function-output-with-use-cache}
+
+`use cache`を任意の非同期関数に追加できるため、コンポーネントやルートだけでなく、ネットワークリクエストやデータベースクエリ、非常に遅い計算をキャッシュすることも可能です。このような作業を含む関数に`use cache`を追加することでキャッシュ可能になり、再利用時に同じキャッシュエントリを共有します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" highlight={2} switcher
+export async function getData() {
+  'use cache'
+
+  const data = await fetch('/api/data')
+  return data
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/actions.js" highlight={2} switcher
+export async function getData() {
+  'use cache'
+
+  const data = await fetch('/api/data')
+  return data
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 再検証 {#revalidating}
+
+デフォルトでは、`use cache`ディレクティブを使用すると**[15分の再検証期間](/docs/app/building-your-application/data-fetching/fetching#revalidating-cached-data)**をNext.jsが設定します。Next.jsはほぼ無限の有効期限を設定し、頻繁な更新が不要なコンテンツに適しています。
+
+この再検証期間は、あまり変更が予想されないコンテンツに役立つ可能性がありますが、`cacheLife`および`cacheTag`APIを使用してキャッシュの動作を構成できます：
+
+- [`cacheLife`](/docs/app/api-reference/functions/cacheLife)：時間ベースの再検証期間に使用
+- [`cacheTag`](/docs/app/api-reference/functions/cacheTag)：オンデマンド再検証に使用
+
+これらのAPIは、クライアントおよびサーバーのキャッシング層全体で統合されており、1か所でキャッシュのセマンティクスを構成し、すべてに適用されるようにできます。
+
+詳細については、[`cacheLife`](/docs/app/api-reference/functions/cacheLife)および[`cacheTag`](/docs/app/api-reference/functions/cacheTag)のドキュメントを参照してください。
+
+### インターリーブ {#interleaving}
+
+キャッシュ可能な関数に非シリアライズ可能な引数を渡す必要がある場合、`children`として渡すことができます。これにより、`children`参照が変更されてもキャッシュエントリに影響を与えることはありません。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+async function Page() {
+  const uncachedData = await getData()
+  return (
+    <CacheComponent>
+      <DynamicComponent data={uncachedData} />
+    </CacheComponent>
+  )
+}
+
+async function CacheComponent({ children }) {
+  'use cache'
+  const cachedData = await fetch('/api/cached-data')
+  return (
+    <div>
+      <PrerenderedComponent data={cachedData} />
+      {children}
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+Server Actionsもキャッシュされたコンポーネントを通じ、Client Componentsに渡すことができますが、キャッシュ可能な関数の中でそれらを呼び出さないように注意してください。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import ClientComponent from './ClientComponent';
+
+async function Page() {
+  const performUpdate = async () => {
+    "use server"
+    // サーバー側での何かの更新を実行
+    await db.update(...);
+  };
+
+  return <CacheComponent performUpdate={performUpdate} />;
+}
+
+async function CachedComponent({ performUpdate }) {
+  "use cache"
+  // ここでperformUpdateを呼び出さない
+  return <ClientComponent action={performUpdate} />;
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import ClientComponent from './ClientComponent';
+
+async function Page() {
+  const performUpdate = async () => {
+    "use server"
+    // サーバー側での何かの更新を実行
+    await db.update(...);
+  };
+
+  return <CacheComponent performUpdate={performUpdate} />;
+}
+
+async function CachedComponent({ performUpdate }) {
+  "use cache"
+  // ここでperformUpdateを呼び出さない
+  return <ClientComponent action={performUpdate} />;
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ClientComponent.tsx" switcher
+'use client'
+
+export default function ClientComponent({ action }) {
+  return <button onClick={action}>Update</button>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ClientComponent.js" switcher
+'use client'
+
+export default function ClientComponent({ action }) {
+  return <button onClick={action}>Update</button>
+}
+```
+
+</TabItem>
+</Tabs>

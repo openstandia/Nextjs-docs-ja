@@ -1,0 +1,366 @@
+---
+title: '画像最適化'
+nav_title: '画像'
+description: '組み込みの`next/image`コンポーネントで画像を最適化します。'
+related:
+  title: 'API リファレンス'
+  description: 'next/image API について詳しく学びましょう。'
+  links:
+    - app/api-reference/components/image
+---
+
+{/* このドキュメントのコンテンツは、app routerとpages routerの間で共有されています。Pages Routerに特有のコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有されるコンテンツはコンポーネントで囲まないでください。 */}
+
+<details>
+  <summary>例</summary>
+
+- [Image コンポーネント](https://github.com/vercel/next.js/tree/canary/examples/image-component)
+
+</details>
+
+[Web Almanac](https://almanac.httparchive.org)によると、画像は一般的なウェブサイトの[ページ重量](https://almanac.httparchive.org/en/2022/page-weight#content-type-and-file-formats)の大部分を占め、ウェブサイトの[LCPパフォーマンス](https://almanac.httparchive.org/en/2022/performance#lcp-image-optimization)に大きな影響を与える可能性があります。
+
+Next.jsのImageコンポーネントは、HTMLの`<img>`要素を拡張し、自動的な画像最適化の機能を提供します：
+
+- **サイズ最適化：** 各デバイス向けに適切なサイズの画像を自動的に提供し、WebPやAVIFのような現代的な画像形式を使用します
+- **視覚的安定性：** 画像の読み込み時に[レイアウトシフト](https://nextjs.org/learn/seo/web-performance/cls)を自動的に防ぎます
+- **高速なページ読み込み：** 画像はネイティブブラウザの遅延読み込みを使用し、ビューポートに入ったときにのみ読み込まれ、オプションのぼかしプレースホルダーがあります
+- **アセットの柔軟性：** リモートサーバーに保存されている画像でもオンデマンドでリサイズします
+
+> **🎥 視聴：** `next/image`の使用方法について詳しく学びましょう → [YouTube（9分）](https://youtu.be/IU_qq_c_lKA)。
+
+## 使用方法 {#usage}
+
+```js
+import Image from 'next/image'
+```
+
+次に、画像の`src`を定義します（ローカルまたはリモートのいずれか）。
+
+### ローカル画像 {#local-images}
+
+ローカル画像を使用するには、`.jpg`、`.png`または`.webp`画像ファイルを`import`します。
+
+Next.jsは、インポートされたファイルに基づいて画像の固有の`width`と`height`を自動的に決定します。これらの値は画像の比率を決定し、画像の読み込み中に[累積レイアウトシフト](https://nextjs.org/learn/seo/web-performance/cls)を防ぐために使用されます。
+
+<AppOnly>
+
+```jsx title="app/page.js"
+import Image from 'next/image'
+import profilePic from './me.png'
+
+export default function Page() {
+  return (
+    <Image
+      src={profilePic}
+      alt="著者の写真"
+      // width={500} 自動的に提供されます
+      // height={500} 自動的に提供されます
+      // blurDataURL="data:..." 自動的に提供されます
+      // placeholder="blur" // 読み込み中にぼかしを行うオプション
+    />
+  )
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx title="pages/index.js"
+import Image from 'next/image'
+import profilePic from '../public/me.png'
+
+export default function Page() {
+  return (
+    <Image
+      src={profilePic}
+      alt="著者の写真"
+      // width={500} 自動的に提供されます
+      // height={500} 自動的に提供されます
+      // blurDataURL="data:..." 自動的に提供されます
+      // placeholder="blur" // 読み込み中にぼかしを行うオプション
+    />
+  )
+}
+```
+
+</PagesOnly>
+
+> **警告：** 動的な`await import()` または `require()` はサポートされていません。`import`はビルド時に解析できるように静的でなければなりません。
+
+特定の画像を許可し、他の画像をブロックするには、`next.config.js`ファイルで`localPatterns`を設定します。
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    localPatterns: [
+      {
+        pathname: '/assets/images/**',
+        search: '',
+      },
+    ],
+  },
+}
+```
+
+### リモート画像 {#remote-images}
+
+リモート画像を使用するには、`src`プロパティをURL文字列に設定します。
+
+Next.jsはビルドプロセス中にリモートファイルにアクセスできないため、[`width`](/docs/app/api-reference/components/image#width)、[`height`](/docs/app/api-reference/components/image#height)、およびオプションの[`blurDataURL`](/docs/app/api-reference/components/image#blurdataurl)プロパティを手動で提供する必要があります。
+
+`width`と`height`の属性は、画像の正しいアスペクト比を推測し、画像の読み込み時にレイアウトシフトを避けるために使用されます。`width`と`height`は画像ファイルの表示サイズを決定しません。[画像サイズ](#image-sizing)について詳しく学びましょう。
+
+```jsx title="app/page.js"
+import Image from 'next/image'
+
+export default function Page() {
+  return (
+    <Image
+      src="https://s3.amazonaws.com/my-bucket/profile.png"
+      alt="著者の写真"
+      width={500}
+      height={500}
+    />
+  )
+}
+```
+
+画像の最適化を安全に行うには、`next.config.js`でサポートされるURLパターンのリストを定義します。悪用を防ぐため、できるだけ具体的に指定してください。たとえば、次の設定は特定のAWS S3バケットからの画像のみを許可します：
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 's3.amazonaws.com',
+        port: '',
+        pathname: '/my-bucket/**',
+      },
+    ],
+  },
+}
+```
+
+[`remotePatterns`](/docs/app/api-reference/components/image#remotepatterns)の設定について詳しく学びましょう。画像の`src`に相対URLを使用したい場合は、[`loader`](/docs/app/api-reference/components/image#loader)を使用します。
+
+### ドメイン {#domains}
+
+リモート画像を最適化したい場合でも、Next.jsの組み込みの画像最適化APIを使用したい場合があります。この場合、`loader`をデフォルトの設定にして、画像`src`プロパティに絶対URLを入力します。
+
+悪意のあるユーザーからアプリケーションを保護するために、`next/image`コンポーネントで使用するリモートホスト名のリストを定義する必要があります。
+
+> [`remotePatterns`](/docs/app/api-reference/components/image#remotepatterns)の設定について詳しく学びましょう。
+
+### ローダー {#loaders}
+
+[前述の例](#local-images)では、ローカル画像に部分的なURL（`"/me.png"`）が提供されていることに注意してください。これはローダーアーキテクチャのおかげです。
+
+ローダーは、画像のURLを生成する関数です。指定された`src`を変更し、異なるサイズで画像をリクエストするための複数のURLを生成します。これらの複数のURLは自動的な[srcset](https://developer.mozilla.org/docs/Web/API/HTMLImageElement/srcset)生成で使用され、サイトの訪問者に対してビューポートに適したサイズの画像が提供されます。
+
+Next.jsアプリケーションのデフォルトのローダーは、組み込みの画像最適化APIを使用して、ウェブ上のどこからでも画像を最適化し、それらをNext.jsウェブサーバーから直接配信します。CDNや画像サーバーから画像を直接配信したい場合は、数行のJavaScriptで独自のローダー関数を作成できます。
+
+[`loader`プロパティ](/docs/app/api-reference/components/image#loader)を使用して画像ごとにローダーを定義するか、[`loaderFile`設定](/docs/app/api-reference/components/image#loaderfile)を使用してアプリケーションレベルで定義できます。
+
+## プライオリティ {#priority}
+
+各ページの[最大コンテンツ表示（LCP）要素](https://web.dev/lcp/#what-elements-are-considered)である画像に対して`priority`プロパティを追加する必要があります。これにより、Next.jsは画像の読み込みを特別に優先し（例：プレロードタグやプライオリティヒントを介して）、LCPの大幅な向上を実現します。
+
+LCP要素は通常、ページのビューポート内で最も大きな画像またはテキストブロックです。`next dev`を実行すると、LCP要素が`priority`プロパティなしの`<Image>`である場合、コンソール警告が表示されます。
+
+LCP画像を特定したら、次のようにプロパティを追加できます：
+
+<PagesOnly>
+
+```jsx title="app/page.js"
+import Image from 'next/image'
+
+export default function Home() {
+  return (
+    <>
+      <h1>私のホームページ</h1>
+      <Image src="/me.png" alt="著者の写真" width={500} height={500} priority />
+      <p>私のホームページへようこそ！</p>
+    </>
+  )
+}
+```
+
+</PagesOnly>
+
+<AppOnly>
+
+```jsx title="app/page.js"
+import Image from 'next/image'
+import profilePic from '../public/me.png'
+
+export default function Page() {
+  return <Image src={profilePic} alt="著者の写真" priority />
+}
+```
+
+</AppOnly>
+
+[`next/image`コンポーネントドキュメント](/docs/app/api-reference/components/image#priority)でプライオリティについて詳しく学びましょう。
+
+## 画像サイズ {#image-sizing}
+
+画像がパフォーマンスに最も悪影響を与える方法の1つは、読み込まれるときに画像がページ上の他の要素を押し出すものです。このパフォーマンス問題はユーザーにとって非常に厄介なため、「累積レイアウトシフト」と呼ばれるCore Web Vitalがあります。[常に画像をサイズ設定する](https://web.dev/optimize-cls/#images-without-dimensions)ことで、画像に基づくレイアウトシフトを回避できます。これにより、ブラウザは画像が読み込まれる前に正確なスペースを予約できます。
+
+`next/image`は良好なパフォーマンス結果を保証するように設計されているため、レイアウトシフトに寄与する方法で使用することはできません。必ず次の3つの方法でサイズ設定される必要があります：
+
+1. [静的なインポート](#local-images)を使用して自動的に行う
+2. 画像のアスペクト比を決定するために使用される[`width`](/docs/app/api-reference/components/image#width)および[`height`](/docs/app/api-reference/components/image#height)プロパティを含めて手動で行う
+3. その親要素を埋めるように画像が拡大することを引き起こす[fill](/docs/app/api-reference/components/image#fill)を使用して暗黙的に行う
+
+> **画像のサイズがわからない場合はどうすればいいですか？**
+>
+> 画像のサイズを知っていないソースから画像にアクセスする場合、次のことを行うことができます：
+>
+> **`fill`を使用する**
+>
+> [`fill`](/docs/app/api-reference/components/image#fill)プロパティは、親要素によって画像のサイズが決定されることを可能にします。CSSを使用して画像の親要素にページスペースを与え、任意のメディアクエリブレークポイントと一致するよう[`sizes`](/docs/app/api-reference/components/image#sizes)プロパティを設定することを検討してください。また、`fill`、`contain`、または`cover`を使用して[`object-fit`](https://developer.mozilla.org/docs/Web/CSS/object-fit)を使用し、`object-position`を使用してそのスペースがどのように埋められるべきかを定義できます。
+>
+> **画像を正規化する**
+>
+> 制御可能なソースから画像を配信する場合は、画像パイプラインを変更して特定のサイズに正規化することを検討してください。
+>
+> **APIコールを変更する**
+>
+> あなたのアプリケーションがAPIコールを使用して画像URLを取得している場合（例：CMS）、画像の寸法をURLと共に返すようにAPIコールを変更できるかもしれません。
+
+どの提案された方法も画像のサイズ設定に役立たない場合、`next/image`コンポーネントは通常の`<img>`要素の隣でページ上でうまく機能するように設計されています。
+
+## スタイリング {#styling}
+
+Imageコンポーネントのスタイリングは通常の`<img>`要素のスタイリングに似ていますが、いくつかのガイドラインに留意してください：
+
+- `className`または`style`を使用し、`styled-jsx`は使用しない
+  - ほとんどの場合、`className`プロパティの使用を推奨します。これは、[CSSモジュール](/docs/app/building-your-application/styling/css)や[グローバルスタイルシート](/docs/app/building-your-application/styling/css#global-styles)などをインポートできます。
+  - `style`プロパティを使用してインラインスタイルを割り当てることも可能です。
+  - `styled-jsx`は現在のコンポーネントにスコープされているため（`global`としてスタイルをマークしない限り）、使用できません。
+- `fill`を使用する場合、親要素には`position: relative`が必要です
+  - これはレイアウトモードにおける画像要素の正しいレンダリングのために必要です。
+- `fill`を使用する場合、親要素には`display: block`が必要です
+  - これは`<div>`要素のデフォルトですが、明示的に指定する必要があります。
+
+## 例 {#examples}
+
+### レスポンシブ {#responsive}
+
+<Image
+  alt="親コンテナの幅と高さを満たすレスポンシブ画像"
+  srcLight="/docs/light/responsive-image.png"
+  srcDark="/docs/dark/responsive-image.png"
+  width="1600"
+  height="629"
+/>
+
+```jsx
+import Image from 'next/image'
+import mountains from '../public/mountains.jpg'
+
+export default function Responsive() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <Image
+        alt="山々"
+        // インポートされた画像は
+        // 自動的に幅と高さが設定されます
+        src={mountains}
+        sizes="100vw"
+        // 画像をフル幅で表示
+        style={{
+          width: '100%',
+          height: 'auto',
+        }}
+      />
+    </div>
+  )
+}
+```
+
+### コンテナを埋める {#fill-container}
+
+<Image
+  alt="親コンテナの幅を埋める画像のグリッド"
+  srcLight="/docs/light/fill-container.png"
+  srcDark="/docs/dark/fill-container.png"
+  width="1600"
+  height="529"
+/>
+
+```jsx
+import Image from 'next/image'
+import mountains from '../public/mountains.jpg'
+
+export default function Fill() {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridGap: '8px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, auto))',
+      }}
+    >
+      <div style={{ position: 'relative', height: '400px' }}>
+        <Image
+          alt="山々"
+          src={mountains}
+          fill
+          sizes="(min-width: 808px) 50vw, 100vw"
+          style={{
+            objectFit: 'cover', // cover, contain, none
+          }}
+        />
+      </div>
+      {/* グリッド内の他の画像も... */}
+    </div>
+  )
+}
+```
+
+### 背景画像 {#background-image}
+
+<Image
+  alt="ページのフル幅と高さを占める背景画像"
+  srcLight="/docs/light/background-image.png"
+  srcDark="/docs/dark/background-image.png"
+  width="1600"
+  height="427"
+/>
+
+```jsx
+import Image from 'next/image'
+import mountains from '../public/mountains.jpg'
+
+export default function Background() {
+  return (
+    <Image
+      alt="山々"
+      src={mountains}
+      placeholder="blur"
+      quality={100}
+      fill
+      sizes="100vw"
+      style={{
+        objectFit: 'cover',
+      }}
+    />
+  )
+}
+```
+
+さまざまなスタイルで使用されているImageコンポーネントの例については、[画像コンポーネントデモ](https://image-component.nextjs.gallery)を参照してください。
+
+## その他のプロパティ {#other-properties}
+
+[`next/image`コンポーネントで利用可能なすべてのプロパティを表示する。](/docs/app/api-reference/components/image)
+
+## 設定 {#configuration}
+
+`next/image`コンポーネントおよびNext.js画像最適化APIは、[`next.config.jsファイル`](/docs/app/api-reference/next-config-js)で設定できます。これらの設定により、[リモート画像を有効にする](/docs/app/api-reference/components/image#remotepatterns)、[カスタム画像ブレークポイントを定義する](/docs/app/api-reference/components/image#devicesizes)、[キャッシング動作を変更する](/docs/app/api-reference/components/image#caching-behavior)などが可能です。
+
+[**より詳しい情報については、完全な画像設定ドキュメントをお読みください。**](/docs/app/api-reference/components/image#configuration-options)

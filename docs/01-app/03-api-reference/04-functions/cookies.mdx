@@ -1,0 +1,356 @@
+---
+title: 'cookies'
+description: 'cookies 関数の API リファレンス。'
+---
+
+`cookies` は、[Server Component](/docs/app/building-your-application/rendering/server-components)で HTTP の受信リクエスト cookie を読み取り、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)または[Route Handlers](/docs/app/building-your-application/routing/route-handlers)で送信リクエストの cookie を読み書きすることができる **非同期** 関数です。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { cookies } from 'next/headers'
+
+export default async function Page() {
+  const cookieStore = await cookies()
+  const theme = cookieStore.get('theme')
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/page.js" switcher
+import { cookies } from 'next/headers'
+
+export default async function Page() {
+  const cookieStore = await cookies()
+  const theme = cookieStore.get('theme')
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+## リファレンス {#reference}
+
+### メソッド {#methods}
+
+以下のメソッドが利用可能です：
+
+| メソッド                    | 戻り値の型         | 説明                                                                              |
+| --------------------------- | ------------------ | --------------------------------------------------------------------------------- |
+| `get('name')`               | オブジェクト       | cookie 名を受け取り、名前と値を持つオブジェクトを返します。                       |
+| `getAll()`                  | オブジェクトの配列 | 一致する名前を持つすべての cookie のリストを返します。                            |
+| `has('name')`               | ブール値           | cookie 名を受け取り、cookie が存在するかどうかに基づいてブール値を返します。      |
+| `set(name, value, options)` | -                  | cookie 名、値、およびオプションを受け取り、送信リクエストの cookie を設定します。 |
+| `delete(name)`              | -                  | cookie 名を受け取り、cookie を削除します。                                        |
+| `clear()`                   | -                  | すべての cookie を削除します。                                                    |
+| `toString()`                | 文字列             | cookie の文字列表現を返します。                                                   |
+
+### オプション {#options}
+
+cookie を設定する際に、`options` オブジェクトから次のプロパティがサポートされています：
+
+| オプション        | 型                                      | 説明                                                                                 |
+| ----------------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| `name`            | 文字列                                  | cookie の名前を指定します。                                                          |
+| `value`           | 文字列                                  | cookie に保存される値を指定します。                                                  |
+| `expires`         | 日付                                    | cookie が期限切れになる正確な日付を定義します。                                      |
+| `maxAge`          | 数値                                    | cookie の寿命を秒単位で設定します。                                                  |
+| `domain`          | 文字列                                  | cookie が利用可能なドメインを指定します。                                            |
+| `path`            | 文字列、デフォルト: `'/'`               | ドメイン内で cookie の範囲を特定のパスに制限します。                                 |
+| `secure`          | ブール値                                | cookie がセキュリティを高めるために HTTPS 接続でのみ送信されることを保証します。     |
+| `httpOnly`        | ブール値                                | client-side からのアクセスを防ぎ、cookie を HTTP リクエストに限定します。            |
+| `sameSite`        | ブール値, `'lax'`, `'strict'`, `'none'` | cookie のクロスサイトリクエストの動作を制御します。                                  |
+| `priority`        | 文字列 (`"low"`, `"medium"`, `"high"`)  | cookie の優先度を指定します                                                          |
+| `encode('value')` | 関数                                    | cookie の値をエンコードするために使用される関数を指定します。                        |
+| `partitioned`     | ブール値                                | cookie が[partitioned](https://github.com/privacycg/CHIPS)であるかどうかを示します。 |
+
+デフォルト値を持つ唯一のオプションは `path` です。
+
+これらのオプションの詳細については、[MDN ドキュメント](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)を参照してください。
+
+## 知っておくとよいこと {#good-to-know}
+
+- `cookies` は、Promise を返す **非同期** 関数です。cookie にアクセスするには、`async/await` または React の [`use`](https://react.dev/reference/react/use) 関数を使用する必要があります。
+  - バージョン 14 以前では、`cookies` は同期関数でした。以前の互換性を助けるために、Next.js 15 では同期的にアクセスできますが、この動作は将来的に廃止されます。
+- `cookies` は、返される値が事前にわからない[動的 API](/docs/app/building-your-application/rendering/server-components#dynamic-apis)です。これをレイアウトまたはページで使用すると、ルートは[動的レンダリング](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)に適合されます。
+- `.delete` メソッドは次の場合にのみ呼び出せます：
+  - [Server Action](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)または[Route Handler](/docs/app/building-your-application/routing/route-handlers)内で。
+  - `.set` が呼び出されたのと同じドメインに属している場合。また、コードは削除したい cookie と同じプロトコル（HTTP または HTTPS）で実行される必要があります。
+- HTTP はストリーミングが開始された後に cookie を設定することを許可していませんので、[Server Action](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)または[Route Handler](/docs/app/building-your-application/routing/route-handlers)で `.set` を使用する必要があります。
+
+## 例 {#examples}
+
+### cookie を取得する {#getting-a-cookie}
+
+`(await cookies()).get('name')` メソッドを使用して、単一の cookie を取得することができます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { cookies } from 'next/headers'
+
+export default async function Page() {
+  const cookieStore = await cookies()
+  const theme = cookieStore.get('theme')
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { cookies } from 'next/headers'
+
+export default async function Page() {
+  const cookieStore = await cookies()
+  const theme = cookieStore.get('theme')
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+### すべての cookie を取得する {#getting-all-cookies}
+
+`(await cookies()).getAll()` メソッドを使用して、一致する名前を持つすべての cookie を取得することができます。`name` が指定されていない場合は、利用可能なすべての cookie を返します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { cookies } from 'next/headers'
+
+export default async function Page() {
+  const cookieStore = await cookies()
+  return cookieStore.getAll().map((cookie) => (
+    <div key={cookie.name}>
+      <p>Name: {cookie.name}</p>
+      <p>Value: {cookie.value}</p>
+    </div>
+  ))
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { cookies } from 'next/headers'
+
+export default async function Page() {
+  const cookieStore = await cookies()
+  return cookieStore.getAll().map((cookie) => (
+    <div key={cookie.name}>
+      <p>Name: {cookie.name}</p>
+      <p>Value: {cookie.value}</p>
+    </div>
+  ))
+}
+```
+
+</TabItem>
+</Tabs>
+
+### cookie を設定する {#setting-a-cookie}
+
+`(await cookies()).set(name, value, options)` メソッドを使用して、[Server Action](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)または[Route Handler](/docs/app/building-your-application/routing/route-handlers)内で cookie を設定することができます。[`options` オブジェクト](#options)はオプションです。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function create(data) {
+  const cookieStore = await cookies()
+
+  cookieStore.set('name', 'lee')
+  // または
+  cookieStore.set('name', 'lee', { secure: true })
+  // または
+  cookieStore.set({
+    name: 'name',
+    value: 'lee',
+    httpOnly: true,
+    path: '/',
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function create(data) {
+  const cookieStore = await cookies()
+
+  cookieStore.set('name', 'lee')
+  // または
+  cookieStore.set('name', 'lee', { secure: true })
+  // または
+  cookieStore.set({
+    name: 'name',
+    value: 'lee',
+    httpOnly: true,
+    path: '/',
+  })
+}
+```
+
+</TabItem>
+</Tabs>
+
+### cookie の存在を確認する {#checking-if-a-cookie-exists}
+
+`(await cookies()).has(name)` メソッドを使用して、cookie の存在を確認することができます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.ts" switcher
+import { cookies } from 'next/headers'
+
+export default async function Page() {
+  const cookieStore = await cookies()
+  const hasCookie = cookieStore.has('theme')
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { cookies } from 'next/headers'
+
+export default async function Page() {
+  const cookieStore = await cookies()
+  const hasCookie = cookieStore.has('theme')
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+### cookie を削除する {#deleting-cookies}
+
+cookie を削除する方法は3つあります。
+
+`delete()` メソッドを使用する：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function delete(data) {
+  (await cookies()).delete('name')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function delete(data) {
+  (await cookies()).delete('name')
+}
+```
+
+</TabItem>
+</Tabs>
+
+同じ名前と空の値で新しい cookie を設定する：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function delete(data) {
+  (await cookies()).set('name', '')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function delete(data) {
+  (await cookies()).set('name', '')
+}
+```
+
+</TabItem>
+</Tabs>
+
+`maxAge` を 0 に設定することで、cookie は即座に期限切れになります。`maxAge` は秒単位の値を受け付けます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function delete(data) {
+  (await cookies()).set('name', 'value', { maxAge: 0 })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function delete(data) {
+  (await cookies()).set('name', 'value', { maxAge: 0 })
+```
+
+}
+
+```
+</TabItem>
+</Tabs>
+
+
+## バージョン履歴 {#version-history}
+
+| バージョン       | 変更点                                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `v15.0.0-RC` | `cookies` が非同期関数になりました。[Codemod](/docs/app/building-your-application/upgrading/codemods#150) が利用可能です。 |
+| `v13.0.0`    | `cookies` 導入。                                                                                                           |
+```

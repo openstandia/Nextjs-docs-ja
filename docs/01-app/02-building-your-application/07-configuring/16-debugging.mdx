@@ -1,0 +1,182 @@
+---
+title: 'デバッグ'
+description: 'VS Code、Chrome DevTools、または Firefox DevTools を使用して Next.js アプリケーションをデバッグする方法を学びます。'
+---
+
+{/* このドキュメントの内容は app router と pages router 間で共有されています。Pages Router に特有のコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>` コンポーネントを使用できます。共有コンテンツはコンポーネントでラップしないでください。 */}
+
+このドキュメンテーションでは、[VS Code デバッガー](https://code.visualstudio.com/docs/editor/debugging)、[Chrome DevTools](https://developers.google.com/web/tools/chrome-devtools)、または [Firefox DevTools](https://firefox-source-docs.mozilla.org/devtools-user/)を使用して、Next.js のフロントエンドおよびバックエンドコードをフルソースマップサポートでデバッグする方法を説明します。
+
+Node.js にアタッチできるデバッガーであれば、Next.js アプリケーションをデバッグするために使用できます。詳細については、Node.js の [デバッグガイド](https://nodejs.org/ja/docs/guides/debugging-getting-started/)をご覧ください。
+
+## VS Code を使用したデバッグ {#debugging-with-vs-code}
+
+プロジェクトの root に `.vscode/launch.json` という名前のファイルを作成し、次の内容を記述します：
+
+```json title="launch.json"
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: debug server-side",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev"
+    },
+    {
+      "name": "Next.js: debug client-side",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000"
+    },
+    {
+      "name": "Next.js: debug client-side (Firefox)",
+      "type": "firefox",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "reAttach": true,
+      "pathMappings": [
+        {
+          "url": "webpack://_N_E",
+          "path": "${workspaceFolder}"
+        }
+      ]
+    },
+    {
+      "name": "Next.js: debug full stack",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/next",
+      "runtimeArgs": ["--inspect"],
+      "skipFiles": ["<node_internals>/**"],
+      "serverReadyAction": {
+        "action": "debugWithEdge",
+        "killOnServerStop": true,
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "webRoot": "${workspaceFolder}"
+      }
+    }
+  ]
+}
+```
+
+> **Note**: VS Code で Firefox デバッグを使用するには、[Firefox Debugger 拡張機能](https://marketplace.visualstudio.com/items?itemName=firefox-devtools.vscode-firefox-debug)をインストールする必要があります。
+
+`npm run dev`は、Yarn を使用している場合は `yarn dev`、pnpm を使用している場合は `pnpm dev` に置き換えられます。
+
+アプリケーションが起動するポート番号を[変更している場合](https://nextjs.org/docs/canary/pages/api-reference/cli/next#next-dev-options)、`http://localhost:3000` の `3000` の部分を使用しているポートに置き換えます。
+
+Next.js を root 以外のディレクトリから実行している場合（例：Turborepo を使用している場合）、サーバーサイドおよびフルスタックデバッグタスクに `cwd` を追加する必要があります。例としては、`"cwd": "${workspaceFolder}/apps/web"` となります。
+
+次に、デバッグパネル（Windows/Linux では `Ctrl+Shift+D`、macOS では `⇧+⌘+D`）に移動し、起動構成を選択し、`F5` を押すか、コマンドパレットから **Debug: Start Debugging** を選択してデバッグセッションを開始します。
+
+## Jetbrains WebStorm でのデバッガー使用 {#using-the-debugger-in-jetbrains-webstorm}
+
+ランタイム構成をリストするドロップダウンメニューをクリックし、`Edit Configurations...` をクリックします。`http://localhost:3000` を URL とする `JavaScript Debug` デバッグ構成を作成します。お好みに応じてカスタマイズ（例：デバッグ用のブラウザを選択、プロジェクトファイルとして保存）し、`OK` をクリックします。このデバッグ構成を実行すると、選択したブラウザが自動で開きます。この時点で、NextJS ノードアプリケーションとクライアント/ブラウザアプリケーションの 2 つのアプリケーションがデバッグモードになります。
+
+## ブラウザ DevTools を使用したデバッグ {#debugging-with-browser-devtools}
+
+### クライアントサイドのコード {#client-side-code}
+
+`next dev`、`npm run dev`、`yarn dev` を実行して、通常どおり開発サーバーを起動します。サーバーが起動したら、お好みのブラウザで `http://localhost:3000`（または別の URL）を開きます。
+
+Chrome の場合：
+
+- Chrome のデベロッパーツールを開く（Windows/Linux では `Ctrl+Shift+J`、macOS では `⌥+⌘+I`）
+- **Sources** タブに移動
+
+Firefox の場合：
+
+- Firefox のデベロッパーツールを開く（Windows/Linux では `Ctrl+Shift+I`、macOS では `⌥+⌘+I`）
+- **Debugger** タブに移動
+
+いずれのブラウザでも、クライアントサイドのコードが [`debugger`](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Statements/debugger) ステートメントに達したときに、コード実行が一時停止し、そのファイルがデバッグエリアに表示されます。また、手動でブレークポイントを設定するためのファイルを検索することもできます：
+
+- Chrome では：Windows/Linux では `Ctrl+P`、macOS では `⌘+P` を押す
+- Firefox では：Windows/Linux では `Ctrl+P`、macOS では `⌘+P` を押すか、左のパネルでファイルツリーを使用
+
+検索するときは、ソースファイルのパスは `webpack://_N_E/./` で始まることに注意してください。
+
+### サーバーサイドのコード {#server-side-code}
+
+ブラウザ DevTools を使用してサーバーサイドの Next.js コードをデバッグするには、基盤となる Node.js プロセスに [`--inspect`](https://nodejs.org/api/cli.html#cli_inspect_host_port) フラグを渡す必要があります：
+
+```bash title="ターミナル"
+NODE_OPTIONS='--inspect' next dev
+```
+
+> **Good to know**: `NODE_OPTIONS='--inspect=0.0.0.0'` を使用することで、Docker コンテナでアプリを実行する場合などにローカルホスト外でのリモートデバッグアクセスを許可します。
+
+`npm run dev` や `yarn dev` を使用している場合は、`package.json` の `dev` スクリプトを更新する必要があります：
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "NODE_OPTIONS='--inspect' next dev"
+  }
+}
+```
+
+`--inspect` フラグを追加して Next.js 開発サーバーを起動すると、次のようになります：
+
+```bash title="ターミナル"
+Debugger listening on ws://127.0.0.1:9229/0cf90313-350d-4466-a748-cd60f4e47c95
+For help, see: https://nodejs.org/ja/docs/inspector
+ready - started server on 0.0.0.0:3000, url: http://localhost:3000
+```
+
+Chrome の場合：
+
+1. 新しいタブを開き、`chrome://inspect` にアクセス
+2. **Remote Target** セクションで Next.js アプリケーションを探す
+3. **inspect** をクリックして、別の DevTools ウィンドウを開く
+4. **Sources** タブに移動
+
+Firefox の場合：
+
+1. 新しいタブを開き、`about:debugging` にアクセス
+2. 左のサイドバーで **This Firefox** をクリック
+3. **Remote Targets** にある Next.js アプリケーションを見つける
+4. **Inspect** をクリックしてデバッガーを開く
+5. **Debugger** タブに移動
+
+サーバーサイドのコードのデバッグは、クライアントサイドのデバッグと似ています。ファイルを検索するとき（`Ctrl+P`/`⌘+P`）、ソースファイルのパスは `webpack://{application-name}/./`（ここで `{application-name}` は `package.json` ファイルに基づいてアプリケーション名に置き換わります）で始まります。
+
+### ブラウザ DevTools を使用してサーバーエラーを検査する {#inspect-server-errors-with-browser-devtools}
+
+エラーが発生した場合、ソースコードを検査することでエラーの原因を突き止めることができます。
+
+Next.js は、dev オーバーレイに Node.js ロゴの緑色のボタンを表示します。そのボタンをクリックすると、DevTools の URL がクリップボードにコピーされます。新しいブラウザタブでその URL を開いて、Next.js サーバープロセスを検査できます。
+
+<Image
+  alt="DevTools URL のコピー例"
+  srcLight="/docs/dark/copy-devtool-url-example.png"
+  srcDark="/docs/dark/copy-devtool-url-example.png"
+  width="1600"
+  height="594"
+/>
+
+### Windows でのデバッグ {#debugging-on-windows}
+
+Windows ユーザーは、`NODE_OPTIONS='--inspect'` を使用した際に問題が発生する可能性があります。なぜなら、その構文は Windows プラットフォームでサポートされていないからです。この問題を解決するために、[`cross-env`](https://www.npmjs.com/package/cross-env) パッケージを開発依存（`-D` は `npm` と `yarn` で使用）としてインストールし、次のように `dev` スクリプトを置き換えます。
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS='--inspect' next dev"
+  }
+}
+```
+
+`cross-env` を使用すると、プラットフォームに関係なく（Mac、Linux、Windows を含むがこれに限りません）`NODE_OPTIONS` 環境変数を設定でき、デバイスとオペレーティングシステムをまたいで一貫してデバッグできます。
+
+> **Good to know**: Windows Defender が無効になっていることを確認してください。この外部サービスはすべてのファイル読み取りをチェックし、`next dev` での高速更新時間が大幅に増加すると報告されています。これは Next.js に関連しない既知の問題ですが、Next.js の開発には影響します。
+
+## 詳細情報 {#more-information}
+
+JavaScript デバッガーの使用方法について詳しく学ぶには、以下のドキュメントをご覧ください：
+
+- [VS Code における Node.js デバッグ：ブレークポイント](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_breakpoints)
+- [Chrome DevTools: JavaScript デバッグ](https://developers.google.com/web/tools/chrome-devtools/javascript)
+- [Firefox DevTools: デバッガー](https://firefox-source-docs.mozilla.org/devtools-user/debugger/)

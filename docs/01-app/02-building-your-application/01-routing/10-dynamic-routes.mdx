@@ -1,0 +1,167 @@
+---
+title: 'Dynamic Routes'
+description: 'Dynamic Routesは、動的なデータからプログラム的にルートセグメントを生成するために使用できます。'
+related:
+  title: 'Next Steps'
+  description: '次にすべきことについての詳しい情報は、次のセクションをご参照ください'
+  links:
+    - app/building-your-application/routing/linking-and-navigating
+    - app/api-reference/functions/generate-static-params
+---
+
+事前に正確なセグメント名がわからず、動的データからルートを作成したい場合、リクエスト時に埋め込まれるDynamic Segmentsを使用するか、またはビルド時に[pre-rendering](#generating-static-params)されることができます。
+
+## 規約 {#convention}
+
+Dynamic Segmentは、フォルダ名を角括弧で囲むことで作成できます: `[folderName]`。例えば、`[id]`や`[slug]`などです。
+
+Dynamic Segmentsは、[`layout`](/docs/app/api-reference/file-conventions/layout)、[`page`](/docs/app/api-reference/file-conventions/page)、[`route`](/docs/app/building-your-application/routing/route-handlers)、および[`generateMetadata`](/docs/app/api-reference/functions/generate-metadata#generatemetadata-function)関数に`params` propとして渡されます。
+
+## 例 {#example}
+
+例えば、ブログでは次のようなルートを含めることができます: `app/blog/[slug]/page.js`。ここで、`[slug]`はブログ投稿のためのDynamic Segmentです。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const slug = (await params).slug
+  return <div>My Post: {slug}</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+export default async function Page({ params }) {
+  const slug = (await params).slug
+  return <div>My Post: {slug}</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+| Route                     | Example URL | `params`        |
+| ------------------------- | ----------- | --------------- |
+| `app/blog/[slug]/page.js` | `/blog/a`   | `{ slug: 'a' }` |
+| `app/blog/[slug]/page.js` | `/blog/b`   | `{ slug: 'b' }` |
+| `app/blog/[slug]/page.js` | `/blog/c`   | `{ slug: 'c' }` |
+
+セグメントのparamsを生成する方法については、[generateStaticParams()](#generating-static-params)ページをご覧ください。
+
+## Good to know {#good-to-know}
+
+- `params` propはPromiseです。そのためAsync/AwaitまたはReactのuse関数を使用して値にアクセスする必要があります。
+  - バージョン14以前では、`params`は同期的なpropでした。後方互換性を考慮して、Next.js 15でも同期的にアクセスできますが、将来的にはこの動作は廃止される予定です。
+- Dynamic Segmentsは`pages`ディレクトリ内の[Dynamic Routes](https://nextjs.org/docs/canary/pages/building-your-application/routing/dynamic-routes)と同等です。
+
+## 静的Paramsの生成 {#generating-static-params}
+
+`generateStaticParams`関数は、[dynamic route segments](/docs/app/building-your-application/routing/dynamic-routes)と組み合わせて、ビルド時に[**静的に生成された**](/docs/app/building-your-application/rendering/server-components#static-rendering-default)ルートを生成するために使用できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+export async function generateStaticParams() {
+  const posts = await fetch('https://.../posts').then((res) => res.json())
+
+  return posts.map((post) => ({
+    slug: post.slug,
+  }))
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+export async function generateStaticParams() {
+  const posts = await fetch('https://.../posts').then((res) => res.json())
+
+  return posts.map((post) => ({
+    slug: post.slug,
+  }))
+}
+```
+
+</TabItem>
+</Tabs>
+
+`generateStaticParams`関数の主な利点は、そのスマートなデータの取得です。`fetch`リクエストを使用して`generateStaticParams`関数内でコンテンツを取得する場合、リクエストは[自動的にメモ化](/docs/app/building-your-application/caching#request-memoization)されます。これは、複数のgenerateStaticParams、Layouts、およびPages間で同じ引数を持つ`fetch`リクエストが1回だけ実行され、ビルド時間が短縮されることを意味します。
+
+`pages`ディレクトリから移行する場合は、[移行ガイド](/docs/app/building-your-application/upgrading/app-router-migration#dynamic-paths-getstaticpaths)を使用してください。
+
+詳細および高度な使用例については、[`generateStaticParams`サーバー関数のドキュメント](/docs/app/api-reference/functions/generate-static-params)を参照してください。
+
+## Catch-all Segments {#catch-all-segments}
+
+Dynamic Segmentsは、角括弧の中に省略記号を追加することで、**すべてを含む**後続のセグメントを拡張できます: `[...folderName]`。
+
+例えば、`app/shop/[...slug]/page.js`は`/shop/clothes`だけでなく、`/shop/clothes/tops`や`/shop/clothes/tops/t-shirts`なども一致します。
+
+| Route                        | Example URL   | `params`                    |
+| ---------------------------- | ------------- | --------------------------- |
+| `app/shop/[...slug]/page.js` | `/shop/a`     | `{ slug: ['a'] }`           |
+| `app/shop/[...slug]/page.js` | `/shop/a/b`   | `{ slug: ['a', 'b'] }`      |
+| `app/shop/[...slug]/page.js` | `/shop/a/b/c` | `{ slug: ['a', 'b', 'c'] }` |
+
+## Optional Catch-all Segments {#optional-catch-all-segments}
+
+Catch-all Segmentsは、ダブル角括弧にパラメータを含めることで、**オプション**にすることができます: `[[...folderName]]`。
+
+例えば、`app/shop/[[...slug]]/page.js`は、`/shop/clothes`や`/shop/clothes/tops`、`/shop/clothes/tops/t-shirts`に加えて、`/shop`にも一致します。
+
+**すべてを含む**セグメントと**オプションのすべてを含む**セグメントの違いは、オプションでは、パラメータなしのルートも一致することです（上記の例では`/shop`）。
+
+| Route                          | Example URL   | `params`                    |
+| ------------------------------ | ------------- | --------------------------- |
+| `app/shop/[[...slug]]/page.js` | `/shop`       | `{ slug: undefined }`       |
+| `app/shop/[[...slug]]/page.js` | `/shop/a`     | `{ slug: ['a'] }`           |
+| `app/shop/[[...slug]]/page.js` | `/shop/a/b`   | `{ slug: ['a', 'b'] }`      |
+| `app/shop/[[...slug]]/page.js` | `/shop/a/b/c` | `{ slug: ['a', 'b', 'c'] }` |
+
+## TypeScript {#typescript}
+
+TypeScriptを使用する場合、設定したルートセグメントに応じて`params`に型を追加できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  return <h1>My Page</h1>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+export default async function Page({ params }) {
+  return <h1>My Page</h1>
+}
+```
+
+</TabItem>
+</Tabs>
+
+| Route                               | `params` Type Definition                 |
+| ----------------------------------- | ---------------------------------------- |
+| `app/blog/[slug]/page.js`           | `{ slug: string }`                       |
+| `app/shop/[...slug]/page.js`        | `{ slug: string[] }`                     |
+| `app/shop/[[...slug]]/page.js`      | `{ slug?: string[] }`                    |
+| `app/[categoryId]/[itemId]/page.js` | `{ categoryId: string, itemId: string }` |
+
+> **Good to know**: これは将来的に[TypeScriptプラグイン](/docs/app/api-reference/config/typescript#ide-plugin)によって自動的に行われる可能性があります。

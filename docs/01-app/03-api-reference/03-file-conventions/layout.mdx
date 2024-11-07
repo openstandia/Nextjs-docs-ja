@@ -1,0 +1,318 @@
+---
+title: 'layout.js'
+description: 'layout.js ファイルの API リファレンス'
+---
+
+`layout` ファイルは、Next.js アプリケーションのレイアウトを定義するために使用されます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/layout.tsx" switcher
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <section>{children}</section>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/layout.js" switcher
+export default function DashboardLayout({ children }) {
+  return <section>{children}</section>
+}
+```
+
+</TabItem>
+</Tabs>
+
+**root レイアウト** は、root `app` ディレクトリ内の最上位のレイアウトです。これは、`<html>` や `<body>` タグなどのグローバルに共有される UI を定義するために使用されます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+## リファレンス {#reference}
+
+### Props {#props}
+
+#### `children` (必須) {#children-required}
+
+レイアウトコンポーネントは `children` prop を受け入れ、それを使用する必要があります。レンダリング時には、`children` はレイアウトがラップしているルートセグメントで埋められます。これらは主に、子[レイアウト](/docs/app/building-your-application/routing/pages)（存在する場合）や[ページ](/docs/app/building-your-application/routing/pages)のコンポーネントですが、適用可能な場合には [Loading](/docs/app/building-your-application/routing/loading-ui-and-streaming) や [Error](/docs/app/building-your-application/routing/error-handling) などの他の特殊ファイルも含まれることがあります。
+
+#### `params` (オプション) {#params-optional}
+
+root セグメントからこのレイアウトまでの [動的ルートパラメータ](/docs/app/building-your-application/routing/dynamic-routes) オブジェクトを含むオブジェクトに解決されるプロミスです。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/[team]/layout.tsx" switcher
+export default async function Layout({
+  params,
+}: {
+  params: Promise<{ team: string }>
+}) {
+  const team = (await params).team
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/[team]/layout.js" switcher
+export default async function Layout({ params }) {
+  const team = (await params).team
+}
+```
+
+</TabItem>
+</Tabs>
+
+| ルートの例                        | URL            | `params`                           |
+| --------------------------------- | -------------- | ---------------------------------- |
+| `app/dashboard/[team]/layout.js`  | `/dashboard/1` | `Promise<{ team: '1' }>`           |
+| `app/shop/[tag]/[item]/layout.js` | `/shop/1/2`    | `Promise<{ tag: '1', item: '2' }>` |
+| `app/blog/[...slug]/layout.js`    | `/blog/1/2`    | `Promise<{ slug: ['1', '2'] }>`    |
+
+- `params` prop はプロミスであるため、値にアクセスするには `async/await` もしくは React の [`use`](https://react.dev/reference/react/use) 関数を使用する必要があります。
+  - バージョン14およびそれ以前では、`params` は同期的な prop でした。後方互換性を維持するために、Next.js 15 では同期的にアクセスすることもできますが、この動作は将来的には廃止されます。
+
+### Root レイアウト {#root-layouts}
+
+`app` ディレクトリには root `app/layout.js` が **必ず** 含まれている必要があります。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+- root レイアウトは **必ず** `<html>` および `<body>` タグを定義する必要があります。
+  - root レイアウトに `<title>` や `<meta>` などの `<head>` タグを手動で追加するべきではありません。代わりに、ストリーミングや `<head>` 要素の重複排除などの高度な要件を自動的に処理する [Metadata API](/docs/app/building-your-application/optimizing/metadata) を使用するべきです。
+- [ルートグループ](/docs/app/building-your-application/routing/route-groups)を使用して、複数の root レイアウトを作成することができます。
+  - **複数の root レイアウトをまたいだナビゲーション** は、**フルページロード** を引き起こします（クライアントサイドナビゲーションとは対照的に）。例えば、`/cart` から `/blog` へナビゲーションする際に `app/(shop)/layout.js` と `app/(marketing)/layout.js` をそれぞれ使用する場合、フルページロードが発生します。これは **複数の root レイアウトのみ** に適用されます。
+
+## 注意点 {#caveats}
+
+### レイアウトは `searchParams` を受け取らない {#layouts-do-not-receive-searchparams}
+
+[ページ](/docs/app/api-reference/file-conventions/page) とは異なり、レイアウトコンポーネントは `searchParams` prop を **受け取りません**。これは、共有されたレイアウトが[ナビゲーション中に再レンダリングされない](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)ため、ナビゲーション間で古い `searchParams` が残る可能性があるからです。
+
+クライアントサイドナビゲーションを使用するとき、Next.js は自動的にページの共通レイアウトより下の部分のみをレンダリングします。
+
+例えば、以下のディレクトリ構造では、`dashboard/layout.tsx` が `/dashboard/settings` と `/dashboard/analytics` の両方に共通するレイアウトになっています：
+
+<Image
+  alt="ダッシュボードフォルダーが layout.tsx ファイルと、独自のページを持つ設定と分析フォルダーをネストしているファイル構造"
+  srcLight="/docs/light/shared-dashboard-layout.png"
+  srcDark="/docs/dark/shared-dashboard-layout.png"
+  width="1600"
+  height="687"
+/>
+
+`/dashboard/settings` から `/dashboard/analytics` にナビゲーションする際、`/dashboard/analytics` 内の `page.tsx` はサーバで再レンダリングされますが、`dashboard/layout.tsx` は共通の UI であるため再レンダリングされません。
+
+このパフォーマンスの最適化により、レイアウトを共有するページ間のナビゲーションが高速化されます。全体のルートが実行される代わりにページのデータ取得とレンダリングのみが実行されるため、共有レイアウトが独自にデータを取得する場合も含まれます。
+
+`dashboard/layout.tsx` が再レンダリングされないため、レイアウトの Server Component の中の `searchParams` prop がナビゲーション後に **古い** ままになる可能性があります。
+
+代わりに、ページの [`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional) prop や、クライアントコンポーネント内で [ `useSearchParams`](/docs/app/api-reference/functions/use-search-params) フックを使用します。これらはクライアントで再レンダリングされ、新しい `searchParams` を持ちます。
+
+### レイアウトは `pathname` にアクセスできない {#layouts-cannot-access-pathname}
+
+レイアウトは `pathname` にアクセスすることができません。これは、レイアウトがデフォルトでサーバコンポーネントであり、[クライアントサイドのナビゲーション中には再レンダリングされません](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)。これにより、`pathname` がナビゲーション間で古くなる可能性があります。古さを防ぐために、Next.js はルートのすべてのセグメントを再フェッチし、キャッシュの利点を失い、ナビゲーション時に [RSC ペイロード](/docs/app/building-your-application/rendering/server-components#what-is-the-react-server-component-payload-rsc) サイズを増やす必要があります。
+
+代わりに、`pathname` に依存するロジックをクライアントコンポーネントに抽出し、レイアウトにインポートすることができます。クライアントコンポーネントはナビゲーション中に再レンダリングされますが再フェッチされないため、`usePathname` などの Next.js フックを使用して現在の `pathname` にアクセスし、古くなるのを防ぐことができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/layout.tsx" switcher
+import { ClientComponent } from '@/app/ui/ClientComponent'
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <ClientComponent />
+      {/* 他のレイアウト UI */}
+      <main>{children}</main>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/layout.js" switcher
+import { ClientComponent } from '@/app/ui/ClientComponent'
+
+export default function Layout({ children }) {
+  return (
+    <>
+      <ClientComponent />
+      {/* 他のレイアウト UI */}
+      <main>{children}</main>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+共通の `pathname` パターンは [`params`](#params-optional) prop を使用しても実装できます。
+
+詳細は [例](/docs/app/building-your-application/routing/layouts-and-templates#examples) セクションを参照してください。
+
+## 例 {#examples}
+
+### `params` に基づいてコンテンツを表示する {#displaying-content-based-on-params}
+
+[動的ルートセグメント](/docs/app/building-your-application/routing/dynamic-routes)を使用して、特定のコンテンツを `params` prop に基づいて表示または取得できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/layout.tsx" switcher
+export default async function DashboardLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ team: string }>
+}) {
+  const { team } = await params
+
+  return (
+    <section>
+      <header>
+        <h1>Welcome to {team}'s Dashboard</h1>
+      </header>
+      <main>{children}</main>
+    </section>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/layout.js" switcher
+export default async function DashboardLayout({ children, params }) {
+  const { team } = await params
+
+  return (
+    <section>
+      <header>
+        <h1>Welcome to {team}'s Dashboard</h1>
+      </header>
+      <main>{children}</main>
+    </section>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### クライアントコンポーネント内での `params` の読み取り {#reading-params-in-client-components}
+
+クライアントコンポーネント（`async` にできない）で `params` を使用するには、React の [`use`](https://react.dev/reference/react/use) 関数を使ってプロミスを読むことができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+'use client'
+
+import { use } from 'react'
+
+export function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/page.js" switcher
+'use client'
+
+import { use } from 'react'
+
+export function Page({ params }) {
+  const { slug } = use(params)
+}
+```
+
+</TabItem>
+</Tabs>
+
+## バージョン履歴 {#version-history}
+
+| バージョン   | 変更点                                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `v15.0.0-RC` | `params` がプロミスになりました。[codemod](/docs/app/building-your-application/upgrading/codemods#150) が利用可能です。 |
+| `v13.0.0`    | `layout` 導入されました。                                                                                               |

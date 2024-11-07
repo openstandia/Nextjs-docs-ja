@@ -1,0 +1,243 @@
+---
+title: 'page.js'
+description: 'page.jsファイルのAPIリファレンス。'
+---
+
+`page` ファイルは、Next.jsアプリケーション内でページを定義するために使用されます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+export default function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  return <h1>My Page</h1>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+export default function Page({ params, searchParams }) {
+  return <h1>My Page</h1>
+}
+```
+
+</TabItem>
+</Tabs>
+
+## リファレンス {#reference}
+
+### Props {#props}
+
+#### `params` (オプション) {#params-optional}
+
+rootセグメントからそのページに至るまでの[動的ルートパラメータ](/docs/app/building-your-application/routing/dynamic-routes)を含むオブジェクトに解決されるプロミスです。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/shop/[slug]/page.tsx" switcher
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const slug = (await params).slug
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/shop/[slug]/page.js" switcher
+export default async function Page({ params }) {
+  const slug = (await params).slug
+}
+```
+
+</TabItem>
+</Tabs>
+
+| ルート例                             | URL         | `params`                                |
+| ------------------------------------ | ----------- | --------------------------------------- |
+| `app/shop/[slug]/page.js`            | `/shop/1`   | `Promise<{ slug: '1' }>`                |
+| `app/shop/[category]/[item]/page.js` | `/shop/1/2` | `Promise<{ category: '1', item: '2' }>` |
+| `app/shop/[...slug]/page.js`         | `/shop/1/2` | `Promise<{ slug: ['1', '2'] }>`         |
+
+- `params` propはプロミスであるため、値にアクセスするには`async/await`またはReactの[`use`](https://react.dev/reference/react/use)関数を使用する必要があります。
+  - バージョン14以前では、`params`は同期的なpropでした。後方互換性を考慮して、Next.js 15では引き続き同期的にアクセスできますが、この動作は将来非推奨となります。
+
+#### `searchParams` (オプション) {#searchparams-optional}
+
+現在のURLの[検索パラメータ](https://developer.mozilla.org/docs/Learn/Common_questions/What_is_a_URL#parameters)を含むオブジェクトに解決されるプロミスです。例えば：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/shop/page.tsx" switcher
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const filters = (await searchParams).filters
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/shop/page.js" switcher
+export default async function Page({ searchParams }) {
+  const filters = (await searchParams).filters
+}
+```
+
+</TabItem>
+</Tabs>
+
+| URLの例         | `searchParams`                |
+| --------------- | ----------------------------- |
+| `/shop?a=1`     | `Promise<{ a: '1' }>`         |
+| `/shop?a=1&b=2` | `Promise<{ a: '1', b: '2' }>` |
+| `/shop?a=1&a=2` | `Promise<{ a: ['1', '2'] }>`  |
+
+- `searchParams` propはプロミスであるため、値にアクセスするには`async/await`またはReactの[`use`](https://react.dev/reference/react/use)関数を使用する必要があります。
+  - バージョン14以前では、`searchParams`は同期的なpropでした。後方互換性を考慮して、Next.js 15では引き続き同期的にアクセスできますが、この動作は将来非推奨となります。
+- `searchParams`はあらかじめ値を把握できない**[動的API](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-apis)**です。これを利用すると、ページがリクエスト時に**[動的レンダリング](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)**に適応します。
+- `searchParams`は`URLSearchParams`インスタンスではなく、単なるJavaScriptオブジェクトです。
+
+## 例 {#examples}
+
+### `params`に基づいてコンテンツを表示する {#displaying-content-based-on-params}
+
+[動的ルートセグメント](/docs/app/building-your-application/routing/dynamic-routes)を使用して、`params` propに基づいた特定のページのコンテンツを表示またはフェッチできます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  return <h1>Blog Post: {slug}</h1>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+export default async function Page({ params }) {
+  const { slug } = await params
+  return <h1>Blog Post: {slug}</h1>
+}
+```
+
+</TabItem>
+</Tabs>
+
+### `searchParams`を使用してフィルタリングを扱う {#handling-filtering-with-searchparams}
+
+URLのクエリ文字列に基づいて、`searchParams` propを使用してフィルタリング、ページネーション、またはソートを扱うことができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/shop/page.tsx" switcher
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const { page = '1', sort = 'asc', query = '' } = await searchParams
+
+  return (
+    <div>
+      <h1>Product Listing</h1>
+      <p>Search query: {query}</p>
+      <p>Current page: {page}</p>
+      <p>Sort order: {sort}</p>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/shop/page.js" switcher
+export default async function Page({ searchParams }) {
+  const { page = '1', sort = 'asc', query = '' } = await searchParams
+
+  return (
+    <div>
+      <h1>Product Listing</h1>
+      <p>Search query: {query}</p>
+      <p>Current page: {page}</p>
+      <p>Sort order: {sort}</p>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### クライアントコンポーネントで`searchParams`と`params`を読む {#reading-searchparams-and-params-in-client-components}
+
+クライアントコンポーネント内で`searchParams`と`params`を使用するためには（`async`にすることはできません）、プロミスを読み取るためにReactの[`use`](https://react.dev/reference/react/use)関数を利用できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+'use client'
+
+import { use } from 'react'
+
+export function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const { slug } = use(params)
+  const { query } = use(searchParams)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/page.js" switcher
+'use client'
+
+import { use } from 'react'
+
+export function Page({ params, searchParams }) {
+  const { slug } = use(params)
+  const { query } = use(searchParams)
+}
+```
+
+</TabItem>
+</Tabs>
+
+## バージョン履歴 {#version-history}
+
+| バージョン   | 変更内容                                                                                                                               |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `v15.0.0-RC` | `params`と`searchParams`がプロミスになりました。 [codemod](/docs/app/building-your-application/upgrading/codemods#150)が利用可能です。 |
+| `v13.0.0`    | `page`が導入されました。                                                                                                               |
