@@ -1,0 +1,586 @@
+---
+title: 'Parallel Routes'
+description: '同じビューで一度に複数のページを独立してナビゲートできる形でレンダリングします。高度に動的なアプリケーションに適したパターンです。'
+related:
+  links:
+    - app/api-reference/file-conventions/default
+---
+
+Parallel Routesを使用すると、同じレイアウト内で複数のページを一度に、または条件付きでレンダリングできます。これは、ダッシュボードやソーシャルサイトのフィードなど、アプリの高度に動的なセクションに役立ちます。
+
+例えば、ダッシュボードを考えると、parallel routesを使用して`team`ページと`analytics`ページを同時にレンダリングすることができます：
+
+<Image
+  alt="Parallel Routes 図"
+  srcLight="/docs/light/parallel-routes.png"
+  srcDark="/docs/dark/parallel-routes.png"
+  width="1600"
+  height="942"
+/>
+
+## スロット {#slots}
+
+Parallel routesは名前付き**スロット**を使用して作成されます。スロットは、`@folder`規約で定義されます。例えば、次のファイル構造は2つのスロットを定義しています：`@analytics`と`@team`：
+
+<Image
+  alt="Parallel Routes ファイルシステム構造"
+  srcLight="/docs/light/parallel-routes-file-system.png"
+  srcDark="/docs/dark/parallel-routes-file-system.png"
+  width="1600"
+  height="687"
+/>
+
+スロットは共有親レイアウトへのpropsとして渡されます。前述の例では、`app/layout.js`内のコンポーネントは、`@analytics`および`@team`スロットのpropsを受け入れ、`children` propと並行してレンダリングできます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function Layout({
+  children,
+  team,
+  analytics,
+}: {
+  children: React.ReactNode
+  analytics: React.ReactNode
+  team: React.ReactNode
+}) {
+  return (
+    <>
+      {children}
+      {team}
+      {analytics}
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function Layout({ children, team, analytics }) {
+  return (
+    <>
+      {children}
+      {team}
+      {analytics}
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+しかし、スロットは[route segments](/docs/app/building-your-application/routing#route-segments)では**ありません**ので、URL構造には影響しません。例えば、`/@analytics/views`に対して、`@analytics`はスロットであるためURLは`/views`となります。スロットは通常の[Page](/docs/app/api-reference/file-conventions/page)コンポーネントと組み合わされ、route segmentに関連付けられた最終ページを形成します。このため、同じroute segmentレベルで個別の[static](/docs/app/building-your-application/rendering/server-components#static-rendering-default)および[dynamic](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)スロットを持つことはできません。1つのスロットが動的である場合、そのレベルのすべてのスロットは動的である必要があります。
+
+> **Good to know**:
+>
+> - `children` propはフォルダにマッピングする必要のない暗黙的なスロットです。つまり、`app/page.js`は`app/@children/page.js`と同等です。
+
+## アクティブな状態とナビゲーション {#active-state-and-navigation}
+
+デフォルトで、Next.jsは各スロットのアクティブな状態（またはサブページ）を追跡します。しかし、スロット内でレンダリングされるコンテンツはナビゲーションの種類によって異なります：
+
+- [**ソフトナビゲーション**](/docs/app/building-your-application/routing/linking-and-navigating#5-soft-navigation)：クライアント側のナビゲーション時に、Next.jsは[部分レンダリング](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)を行い、スロット内のサブページを変更し、他のスロットのアクティブなサブページを維持します。たとえそれらが現在のURLと一致しなくてもです。
+- **ハードナビゲーション**：フルページロード（ブラウザのリフレッシュ）の後、Next.jsは現在のURLと一致しないスロットのアクティブな状態を判別することができません。代わりに、一致しないスロットに対して[`default.js`](#defaultjs)ファイルをレンダリングします。ただし、`default.js`が存在しない場合は`404`をレンダリングします。
+
+> **Good to know**:
+>
+> - 一致しないルートのための`404`は、意図されていないページで優先ルートが誤ってレンダリングされないようにするのに役立ちます。
+
+### `default.js` {#default-js}
+
+`default.js`ファイルを定義して初期ロードまたはフルページリロード時に一致しないスロットのフォールバックとしてレンダリングできます。
+
+以下のフォルダ構造を考慮します。`@team`スロットには`/settings`ページがあるが、`@analytics`にはありません。
+
+<Image
+  alt="パラレルルートで一致しないルート"
+  srcLight="/docs/light/parallel-routes-unmatched-routes.png"
+  srcDark="/docs/dark/parallel-routes-unmatched-routes.png"
+  width="1600"
+  height="930"
+/>
+
+`/settings`にナビゲーションすると、`@team`スロットは`/settings`ページをレンダリングし、`@analytics`スロットの現在アクティブなページを維持します。
+
+リフレッシュ時、Next.jsは`@analytics`用に`default.js`をレンダリングします。`default.js`が存在しない場合は`404`が代わりにレンダリングされます。
+
+さらに、`children`は暗黙的なスロットであるため、Next.jsが親ページのアクティブ状態を復元できない場合、`children`のフォールバックをレンダリングする`default.js`ファイルも作成する必要があります。
+
+### `useSelectedLayoutSegment(s)` {#useselectedlayoutsegment-s}
+
+[`useSelectedLayoutSegment`](/docs/app/api-reference/functions/use-selected-layout-segment)および[`useSelectedLayoutSegments`](/docs/app/api-reference/functions/use-selected-layout-segments)の両方が`parallelRoutesKey`パラメータを受け入れ、スロット内のアクティブなルートセグメントを読み取ることができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+'use client'
+
+import { useSelectedLayoutSegment } from 'next/navigation'
+
+export default function Layout({ auth }: { auth: React.ReactNode }) {
+  const loginSegment = useSelectedLayoutSegment('auth')
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+'use client'
+
+import { useSelectedLayoutSegment } from 'next/navigation'
+
+export default function Layout({ auth }) {
+  const loginSegment = useSelectedLayoutSegment('auth')
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+ユーザーが`app/@auth/login`（またはURLバーで`/login`）にナビゲートすると、`loginSegment`は文字列`"login"`と等しくなります。
+
+## 例 {#examples}
+
+### 条件付きルート {#conditional-routes}
+
+Parallel Routesを使用して、特定の条件（例：ユーザーの役割）に基づいてルートを条件付きでレンダリングできます。例えば、`/admin`または`/user`役割ごとに異なるダッシュボードページをレンダリングするには：
+
+<Image
+  alt="条件付きルート図"
+  srcLight="/docs/light/conditional-routes-ui.png"
+  srcDark="/docs/dark/conditional-routes-ui.png"
+  width="1600"
+  height="898"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/layout.tsx" switcher
+import { checkUserRole } from '@/lib/auth'
+
+export default function Layout({
+  user,
+  admin,
+}: {
+  user: React.ReactNode
+  admin: React.ReactNode
+}) {
+  const role = checkUserRole()
+  return <>{role === 'admin' ? admin : user}</>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/layout.js" switcher
+import { checkUserRole } from '@/lib/auth'
+
+export default function Layout({ user, admin }) {
+  const role = checkUserRole()
+  return <>{role === 'admin' ? admin : user}</>
+}
+```
+
+</TabItem>
+</Tabs>
+
+### タブグループ {#tab-groups}
+
+ユーザーがスロットを独立してナビゲートできるようにするため、スロット内に`layout`を追加できます。これはタブを作成するために役立ちます。
+
+例えば、`@analytics`スロットには2つのサブページ：`/page-views`と`/visitors`があります。
+
+<Image
+  alt="2つのサブページとレイアウトを持つAnalyticsスロット"
+  srcLight="/docs/light/parallel-routes-tab-groups.png"
+  srcDark="/docs/dark/parallel-routes-tab-groups.png"
+  width="1600"
+  height="768"
+/>
+
+`@analytics`内に[`layout`](/docs/app/building-your-application/routing/layouts-and-templates)ファイルを作成し、2つのページ間でタブを共有します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/@analytics/layout.tsx" switcher
+import Link from 'next/link'
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <nav>
+        <Link href="/page-views">Page Views</Link>
+        <Link href="/visitors">Visitors</Link>
+      </nav>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/@analytics/layout.js" switcher
+import Link from 'next/link'
+
+export default function Layout({ children }) {
+  return (
+    <>
+      <nav>
+        <Link href="/page-views">Page Views</Link>
+        <Link href="/visitors">Visitors</Link>
+      </nav>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### モーダル {#modals}
+
+Parallel Routesは[Intercepting Routes](/docs/app/building-your-application/routing/intercepting-routes)と一緒に使用して、深いリンクをサポートするモーダルを作成できます。これにより、モーダルを作成するときによくある次のような課題を解決できます：
+
+- モーダルのコンテンツを**URLを通じて共有可能にする**。
+- ページが更新されてもモーダルが閉じるのではなく、**コンテキストを維持する**。
+- **前方ナビゲーションでモーダルを再度開く**。
+- **後方ナビゲーションでモーダルを閉じる**。
+
+以下のUIパターンを検討してください。ユーザーはクライアント側のナビゲーションを使用してレイアウトからログインモーダルを開いたり、別々の`/login`ページにアクセスできます：
+
+<Image
+  alt="Parallel Routes 図"
+  srcLight="/docs/light/parallel-routes-auth-modal.png"
+  srcDark="/docs/dark/parallel-routes-auth-modal.png"
+  width="1600"
+  height="687"
+/>
+
+このパターンを実装するには、**メイン**のログインページをレンダリングする`/login`ルートを作成することから始めます。
+
+<Image
+  alt="Parallel Routes 図"
+  srcLight="/docs/light/parallel-routes-modal-login-page.png"
+  srcDark="/docs/dark/parallel-routes-modal-login-page.png"
+  width="1600"
+  height="768"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/login/page.tsx" switcher
+import { Login } from '@/app/ui/login'
+
+export default function Page() {
+  return <Login />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/login/page.js" switcher
+import { Login } from '@/app/ui/login'
+
+export default function Page() {
+  return <Login />
+}
+```
+
+</TabItem>
+</Tabs>
+
+その後、`@auth`スロット内に[`default.js`](/docs/app/api-reference/file-conventions/default)ファイルを追加し、`null`を返します。これにより、モーダルがアクティブでない場合にはレンダリングされないことを保証します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/@auth/default.tsx" switcher
+export default function Default() {
+  return null
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/@auth/default.js" switcher
+export default function Default() {
+  return null
+}
+```
+
+</TabItem>
+</Tabs>
+
+`@auth`スロット内で`/(.)login`フォルダを更新して、`/login`ルートをバイパスします。`<Modal>`コンポーネントとその子要素を`/(.)login/page.tsx`ファイルにインポートします：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/@auth/(.)login/page.tsx" switcher
+import { Modal } from '@/app/ui/modal'
+import { Login } from '@/app/ui/login'
+
+export default function Page() {
+  return (
+    <Modal>
+      <Login />
+    </Modal>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/@auth/(.)login/page.js" switcher
+import { Modal } from '@/app/ui/modal'
+import { Login } from '@/app/ui/login'
+
+export default function Page() {
+  return (
+    <Modal>
+      <Login />
+    </Modal>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know:**
+>
+> - ルートをバイパスするために使用される規約（例えば`(.)`）は、あなたのファイルシステム構造に依存します。[Intercepting Routesの規約](/docs/app/building-your-application/routing/intercepting-routes#convention)を参照してください。
+> - `<Modal>`機能をモーダルコンテンツ（`<Login>`）から分離することで、モーダル内の任意のコンテンツ（例えば[フォーム](/docs/app/building-your-application/data-fetching/server-actions-and-mutations#forms)）がサーバーコンポーネントであることを保証できます。詳細については[クライアントコンポーネントとサーバーコンポーネントの組み合わせ](/docs/app/building-your-application/rendering/composition-patterns#supported-pattern-passing-server-components-to-client-components-as-props)を参照してください。
+
+#### モーダルを開く {#opening-the-modal}
+
+次に、Next.jsルーターを利用してモーダルを開閉できます。これにより、モーダルが開いているときや前方および後方ナビゲーション時にURLが正しく更新されます。
+
+モーダルを開くには、`@auth`スロットを親レイアウトにpropとして渡し、`children` propと並行してレンダリングします。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import Link from 'next/link'
+
+export default function Layout({
+  auth,
+  children,
+}: {
+  auth: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <>
+      <nav>
+        <Link href="/login">Open modal</Link>
+      </nav>
+      <div>{auth}</div>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+import Link from 'next/link'
+
+export default function Layout({ auth, children }) {
+  return (
+    <>
+      <nav>
+        <Link href="/login">Open modal</Link>
+      </nav>
+      <div>{auth}</div>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+ユーザーが`<Link>`をクリックすると、モーダルが開き、`/login`ページにナビゲートする代わりにモーダルが開きます。しかし、リフレッシュまたは初期ロード時に`/login`にナビゲートすると、メインのログインページに移動します。
+
+#### モーダルを閉じる {#closing-the-modal}
+
+`router.back()`を呼び出すか、`Link`コンポーネントを使用してモーダルを閉じることができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/modal.tsx" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export function Modal({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          router.back()
+        }}
+      >
+        Close modal
+      </button>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/modal.js" switcher
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export function Modal({ children }) {
+  const router = useRouter()
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          router.back()
+        }}
+      >
+        Close modal
+      </button>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+モーダルをレンダリングしないページからナビゲートするために`Link`コンポーネントを使用する場合は、parallel routeが`null`を返すコンポーネントに一致するようにする必要があります。例えば、rootページに戻るときには、`@auth/page.tsx`コンポーネントを作成します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/modal.tsx" switcher
+import Link from 'next/link'
+
+export function Modal({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <Link href="/">Close modal</Link>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/modal.js" switcher
+import Link from 'next/link'
+
+export function Modal({ children }) {
+  return (
+    <>
+      <Link href="/">Close modal</Link>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/@auth/page.tsx" switcher
+export default function Page() {
+  return null
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/@auth/page.js" switcher
+export default function Page() {
+  return null
+}
+```
+
+</TabItem>
+</Tabs>
+
+または他のページ（`/foo`、`/foo/bar`など）に移動する場合、catch-allスロットを使用できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/@auth/[...catchAll]/page.tsx" switcher
+export default function CatchAll() {
+  return null
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/@auth/[...catchAll]/page.js" switcher
+export default function CatchAll() {
+  return null
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know:**
+>
+> - `@auth`スロット内でcatch-allルートを使用してモーダルを閉じるのは、[アクティブな状態とナビゲーション](#active-state-and-navigation)で説明されている動作のためです。ルートがスロットに一致しなくなったとき、クライアント側のナビゲーションは表示されたままになるので、スロットを`null`を返すルートに一致させてモーダルを閉じる必要があります。
+> - 他の例としては、ギャラリーで写真モーダルを開くか、専用の`/photo/[id]`ページを持つことがあります。または、サイドモーダルでショッピングカートを開くこともあります。
+> - InterceptedとParallel Routesを使用したモーダルの[例を表示](https://github.com/vercel-labs/nextgram)します。
+
+### ローディングおよびエラーUI {#loading-and-error-ui}
+
+Parallel Routesは独立してストリーミングされるため、各ルートに対して独立したエラーとローディングの状態を定義できます：
+
+<Image
+  alt="Parallel routesではカスタムエラーとローディング状態が可能です"
+  srcLight="/docs/light/parallel-routes-cinematic-universe.png"
+  srcDark="/docs/dark/parallel-routes-cinematic-universe.png"
+  width="1600"
+  height="1218"
+/>
+
+詳細は、[ローディングUI](/docs/app/building-your-application/routing/loading-ui-and-streaming)および[エラー処理](/docs/app/building-your-application/routing/error-handling)のドキュメントを参照してください。

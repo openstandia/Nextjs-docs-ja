@@ -1,0 +1,1209 @@
+---
+title: 'Server Actionsとデータの変更'
+nav_title: 'Server Actionsとデータの変更'
+description: 'Next.jsでのフォーム送信とデータ変更の処理方法を学びます。'
+related:
+  description: 'Next.jsでServer Actionsを設定する方法を学びます'
+  links:
+    - app/api-reference/next-config-js/serverActions
+---
+
+[Server Actions](https://react.dev/reference/rsc/server-actions)は、サーバー上で実行される**非同期関数**です。Next.jsのアプリケーションでフォーム送信やデータ変更を処理するため、Server ComponentとClient Componentの両方で呼び出すことができます。
+
+> **🎥 視聴:** Server Actionsを用いたデータ変更についてもっと学ぶ → [YouTube (10分)](https://youtu.be/dDpZfOQBMaU?si=cJZHlUu_jFhCzHUg)
+
+## 規約 {#convention}
+
+Server Actionは、Reactの[`"use server"`](https://react.dev/reference/react/use-server)ディレクティブを使用して定義できます。このディレクティブを`async`関数のトップに配置して関数をServer Actionとするか、別ファイルのトップに配置してそのファイル内のすべてのエクスポートをServer Actionとしてマークできます。
+
+### Server Components {#server-components}
+
+Server Componentでは、インライン関数レベルまたはモジュールレベルで`"use server"`ディレクティブが使用できます。Server Actionをインライン化するには、関数本体のトップに`"use server"`を追加してください:
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+export default function Page() {
+  // Server Action
+  async function create() {
+    'use server'
+    // データを変更
+  }
+
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export default function Page() {
+  // Server Action
+  async function create() {
+    'use server'
+    // データを変更
+  }
+
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Client Components {#client-components}
+
+Client ComponentでServer Actionを呼び出すには、新しいファイルを作成し、そのトップに`"use server"`ディレクティブを追加します。ファイル内のすべてのエクスポートされた関数は、Client ComponentでもServer Componentでも再利用できるServer Actionとしてマークされます:
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
+'use server'
+
+export async function create() {}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+export async function create() {}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/button.tsx" switcher
+'use client'
+
+import { create } from '@/app/actions'
+
+export function Button() {
+  return <button onClick={() => create()}>Create</button>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/button.js" switcher
+'use client'
+
+import { create } from '@/app/actions'
+
+export function Button() {
+  return <button onClick={() => create()}>Create</button>
+}
+```
+
+</TabItem>
+</Tabs>
+
+### actionsをpropsとして渡す {#passing-actions-as-props}
+
+Server ActionをClient Componentにpropとして渡すこともできます:
+
+```jsx
+<ClientComponent updateItemAction={updateItem} />
+```
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/client-component.tsx" switcher
+'use client'
+
+export default function ClientComponent({
+  updateItemAction,
+}: {
+  updateItemAction: (formData: FormData) => void
+}) {
+  return <form action={updateItemAction}>{/* ... */}</form>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/client-component.js" switcher
+'use client'
+
+export default function ClientComponent({ updateItemAction }) {
+  return <form action={updateItemAction}>{/* ... */}</form>
+}
+```
+
+</TabItem>
+</Tabs>
+
+通常、Next.jsのTypeScriptプラグインは`client-component.tsx`内の`updateItemAction`に警告を表示します。これは、クライアントとサーバー間の境界を越えてシリアライズできるものではないからです。
+しかし、`action`という名前または`Action`で終わるpropsはServer Actionsを受け取ると仮定されます。
+これはあくまでもヒューリスティックで、TypeScriptプラグインは実際にServer Actionか通常の関数かを判断しません。
+それでも、実行時の型チェックは、誤ってClient Componentに関数を渡すことがないようにします。
+
+## 挙動 {#behavior}
+
+- Server Actionsは[`<form>`要素](#forms)の`action`属性を用いて呼び出すことができます:
+  - Server Componentはデフォルトでプログレッシブエンハンスメントをサポートしており、JavaScriptがまだロードされていないか無効になっている場合でもフォームは送信されます。
+  - Client Componentでは、Server Actionsを呼び出すフォームはJavaScriptがまだロードされていない場合、送信をキューに入れ、クライアントの初期化を優先します。
+  - 初期化後、ブラウザはフォーム送信時にリフレッシュされません。
+- Server Actionsは`<form>`に限定されず、イベントハンドラ、`useEffect`、サードパーティライブラリ、および`<button>`のような他のフォーム要素からも呼び出すことができます。
+- Server ActionsはNext.jsの[caching and revalidation](/docs/app/building-your-application/caching)アーキテクチャと統合されています。アクションが呼び出されると、Next.jsは更新されたUIと新データを一度のサーバーラウンドトリップで返すことができます。
+- 背後では、アクションは`POST`メソッドを使用し、このHTTPメソッドのみがそれらを呼び出すことができます。
+- Server Actionsの引数と戻り値はReactでシリアライズ可能でなければなりません。シリアライズ可能な引数と値のリストについては、Reactのドキュメントを参照してください。[serializable arguments and values](https://react.dev/reference/react/use-server#serializable-parameters-and-return-values)
+- Server Actionsは関数です。つまり、アプリケーション内のどこでも再利用することができます。
+- Server Actionsは、それが使用されるページやレイアウトから[runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)を継承します。
+- Server Actionsは、それが使用されるページやレイアウトから[Route Segment Config](/docs/app/api-reference/file-conventions/route-segment-config)を継承し、例えば`maxDuration`のようなフィールドを含みます。
+
+## 例 {#examples}
+
+### フォーム {#forms}
+
+ReactはHTMLの[`<form>`](https://developer.mozilla.org/docs/Web/HTML/Element/form)要素を拡張して、`action`プロップでServer Actionsを呼び出すことができるようにします。
+
+フォームで呼び出されると、アクションは自動的に[`FormData`](https://developer.mozilla.org/docs/Web/API/FormData/FormData) オブジェクトを受け取ります。フィールドを管理するためにReactの`useState`を使用する必要はなく、代わりにネイティブの[`FormData` methods](https://developer.mozilla.org/en-US/docs/Web/API/FormData#instance_methods)を使用してデータを抽出できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/invoices/page.tsx" switcher
+export default function Page() {
+  async function createInvoice(formData: FormData) {
+    'use server'
+
+    const rawFormData = {
+      customerId: formData.get('customerId'),
+      amount: formData.get('amount'),
+      status: formData.get('status'),
+    }
+
+    // データを変更
+    // キャッシュを再検証
+  }
+
+  return <form action={createInvoice}>...</form>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/invoices/page.js" switcher
+export default function Page() {
+  async function createInvoice(formData) {
+    'use server'
+
+    const rawFormData = {
+      customerId: formData.get('customerId'),
+      amount: formData.get('amount'),
+      status: formData.get('status'),
+    }
+
+    // データを変更
+    // キャッシュを再検証
+  }
+
+  return <form action={createInvoice}>...</form>
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know:**
+>
+> - 例: [Loading & Error States付きのフォーム](https://github.com/vercel/next.js/tree/canary/examples/next-forms)
+> - 多数のフィールドを持つフォームを扱う場合は、JavaScriptの[`Object.fromEntries()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/fromEntries) メソッドと共に[`entries()`](https://developer.mozilla.org/en-US/docs/Web/API/FormData/entries) メソッドを使用することを検討してください。例えば: `const rawFormData = Object.fromEntries(formData)`。注意すべきは、`formData`に追加の`$ACTION_`プロパティが含まれることです。
+> - 詳細は[React `<form>`ドキュメント](https://react.dev/reference/react-dom/components/form#handle-form-submission-with-a-server-action)をご覧ください。
+
+### 追加の引数を渡す {#passing-additional-arguments}
+
+JavaScriptの`bind`メソッドを使用して、Server Actionに追加の引数を渡すことができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/client-component.tsx" highlight={6} switcher
+'use client'
+
+import { updateUser } from './actions'
+
+export function UserProfile({ userId }: { userId: string }) {
+  const updateUserWithId = updateUser.bind(null, userId)
+
+  return (
+    <form action={updateUserWithId}>
+      <input type="text" name="name" />
+      <button type="submit">Update User Name</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/client-component.js" highlight={6} switcher
+'use client'
+
+import { updateUser } from './actions'
+
+export function UserProfile({ userId }) {
+  const updateUserWithId = updateUser.bind(null, userId)
+
+  return (
+    <form action={updateUserWithId}>
+      <input type="text" name="name" />
+      <button type="submit">Update User Name</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+Server Actionは、フォームデータに加えて`userId`引数を受け取ります：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+export async function updateUser(userId: string, formData: FormData) {}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+export async function updateUser(userId, formData) {}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - 代替案として、引数をフォーム内の非表示入力フィールドとして渡すことも可能です（例: `<input type="hidden" name="userId" value={userId} />`）。ただし、値はレンダリングされたHTMLの一部となり、エンコードされません。
+> - `.bind`はServer ComponentでもClient Componentでも使用できます。また、プログレッシブエンハンスメントをサポートします。
+
+### ネストされたフォーム要素 {#nested-form-elements}
+
+`<form>`内にネストされた`<button>`, `<input type="submit">`, `<input type="image">`などの要素でServer Actionを呼び出すこともできます。これらの要素は、`formAction`プロップまたは[event handlers](#event-handlers)を受け入れます。
+
+これは、フォーム内で複数のServer Actionを呼び出す必要がある場合に便利です。例えば、投稿のドラフトを保存するための特定の`<button>`要素を作成することができます。詳細は、[React `<form>` docs](https://react.dev/reference/react-dom/components/form#handling-multiple-submission-types)をご覧ください。
+
+### プログラムによるフォーム送信 {#programmatic-form-submission}
+
+[`requestSubmit()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/requestSubmit)メソッドを使用して、プログラムでフォーム送信をトリガーできます。例えば、ユーザーが`⌘` + `Enter`キーボードショートカットを使用してフォームを送信したとき、`onKeyDown`イベントをリスンすることができます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/entry.tsx" switcher
+'use client'
+
+export function Entry() {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (
+      (e.ctrlKey || e.metaKey) &&
+      (e.key === 'Enter' || e.key === 'NumpadEnter')
+    ) {
+      e.preventDefault()
+      e.currentTarget.form?.requestSubmit()
+    }
+  }
+
+  return (
+    <div>
+      <textarea name="entry" rows={20} required onKeyDown={handleKeyDown} />
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/entry.js" switcher
+'use client'
+
+export function Entry() {
+  const handleKeyDown = (e) => {
+    if (
+      (e.ctrlKey || e.metaKey) &&
+      (e.key === 'Enter' || e.key === 'NumpadEnter')
+    ) {
+      e.preventDefault()
+      e.currentTarget.form?.requestSubmit()
+    }
+  }
+
+  return (
+    <div>
+      <textarea name="entry" rows={20} required onKeyDown={handleKeyDown} />
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+これにより、最近くの`<form>`祖先の送信がトリガーされ、Server Actionが呼び出されます。
+
+### サーバー側のフォームバリデーション {#server-side-form-validation}
+
+基本的なクライアント側のフォームバリデーションには、HTML属性`required`や`type="email"`を使用できます。
+
+より高度なサーバー側バリデーションには、zodのようなライブラリを使用してデータを変更する前にフォームフィールドのバリデーションを行うことができます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
+'use server'
+
+import { z } from 'zod'
+
+const schema = z.object({
+  email: z.string({
+    invalid_type_error: 'Invalid Email',
+  }),
+})
+
+export default async function createUser(formData: FormData) {
+  const validatedFields = schema.safeParse({
+    email: formData.get('email'),
+  })
+
+  // フォームデータが無効な場合は早期に終了
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    }
+  }
+
+  // データを変更
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/actions.js" switcher
+'use server'
+
+import { z } from 'zod'
+
+const schema = z.object({
+  email: z.string({
+    invalid_type_error: 'Invalid Email',
+  }),
+})
+
+export default async function createsUser(formData) {
+  const validatedFields = schema.safeParse({
+    email: formData.get('email'),
+  })
+
+  // フォームデータが無効な場合は早期に終了
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    }
+  }
+
+  // データを変更
+}
+```
+
+</TabItem>
+</Tabs>
+
+フィールドがサーバーでバリデーションされた後、アクション内でシリアライズ可能なオブジェクトを返し、Reactの`useFormState`フックを使用してユーザーにメッセージを表示することができます。
+
+- アクションを`useFormState`に渡すことで、アクションの関数シグネチャは、最初の引数として新しい`prevState`または`initialState`パラメータを受け取るように変更されます。
+- `useFormState`はReactのフックであるため、Client Componentで使用する必要があります。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+
+export async function createUser(prevState: any, formData: FormData) {
+  const res = await fetch('https://...')
+  const json = await res.json()
+
+  if (!res.ok) {
+    return { message: 'Please enter a valid email' }
+  }
+
+  redirect('/dashboard')
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/actions.js" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+
+export async function createUser(prevState, formData) {
+  const res = await fetch('https://...')
+  const json = await res.json()
+
+  if (!res.ok) {
+    return { message: 'Please enter a valid email' }
+  }
+
+  redirect('/dashboard')
+}
+```
+
+</TabItem>
+</Tabs>
+
+その後、アクションを`useFormState`フックに渡し、返される`state`を使用してエラーメッセージを表示できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/signup.tsx" highlight={11,18-20} switcher
+'use client'
+
+import { useFormState } from 'react-dom'
+import { createUser } from '@/app/actions'
+
+const initialState = {
+  message: '',
+}
+
+export function Signup() {
+  const [state, formAction] = useFormState(createUser, initialState)
+
+  return (
+    <form action={formAction}>
+      <label htmlFor="email">Email</label>
+      <input type="text" id="email" name="email" required />
+      {/* ... */}
+      <p aria-live="polite">{state?.message}</p>
+      <button>Sign up</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/signup.js" highlight={11,18-20} switcher
+'use client'
+
+import { useFormState } from 'react-dom'
+import { createUser } from '@/app/actions'
+
+const initialState = {
+  message: '',
+}
+
+export function Signup() {
+  const [state, formAction] = useFormState(createUser, initialState)
+
+  return (
+    <form action={formAction}>
+      <label htmlFor="email">Email</label>
+      <input type="text" id="email" name="email" required />
+      {/* ... */}
+      <p aria-live="polite">{state?.message}</p>
+      <button>Sign up</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know:**
+>
+> - これらの例は、Next.js App routerと共に提供されるReactの`useFormState`フックを使用しています。React 19を使用している場合は、代わりに`useActionState`を使用してください。詳細は[React docs](https://react.dev/reference/react/useActionState)をご覧ください。
+
+### ペンディング状態 {#pending-states}
+
+> - データを変更する前に、ユーザーがそのアクションを実行する権限があることを確認する必要があります。[認証と承認](#authentication-and-authorization)を参照してください。
+
+[`useFormStatus`](https://react.dev/reference/react-dom/hooks/useFormStatus)フックは`pending`というブール値を公開し、アクションが実行されている間にロードインジケーターを表示するのに使用できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/submit-button.tsx" highlight={6} switcher
+'use client'
+
+import { useFormStatus } from 'react-dom'
+
+export function SubmitButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button disabled={pending} type="submit">
+      Sign Up
+    </button>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/submit-button.js" highlight={6} switcher
+'use client'
+
+import { useFormStatus } from 'react-dom'
+
+export function SubmitButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button disabled={pending} type="submit">
+      Sign Up
+    </button>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know:**
+>
+> - React 19では、`useFormStatus`は、返されるオブジェクトに`data`や`method`、`action`などの追加のキーを含んでいます。React 19を使用していない場合、`pending`キーのみが利用可能です。
+> - React 19では、`useActionState`も返される状態に`pending`キーを含んでいます。
+
+### 楽観的な更新 {#optimistic-updates}
+
+Reactの[`useOptimistic`](https://react.dev/reference/react/useOptimistic)フックを使用して、Server Actionが実行を終了する前に、レスポンスを待つことなくUIを楽観的に更新できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+'use client'
+
+import { useOptimistic } from 'react'
+import { send } from './actions'
+
+type Message = {
+  message: string
+}
+
+export function Thread({ messages }: { messages: Message[] }) {
+  const [optimisticMessages, addOptimisticMessage] = useOptimistic<
+    Message[],
+    string
+  >(messages, (state, newMessage) => [...state, { message: newMessage }])
+
+  const formAction = async (formData) => {
+    const message = formData.get('message') as string
+    addOptimisticMessage(message)
+    await send(message)
+  }
+
+  return (
+    <div>
+      {optimisticMessages.map((m, i) => (
+        <div key={i}>{m.message}</div>
+      ))}
+      <form action={formAction}>
+        <input type="text" name="message" />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+'use client'
+
+import { useOptimistic } from 'react'
+import { send } from './actions'
+
+export function Thread({ messages }) {
+  const [optimisticMessages, addOptimisticMessage] = useOptimistic(
+    messages,
+    (state, newMessage) => [...state, { message: newMessage }]
+  )
+
+  const formAction = async (formData) => {
+    const message = formData.get('message')
+    addOptimisticMessage(message)
+    await send(message)
+  }
+
+  return (
+    <div>
+      {optimisticMessages.map((m) => (
+        <div>{m.message}</div>
+      ))}
+      <form action={formAction}>
+        <input type="text" name="message" />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### イベントハンドラ {#event-handlers}
+
+`<form>`要素内でServer Actionsを使用するのが一般的ですが、`onClick`などのイベントハンドラで呼び出すこともできます。たとえば、いいねカウントを増やす場合：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/like-button.tsx" switcher
+'use client'
+
+import { incrementLike } from './actions'
+import { useState } from 'react'
+
+export default function LikeButton({ initialLikes }: { initialLikes: number }) {
+  const [likes, setLikes] = useState(initialLikes)
+
+  return (
+    <>
+      <p>Total Likes: {likes}</p>
+      <button
+        onClick={async () => {
+          const updatedLikes = await incrementLike()
+          setLikes(updatedLikes)
+        }}
+      >
+        Like
+      </button>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/like-button.js" switcher
+'use client'
+
+import { incrementLike } from './actions'
+import { useState } from 'react'
+
+export default function LikeButton({ initialLikes }) {
+  const [likes, setLikes] = useState(initialLikes)
+
+  return (
+    <>
+      <p>Total Likes: {likes}</p>
+      <button
+        onClick={async () => {
+          const updatedLikes = await incrementLike()
+          setLikes(updatedLikes)
+        }}
+      >
+        Like
+      </button>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+また、フォーム要素にイベントハンドラを追加することもできます。たとえば、`onChange`でフォームフィールドを保存する場合：
+
+```tsx title="app/ui/edit-post.tsx"
+'use client'
+
+import { publishPost, saveDraft } from './actions'
+
+export default function EditPost() {
+  return (
+    <form action={publishPost}>
+      <textarea
+        name="content"
+        onChange={async (e) => {
+          await saveDraft(e.target.value)
+        }}
+      />
+      <button type="submit">Publish</button>
+    </form>
+  )
+}
+```
+
+このような場合、短期間に複数のイベントが発生する可能性があるため **debouncing（デバウンシング）** を使用して、不必要なServer Actionの呼び出しを防ぐことをお勧めします。
+
+### `useEffect` {#useeffect}
+
+Reactの[`useEffect`](https://react.dev/reference/react/useEffect)フックを使用して、コンポーネントがマウントされたときや依存関係が変更されたときにServer Actionを呼び出すことができます。これは、グローバルイベントに依存する、または自動的にトリガーされる必要がある変更に役立ちます。たとえば、アプリショートカット用の`onKeyDown`、無限スクロール用のインターセクションオブザーバーフック、または表示回数を更新するためにコンポーネントがマウントされたとき：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/view-count.tsx" switcher
+'use client'
+
+import { incrementViews } from './actions'
+import { useState, useEffect } from 'react'
+
+export default function ViewCount({ initialViews }: { initialViews: number }) {
+  const [views, setViews] = useState(initialViews)
+
+  useEffect(() => {
+    const updateViews = async () => {
+      const updatedViews = await incrementViews()
+      setViews(updatedViews)
+    }
+
+    updateViews()
+  }, [])
+
+  return <p>Total Views: {views}</p>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/view-count.js" switcher
+'use client'
+
+import { incrementViews } from './actions'
+import { useState, useEffect } from 'react'
+
+export default function ViewCount({ initialViews }) {
+  const [views, setViews] = useState(initialViews)
+
+  useEffect(() => {
+    const updateViews = async () => {
+      const updatedViews = await incrementViews()
+      setViews(updatedViews)
+    }
+
+    updateViews()
+  }, [])
+
+  return <p>Total Views: {views}</p>
+}
+```
+
+</TabItem>
+</Tabs>
+
+`useEffect`の[行動と注意事項](https://react.dev/reference/react/useEffect#caveats)を考慮するのを忘れないでください。
+
+### エラーハンドリング {#error-handling}
+
+エラーがスローされた場合、それはクライアント上で最近の[`error.js`](/docs/app/building-your-application/routing/error-handling)または`<Suspense>`バウンダリーによってキャッチされます。UIで処理されるエラーを返すために、`try/catch`を使用することをお勧めします。
+
+たとえば、新しいアイテムを作成する際にエラーを処理し、メッセージを返すServer Actionを以下に示します：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+export async function createTodo(prevState: any, formData: FormData) {
+  try {
+    // データを変更
+  } catch (e) {
+    throw new Error('Failed to create task')
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+export async function createTodo(prevState, formData) {
+  try {
+    // データを変更
+  } catch (e) {
+    throw new Error('Failed to create task')
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know:**
+>
+> - エラーをスローする以外に、`useFormState`で処理されるオブジェクトを返すこともできます。[サーバー側のバリデーションとエラーハンドリング](#server-side-form-validation)を参照してください。
+
+### データの再検証 {#revalidating-data}
+
+次の`revalidatePath`APIを使用して、Server Actions内で[Next.js キャッシュ](/docs/app/building-your-application/caching)を再検証できます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+import { revalidatePath } from 'next/cache'
+
+export async function createPost() {
+  try {
+    // ...
+  } catch (error) {
+    // ...
+  }
+
+  revalidatePath('/posts')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { revalidatePath } from 'next/cache'
+
+export async function createPost() {
+  try {
+    // ...
+  } catch (error) {
+    // ...
+  }
+
+  revalidatePath('/posts')
+}
+```
+
+</TabItem>
+</Tabs>
+
+または、特定のデータフェッチをキャッシュタグで無効化する場合は、`revalidateTag`を使用してください：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+import { revalidateTag } from 'next/cache'
+
+export async function createPost() {
+  try {
+    // ...
+  } catch (error) {
+    // ...
+  }
+
+  revalidateTag('posts')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { revalidateTag } from 'next/cache'
+
+export async function createPost() {
+  try {
+    // ...
+  } catch (error) {
+    // ...
+  }
+
+  revalidateTag('posts')
+}
+```
+
+</TabItem>
+</Tabs>
+
+### リダイレクト {#redirecting}
+
+Server Actionの完了後にユーザーを別のルートにリダイレクトする場合は、`redirect` APIを使用します。`redirect`は`try/catch`ブロックの外側で呼び出す必要があります：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+import { revalidateTag } from 'next/cache'
+
+export async function createPost(id: string) {
+  try {
+    // ...
+  } catch (error) {
+    // ...
+  }
+
+  revalidateTag('posts') // キャッシュされた投稿を更新
+  redirect(`/post/${id}`) // 新しい投稿ページにナビゲート
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+import { revalidateTag } from 'next/cache'
+
+export async function createPost(id) {
+  try {
+    // ...
+  } catch (error) {
+    // ...
+  }
+
+  revalidateTag('posts') // キャッシュされた投稿を更新
+  redirect(`/post/${id}`) // 新しい投稿ページにナビゲート
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Cookies {#cookies}
+
+Server Action内で次のAPIを用いて、`get`、`set`、`delete`を使用してCookieを処理できます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function exampleAction() {
+  const cookieStore = await cookies()
+
+  // Cookieの取得
+  cookieStore.get('name')?.value
+
+  // Cookieの設定
+  cookieStore.set('name', 'Delba')
+
+  // Cookieの削除
+  cookieStore.delete('name')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function exampleAction() {
+  // Cookieの取得
+  const cookieStore = await cookies()
+
+  // Cookieの取得
+  cookieStore.get('name')?.value
+
+  // Cookieの設定
+  cookieStore.set('name', 'Delba')
+
+  // Cookieの削除
+  cookieStore.delete('name')
+}
+```
+
+</TabItem>
+</Tabs>
+
+Server ActionsからCookieを削除するための追加の例については、[こちら](/docs/app/api-reference/functions/cookies#deleting-cookies)をご覧ください。
+
+## セキュリティ {#security}
+
+デフォルトでは、Server Actionを作成してエクスポートすると、公開のHTTPエンドポイントが作成され、同じセキュリティ仮定と認可チェックで扱われます。これは、Server Actionやユーティリティ関数がコード内の他の場所でインポートされていない場合でも、公開アクセス可能であることを意味します。
+
+セキュリティを向上させるため、Next.jsには以下の組み込み機能があります：
+
+- **セキュアなアクションID:** クライアントがServer Actionを参照して呼び出せるように、Next.jsは暗号化された非決定的なIDを作成します。これらのIDは、セキュリティを強化するためにビルド間で定期的に再計算されます。
+- **デッドコード削除:** 使用されていないServer Action（IDで参照される）は、クライアントバンドルから削除され、第三者による公開アクセスを防ぎます。
+
+> **Good to know**:
+>
+> IDはコンパイル時に作成され、最大14日間キャッシュされます。新しいビルドが開始されるか、ビルドキャッシュが無効化された場合に再生成されます。
+> このセキュリティの向上は、認証レイヤーが欠けている場合のリスクを低減します。ただし、Server Actionは公開されたHTTPエンドポイントとして取り扱うべきです。
+
+```jsx
+// app/actions.js
+'use server'
+
+// このアクションはアプリケーションで使用されています。
+// したがって、Next.jsはクライアントがリファレンスをしてServer Actionを呼び出せるようにするために安全なIDを作成します。
+export async function updateUserAction(formData) {}
+
+// このアクションはアプリケーションで使用されていません。
+// そのため、Next.jsはこのコードを`next build`中に自動的に削除し、公開されたエンドポイントを作成しません。
+export async function deleteUserAction(formData) {}
+```
+
+### 認証と認可 {#authentication-and-authorization}
+
+ユーザーがアクションを実行する権限を持っていることを確認する必要があります。例:
+
+```tsx title="app/actions.ts"
+'use server'
+
+import { auth } from './lib'
+
+export function addItem() {
+  const { user } = auth()
+  if (!user) {
+    throw new Error('You must be signed in to perform this action')
+  }
+
+  // ...
+}
+```
+
+### クロージャと暗号化 {#closures-and-encryption}
+
+コンポーネント内にServer Actionを定義すると、そのアクションは外部関数のスコープにアクセスできる[クロージャ](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)が作成されます。たとえば、`publish`アクションは`publishVersion`変数にアクセスできます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+export default async function Page() {
+  const publishVersion = await getLatestVersion();
+
+  async function publish() {
+    "use server";
+    if (publishVersion !== await getLatestVersion()) {
+      throw new Error('The version has changed since pressing publish');
+    }
+    ...
+  }
+
+  return (
+    <form>
+      <button formAction={publish}>Publish</button>
+    </form>
+  );
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export default async function Page() {
+  const publishVersion = await getLatestVersion();
+
+  async function publish() {
+    "use server";
+    if (publishVersion !== await getLatestVersion()) {
+      throw new Error('The version has changed since pressing publish');
+    }
+    ...
+  }
+
+  return (
+    <form>
+      <button formAction={publish}>Publish</button>
+    </form>
+  );
+}
+```
+
+</TabItem>
+</Tabs>
+
+クロージャは、描画時にデータ（例：`publishVersion`）の「スナップショット」をキャプチャしておき、後でアクションが呼び出されたときに使用する必要がある場合に便利です。
+
+しかし、これを実現するためには、キャプチャされた変数は、アクションが呼び出されたときにクライアントに送信され、サーバーに戻されます。クライアントに機密データが公開されるのを防ぐために、Next.jsは自動的にクローズオーバー変数を暗号化します。Next.jsアプリケーションがビルドされるたびに、各アクションには新しい秘密鍵が生成されます。これにより、特定のビルドに対してのみアクションを呼び出すことができます。
+
+> **Good to know:** 機密値がクライアントに公開されるのを防止するために、暗号化だけに頼ることはお勧めしません。代わりに、クライアントに特定のデータが送信されるのを防ぐために、[React汚染API](/docs/app/building-your-application/data-fetching/fetching#preventing-sensitive-data-from-being-exposed-to-the-client)を使用することをお勧めします。
+
+### 暗号化キーの上書き（高度な設定） {#overwriting-encryption-keys-advanced}
+
+Next.jsアプリケーションを複数のサーバーで自己ホスティングする場合、各サーバーインスタンスは異なる暗号化キーを持ち、矛盾が生じる可能性があります。
+
+これを緩和するために、`process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`環境変数を使用して暗号化キーを上書きできます。この変数を指定することで、暗号化キーがビルド間で持続され、すべてのサーバーインスタンスが同じキーを使用することが保証されます。
+
+これは、複数のデプロイメントにまたがるコンシステントな暗号化動作があなたのアプリケーションにとって重要である場合の高度なユースケースです。キーの交換や署名といった標準的なセキュリティ慣行を考慮すべきです。
+
+> **Good to know:** VercelにデプロイされたNext.jsアプリケーションはこれを自動的に処理します。
+
+### 許可されたオリジン（高度な設定） {#allowed-origins-advanced}
+
+Server Actionsは`<form>`要素で呼び出すことができるため、[CSRF攻撃](https://developer.mozilla.org/en-US/docs/Glossary/CSRF)にさらされる可能性があります。
+
+背景では、Server Actionsは`POST`メソッドを使用し、このHTTPメソッドのみがそれらを呼び出すことができます。これにより、特に[SameSiteクッキー](https://web.dev/articles/samesite-cookies-explained)がデフォルト状態になっている場合、現代のブラウザでの大多数のCSRF脆弱性を防ぎます。
+
+さらに、Next.jsのServer Actionsは、 [Originヘッダー](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin) を [Hostヘッダー](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) (または `X-Forwarded-Host`) と比較します。これらが一致しない場合、リクエストは中断されます。言い換えれば、Server Actionsは、それをホストするページと同じホストでのみ呼び出すことができます。
+
+リバースプロキシや多層バックエンドアーキテクチャーを使用する大規模なアプリケーションの場合（サーバーAPIが本番ドメインとは異なる場合）、`serverActions.allowedOrigins`オプションを使用して安全なオリジンのリストを指定することをお勧めします。このオプションは文字列の配列を受け入れます。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+module.exports = {
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['my-proxy.com', '*.my-proxy.com'],
+    },
+  },
+}
+```
+
+[セキュリティとServer Actions](https://nextjs.org/blog/security-nextjs-server-components-actions)についてさらに学びましょう。
+
+## その他のリソース {#additional-resources}
+
+詳細情報は、以下のReactドキュメントを参照してください：
+
+- [Server Actions](https://react.dev/reference/rsc/server-actions)
+- [`"use server"`](https://react.dev/reference/react/use-server)
+- [`<form>`](https://react.dev/reference/react-dom/components/form)
+- [`useFormStatus`](https://react.dev/reference/react-dom/hooks/useFormStatus)
+- [`useActionState`](https://react.dev/reference/react/useActionState)
+- [`useOptimistic`](https://react.dev/reference/react/useOptimistic)
