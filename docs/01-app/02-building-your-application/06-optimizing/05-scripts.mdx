@@ -1,0 +1,485 @@
+---
+title: 'スクリプトの最適化'
+nav_title: 'スクリプト'
+description: '組み込みの Script コンポーネントを使用してサードパーティのスクリプトを最適化します。'
+related:
+  title: 'API リファレンス'
+  description: 'next/script APIについて詳しく学びましょう。'
+  links:
+    - app/api-reference/components/script
+---
+
+{/* このドキュメントの内容はapp routerとpages routerの間で共有されています。Pages Routerに特有のコンテンツを追加するには、`<PagesOnly>中のコンテンツ</PagesOnly>`コンポーネントを使うことができます。共有されたコンテンツはコンポーネントで囲んではいけません。 */}
+
+<AppOnly>
+
+### レイアウトスクリプト {#layout-scripts}
+
+複数のルートにサードパーティスクリプトをロードするには、`next/script`をインポートし、スクリプトを直接レイアウトコンポーネントに含めます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/layout.tsx" switcher
+import Script from 'next/script'
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <>
+      <section>{children}</section>
+      <Script src="https://example.com/script.js" />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/layout.js" switcher
+import Script from 'next/script'
+
+export default function DashboardLayout({ children }) {
+  return (
+    <>
+      <section>{children}</section>
+      <Script src="https://example.com/script.js" />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+サードパーティスクリプトは、ユーザーがフォルダルート（例えば`dashboard/page.js`）またはいずれかのネストされたルート（例えば`dashboard/settings/page.js`）にアクセスしたときにフェッチされます。Next.jsは、たとえユーザーが同じレイアウト内で複数のルート間を移動しても、スクリプトを**一度だけロード**することを保証します。
+
+</AppOnly>
+
+### アプリケーションスクリプト {#application-scripts}
+
+<AppOnly>
+
+すべてのルートにサードパーティスクリプトをロードするには、`next/script`をインポートしてスクリプトを直接root レイアウトに含めます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import Script from 'next/script'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+      <Script src="https://example.com/script.js" />
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+import Script from 'next/script'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+      <Script src="https://example.com/script.js" />
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+すべてのルートにサードパーティスクリプトをロードするには、`next/script`をインポートしてスクリプトをカスタム`_app`に直接含めます：
+
+```jsx title="pages/_app.js"
+import Script from 'next/script'
+
+export default function MyApp({ Component, pageProps }) {
+  return (
+    <>
+      <Component {...pageProps} />
+      <Script src="https://example.com/script.js" />
+    </>
+  )
+}
+```
+
+</PagesOnly>
+
+このスクリプトは、アプリケーション内のどのルートがアクセスされてもロードおよび実行されます。Next.jsは、たとえユーザーが複数のページを移動しても、スクリプトは**一度だけロード**されることを保証します。
+
+> **推奨**: パフォーマンスへの不要な影響を最小限に抑えるため、特定のページやレイアウトでのみサードパーティスクリプトを含めることをお勧めします。
+
+### 戦略 {#strategy}
+
+デフォルトの`next/script`の動作では、任意のページやレイアウトでサードパーティスクリプトをロードできますが、`strategy`プロパティを使用してそのロード動作を微調整することができます：
+
+- `beforeInteractive`: Next.jsコードとページのハイドレーションが発生する前にスクリプトをロードします。
+- `afterInteractive`: （**デフォルト**）ページでいくらかのハイドレーションが発生した後、早期にスクリプトをロードします。
+- `lazyOnload`: ブラウザがアイドル状態のときにスクリプトを後でロードします。
+- `worker`: （実験的）Webワーカー内でスクリプトをロードします。
+
+各戦略およびその使用ケースについて詳しくは、[`next/script`](/docs/app/api-reference/components/script#strategy) APIリファレンスドキュメントを参照してください。
+
+### スクリプトをWebワーカーにオフロードする（実験的） {#offloading-scripts-to-a-web-worker-experimental}
+
+> **警告：** `worker`戦略はまだ安定しておらず、[`app`](/docs/app/building-your-application/routing/defining-routes)ディレクトリとまだ互換性がありません。慎重に使用してください。
+
+`worker`戦略を使用するスクリプトは、[Partytown](https://partytown.builder.io/)を使用してWebワーカー内でオフロードおよび実行されます。これにより、メインスレッドを他のアプリケーションコードに割り当てることで、サイトのパフォーマンスを向上させることができます。
+
+この戦略はまだ実験的であり、`next.config.js`で`nextScriptWorkers`フラグを有効にしない限り使用できません：
+
+```js title="next.config.js"
+module.exports = {
+  experimental: {
+    nextScriptWorkers: true,
+  },
+}
+```
+
+その後、`next`を実行して（通常は`npm run dev`または`yarn dev`）、Next.jsは設定の完了に必要なパッケージのインストールをガイドします：
+
+```bash title="ターミナル"
+npm run dev
+```
+
+次のような指示が表示されます：`npm install @builder.io/partytown`を実行してPartytownをインストールしてください
+
+セットアップが完了すると、`strategy="worker"`を定義することで自動的にPartytownがアプリケーション内にインスタンス化され、スクリプトがWebワーカーにオフロードされます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/home.tsx" switcher
+import Script from 'next/script'
+
+export default function Home() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="worker" />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/home.js" switcher
+import Script from 'next/script'
+
+export default function Home() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="worker" />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+Webワーカー内でサードパーティスクリプトをロードする際に考慮すべきトレードオフがいくつかあります。詳しくは、Partytownの[トレードオフ](https://partytown.builder.io/trade-offs)ドキュメントを参照してください。
+
+<PagesOnly>
+
+#### カスタムPartytown設定の使用 {#using-custom-partytown-configuration}
+
+`worker`戦略は動作するために追加の設定を必要としませんが、Partytownは設定オブジェクトの使用をサポートしており、`debug`モードの有効化やイベントとトリガーの転送などの設定を変更できます。
+
+追加の設定オプションを追加する場合は、カスタム`_document.js`で使用される`<Head />`コンポーネント内に含めることができます：
+
+```jsx title="_pages/document.jsx"
+import { Html, Head, Main, NextScript } from 'next/document'
+
+export default function Document() {
+  return (
+    <Html>
+      <Head>
+        <script
+          data-partytown-config
+          dangerouslySetInnerHTML={{
+            __html: `
+              partytown = {
+                lib: "/_next/static/~partytown/",
+                debug: true
+              };
+            `,
+          }}
+        />
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  )
+}
+```
+
+Partytownの設定を変更するには、次の条件を満たしている必要があります：
+
+1. `data-partytown-config`属性を使用して、Next.jsが使用するデフォルトの設定を上書きすることができます
+2. Partytownのライブラリファイルを別のディレクトリに保存することを決定しない限り、`lib: "/_next/static/~partytown/"`プロパティと値は設定オブジェクトに含まれている必要があります。これは、Next.jsが必要な静的ファイルを保存する場所をPartytownに知らせるためです。
+
+> **注意**: [アセットプレフィックス](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/assetPrefix)を使用している場合、Partytownのデフォルト設定を変更したい場合は、それを`lib`パスの一部として含める必要があります。
+
+Partytownの[設定オプション](https://partytown.builder.io/configuration)を確認して、追加できる他のプロパティの完全なリストを参照してください。
+
+</PagesOnly>
+
+### インラインスクリプト {#inline-scripts}
+
+インラインスクリプト、または外部ファイルからロードされないスクリプトもScriptコンポーネントでサポートされています。JavaScriptを中括弧内に配置することで書くことができます：
+
+```jsx
+<Script id="show-banner">
+  {`document.getElementById('banner').classList.remove('hidden')`}
+</Script>
+```
+
+または、`dangerouslySetInnerHTML`プロパティを使用して：
+
+```jsx
+<Script
+  id="show-banner"
+  dangerouslySetInnerHTML={{
+    __html: `document.getElementById('banner').classList.remove('hidden')`,
+  }}
+/>
+```
+
+> **警告**: 引数`id`がインラインスクリプトに割り当てられている必要があります。これにより、Next.jsはスクリプトを追跡し最適化します。
+
+### 追加のコードを実行する {#executing-additional-code}
+
+イベントハンドラはScriptコンポーネントとともに使用して、特定のイベントが発生した後に追加のコードを実行することができます：
+
+- `onLoad`: スクリプトのロードが完了した後にコードを実行します。
+- `onReady`: スクリプトのロードが完了し、コンポーネントがマウントされるたびにコードを実行します。
+- `onError`: スクリプトがロードに失敗した場合にコードを実行します。
+
+<AppOnly>
+
+これらのハンドラは、[Client Component](/docs/app/building-your-application/rendering/client-components)内で`next/script`がインポートされ使用された場合にのみ動作し、コードの最初の行として`"use client"`が定義されている場合にのみ動作します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+'use client'
+
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onLoad={() => {
+          console.log('Script has loaded')
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+'use client'
+
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onLoad={() => {
+          console.log('Script has loaded')
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+各イベントハンドラについて詳しく知り、例を参照するには、[`next/script`](/docs/app/api-reference/components/script#onload) APIリファレンスをご覧ください。
+
+</AppOnly>
+
+<PagesOnly>
+
+これらのハンドラは、[Client Component](/docs/app/building-your-application/rendering/client-components)内で`next/script`がインポートされ使用された場合にのみ動作し、コードの最初の行として`"use client"`が定義されている場合にのみ動作します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/index.tsx" switcher
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onLoad={() => {
+          console.log('Script has loaded')
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/index.js" switcher
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onLoad={() => {
+          console.log('Script has loaded')
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+各イベントハンドラについて詳しく知り、例を参照するには、[`next/script`](https://nextjs.org/docs/canary/pages/api-reference/components/script#onload) APIリファレンスをご覧ください。
+
+</PagesOnly>
+
+### 追加の属性 {#additional-attributes}
+
+`<script>`要素に割り当てられる多くのDOM属性があり、これはScriptコンポーネントでは使用されないものもあります（[`nonce`](https://developer.mozilla.org/docs/Web/HTML/Global_attributes/nonce)や[カスタムデータ属性](https://developer.mozilla.org/docs/Web/HTML/Global_attributes/data-*)など）。追加の属性を含めることで、最終的にHTMLに含まれる最適化された`<script>`要素に自動的に転送されます。
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        id="example-script"
+        nonce="XUENAJFW"
+        data-test="script"
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        id="example-script"
+        nonce="XUENAJFW"
+        data-test="script"
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/index.tsx" switcher
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        id="example-script"
+        nonce="XUENAJFW"
+        data-test="script"
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/index.js" switcher
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        id="example-script"
+        nonce="XUENAJFW"
+        data-test="script"
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+</PagesOnly>

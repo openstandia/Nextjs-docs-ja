@@ -1,0 +1,87 @@
+---
+title: 'バージョン 13'
+description: 'Next.js アプリケーションをバージョン 12から13にアップグレードします。'
+---
+
+## バージョン12から13へのアップグレード {#upgrading-from-12-to-13}
+
+Next.js バージョン 13にアップデートするには、お使いのパッケージマネージャで以下のコマンドを実行してください：
+
+```bash title="ターミナル"
+npm i next@13 react@latest react-dom@latest eslint-config-next@13
+```
+
+```bash title="ターミナル"
+yarn add next@13 react@latest react-dom@latest eslint-config-next@13
+```
+
+```bash title="ターミナル"
+pnpm i next@13 react@latest react-dom@latest eslint-config-next@13
+```
+
+```bash title="ターミナル"
+bun add next@13 react@latest react-dom@latest eslint-config-next@13
+```
+
+> **Good to know:** TypeScriptを使用している場合、`@types/react`および`@types/react-dom`も最新バージョンにアップグレードしてください。
+
+### v13の概要 {#v13-summary}
+
+- [サポートされているブラウザ](/docs/architecture/supported-browsers) が変更され、Internet Explorerのサポートが削除され、モダンなブラウザが対象になりました
+- Node.js の最低バージョンが12.22.0から16.14.0に引き上げられました。これは、12.xと14.xがサポート終了したためです
+- React の最低バージョンが17.0.2から18.2.0に引き上げられました
+- `swcMinify`設定プロパティが`false`から`true`に変更されました。詳細は [Next.js コンパイラ](/docs/architecture/nextjs-compiler) をご覧ください
+- `next/image`インポートが`next/legacy/image`にリネームされました。`next/future/image`インポートが`next/image`にリネームされました。インポートを安全かつ自動的にリネームするための[コーデモッドが利用可能です](https://nextjs.org/docs/canary/pages/building-your-application/upgrading/codemods#next-image-to-legacy-image)
+- `next/link`の子要素に`<a>`が使用できなくなりました。レガシー動作を使うためには`legacyBehavior`propを追加するか、`<a>`を削除してアップグレードしてください。コードを自動的にアップグレードするための[コーデモッドが利用可能です](https://nextjs.org/docs/canary/pages/building-your-application/upgrading/codemods#new-link)
+- `target`設定プロパティが削除され、[出力ファイルトレーシング](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/output) がそれに取って代わりました
+
+## 共通機能の移行 {#migrating-shared-features}
+
+Next.js 13は、新しい機能と規約を伴った[`app`ディレクトリ](/docs/app/building-your-application/routing)を導入しています。ただし、Next.js 13にアップグレードするために新しい[`app`ディレクトリ](/docs/app/building-your-application/routing#the-app-router)を使用する必要は**ありません**。
+
+更新された[Imageコンポーネント](#image-component)、[Linkコンポーネント](#link-component)、[Scriptコンポーネント](#script-component)、および[フォント最適化](#font-optimization)など、両方のディレクトリで動作する新機能を使用して`pages`を引き続き使用できます。
+
+### `<Image/>`コンポーネント {#image-component}
+
+Next.js 12では、一時的なインポート`next/future/image`によるImageコンポーネントの多くの改善が導入されました。これらの改善には、クライアントサイドJavaScriptの削減、画像の拡張やスタイル付けの簡便化、アクセシビリティの向上、そしてネイティブブラウザによる遅延読み込みが含まれます。
+
+Next.js 13から、この新しい動作が`next/image`のデフォルトとなりました。
+
+新しいImageコンポーネントへの移行を支援するために2つのコーデモッドがあります：
+
+- [next-image-to-legacy-image](https://nextjs.org/docs/canary/pages/building-your-application/upgrading/codemods#next-image-to-legacy-image)：このコーデモッドは、Next.js 12 と同じ動作を維持するために`next/image`インポートを安全かつ自動的に`next/legacy/image`にリネームします。このコーデモッドを実行して、Next.js 13にすばやく自動的にアップデートすることをおすすめします
+- [next-image-experimental](https://nextjs.org/docs/canary/pages/building-your-application/upgrading/codemods#next-image-experimental)：前のコーデモッドを実行した後、オプションでこの実験的なコーデモッドを実行して、`next/legacy/image`を新しい`next/image`にアップグレードすることができます。これにより、未使用のpropsが削除され、インラインスタイルが追加されます。ただし、このコーデモッドは実験的であり、静的使用のみをカバーします（例：`<Image src={img} layout="responsive" />`）が、動的使用（例：`<Image {...props} />`）はカバーしていません。
+
+また、手動で更新することもでき、[移行ガイド](https://nextjs.org/docs/canary/pages/building-your-application/upgrading/codemods#next-image-experimental)を参照したり、[レガシー比較](https://nextjs.org/docs/canary/pages/api-reference/components/image-legacy#comparison)も確認できます。
+
+### `<Link>`コンポーネント {#link-component}
+
+[`<Link>`コンポーネント](https://nextjs.org/docs/canary/pages/api-reference/components/link)は、子要素として`<a>`タグを手動で追加する必要がなくなりました。この動作は、[バージョン12.2](https://nextjs.org/blog/next-12-2)で実験的オプションとして追加され、現在はデフォルトになっています。Next.js 13では、`<Link>`が常に`<a>`をレンダリングし、基礎となるタグにpropsを転送することができます。
+
+例：
+
+```jsx
+import Link from 'next/link'
+
+// Next.js 12: `<a>`をネストしないと除外されます
+<Link href="/about">
+  <a>About</a>
+</Link>
+
+// Next.js 13: `<Link>`は常にバックエンドで`<a>`をレンダリングします
+<Link href="/about">
+  About
+</Link>
+```
+
+Next.js 13にリンクをアップグレードするには、[`new-link`コーデモッド](https://nextjs.org/docs/canary/pages/building-your-application/upgrading/codemods#new-link)を使用できます。
+
+### `<Script>`コンポーネント {#script-component}
+
+[`next/script`](https://nextjs.org/docs/canary/pages/api-reference/components/script) の動作は、`pages`と`app`の両方をサポートするように更新されました。`app`を段階的に採用している場合は、[アップグレードガイド](https://nextjs.org/docs/canary/pages/building-your-application/upgrading)をお読みください。
+
+### フォント最適化 {#font-optimization}
+
+以前は、Next.jsはフォントのCSSをインライン化することでフォントを最適化する手助けをしていました。バージョン13では、新しい[`next/font`](https://nextjs.org/docs/canary/pages/building-your-application/optimizing/fonts) モジュールが導入され、パフォーマンスとプライバシーを確保しつつ、フォントの読み込み体験をカスタマイズすることができます。
+
+`next/font`を使用する方法については、[フォントの最適化](https://nextjs.org/docs/canary/pages/building-your-application/optimizing/fonts)をご覧ください。

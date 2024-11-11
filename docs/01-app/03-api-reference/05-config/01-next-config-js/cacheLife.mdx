@@ -1,0 +1,97 @@
+---
+title: 'cacheLife'
+description: 'Next.jsでのcacheLife設定の方法を学びましょう。'
+version: 'canary'
+---
+
+`cacheLife`オプションを使用すると、コンポーネントまたは関数内で[`cacheLife`](/docs/app/api-reference/functions/cacheLife)関数を使用する際、および[`use cache`ディレクティブ](/docs/app/api-reference/directives/use-cache)の範囲内で**カスタムキャッシュプロファイル**を定義できます。
+
+## 使用法 {#usage}
+
+プロファイルを定義するには、[`dynamicIO`フラグ](/docs/app/api-reference/config/next-config-js/dynamicIO)を有効にし、`next.config.js`ファイルの`cacheLife`オブジェクトにキャッシュプロファイルを追加します。例えば、`blog`プロファイルは以下のようになります：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    dynamicIO: true,
+    cacheLife: {
+      blog: {
+        stale: 3600, // 1時間
+        revalidate: 900, // 15分
+        expire: 86400, // 1日
+      },
+    },
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+module.exports = {
+  experimental: {
+    dynamicIO: true,
+    cacheLife: {
+      blog: {
+        stale: 3600, // 1時間
+        revalidate: 900, // 15分
+        expire: 86400, // 1日
+      },
+    },
+  },
+}
+```
+
+</TabItem>
+</Tabs>
+
+これで、コンポーネントまたは関数内でこのカスタム`blog`設定を次のように使用できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" highlight={4,5} switcher
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export async function getCachedData() {
+  'use cache'
+  cacheLife('blog')
+  const data = await fetch('/api/data')
+  return data
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/actions.js" highlight={4,5} switcher
+import { unstable_cacheLife as cacheLife } from 'next/cache'
+
+export async function getCachedData() {
+  'use cache'
+  cacheLife('blog')
+  const data = await fetch('/api/data')
+  return data
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 参照 {#reference}
+
+設定オブジェクトには、以下の形式でキー値が含まれています：
+
+| **プロパティ** | **値**   | **説明**                                                                       | **要件**                                        |
+| -------------- | -------- | ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| `stale`        | `number` | クライアントがサーバーに確認せずに値をキャッシュする期間                       | 任意                                            |
+| `revalidate`   | `number` | キャッシュがサーバーで更新される頻度；更新中に古い値が提供されることがあります | 任意                                            |
+| `expire`       | `number` | 値が動的に切り替わる前に古いままになれる最大期間                               | 任意 - `revalidate`よりも長くする必要があります |

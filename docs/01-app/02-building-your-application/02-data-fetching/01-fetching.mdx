@@ -1,0 +1,857 @@
+---
+title: 'データの取得とキャッシュ'
+nav_title: 'データの取得とキャッシュ'
+description: 'Next.jsでサーバーまたはクライアントでデータを取得するためのベストプラクティスを学びましょう。'
+---
+
+<details>
+  <summary>例</summary>
+
+- [Next.js Commerce](https://vercel.com/templates/next.js/nextjs-commerce)
+- [On-Demand ISR](https://on-demand-isr.vercel.app)
+- [Next.js Forms](https://github.com/vercel/next.js/tree/canary/examples/next-forms)
+
+</details>
+
+このガイドでは、Next.jsにおけるデータの取得とキャッシュの基本を、具体例やベストプラクティスを交えて説明します。
+
+以下はNext.jsでのデータ取得の最小限の例です：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+export default async function Page() {
+  let data = await fetch('https://api.vercel.app/blog')
+  let posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export default async function Page() {
+  let data = await fetch('https://api.vercel.app/blog')
+  let posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+この例は、非同期のReact Server Componentで`fetch` APIを使って基本的なサーバーサイドのデータ取得を行うことを示しています。
+
+## 参照 {#reference}
+
+- [`fetch`](/docs/app/api-reference/functions/fetch)
+- React [`cache`](https://react.dev/reference/react/cache)
+- Next.js [`unstable_cache`](/docs/app/api-reference/functions/unstable_cache)
+
+## 例 {#examples}
+
+### `fetch` APIを使ったサーバーでのデータの取得 {#fetching-data-on-the-server-with-the-fetch-api}
+
+このコンポーネントはブログポストのリストを取得して表示します。`fetch`からのレスポンスはデフォルトではキャッシュされません。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+export default async function Page() {
+  let data = await fetch('https://api.vercel.app/blog')
+  let posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export default async function Page() {
+  let data = await fetch('https://api.vercel.app/blog')
+  let posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+このルートの他のどこにも[Dynamic APIs](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)を使用していない場合、このページは`next build`の際に事前レンダリングされ、静的ページになります。データは[Incremental Static Regeneration](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)を使用して更新できます。
+
+ページを事前レンダリングしないようにするには、ファイルに次のように追加します：
+
+```js
+export const dynamic = 'force-dynamic'
+```
+
+ただし、通常は`cookies`や`headers`、ページpropsからの`searchParams`の読み込みなどの関数を使用し、これによってページが動的にレンダリングされるようになります。この場合、明示的に`force-dynamic`を使用する必要はありません。
+
+### ORMまたはデータベースを使ったサーバーでのデータ取得 {#fetching-data-on-the-server-with-an-orm-or-database}
+
+このコンポーネントはブログポストのリストを取得して表示します。データベースからのレスポンスはデフォルトではキャッシュされませんが、[追加の設定](#caching-data-with-an-orm-or-database)でキャッシュできます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { db, posts } from '@/lib/db'
+
+export default async function Page() {
+  let allPosts = await db.select().from(posts)
+  return (
+    <ul>
+      {allPosts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { db, posts } from '@/lib/db'
+
+export default async function Page() {
+  let allPosts = await db.select().from(posts)
+  return (
+    <ul>
+      {allPosts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+このルートの他のどこにも[Dynamic APIs](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)を使用していない場合、このページは`next build`の際に事前レンダリングされ、静的ページになります。データは[Incremental Static Regeneration](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)を使用して更新できます。
+
+ページを事前レンダリングしないようにするには、ファイルに次のように追加します：
+
+```js
+export const dynamic = 'force-dynamic'
+```
+
+ただし、通常は`cookies`や`headers`、ページpropsからの`searchParams`の読み込みなどの関数を使用し、これによってページが動的にレンダリングされるようになります。この場合、明示的に`force-dynamic`を使用する必要はありません。
+
+### クライアントでのデータの取得 {#fetching-data-on-the-client}
+
+まずはサーバーサイドでのデータ取得を試みることを推奨します。
+
+しかし、クライアントサイドでデータを取得するケースが合理的な場合もあります。これらのシナリオでは、手動で`useEffect`で`fetch`を呼び出す（推奨されません）か、クライアント取得のために人気のあるコミュニティのReactライブラリ（[SWR](https://swr.vercel.app/)や[React Query](https://tanstack.com/query/latest)など）を活用することができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+'use client'
+
+import { useState, useEffect } from 'react'
+
+export function Posts() {
+  const [posts, setPosts] = useState(null)
+
+  useEffect(() => {
+    async function fetchPosts() {
+      let res = await fetch('https://api.vercel.app/blog')
+      let data = await res.json()
+      setPosts(data)
+    }
+    fetchPosts()
+  }, [])
+
+  if (!posts) return <div>読み込み中...</div>
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+'use client'
+
+import { useState, useEffect } from 'react'
+
+export function Posts() {
+  const [posts, setPosts] = useState(null)
+
+  useEffect(() => {
+    async function fetchPosts() {
+      let res = await fetch('https://api.vercel.app/blog')
+      let data = await res.json()
+      setPosts(data)
+    }
+    fetchPosts()
+  }, [])
+
+  if (!posts) return <div>読み込み中...</div>
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### ORMまたはデータベースでのデータキャッシュ {#caching-data-with-an-orm-or-database}
+
+`unstable_cache` APIを使用してレスポンスをキャッシュし、`next build`実行時にページが事前レンダリングされるようにできます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { unstable_cache } from 'next/cache'
+import { db, posts } from '@/lib/db'
+
+const getPosts = unstable_cache(
+  async () => {
+    return await db.select().from(posts)
+  },
+  ['posts'],
+  { revalidate: 3600, tags: ['posts'] }
+)
+
+export default async function Page() {
+  const allPosts = await getPosts()
+
+  return (
+    <ul>
+      {allPosts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { unstable_cache } from 'next/cache'
+import { db, posts } from '@/lib/db'
+
+const getPosts = unstable_cache(
+  async () => {
+    return await db.select().from(posts)
+  },
+  ['posts'],
+  { revalidate: 3600, tags: ['posts'] }
+)
+
+export default async function Page() {
+  const allPosts = await getPosts()
+
+  return (
+    <ul>
+      {allPosts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+この例は、データベースクエリの結果を1時間（3600秒）キャッシュします。また、`posts`というキャッシュタグを付け、[Incremental Static Regeneration](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)で無効化できます。
+
+### 複数の関数でデータを再利用する {#reusing-data-across-multiple-functions}
+
+Next.jsは`generateMetadata`や`generateStaticParams`のようなAPIを使用しますが、これらでは`page`で取得したデータを使用する必要があります。
+
+`fetch`を使用している場合、`cache: 'force-cache'`を追加することでリクエストを[メモ化](/docs/app/building-your-application/caching#request-memoization)できます。これにより、同じURLを同じオプションで安全に呼び出し、リクエストが1回だけ行われます。
+
+> **Good to know:**
+>
+> - 以前のバージョンのNext.jsでは、`fetch`を使用する際のデフォルト`cache`値は`force-cache`でした。これがバージョン15から`cache: no-store`に変更されました。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { notFound } from 'next/navigation'
+
+interface Post {
+  id: string
+  title: string
+  content: string
+}
+
+async function getPost(id: string) {
+  let res = await fetch(`https://api.vercel.app/blog/${id}`, {
+    cache: 'force-cache',
+  })
+  let post: Post = await res.json()
+  if (!post) notFound()
+  return post
+}
+
+export async function generateStaticParams() {
+  let posts = await fetch('https://api.vercel.app/blog', {
+    cache: 'force-cache',
+  }).then((res) => res.json())
+
+  return posts.map((post: Post) => ({
+    id: post.id,
+  }))
+}
+
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  let post = await getPost(params.id)
+
+  return {
+    title: post.title,
+  }
+}
+
+export default async function Page({ params }: { params: { id: string } }) {
+  let post = await getPost(params.id)
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <p>{post.content}</p>
+    </article>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { notFound } from 'next/navigation'
+
+async function getPost(id) {
+  let res = await fetch(`https://api.vercel.app/blog/${id}`)
+  let post = await res.json()
+  if (!post) notFound()
+  return post
+}
+
+export async function generateStaticParams() {
+  let posts = await fetch('https://api.vercel.app/blog').then((res) =>
+    res.json()
+  )
+
+  return posts.map((post) => ({
+    id: post.id,
+  }))
+}
+
+export async function generateMetadata({ params }) {
+  let post = await getPost(params.id)
+
+  return {
+    title: post.title,
+  }
+}
+
+export default async function Page({ params }) {
+  let post = await getPost(params.id)
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <p>{post.content}</p>
+    </article>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+`fetch`を使用しない場合は、ORMやデータベースを直接使用し、Reactの`cache`関数を使ってデータの取得をラップできます。これにより、クエリは重複せず、1回だけ実行されます。
+
+```jsx
+import { cache } from 'react'
+import { db, posts, eq } from '@/lib/db' // Drizzle ORMを使った例
+import { notFound } from 'next/navigation'
+
+export const getPost = cache(async (id) => {
+  const post = await db.query.posts.findFirst({
+    where: eq(posts.id, parseInt(id)),
+  })
+
+  if (!post) notFound()
+  return post
+})
+```
+
+### キャッシュされたデータの再検証 {#revalidating-cached-data}
+
+キャッシュされたデータの再検証については、[Incremental Static Regeneration](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)で学びましょう。
+
+## パターン {#patterns}
+
+### 並列および順次データ取得 {#parallel-and-sequential-data-fetching}
+
+コンポーネント内部でデータを取得する際、2つのデータ取得パターンを理解しておく必要があります：並列と順次です。
+
+<Image
+  alt="順次および並行データ取得"
+  srcLight="/docs/light/sequential-parallel-data-fetching.png"
+  srcDark="/docs/dark/sequential-parallel-data-fetching.png"
+  width="1600"
+  height="525"
+/>
+
+- **順次**：コンポーネントツリー内のリクエストが互いに依存している。これにより、ロード時間が長くなる可能性があります
+- **並列**：ルート内のリクエストが積極的に開始され、同時にデータをロードする。この結果、データ取得にかかる全体の時間が短縮されます
+
+#### 順次データ取得 {#sequential-data-fetching}
+
+ネストされたコンポーネントがあり、それぞれのコンポーネントが独自のデータを取得する場合、それらのデータリクエストが[メモ化されていない](/docs/app/building-your-application/caching#request-memoization)場合、データの取得は順次行われます。
+
+このパターンが望ましい場合もあります。たとえば、ひとつの取得が他の取得結果によって決まる場合です。たとえば、`Playlists`コンポーネントは、`artistID` propに依存しているため、アーティストコンポーネントの取得完了後にのみデータの取得を開始します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/artist/[username]/page.tsx" switcher
+export default async function Page({
+  params: { username },
+}: {
+  params: { username: string }
+}) {
+  // アーティスト情報を取得する
+  const artist = await getArtist(username)
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      {/* Playlistsコンポーネントが読み込み中にフォールバックUIを表示する */}
+      <Suspense fallback={<div>読み込み中...</div>}>
+        {/* アーティスト ID を Playlists コンポーネントに渡す */}
+        <Playlists artistID={artist.id} />
+      </Suspense>
+    </>
+  )
+}
+
+async function Playlists({ artistID }: { artistID: string }) {
+  // アーティスト ID を使用してプレイリストを取得します
+  const playlists = await getArtistPlaylists(artistID)
+
+  return (
+    <ul>
+      {playlists.map((playlist) => (
+        <li key={playlist.id}>{playlist.name}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/artist/[username]/page.js" switcher
+export default async function Page({ params: { username } }) {
+  // アーティスト情報を取得する
+  const artist = await getArtist(username)
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      {/* Playlists コンポーネントが読み込み中にフォールバック UI を表示する */}
+      <Suspense fallback={<div>読み込み中...</div>}>
+        {/* アーティスト ID を Playlists コンポーネントに渡す */}
+        <Playlists artistID={artist.id} />
+      </Suspense>
+    </>
+  )
+}
+
+async function Playlists({ artistID }) {
+  // アーティスト ID を使用してプレイリストを取得します
+  const playlists = await getArtistPlaylists(artistID)
+
+  return (
+    <ul>
+      {playlists.map((playlist) => (
+        <li key={playlist.id}>{playlist.name}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+[`loading.js`](/docs/app/building-your-application/routing/loading-ui-and-streaming)（ルートセグメント用）や[React `<Suspense>`](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense)（ネストされたコンポーネント用）を使用して、即時にローディング状態を表示し、Reactが結果をストリーミングするまでの間ユーザーがページの読み込み準備が整った部分を操作できるようにします。
+
+これにより、データリクエストによって全体のルートがブロックされるのを防ぎ、ユーザーは準備が整ったページの部分を操作できるようになります。
+
+#### 並列データ取得 {#parallel-data-fetching}
+
+デフォルトでは、レイアウトおよびページセグメントは並列にレンダリングされます。つまり、リクエストは並行して開始されます。
+
+しかし、`async`/`await`の特性上、同じセグメントやコンポーネント内での待機リクエストは、それ以下のリクエストをブロックします。
+
+データを並列で取得するには、データを使用するコンポーネントの外側でリクエストを積極的に開始します。これにより、両方のリクエストが並行して開始され、時間を節約できますが、両方のプロミスが解決されるまでレンダリング結果は表示されません。
+
+以下の例では、`getArtist`と`getAlbums`関数が`Page`コンポーネントの外に定義され、`Promise.all`を使用してコンポーネント内で開始されています。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/artist/[username]/page.tsx" switcher
+import Albums from './albums'
+
+async function getArtist(username: string) {
+  const res = await fetch(`https://api.example.com/artist/${username}`)
+  return res.json()
+}
+
+async function getAlbums(username: string) {
+  const res = await fetch(`https://api.example.com/artist/${username}/albums`)
+  return res.json()
+}
+
+export default async function Page({
+  params: { username },
+}: {
+  params: { username: string }
+}) {
+  const artistData = getArtist(username)
+  const albumsData = getAlbums(username)
+
+  // 両方のリクエストを並行して開始する
+  const [artist, albums] = await Promise.all([artistData, albumsData])
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      <Albums list={albums} />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/artist/[username]/page.js" switcher
+import Albums from './albums'
+
+async function getArtist(username) {
+  const res = await fetch(`https://api.example.com/artist/${username}`)
+  return res.json()
+}
+
+async function getAlbums(username) {
+  const res = await fetch(`https://api.example.com/artist/${username}/albums`)
+  return res.json()
+}
+
+export default async function Page({ params: { username } }) {
+  const artistData = getArtist(username)
+  const albumsData = getAlbums(username)
+
+  // 両方のリクエストを並行して開始する
+  const [artist, albums] = await Promise.all([artistData, albumsData])
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      <Albums list={albums} />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+さらに、[Suspense Boundary](/docs/app/building-your-application/routing/loading-ui-and-streaming)を追加して、レンダリング作業を分割し、結果の一部を可能な限り早く表示できます。
+
+### データのプリロード {#preloading-data}
+
+ウォーターフォールを防ぐもう1つの方法は、ユーティリティ関数を作成してブロッキングリクエストの上に積極的に呼び出すことによってプリロードパターンを使うことです。たとえば、`checkIsAvailable()`は`<Item/>` のレンダリングをブロックしますが、`preload()`をその前に呼び出すことで`<Item/>`のデータ依存関係を積極的に開始できます。`<Item/>`がレンダリングされたときには、そのデータがすでに取得されています。
+
+ただし、`preload`関数は`checkIsAvailable()`の実行を妨げるわけではありません。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="components/Item.tsx" switcher
+import { getItem } from '@/utils/get-item'
+
+export const preload = (id: string) => {
+  // voidは指定した式を評価して非定義を返します
+  // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Operators/void
+  void getItem(id)
+}
+export default async function Item({ id }: { id: string }) {
+  const result = await getItem(id)
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="components/Item.js" switcher
+import { getItem } from '@/utils/get-item'
+
+export const preload = (id) => {
+  // voidは指定した式を評価して非定義を返します
+  // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Operators/void
+  void getItem(id)
+}
+export default async function Item({ id }) {
+  const result = await getItem(id)
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/item/[id]/page.tsx" switcher
+import Item, { preload, checkIsAvailable } from '@/components/Item'
+
+export default async function Page({
+  params: { id },
+}: {
+  params: { id: string }
+}) {
+  // アイテムデータの読み込み開始
+  preload(id)
+  // 別の非同期タスクを実行する
+  const isAvailable = await checkIsAvailable()
+
+  return isAvailable ? <Item id={id} /> : null
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/item/[id]/page.js" switcher
+import Item, { preload, checkIsAvailable } from '@/components/Item'
+
+export default async function Page({ params: { id } }) {
+  // アイテムデータの読み込み開始
+  preload(id)
+  // 別の非同期タスクを実行する
+  const isAvailable = await checkIsAvailable()
+
+  return isAvailable ? <Item id={id} /> : null
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know:** "preload"関数はパターンであってAPIではないため、任意の名前を指定できます。
+
+#### React `cache`および`server-only`とプリロードパターンを使用する {#using-react-cache-and-server-only-with-the-preload-pattern}
+
+`cache`関数、`preload`パターン、および`server-only`パッケージを組み合わせて、アプリ全体で使用できるデータ取得ユーティリティを作成できます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="utils/get-item.ts" switcher
+import { cache } from 'react'
+import 'server-only'
+
+export const preload = (id: string) => {
+  void getItem(id)
+}
+
+export const getItem = cache(async (id: string) => {
+  // ...
+})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="utils/get-item.js" switcher
+import { cache } from 'react'
+import 'server-only'
+
+export const preload = (id) => {
+  void getItem(id)
+}
+
+export const getItem = cache(async (id) => {
+  // ...
+})
+```
+
+</TabItem>
+</Tabs>
+
+このアプローチを使用すると、積極的にデータを取得し、レスポンスをキャッシュし、このデータ取得が[必ずサーバーでのみ行われること](/docs/app/building-your-application/rendering/composition-patterns#keeping-server-only-code-out-of-the-client-environment)を保証できます。
+
+`utils/get-item`エクスポートは、レイアウト、ページ、または他のコンポーネントによって使用され、アイテムのデータを取得するタイミングをコントロールします。
+
+> **Good to know:**
+>
+> - サーバー向けデータ取得関数がクライアントで使用されないことを保証するために、[`server-only` パッケージ](/docs/app/building-your-application/rendering/composition-patterns#keeping-server-only-code-out-of-the-client-environment)を使用することをお勧めします。
+
+### クライアントに機密データが流出するのを防ぐ {#preventing-sensitive-data-from-being-exposed-to-the-client}
+
+オブジェクトの全インスタンスや機密な値がクライアントに渡されるのを防ぐために、Reactの汚染API、[`taintObjectReference`](https://react.dev/reference/react/experimental_taintObjectReference)や[`taintUniqueValue`](https://react.dev/reference/react/experimental_taintUniqueValue)を使用することをお勧めします。
+
+アプリケーションで汚染を有効にするには、Next.jsの設定で`experimental.taint`オプションを`true`に設定します：
+
+```js title="next.config.js"
+module.exports = {
+  experimental: {
+    taint: true,
+  },
+}
+```
+
+そして、汚染したいオブジェクトや値を`experimental_taintObjectReference`または`experimental_taintUniqueValue`関数に渡してください：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/utils.ts" switcher
+import { queryDataFromDB } from './api'
+import {
+  experimental_taintObjectReference,
+  experimental_taintUniqueValue,
+} from 'react'
+
+export async function getUserData() {
+  const data = await queryDataFromDB()
+  experimental_taintObjectReference(
+    'Do not pass the whole user object to the client',
+    data
+  )
+  experimental_taintUniqueValue(
+    "Do not pass the user's address to the client",
+    data,
+    data.address
+  )
+  return data
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/utils.js" switcher
+import { queryDataFromDB } from './api'
+import {
+  experimental_taintObjectReference,
+  experimental_taintUniqueValue,
+} from 'react'
+
+export async function getUserData() {
+  const data = await queryDataFromDB()
+  experimental_taintObjectReference(
+    'Do not pass the whole user object to the client',
+    data
+  )
+  experimental_taintUniqueValue(
+    "Do not pass the user's address to the client",
+    data,
+    data.address
+  )
+  return data
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { getUserData } from './data'
+
+export async function Page() {
+  const userData = getUserData()
+  return (
+    <ClientComponent
+      user={userData} // これはtaintObjectReferenceによるエラーを引き起こす
+      address={userData.address} // これはtaintUniqueValueによるエラーを引き起こす
+    />
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { getUserData } from './data'
+
+export async function Page() {
+  const userData = await getUserData()
+  return (
+    <ClientComponent
+      user={userData} // これはtaintObjectReferenceによるエラーを引き起こす
+      address={userData.address} // これはtaintUniqueValueによるエラーを引き起こす
+    />
+  )
+}
+```
+
+</TabItem>
+</Tabs>

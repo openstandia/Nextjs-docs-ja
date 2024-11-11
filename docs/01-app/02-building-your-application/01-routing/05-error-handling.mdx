@@ -1,0 +1,317 @@
+---
+title: 'Error Handling'
+description: '予期されたエラーの表示方法と、未捕捉例外の処理方法を学びます。'
+related:
+  links:
+    - app/api-reference/file-conventions/error
+---
+
+エラーは2つのカテゴリに分けることができます：**予期されたエラー**と**未捕捉例外**：
+
+- **予期されたエラーを戻り値としてモデル化する**：Server Actionsでは予期されたエラーに対して`try`/`catch`を使用しないようにしてください。これらのエラーを管理し、クライアントに返すために`useFormState`を使用してください。
+- **予期しないエラーにはエラーバウンダリを使用する**：予期しないエラーを処理しフォールバックUIを提供するために、`error.tsx`や`global-error.tsx`ファイルを使用してエラーバウンダリを実装します。
+
+## 予期されたエラーの処理 {#handling-expected-errors}
+
+予期されたエラーは、アプリケーションの通常の操作中に発生する可能性のあるエラーです。たとえば、[サーバーサイドフォームバリデーション](/docs/app/building-your-application/data-fetching/server-actions-and-mutations#server-side-form-validation)や失敗したリクエストからのエラーが含まれます。これらのエラーは明示的に処理され、クライアントに返されるべきです。
+
+### Server Actionsからの予期されたエラーの処理 {#handling-expected-errors-from-server-actions}
+
+Server Actionsの状態を管理し、エラーを処理するために`useFormState`フックを使用します。このアプローチでは、予期されたエラーに対して`try`/`catch`ブロックを回避し、例外をスローするのではなく戻り値としてモデル化するべきです。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+
+// ユーザーを作成する
+export async function createUser(prevState: any, formData: FormData) {
+  const res = await fetch('https://...')
+  const json = await res.json()
+
+  if (!res.ok) {
+    return { message: '有効なメールアドレスを入力してください' }
+  }
+
+  redirect('/dashboard')
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/actions.js" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+
+// ユーザーを作成する
+export async function createUser(prevState, formData) {
+  const res = await fetch('https://...')
+  const json = await res.json()
+
+  if (!res.ok) {
+    return { message: '有効なメールアドレスを入力してください' }
+  }
+
+  redirect('/dashboard')
+}
+```
+
+</TabItem>
+</Tabs>
+
+その後、`useFormState`フックにアクションを渡し、返された`state`を使用してエラーメッセージを表示できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/signup.tsx" highlight={11,18-20} switcher
+'use client'
+
+import { useFormState } from 'react-dom'
+import { createUser } from '@/app/actions'
+
+const initialState = {
+  message: '',
+}
+
+export function Signup() {
+  const [state, formAction] = useFormState(createUser, initialState)
+
+  return (
+    <form action={formAction}>
+      <label htmlFor="email">Email</label>
+      <input type="text" id="email" name="email" required />
+      {/* ... */}
+      <p aria-live="polite">{state?.message}</p>
+      <button>Sign up</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/signup.js" highlight={11,18-20} switcher
+'use client'
+
+import { useFormState } from 'react-dom'
+import { createUser } from '@/app/actions'
+
+const initialState = {
+  message: '',
+}
+
+export function Signup() {
+  const [state, formAction] = useFormState(createUser, initialState)
+
+  return (
+    <form action={formAction}>
+      <label htmlFor="email">Email</label>
+      <input type="text" id="email" name="email" required />
+      {/* ... */}
+      <p aria-live="polite">{state?.message}</p>
+      <button>Sign up</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: これらの例では、Next.js App RouterにバンドルされているReactの`useFormState`フックを使用しています。React 19を使用している場合は、代わりに`useActionState`を使用してください。詳細については、[Reactのドキュメント](https://react.dev/reference/react/useActionState)を参照してください。
+
+返される状態を使用して、クライアントコンポーネントからトーストメッセージを表示することもできます。
+
+### Server Componentからの予期されたエラーの処理 {#handling-expected-errors-from-server-components}
+
+Server Component内部でデータを取得する際、レスポンスを使用して条件付きでエラーメッセージをレンダリングするか、[`redirect`](/docs/app/building-your-application/routing/redirecting#redirect-function)を使用できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+export default async function Page() {
+  const res = await fetch(`https://...`)
+  const data = await res.json()
+
+  if (!res.ok) {
+    return 'エラーが発生しました。'
+  }
+
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export default async function Page() {
+  const res = await fetch(`https://...`)
+  const data = await res.json()
+
+  if (!res.ok) {
+    return 'エラーが発生しました。'
+  }
+
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 未捕捉例外 {#uncaught-exceptions}
+
+未捕捉例外は、アプリケーションの通常のフロー中に発生するべきではないバグや問題を示す予期しないエラーです。これらはエラーをスローすることで処理され、その後エラーバウンダリによって捕捉されます。
+
+- **一般的**: `error.js`を使用してroot レイアウト以下の未捕捉エラーを処理します
+- **オプション**: 入れ子になった`error.js`ファイル（例：`app/dashboard/error.js`）を使用して、詳細な未捕捉エラーを処理します
+- **あまり一般的でない**: `global-error.js`を使用してroot レイアウトで未捕捉エラーを処理します
+
+### エラーバウンダリの使用 {#using-error-boundaries}
+
+Next.jsはエラーバウンダリを使用して未捕捉例外を処理します。エラーバウンダリは子コンポーネント内のエラーを捕捉し、クラッシュしたコンポーネントtreeの代わりにフォールバックUIを表示します。
+
+エラーバウンダリを作成するには、ルートセグメント内に`error.tsx`ファイルを追加し、Reactコンポーネントをエクスポートします：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/error.tsx" switcher
+'use client' // エラーバウンダリはクライアントコンポーネントでなければなりません
+
+import { useEffect } from 'react'
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  useEffect(() => {
+    // エラーをエラーレポートサービスに記録する
+    console.error(error)
+  }, [error])
+
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button
+        onClick={
+          // セグメントを再レンダリングしようとして回復を試みる
+          () => reset()
+        }
+      >
+        Try again
+      </button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/error.js" switcher
+'use client' // エラーバウンダリはクライアントコンポーネントでなければなりません
+
+import { useEffect } from 'react'
+
+export default function Error({ error, reset }) {
+  useEffect(() => {
+    // エラーをエラーレポートサービスに記録する
+    console.error(error)
+  }, [error])
+
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button
+        onClick={
+          // セグメントを再レンダリングしようとして回復を試みる
+          () => reset()
+        }
+      >
+        Try again
+      </button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+エラーを親のエラーバウンダリにバブルアップさせたい場合は、`error`コンポーネントをレンダリングする際に`throw`できます。
+
+### 入れ子になったルートでのエラー処理 {#handling-errors-in-nested-routes}
+
+エラーは最も近い親のエラーバウンダリにバブルアップします。これにより、[ルートの階層](/docs/app/building-your-application/routing#component-hierarchy)のさまざまなレベルに`error.tsx`ファイルを配置することで、詳細なエラー処理が可能になります。
+
+<Image
+  alt="入れ子になったエラーコンポーネントの階層"
+  srcLight="/docs/light/nested-error-component-hierarchy.png"
+  srcDark="/docs/dark/nested-error-component-hierarchy.png"
+  width="1600"
+  height="687"
+/>
+
+### グローバルエラーの処理 {#handling-global-errors}
+
+あまり一般的ではありませんが、[国際化](/docs/app/building-your-application/routing/internationalization)を利用している場合でも、root レイアウト内のエラーをルートアプリディレクトリにある`app/global-error.js`を使って処理できます。グローバルエラーUIはアクティブなときにroot レイアウトやテンプレートを置き換えるため、独自の`<html>`および`<body>`タグを定義する必要があります。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/global-error.tsx" switcher
+'use client' // エラーバウンダリはクライアントコンポーネントでなければなりません
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  return (
+    // global-errorはhtmlおよびbodyタグを含める必要があります
+    <html>
+      <body>
+        <h2>Something went wrong!</h2>
+        <button onClick={() => reset()}>Try again</button>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/global-error.js" switcher
+'use client' // エラーバウンダリはクライアントコンポーネントでなければなりません
+
+export default function GlobalError({ error, reset }) {
+  return (
+    // global-errorはhtmlおよびbodyタグを含める必要があります
+    <html>
+      <body>
+        <h2>Something went wrong!</h2>
+        <button onClick={() => reset()}>Try again</button>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>

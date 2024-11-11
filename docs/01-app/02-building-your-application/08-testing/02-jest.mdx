@@ -1,0 +1,414 @@
+---
+title: 'Next.jsにおけるJestのセットアップ'
+nav_title: 'Jest'
+description: 'Next.jsでJestを設定し、ユニットテストとスナップショットテストを行う方法を学びます。'
+---
+
+{/* このドキュメントの内容はapp routerとpages routerに共有されています。Pages Routerに特定のコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有されているコンテンツはコンポーネントでラップしないでください。 */}
+
+JestとReact Testing Libraryは、**ユニットテスト**と**スナップショットテスト**によく使用されます。このガイドでは、Next.jsでJestをセットアップし、初めてのテストを書く方法を紹介します。
+
+> **Good to know:** `async`なserver componentはReactエコシステムにおいて新しいため、Jestは現在それらをサポートしていません。同期的なserver componentやclient componentのために**ユニットテスト**を実行することはできますが、`async`なコンポーネントには**E2Eテスト**の使用をお勧めします。
+
+## クイックスタート {#quickstart}
+
+Next.jsの[with-jest](https://github.com/vercel/next.js/tree/canary/examples/with-jest)例を使用して`create-next-app`を利用すれば、素早く始めることができます。
+
+```bash title="Terminal"
+npx create-next-app@latest --example with-jest with-jest-app
+```
+
+## 手動でのセットアップ {#manual-setup}
+
+[Next.js 12](https://nextjs.org/blog/next-12)のリリース以来、Next.jsにはJestのための組み込みの設定があります。
+
+Jestをセットアップするには、`jest`と以下のパッケージを開発依存関係としてインストールします。
+
+```bash title="Terminal"
+npm install -D jest jest-environment-jsdom @testing-library/react @testing-library/dom @testing-library/jest-dom ts-node
+# もしくは {#or}
+yarn add -D jest jest-environment-jsdom @testing-library/react @testing-library/dom @testing-library/jest-dom ts-node
+# もしくは {#or}
+pnpm install -D jest jest-environment-jsdom @testing-library/react @testing-library/dom @testing-library/jest-dom ts-node
+```
+
+次のコマンドを実行して、基本的なJest設定ファイルを生成します。
+
+```bash title="Terminal"
+npm init jest@latest
+# もしくは {#or}
+yarn create jest@latest
+# もしくは {#or}
+pnpm create jest@latest
+```
+
+この操作により、プロジェクトにJestをセットアップするための一連のプロンプトが表示され、`jest.config.ts|js`ファイルが自動的に作成されます。
+
+設定ファイルを更新し、`next/jest`を使用するようにします。このトランスフォーマーには、Next.jsでJestを動作させるために必要な設定オプションがすべて含まれています。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="jest.config.ts" switcher
+import type { Config } from 'jest'
+import nextJest from 'next/jest.js'
+
+const createJestConfig = nextJest({
+  // test環境でnext.config.jsおよび.envファイルを読み込むために、Next.jsアプリへのパスを指定
+  dir: './',
+})
+
+// Jestに渡すカスタム設定を追加
+const config: Config = {
+  coverageProvider: 'v8',
+  testEnvironment: 'jsdom',
+  // 各テストが実行される前に他の設定オプションを追加
+  // setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+}
+
+// Next.jsの設定を非同期で読み込むために、createJestConfigはこの方法でエクスポートされます
+export default createJestConfig(config)
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="jest.config.js" switcher
+const nextJest = require('next/jest')
+
+/** @type {import('jest').Config} */
+const createJestConfig = nextJest({
+  // test環境でnext.config.jsおよび.envファイルを読み込むために、Next.jsアプリへのパスを指定
+  dir: './',
+})
+
+// Jestに渡すカスタム設定を追加
+const config = {
+  coverageProvider: 'v8',
+  testEnvironment: 'jsdom',
+  // 各テストが実行される前に他の設定オプションを追加
+  // setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+}
+
+// Next.jsの設定を非同期で読み込むために、createJestConfigはこの方法でエクスポートされます
+module.exports = createJestConfig(config)
+```
+
+</TabItem>
+</Tabs>
+
+next/jestは内部でJestを自動的に設定してくれます。その内容には以下が含まれています。
+
+- [Next.js Compiler](/docs/architecture/nextjs-compiler)を使用してトランスフォームを設定
+- スタイルシート（`.css`、`.module.css`、およびそのscssバリアント）、画像のインポートおよび[`next/font`](/docs/app/building-your-application/optimizing/fonts)を自動モック
+- `.env`（およびすべてのバリアント）を`process.env`に読み込み
+- テスト解決とトランスフォームから`node_modules`を無視
+- テスト解決から`.next`を無視
+- SWCトランスフォームを有効にするフラグのために`next.config.js`を読み込み
+
+> **Good to know**： 環境変数を直接テストするには、それらを個別のセットアップスクリプトまたは`jest.config.ts`ファイルに手動でロードしてください。詳細については、[Test Environment Variables](/docs/app/building-your-application/configuring/environment-variables#test-environment-variables)をご覧ください。
+
+<PagesOnly>
+
+## Jest（Babelを使用）のセットアップ {#setting-up-jest-with-babel}
+
+[Next.js Compiler](/docs/architecture/nextjs-compiler)をオプトアウトし、Babelを使用する場合、`babel-jest`および`identity-obj-proxy`を上記のパッケージに追加でインストールし、Jestを手動で設定する必要があります。
+
+Next.jsのためにJestを設定する推奨オプションは以下のとおりです。
+
+```js title="jest.config.js"
+module.exports = {
+  collectCoverage: true,
+  // node 14.xでは、カバレッジプロバイダーv8は速度が良好で、レポートもおおよそ良好です
+  coverageProvider: 'v8',
+  collectCoverageFrom: [
+    '**/*.{js,jsx,ts,tsx}',
+    '!**/*.d.ts',
+    '!**/node_modules/**',
+    '!<rootDir>/out/**',
+    '!<rootDir>/.next/**',
+    '!<rootDir>/*.config.js',
+    '!<rootDir>/coverage/**',
+  ],
+  moduleNameMapper: {
+    // CSSインポートの処理（CSSモジュールを含む）
+    // https://jestjs.io/docs/webpack#mocking-css-modules
+    '^.+\\.module\\.(css|sass|scss)$': 'identity-obj-proxy',
+
+    // CSSインポートの処理（CSSモジュールを含まない）
+    '^.+\\.(css|sass|scss)$': '<rootDir>/__mocks__/styleMock.js',
+
+    // 画像インポートの処理
+    // https://jestjs.io/docs/webpack#handling-static-assets
+    '^.+\\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$': `<rootDir>/__mocks__/fileMock.js`,
+
+    // モジュールエイリアスの処理
+    '^@/components/(.*)$': '<rootDir>/components/$1',
+
+    // @next/fontの処理
+    '@next/font/(.*)': `<rootDir>/__mocks__/nextFontMock.js`,
+    // next/fontの処理
+    'next/font/(.*)': `<rootDir>/__mocks__/nextFontMock.js`,
+    // server-onlyの無効化
+    'server-only': `<rootDir>/__mocks__/empty.js`,
+  },
+  // 各テストの実行前に設定オプションを追加
+  // setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
+  testEnvironment: 'jsdom',
+  transform: {
+    // babel-jestを使用して、next/babelプリセットを使用してテストをトランスパイル
+    // https://jestjs.io/docs/configuration#transform-objectstring-pathtotransformer--pathtotransformer-object
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
+  },
+  transformIgnorePatterns: [
+    '/node_modules/',
+    '^.+\\.module\\.(css|sass|scss)$',
+  ],
+}
+```
+
+構成オプションごとに詳細については[Jest docs](https://jestjs.io/docs/configuration)をご覧ください。また、Next.jsがJestを設定する方法を見るために[`next/jest` configuration](https://github.com/vercel/next.js/blob/e02fe314dcd0ae614c65b505c6daafbdeebb920e/packages/next/src/build/jest/jest.ts)を確認することをお勧めします。
+
+### スタイルシートと画像インポートの処理 {#handling-stylesheets-and-image-imports}
+
+スタイルシートと画像はテストでは使用されませんが、それらをインポートするとエラーが発生する可能性があるため、それらをモックする必要があります。
+
+`__mocks__`ディレクトリ内に、構成で言及されているモックファイル - `fileMock.js`と`styleMock.js` - を作成します。
+
+```js title="__mocks__/fileMock.js"
+module.exports = 'test-file-stub'
+```
+
+```js title="__mocks__/styleMock.js"
+module.exports = {}
+```
+
+静的アセットの処理に関する詳細については、[Jest Docs](https://jestjs.io/docs/webpack#handling-static-assets)をご覧ください。
+
+## フォントの処理 {#handling-fonts}
+
+フォントを処理するには、`__mocks__`ディレクトリ内に`nextFontMock.js`ファイルを作成し、次の設定を追加します。
+
+```js title="__mocks__/nextFontMock.js"
+module.exports = new Proxy(
+  {},
+  {
+    get: function getter() {
+      return () => ({
+        className: 'className',
+        variable: 'variable',
+        style: { fontFamily: 'fontFamily' },
+      })
+    },
+  }
+)
+```
+
+</PagesOnly>
+
+## 任意: 絶対インポートとモジュールパスエイリアスの処理 {#optional-handling-absolute-imports-and-module-path-aliases}
+
+プロジェクトで[モジュールパスエイリアス](/docs/app/getting-started/installation#set-up-absolute-imports-and-module-path-aliases)を使用している場合、`jsconfig.json`ファイルの`paths`オプションと`jest.config.js`ファイルの`moduleNameMapper`オプションを一致させてインポートを解決するようにJestを設定する必要があります。例えば：
+
+```json title="tsconfig.jsonまたはjsconfig.json"
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "baseUrl": "./",
+    "paths": {
+      "@/components/*": ["components/*"]
+    }
+  }
+}
+```
+
+```js title="jest.config.js"
+moduleNameMapper: {
+  // ...
+  '^@/components/(.*)$': '<rootDir>/components/$1',
+}
+```
+
+## 任意: カスタムマッチャーでJestを拡張 {#optional-extend-jest-with-custom-matchers}
+
+`@testing-library/jest-dom`には、`.toBeInTheDocument()`のような便利な[カスタムマッチャー](https://github.com/testing-library/jest-dom#custom-matchers)が含まれており、テストを書くのが容易になります。以下のオプションをJest構成ファイルに追加することで、各テストでカスタムマッチャーをインポートできます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="jest.config.ts" switcher
+setupFilesAfterEnv: ['<rootDir>/jest.setup.ts']
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="jest.config.js" switcher
+setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
+```
+
+</TabItem>
+</Tabs>
+
+次に、`jest.setup`内で次のインポートを追加します。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="jest.setup.ts" switcher
+import '@testing-library/jest-dom'
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="jest.setup.js" switcher
+import '@testing-library/jest-dom'
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know:** [`extend-expect`は`v6.0`で削除されました](https://github.com/testing-library/jest-dom/releases/tag/v6.0.0)、したがって、バージョン6以前の`@testing-library/jest-dom`を使用している場合は、代わりに`@testing-library/jest-dom/extend-expect`をインポートする必要があります。
+
+各テストの実行前にさらにセットアップオプションを追加する必要がある場合は、上記の`jest.setup`ファイルに追加できます。
+
+## `package.json`にテストスクリプトを追加 {#add-a-test-script-to-package-json}
+
+最後に、Jestの`test`スクリプトを`package.json`ファイルに追加します。
+
+```json title="package.json" highlight={6-7}
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  }
+}
+```
+
+`jest --watch`はファイルが変更されるとテストを再実行します。その他のJest CLIオプションについては、[Jest Docs](https://jestjs.io/docs/cli#reference)をご覧ください。
+
+### 初めてのテスト作成 {#creating-your-first-test}
+
+プロジェクトはテストを実行する準備が整いました。プロジェクトのルートディレクトリに`__tests__`というフォルダーを作成します。
+
+<PagesOnly>
+
+例えば、`<Home />`コンポーネントが見出しを正常にレンダリングするかどうかを確認するテストを追加できます。
+
+```jsx title="pages/index.js
+export default function Home() {
+  return <h1>Home</h1>
+}
+```
+
+```jsx title="__tests__/index.test.js"
+import '@testing-library/jest-dom'
+import { render, screen } from '@testing-library/react'
+import Home from '../pages/index'
+
+describe('Home', () => {
+  it('renders a heading', () => {
+    render(<Home />)
+
+    const heading = screen.getByRole('heading', { level: 1 })
+
+    expect(heading).toBeInTheDocument()
+  })
+})
+```
+
+</PagesOnly>
+
+<AppOnly>
+
+例えば、`<Page />`コンポーネントが見出しを正常にレンダリングするかどうかを確認するテストを追加できます。
+
+```jsx title="app/page.js"
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <div>
+      <h1>Home</h1>
+      <Link href="/about">About</Link>
+    </div>
+  )
+}
+```
+
+```jsx title="__tests__/page.test.jsx"
+import '@testing-library/jest-dom'
+import { render, screen } from '@testing-library/react'
+import Page from '../app/page'
+
+describe('Page', () => {
+  it('renders a heading', () => {
+    render(<Page />)
+
+    const heading = screen.getByRole('heading', { level: 1 })
+
+    expect(heading).toBeInTheDocument()
+  })
+})
+```
+
+</AppOnly>
+
+必要に応じて、コンポーネントで予期しない変更を追跡するために[スナップショットテスト](https://jestjs.io/docs/snapshot-testing)を追加します。
+
+<PagesOnly>
+
+```jsx title="__tests__/snapshot.js"
+import { render } from '@testing-library/react'
+import Home from '../pages/index'
+
+it('renders homepage unchanged', () => {
+  const { container } = render(<Home />)
+  expect(container).toMatchSnapshot()
+})
+```
+
+> **Good to know**： テストファイルはPages Routerの内部には含めないでください。Pages Routerの内部にあるファイルはすべてルートと見なされます。
+
+</PagesOnly>
+
+<AppOnly>
+
+```jsx title="__tests__/snapshot.js"
+import { render } from '@testing-library/react'
+import Page from '../app/page'
+
+it('renders homepage unchanged', () => {
+  const { container } = render(<Page />)
+  expect(container).toMatchSnapshot()
+})
+```
+
+</AppOnly>
+
+## テストの実行 {#running-your-tests}
+
+次に、テストを実行するには以下のコマンドを実行します。
+
+```bash title="Terminal"
+npm run test
+# もしくは {#or}
+yarn test
+# もしくは {#or}
+pnpm test
+```
+
+## 追加リソース {#additional-resources}
+
+詳しくは、以下のリソースをご覧ください。
+
+- [Next.js with Jest example](https://github.com/vercel/next.js/tree/canary/examples/with-jest)
+- [Jest Docs](https://jestjs.io/docs/getting-started)
+- [React Testing Library Docs](https://testing-library.com/docs/react-testing-library/intro/)
+- [Testing Playground](https://testing-playground.com/) - 良いテストプラクティスを使用して要素をマッチします。

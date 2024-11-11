@@ -1,0 +1,476 @@
+---
+title: 'rewrites'
+description: 'Next.jsアプリにリライトを追加します。'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerの両方で共有されています。Pages Routerに特有の内容を追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有された内容はコンポーネントでラップしないでください。 */}
+
+リライトを使用すると、受信リクエストパスを別の宛先パスにマッピングできます。
+
+<AppOnly>
+
+リライトはURLプロキシとして機能し、宛先パスをマスクし、ユーザーがサイト上で場所を変更していないように見せかけます。それとは対照的に、[リダイレクト](/docs/app/api-reference/config/next-config-js/redirects)は新しいページにルート変更を行い、URLの変更を表示します。
+
+</AppOnly>
+
+<PagesOnly>
+
+リライトはURLプロキシとして機能し、宛先パスをマスクし、ユーザーがサイト上で場所を変更していないように見せかけます。それとは対照的に、[リダイレクト](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/redirects)は新しいページにルート変更を行い、URLの変更を表示します。
+
+</PagesOnly>
+
+リライトを使用するには、`next.config.js`で`rewrites`キーを使用します：
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/about',
+        destination: '/',
+      },
+    ]
+  },
+}
+```
+
+リライトはクライアントサイドルーティングに適用され、この場合、`<Link href="/about">`がリライトされます。
+
+`rewrites`は非同期関数であり、`source`と`destination`プロパティを持つオブジェクトが入った配列またはオブジェクトの配列のいずれかを返すことを期待します：
+
+- `source`: `String` - 受信リクエストパスのパターンです
+- `destination`: `String` - ルーティングしたいパスです
+- `basePath`: `false`または`undefined` - falseの場合、マッチング時にbasePathが含まれません。外部リライトにのみ使用できます
+- `locale`: `false`または`undefined` - ロケールがマッチング時に含められるべきでないかどうかです
+- `has`: `type`, `key`, `value`プロパティを持つ[hasオブジェクト](#header-cookie-and-query-matching)の配列です
+- `missing`: `type`, `key`, `value`プロパティを持つ[missingオブジェクト](#header-cookie-and-query-matching)の配列です
+
+`rewrites`関数が配列を返す場合、リライトはファイルシステム（ページと`/public`ファイル）を確認した後、動的ルートの前に適用されます。`rewrites`関数が特定の形の配列のオブジェクトを返す場合、この動作を変更し、より細かく制御できます。Next.jsの`v10.1`からの機能です：
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // これらのリライトは、ヘッダー/リダイレクトの後に
+        // チェックされ、_next/publicファイルを含むすべてのファイルの前に
+        // チェックされるため、ページファイルをオーバーライドできます
+        {
+          source: '/some-page',
+          destination: '/somewhere-else',
+          has: [{ type: 'query', key: 'overrideMe' }],
+        },
+      ],
+      afterFiles: [
+        // これらのリライトは、ページ/パブリックファイルが
+        // チェックされた後にチェックされますが、動的ルートの前に行われます
+        {
+          source: '/non-existent',
+          destination: '/somewhere-else',
+        },
+      ],
+      fallback: [
+        // これらのリライトは、ページ/パブリックファイルと
+        // 動的ルートの両方がチェックされた後でチェックされます
+        {
+          source: '/:path*',
+          destination: `https://my-old-site.com/:path*`,
+        },
+      ],
+    }
+  },
+}
+```
+
+> **Good to know**: `beforeFiles`のリライトは、ソースが一致した直後にファイルシステム/動的ルートを確認せず、すべての`beforeFiles`がチェックされるまで続行します。
+
+Next.jsのルーティングの確認順は次のとおりです：
+
+<AppOnly>
+
+1. [headers](/docs/app/api-reference/config/next-config-js/headers)がチェック/適用されます
+2. [redirects](/docs/app/api-reference/config/next-config-js/redirects)がチェック/適用されます
+3. `beforeFiles`リライトがチェック/適用されます
+4. [public directory](/docs/app/building-your-application/optimizing/static-assets)の静的ファイル、`_next/static`ファイル、および非動的ページのチェックと提供が行われます
+5. `afterFiles`リライトがチェック/適用され、これらのリライトが一致した場合、動的ルート/静的ファイルの確認が行われます
+6. `fallback`リライトがチェック/適用され、404ページのレンダリングの前、および動的ルート/すべての静的アセットの確認の後に適用されます。[fallback：true/ 'blocking'](https://nextjs.org/docs/canary/pages/api-reference/functions/get-static-paths#fallback-true)を`getStaticPaths`で使用する場合、`next.config.js`に定義されたフォールバック`rewrites`は実行されません。
+
+</AppOnly>
+
+<PagesOnly>
+
+1. [headers](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/headers)がチェック/適用されます
+2. [redirects](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/redirects)がチェック/適用されます
+3. `beforeFiles`リライトがチェック/適用されます
+4. [public directory](https://nextjs.org/docs/canary/pages/building-your-application/optimizing/static-assets)の静的ファイル、`_next/static`ファイル、および非動的ページのチェックと提供が行われます
+5. `afterFiles`リライトがチェック/適用され、これらのリライトが一致した場合、動的ルート/静的ファイルの確認が行われます
+6. `fallback`リライトがチェック/適用され、404ページのレンダリングの前、および動的ルート/すべての静的アセットの確認の後に適用されます。[fallback：true/ 'blocking'](https://nextjs.org/docs/canary/pages/api-reference/functions/get-static-paths#fallback-true)を`getStaticPaths`で使用する場合、`next.config.js`に定義されたフォールバック`rewrites`は実行されません。
+
+</PagesOnly>
+
+## リライトパラメータ {#rewrite-parameters}
+
+リライトでパラメータを使用する場合、`destination`で使用されない限りパラメータはデフォルトでクエリに渡されます。
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/old-about/:path*',
+        destination: '/about', // :pathパラメータはここで使用されないため、クエリに自動的に渡されます
+      },
+    ]
+  },
+}
+```
+
+`destination`でパラメータが使用される場合、パラメータはクエリに自動的には渡されません。
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/docs/:path*',
+        destination: '/:path*', // :pathパラメータはここで使用されているため、クエリには自動的に渡されません
+      },
+    ]
+  },
+}
+```
+
+`destination`で既に使用されている場合でも、クエリ内でパラメータを手動で渡すことができます。
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/:first/:second',
+        destination: '/:first?second=:second',
+        // :firstパラメータがdestinationで使用されているため
+        // :secondパラメータはクエリに自動的に追加されませんが、手動で追加できます
+        // 上記のように示します
+      },
+    ]
+  },
+}
+```
+
+> **Good to know**: [Automatic Static Optimization](https://nextjs.org/docs/canary/pages/building-your-application/rendering/automatic-static-optimization)または[prerendering](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/get-static-props)からのリライトのパラメータは、ハイドレーション後にクライアントで解析され、クエリに提供されます。
+
+## パスマッチング {#path-matching}
+
+パスマッチングは許可されています。例えば、`/blog/:slug`は`/blog/hello-world`（ネストされたパスなし）と一致します：
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/blog/:slug',
+        destination: '/news/:slug', // 一致したパラメータは宛先で使用できます
+      },
+    ]
+  },
+}
+```
+
+### ワイルドカードパスマッチング {#wildcard-path-matching}
+
+ワイルドカードパスをマッチングするには、パラメータの後に`*`を使用します。例えば、`/blog/:slug*`は`/blog/a/b/c/d/hello-world`と一致します：
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/blog/:slug*',
+        destination: '/news/:slug*', // 一致したパラメータは宛先で使用できます
+      },
+    ]
+  },
+}
+```
+
+### 正規表現パスマッチング {#regex-path-matching}
+
+正規表現パスをマッチングするには、パラメータの後に正規表現を括弧で囲みます。例えば、`/blog/:slug(\\d{1,})`は`/blog/123`と一致しますが、`/blog/abc`とは一致しません：
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/old-blog/:post(\\d{1,})',
+        destination: '/blog/:post', // 一致したパラメータは宛先で使用できます
+      },
+    ]
+  },
+}
+```
+
+正規表現パスマッチングに使用される文字は`(`, `)`, `{`, `}`, `[`, `]`, `|`, `\`, `^`, `.`, `:`, `*`, `+`, `-`, `?`, `$`であり、これらを`source`で非特殊値として使用する場合には、`\\`を付けてエスケープする必要があります：
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        // これはリクエストされる`/english(default)/something`と一致します
+        source: '/english\\(default\\)/:slug',
+        destination: '/en-us/:slug',
+      },
+    ]
+  },
+}
+```
+
+## ヘッダー、Cookie、クエリのマッチング {#header-cookie-and-query-matching}
+
+リライトを適用する際に、ヘッダー、Cookie、またはクエリの値が一致するか(`has`フィールド)または一致しないか(`missing`フィールド)を確認する場合、これらのフィールドを使用できます。`source`とすべての`has`アイテムが一致し、すべての`missing`アイテムが一致しない場合にリライトが適用されます。
+
+`has`と`missing`アイテムには次のフィールドがあります：
+
+- `type`: `String` - `header`, `cookie`, `host`または`query`のいずれかです
+- `key`: `String` - 照合対象の選択タイプのキーです
+- `value`: `String`または`undefined` - チェックする値であり、`undefined`の場合、任意の値が一致します。特定の部分をキャプチャするための正規表現のような文字列を使用できます。例えば、`first-(?<paramName>.*)`の値を持つ場合、`first-second`では`second`が`:paramName`で宛先で使用できるようになります。
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      // ヘッダー`x-rewrite-me`が存在する場合、
+      // このリライトが適用されます
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'x-rewrite-me',
+          },
+        ],
+        destination: '/another-page',
+      },
+      // ヘッダー`x-rewrite-me`が存在しない場合、
+      // このリライトが適用されます
+      {
+        source: '/:path*',
+        missing: [
+          {
+            type: 'header',
+            key: 'x-rewrite-me',
+          },
+        ],
+        destination: '/another-page',
+      },
+      // ソース、クエリ、およびCookieが一致する場合、
+      // このリライトが適用されます
+      {
+        source: '/specific/:path*',
+        has: [
+          {
+            type: 'query',
+            key: 'page',
+            // page値は宛先で利用可能でないため、
+            // 値が提供され、キャプチャグループを使用していません
+            value: 'home',
+          },
+          {
+            type: 'cookie',
+            key: 'authorized',
+            value: 'true',
+          },
+        ],
+        destination: '/:path*/home',
+      },
+      // ヘッダー`x-authorized`が存在し、
+      // 値が一致する場合、このリライトが適用されます
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'x-authorized',
+            value: '(?<authorized>yes|true)',
+          },
+        ],
+        destination: '/home?authorized=:authorized',
+      },
+      // ホストが`example.com`の場合、
+      // このリライトが適用されます
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'example.com',
+          },
+        ],
+        destination: '/another-page',
+      },
+    ]
+  },
+}
+```
+
+## 外部URLへのリライト {#rewriting-to-an-external-url}
+
+<details>
+  <summary>例</summary>
+
+- [Next.jsの段階的導入](https://github.com/vercel/next.js/tree/canary/examples/custom-routes-proxying)
+- [複数ゾーンの使用](https://github.com/vercel/next.js/tree/canary/examples/with-zones)
+
+</details>
+
+リライトを使用して外部URLにリライトすることができます。これは特にNext.jsを段階的に導入するのに役立ちます。次に示すのは、メインアプリの`/blog`ルートを外部サイトにリダイレクトするためのリライトの例です。
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/blog',
+        destination: 'https://example.com/blog',
+      },
+      {
+        source: '/blog/:slug',
+        destination: 'https://example.com/blog/:slug', // 一致したパラメータは宛先で使用できます
+      },
+    ]
+  },
+}
+```
+
+`trailingSlash: true`を使用している場合、`source`パラメータに末尾のスラッシュを挿入する必要があります。宛先サーバーも末尾のスラッシュを期待している場合、`destination`パラメータにも含まれるべきです。
+
+```js title="next.config.js"
+module.exports = {
+  trailingSlash: true,
+  async rewrites() {
+    return [
+      {
+        source: '/blog/',
+        destination: 'https://example.com/blog/',
+      },
+      {
+        source: '/blog/:path*/',
+        destination: 'https://example.com/blog/:path*/',
+      },
+    ]
+  },
+}
+```
+
+### Next.jsの段階的導入 {#incremental-adoption-of-next-js}
+
+Next.jsがすべてのNext.jsルートを確認した後に、既存のWebサイトへのプロキシにフォールバックすることもできます。
+
+この方法を使用すると、Next.jsにページを移行する際にリライトの設定を変更する必要がありません。
+
+```js title="next.config.js"
+module.exports = {
+  async rewrites() {
+    return {
+      fallback: [
+        {
+          source: '/:path*',
+          destination: `https://custom-routes-proxying-endpoint.vercel.app/:path*`,
+        },
+      ],
+    }
+  },
+}
+```
+
+### basePathサポートを使用したリライト {#rewrites-with-basepath-support}
+
+[`basePath`サポート](/docs/app/api-reference/config/next-config-js/basePath)をリライトで利用する場合、各`source`と`destination`には自動的に`basePath`がプレフィックスとして付加されます。ただし、リライトに`basePath: false`を追加することでこれを回避できます：
+
+```js title="next.config.js"
+module.exports = {
+  basePath: '/docs',
+
+  async rewrites() {
+    return [
+      {
+        source: '/with-basePath', // 自動で/docs/with-basePathになります
+        destination: '/another', // 自動で/docs/anotherになります
+      },
+      {
+        // basePath: falseが設定されているため、`/without-basePath`には/docsが追加されません
+        // 内部リライトには使用できません。例：`destination: '/another'`
+        source: '/without-basePath',
+        destination: 'https://example.com',
+        basePath: false,
+      },
+    ]
+  },
+}
+```
+
+### i18nサポートを使用したリライト {#rewrites-with-i18n-support}
+
+<AppOnly>
+
+リライトで[`i18n`サポート](/docs/app/building-your-application/routing/internationalization)を利用する場合、各`source`と`destination`は設定された`locales`を処理するために自動的にプレフィックスが付加されます。ただし、`locale: false`をリライトに追加することでこれを回避できます。`locale: false`が使用される場合、正しく一致させるために`source`と`destination`にロケールでプレフィックスを付ける必要があります。
+
+</AppOnly>
+
+<PagesOnly>
+
+リライトで[`i18n`サポート](https://nextjs.org/docs/canary/pages/building-your-application/routing/internationalization)を利用する場合、各`source`と`destination`は設定された`locales`を処理するために自動的にプレフィックスが付加されます。ただし、`locale: false`をリライトに追加することでこれを回避できます。`locale: false`が使用される場合、正しく一致させるために`source`と`destination`にロケールでプレフィックスを付ける必要があります。
+
+</PagesOnly>
+
+```js title="next.config.js"
+module.exports = {
+  i18n: {
+    locales: ['en', 'fr', 'de'],
+    defaultLocale: 'en',
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/with-locale', // すべてのロケールを自動的に処理します
+        destination: '/another', // ロケールを自動的に渡します
+      },
+      {
+        // locale: falseが設定されているため、ロケールを自動的には処理しません
+        source: '/nl/with-locale-manual',
+        destination: '/nl/another',
+        locale: false,
+      },
+      {
+        // これは'/'と一致します。`en`はdefaultLocaleです
+        source: '/en',
+        destination: '/en/another',
+        locale: false,
+      },
+      {
+        // locale: falseが設定されている場合でも、すべてのロケールに一致させることができます
+        source: '/:locale/api-alias/:path*',
+        destination: '/api/:path*',
+        locale: false,
+      },
+      {
+        // これは`/(en|fr|de)/(.*)`に変換されるため
+        // `/:path*`のようにトップレベルの`/`または`/fr`ルートとは一致しません
+        source: '/(.*)',
+        destination: '/another',
+      },
+    ]
+  },
+}
+```
+
+## バージョン履歴 {#version-history}
+
+| バージョン | 変更内容                    |
+| ---------- | --------------------------- |
+| `v13.3.0`  | `missing`が追加されました。 |
+| `v10.2.0`  | `has`が追加されました。     |
+| `v9.5.0`   | Headersが追加されました。   |

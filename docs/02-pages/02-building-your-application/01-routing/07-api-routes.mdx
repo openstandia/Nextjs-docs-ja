@@ -1,0 +1,493 @@
+---
+title: 'API Routes'
+description: 'Next.jsはAPI Routesをサポートしており、Next.jsアプリを離れることなくAPIを構築できます。ここでその仕組みを学びましょう。'
+---
+
+<details>
+  <summary>例</summary>
+
+- [API Routesリクエストヘルパー](https://github.com/vercel/next.js/tree/canary/examples/api-routes-middleware)
+- [GraphQLによるAPI Routes](https://github.com/vercel/next.js/tree/canary/examples/api-routes-graphql)
+- [RESTによるAPI Routes](https://github.com/vercel/next.js/tree/canary/examples/api-routes-rest)
+- [CORSを使用したAPI Routes](https://github.com/vercel/next.js/tree/canary/examples/api-routes-cors)
+
+</details>
+
+> **Good to know**: App Routerを使用している場合は、API Routesの代わりに[Server Components](/docs/app/building-your-application/rendering/server-components)または[Route Handlers](/docs/app/building-your-application/routing/route-handlers)を利用できます。
+
+API Routesは、Next.jsで**公開API**を構築するための手段を提供します。
+
+フォルダ`pages/api`内の任意のファイルは`/api/*`にマッピングされ、`page`ではなくAPIエンドポイントとして扱われます。これらはサーバーサイドのみのバンドルであり、クライアントサイドのバンドルサイズを増加させることはありません。
+
+以下のAPI Routeの例は、ステータスコード`200`でJSONレスポンスを返します：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="pages/api/hello.ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+type ResponseData = {
+  message: string
+}
+
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ResponseData>
+) {
+  res.status(200).json({ message: 'Hello from Next.js!' })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="pages/api/hello.js" switcher
+export default function handler(req, res) {
+  res.status(200).json({ message: 'Hello from Next.js!' })
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - API Routesは[CORSヘッダーを指定しません](https://developer.mozilla.org/docs/Web/HTTP/CORS)、つまりデフォルトで同一オリジンのみです。この動作は、リクエストハンドラーを[CORSリクエストヘルパー](https://github.com/vercel/next.js/tree/canary/examples/api-routes-cors)でラップすることでカスタマイズできます。
+
+- API Routesは[静的エクスポート](https://nextjs.org/docs/canary/pages/building-your-application/deploying/static-exports)では使用できません。ただし、App Routerの[Route Handlers](/docs/app/building-your-application/routing/route-handlers)を使用することができます。
+  > - API Routesは、`next.config.js`の[`pageExtensions`設定](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/pageExtensions)の影響を受けます。
+
+## パラメータ {#parameters}
+
+```tsx
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  // ...
+}
+```
+
+- `req`: [http.IncomingMessage](https://nodejs.org/api/http.html#class-httpincomingmessage)のインスタンス
+- `res`: [http.ServerResponse](https://nodejs.org/api/http.html#class-httpserverresponse)のインスタンス
+
+## HTTPメソッド {#http-methods}
+
+API Route内でさまざまなHTTPメソッドを処理するために、リクエストハンドラーで`req.method`を使用できます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="pages/api/hello.ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method === 'POST') {
+    // POSTリクエストを処理します
+  } else {
+    // 他のHTTPメソッドを処理します
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="pages/api/hello.js" switcher
+export default function handler(req, res) {
+  if (req.method === 'POST') {
+    // POSTリクエストを処理します
+  } else {
+    // 他のHTTPメソッドを処理します
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## リクエストヘルパー {#request-helpers}
+
+API Routesは、受信リクエスト（`req`）を解析する組み込みのリクエストヘルパーを提供します：
+
+- `req.cookies` - リクエストによって送信されたcookieを含むオブジェクト。デフォルトは`{}`
+- `req.query` - [クエリ文字列](https://en.wikipedia.org/wiki/Query_string)を含むオブジェクト。デフォルトは`{}`
+- `req.body` - `content-type`で解析されたボディを含むオブジェクト、またはボディが送信されていない場合は`null`
+
+### カスタム設定 {#custom-config}
+
+各API Routeは、デフォルトの設定を変更するために`config`オブジェクトをエクスポートできます。デフォルトの設定は次のとおりです：
+
+```js
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '1mb',
+    },
+  },
+  // この関数が実行する最大許可時間を指定（秒単位）
+  maxDuration: 5,
+}
+```
+
+`bodyParser`は自動的に有効です。`Stream`や[`raw-body`](https://www.npmjs.com/package/raw-body)でボディを消費する場合、これを`false`に設定できます。
+
+自動`bodyParsing`を無効にするユースケースの1つは、例えば[GitHubからの](https://docs.github.com/en/developers/webhooks-and-events/webhooks/securing-your-webhooks#validating-payloads-from-github)Webhookリクエストの生ボディを確認する場合です。
+
+```js
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+```
+
+`bodyParser.sizeLimit`は、[bytes](https://github.com/visionmedia/bytes.js)でサポートされる任意の形式で解析されたボディの最大サイズを示しています：
+
+```js
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '500kb',
+    },
+  },
+}
+```
+
+`externalResolver`は、このルートが*express*や*connect*などの外部リゾルバによって処理されていることをサーバーに通知する明示的なフラグです。このオプションを有効にすると、未解決のリクエストに対する警告が無効になります。
+
+```js
+export const config = {
+  api: {
+    externalResolver: true,
+  },
+}
+```
+
+`responseLimit`は自動的に有効で、API Routeのレスポンスボディが4MBを超えると警告を発します。
+
+Next.jsをサーバーレス環境で使用しておらず、CDNや専用メディアホストを使用しないことによるパフォーマンスへの影響を理解している場合、この制限を`false`に設定できます。
+
+```js
+export const config = {
+  api: {
+    responseLimit: false,
+  },
+}
+```
+
+`responseLimit`は、バイト数や`bytes`でサポートされている任意の文字列形式（例：`1000`、`'500kb'`または`'3mb'`）を取ることもできます。この値は、警告が表示される前の最大レスポンスサイズになります。デフォルトは4MBです（上記参照）。
+
+```js
+export const config = {
+  api: {
+    responseLimit: '8mb',
+  },
+}
+```
+
+## レスポンスヘルパー {#response-helpers}
+
+[Server Responseオブジェクト](https://nodejs.org/api/http.html#http_class_http_serverresponse)（よく`res`と省略されます）には、APIエンドポイントを迅速に作成するためのExpress.jsのようなヘルパーメソッドが含まれています。
+
+含まれているヘルパーは以下のとおりです：
+
+- `res.status(code)` - ステータスコードを設定するための関数。`code`は有効な[HTTPステータスコード](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes)である必要があります
+- `res.json(body)` - JSONレスポンスを送信します。`body`は[シリアライズ可能なオブジェクト](https://developer.mozilla.org/docs/Glossary/Serialization)である必要があります
+- `res.send(body)` - HTTPレスポンスを送信します。`body`は`string`、`object`、または`Buffer`で構成できます
+- `res.redirect([status,] path)` - 指定されたパスまたはURLにリダイレクトします。`status`は有効な[HTTPステータスコード](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes)である必要があります。指定されていない場合、`status`は「307」、「一時的なリダイレクト」となります。
+- `res.revalidate(urlPath)` - `getStaticProps`を使用して[ページをオンデマンドで再検証](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/incremental-static-regeneration#on-demand-revalidation-with-revalidatepath)します。`urlPath`は`string`である必要があります。
+
+### レスポンスのステータスコードを設定する {#setting-the-status-code-of-a-response}
+
+クライアントにレスポンスを返す際に、レスポンスのステータスコードを設定できます。
+
+以下の例では、レスポンスのステータスコードを`200`（`OK`）に設定し、「Hello from Next.js!」という値を持つ`message`プロパティを持つJSONレスポンスを返します：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="pages/api/hello.ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+type ResponseData = {
+  message: string
+}
+
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ResponseData>
+) {
+  res.status(200).json({ message: 'Hello from Next.js!' })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="pages/api/hello.js" switcher
+export default function handler(req, res) {
+  res.status(200).json({ message: 'Hello from Next.js!' })
+}
+```
+
+</TabItem>
+</Tabs>
+
+### JSONレスポンスを送信する {#sending-a-json-response}
+
+クライアントにレスポンスを返す際に、JSONレスポンスを送信することができます。これは[シリアライズ可能なオブジェクト](https://developer.mozilla.org/docs/Glossary/Serialization)である必要があります。現実世界のアプリケーションでは、要求されたエンドポイントの結果に応じてリクエストのステータスをクライアントに通知したいことがあります。
+
+次の例では、ステータスコード`200`（`OK`）と非同期操作の結果を持つJSONレスポンスを送信します。非同期操作の結果を含む例が含まれています。適切なステータスコードとエラーメッセージをキャッチしてクライアントに返すため、tryキャッチブロックを使用しています：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="pages/api/hello.ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  try {
+    const result = await someAsyncOperation()
+    res.status(200).json({ result })
+  } catch (err) {
+    res.status(500).json({ error: 'failed to load data' })
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="pages/api/hello.js" switcher
+export default async function handler(req, res) {
+  try {
+    const result = await someAsyncOperation()
+    res.status(200).json({ result })
+  } catch (err) {
+    res.status(500).json({ error: 'failed to load data' })
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### HTTPレスポンスを送信する {#sending-a-http-response}
+
+HTTPレスポンスの送信は、JSONレスポンスの送信と同じ方法で動作します。唯一の違いは、レスポンスボディが`string`、`object`、または`Buffer`である可能性があることです。
+
+次の例では、ステータスコード`200`（`OK`）と非同期操作の結果を持つHTTPレスポンスを送信します。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="pages/api/hello.ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  try {
+    const result = await someAsyncOperation()
+    res.status(200).send({ result })
+  } catch (err) {
+    res.status(500).send({ error: 'failed to fetch data' })
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="pages/api/hello.js" switcher
+export default async function handler(req, res) {
+  try {
+    const result = await someAsyncOperation()
+    res.status(200).send({ result })
+  } catch (err) {
+    res.status(500).send({ error: 'failed to fetch data' })
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 指定されたパスまたはURLにリダイレクトする {#redirects-to-a-specified-path-or-url}
+
+フォームを例に取ると、フォームの送信後にクライアントを指定されたパスまたはURLにリダイレクトしたい場合があります。
+
+次の例では、フォームが正常に送信された場合にクライアントを`/`パスにリダイレクトします：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="pages/api/hello.ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const { name, message } = req.body
+
+  try {
+    await handleFormInputAsync({ name, message })
+    res.redirect(307, '/')
+  } catch (err) {
+    res.status(500).send({ error: 'Failed to fetch data' })
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="pages/api/hello.js" switcher
+export default async function handler(req, res) {
+  const { name, message } = req.body
+
+  try {
+    await handleFormInputAsync({ name, message })
+    res.redirect(307, '/')
+  } catch (err) {
+    res.status(500).send({ error: 'failed to fetch data' })
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### TypeScriptの型を追加する {#adding-typescript-types}
+
+`NextApiRequest`と`NextApiResponse`の型を`next`からインポートすることで、API Routesをより型安全にすることができます。それらに加えて、レスポンスデータの型を指定することもできます：
+
+```ts
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+type ResponseData = {
+  message: string
+}
+
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ResponseData>
+) {
+  res.status(200).json({ message: 'Hello from Next.js!' })
+}
+```
+
+> **Good to know**: `NextApiRequest`のボディは`any`です。クライアントは任意のペイロードを含めることができるためで、使用する前にランタイムでボディの型・形状を検証すべきです。
+
+## 動的API Routes {#dynamic-api-routes}
+
+API Routesは[動的ルート](https://nextjs.org/docs/canary/pages/building-your-application/routing/dynamic-routes)をサポートし、`pages/`で使用されるのと同じファイルネーミング規則に従います。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="pages/api/post/[pid].ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { pid } = req.query
+  res.end(`Post: ${pid}`)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="pages/api/post/[pid].js" switcher
+export default function handler(req, res) {
+  const { pid } = req.query
+  res.end(`Post: ${pid}`)
+}
+```
+
+</TabItem>
+</Tabs>
+
+これで、`/api/post/abc`へのリクエストは`Post: abc`というテキストで応答します。
+
+### Catch-all API Routes {#catch-all-api-routes}
+
+API Routesは、角括弧内に3つの点（`...`）を追加することで、すべてのパスをキャッチするために拡張できます。例：
+
+- `pages/api/post/[...slug].js`は`/api/post/a`と一致しますが、`/api/post/a/b`、`/api/post/a/b/c`とも一致します。
+
+> **Good to know**: `slug`以外の名前も使用できます。例：`[...param]`
+
+一致したパラメータはページへのクエリパラメータ（この例では`slug`）として送信され、常に配列になります。したがって、パス`/api/post/a`は次のような`query`オブジェクトを持ちます：
+
+```json
+{ "slug": ["a"] }
+```
+
+そして、`/api/post/a/b`、およびその他の一致するパスの場合、新しいパラメータが配列に追加されます。次のように：
+
+```json
+{ "slug": ["a", "b"] }
+```
+
+例：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="pages/api/post/[...slug].ts" switcher
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { slug } = req.query
+  res.end(`Post: ${slug.join(', ')}`)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="pages/api/post/[...slug].js" switcher
+export default function handler(req, res) {
+  const { slug } = req.query
+  res.end(`Post: ${slug.join(', ')}`)
+}
+```
+
+</TabItem>
+</Tabs>
+
+これで、`/api/post/a/b/c`へのリクエストは`Post: a, b, c`というテキストで応答します。
+
+### オプショナルCatch-all API Routes {#optional-catch-all-api-routes}
+
+Catch-allルートは、パラメータを二重角括弧内に含むことでオプションにすることができます（`[[...slug]]`）。
+
+例：`pages/api/post/[[...slug]].js`は`/api/post`、`/api/post/a`、`/api/post/a/b`などと一致します。
+
+Catch-allとオプショナルCatch-allルートの主な違いは、オプショナルの場合、パラメータなしのルートも一致することです（上記の例では`/api/post`）。
+
+`query`オブジェクトは次のとおりです：
+
+```json
+{ } // GET `/api/post` （空のオブジェクト）
+{ "slug": ["a"] } // `GET /api/post/a` （要素が1つの配列）
+{ "slug": ["a", "b"] } // `GET /api/post/a/b` （要素が複数の配列）
+```
+
+### 留意点 {#caveats}
+
+- 事前に定義されたAPIルートは動的APIルートよりも優先され、動的APIルートはCatch-all APIルートよりも優先されます。以下の例を見てください：
+  - `pages/api/post/create.js` - `/api/post/create`と一致します
+  - `pages/api/post/[pid].js` - `/api/post/1`、`/api/post/abc`などと一致しますが、`/api/post/create`とは一致しません
+  - `pages/api/post/[...slug].js` - `/api/post/1/2`、`/api/post/a/b/c`などと一致しますが、`/api/post/create`、`/api/post/abc`とは一致しません
+
+## Edge API Routes {#edge-api-routes}
+
+Edge RuntimeでAPI Routesを使用したい場合は、App Routerを段階的に採用し、代わりに[Route Handlers](/docs/app/building-your-application/routing/route-handlers)を利用することをお勧めします。
+
+Route Handlersの関数署名は等価であり、EdgeとNode.jsのランタイムの両方で同じ機能を使用できます。

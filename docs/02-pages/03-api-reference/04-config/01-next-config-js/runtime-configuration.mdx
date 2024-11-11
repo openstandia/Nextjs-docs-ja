@@ -1,0 +1,60 @@
+---
+title: 'Runtime Config'
+description: 'Next.js アプリにクライアントおよびサーバーランタイムの設定を追加します。'
+---
+
+> **警告：**
+>
+> - **この機能は非推奨です。** [環境変数](https://nextjs.org/docs/canary/pages/building-your-application/configuring/environment-variables)を使用することをお勧めします。これにより、ランタイムの値を読み取ることもできます。
+> - サーバー起動時にコードを実行するには、[`register` 関数](/docs/app/building-your-application/optimizing/instrumentation)を使用できます。
+> - この機能は、[Automatic Static Optimization](https://nextjs.org/docs/canary/pages/building-your-application/rendering/automatic-static-optimization)、[Output File Tracing](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/output#automatically-copying-traced-files)、または [React Server Components](/docs/app/building-your-application/rendering/server-components)と互換性がありません。
+
+アプリにランタイム設定を追加するには、`next.config.js` ファイルを開き、`publicRuntimeConfig` および `serverRuntimeConfig` を追加してください：
+
+```js title="next.config.js"
+module.exports = {
+  serverRuntimeConfig: {
+    // サーバーサイドでのみ利用可能
+    mySecret: 'secret',
+    secondSecret: process.env.SECOND_SECRET, // 環境変数を通じて渡す
+  },
+  publicRuntimeConfig: {
+    // サーバーおよびクライアントの両方で利用可能
+    staticFolder: '/static',
+  },
+}
+```
+
+サーバー専用のランタイム設定は `serverRuntimeConfig` に配置してください。
+
+クライアントおよびサーバーサイドのコードの両方でアクセス可能なものは `publicRuntimeConfig` に配置してください。
+
+> `publicRuntimeConfig` に依存するページは、`getInitialProps` または `getServerSideProps` を使用する **必要があります**。または、アプリケーションが [Custom App](https://nextjs.org/docs/canary/pages/building-your-application/routing/custom-app) を持ち、`getInitialProps` を使用して [Automatic Static Optimization](https://nextjs.org/docs/canary/pages/building-your-application/rendering/automatic-static-optimization) をオプトアウトする必要があります。ランタイム設定は、サーバーサイドでレンダリングされていないページ（またはページ内のコンポーネント）では利用できません。
+
+アプリ内でランタイム設定にアクセスするには、`next/config` を使用します。次のように：
+
+```jsx
+import getConfig from 'next/config'
+import Image from 'next/image'
+
+// serverRuntimeConfig と publicRuntimeConfig のみを保持します
+const { serverRuntimeConfig, publicRuntimeConfig } = getConfig()
+// サーバーサイドでのみ利用可能
+console.log(serverRuntimeConfig.mySecret)
+// サーバーサイドおよびクライアントサイドの両方で利用可能
+console.log(publicRuntimeConfig.staticFolder)
+
+function MyImage() {
+  return (
+    <div>
+      <Image
+        src={`${publicRuntimeConfig.staticFolder}/logo.png`}
+        alt="logo"
+        layout="fill"
+      />
+    </div>
+  )
+}
+
+export default MyImage
+```

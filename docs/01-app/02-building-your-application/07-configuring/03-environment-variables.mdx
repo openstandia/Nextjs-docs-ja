@@ -1,0 +1,329 @@
+---
+title: '環境変数'
+description: 'Next.js アプリケーションで環境変数を追加してアクセスする方法を学びます。'
+---
+
+{/* このドキュメントの内容は app router と pages router の間で共有されています。Pages Router に固有のコンテンツを追加するには `<PagesOnly>Content</PagesOnly>` コンポーネントを使用できます。共有されているコンテンツは、コンポーネントでラップしないようにしてください。 */}
+
+<details>
+  <summary>例</summary>
+
+- [環境変数](https://github.com/vercel/next.js/tree/canary/examples/environment-variables)
+
+</details>
+
+Next.js は環境変数の組み込みサポートを提供しており、以下のことが可能です:
+
+- [`.env` を使用して環境変数を読み込む](#loading-environment-variables)
+- [`NEXT_PUBLIC_` でプレフィックスをつけてブラウザ用に環境変数をバンドルする](#bundling-environment-variables-for-the-browser)
+
+## 環境変数の読み込み {#loading-environment-variables}
+
+Next.jsは、環境変数を `.env*` ファイルから `process.env` に自動的に読み込む機能を備えています。
+
+```txt title=".env"
+DB_HOST=localhost
+DB_USER=myuser
+DB_PASS=mypassword
+```
+
+<PagesOnly>
+
+これにより、`process.env.DB_HOST`、`process.env.DB_USER`、および `process.env.DB_PASS` が Node.js 環境に自動的に読み込まれ、[Next.js データ取得メソッド](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching)や[APIルート](https://nextjs.org/docs/canary/pages/building-your-application/routing/api-routes)で使用できるようになります。
+
+例えば、[`getStaticProps`](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/get-static-props)を使用する場合:
+
+```js title="pages/index.js"
+export async function getStaticProps() {
+  const db = await myDB.connect({
+    host: process.env.DB_HOST,
+    username: process.env.DB_USER,
+    password: process.env.DB_PASS,
+  })
+  // ...
+}
+```
+
+</PagesOnly>
+
+<AppOnly>
+
+> **注意**: Next.js は、`.env*` ファイル内の複数行変数もサポートしています:
+>
+> ```bash
+> # .env
+>
+> # 改行を使って記述することができます
+> PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
+> ...
+> Kh9NV...
+> ...
+> -----END DSA PRIVATE KEY-----"
+>
+> # またはダブルクォート内で `\n` を使用することもできます
+> PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\nKh9NV...\n-----END DSA PRIVATE KEY-----\n"
+> ```
+
+> **注意**: `/src` フォルダーを使用している場合、Next.js は .env ファイルを `/src` フォルダーからではなく、親フォルダーから**のみ**読み込みます。
+> これにより、`process.env.DB_HOST`、`process.env.DB_USER`、および `process.env.DB_PASS` が Node.js 環境に自動的に読み込まれ、[Route Handlers](/docs/app/building-your-application/routing/route-handlers)で使用できるようになります。
+
+例えば:
+
+```js title="app/api/route.js"
+export async function GET() {
+  const db = await myDB.connect({
+    host: process.env.DB_HOST,
+    username: process.env.DB_USER,
+    password: process.env.DB_PASS,
+  })
+  // ...
+}
+```
+
+</AppOnly>
+
+### `@next/env`での環境変数の読み込み {#loading-environment-variables-with-next-env}
+
+Next.js 実行環境外で環境変数を読み込む必要がある場合、例えば ORM やテストランナーのための root 設定ファイルで、この `@next/env` パッケージを使用できます。
+
+このパッケージは Next.js 内部で `.env*` ファイルから環境変数を読み込むために使用されます。
+
+使うには、このパッケージをインストールし、`loadEnvConfig` 関数を用いて環境変数を読み込みます:
+
+```bash
+npm install @next/env
+```
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="envConfig.ts" switcher
+import { loadEnvConfig } from '@next/env'
+
+const projectDir = process.cwd()
+loadEnvConfig(projectDir)
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="envConfig.js" switcher
+import { loadEnvConfig } from '@next/env'
+
+const projectDir = process.cwd()
+loadEnvConfig(projectDir)
+```
+
+</TabItem>
+</Tabs>
+
+そして、必要な箇所でこの設定をインポートできます。例えば:
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="orm.config.ts" switcher
+import './envConfig.ts'
+
+export default defineConfig({
+  dbCredentials: {
+    connectionString: process.env.DATABASE_URL!,
+  },
+})
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="orm.config.js" switcher
+import './envConfig.js'
+
+export default defineConfig({
+  dbCredentials: {
+    connectionString: process.env.DATABASE_URL,
+  },
+})
+```
+
+</TabItem>
+</Tabs>
+
+### 他の変数の参照 {#referencing-other-variables}
+
+Next.js は、`.env*` ファイル内の他の変数を参照するために `$` を使用している場合、例えば `$VARIABLE` を自動的に展開します。これにより他のシークレットを参照することができます。例えば:
+
+```txt title=".env"
+TWITTER_USER=nextjs
+TWITTER_URL=https://x.com/$TWITTER_USER
+```
+
+上記の例では、`process.env.TWITTER_URL` は `https://x.com/nextjs` に設定されます。
+
+> **知っておくと良いこと**: 実際の値に `$` を含む変数を使用する必要がある場合、エスケープする必要があります。例として `\$`。
+
+## ブラウザ用に環境変数をバンドルする {#bundling-environment-variables-for-the-browser}
+
+非 `NEXT_PUBLIC_` 環境変数は Node.js 環境でのみ使用できるため、ブラウザからはアクセスできません（クライアントは別の*環境*で実行されます）。
+
+環境変数の値をブラウザで使用できるようにするために、Next.js はビルド時に js バンドルに値を "インライン" し、`process.env.[variable]` へのすべての参照を固定値に置き換えます。これを行うためには、変数名に `NEXT_PUBLIC_` をプレフィックスとして付けなければなりません。例えば:
+
+```txt title="Terminal"
+NEXT_PUBLIC_ANALYTICS_ID=abcdefghijk
+```
+
+これにより、Next.js は Node.js 環境内の `process.env.NEXT_PUBLIC_ANALYTICS_ID` へのすべての参照を `next build` を実行する環境からの値に置き換え、どのコードでも使用できるようにします。これは、ブラウザに送信される JavaScript にインライン化されます。
+
+> **注意**: ビルド後、アプリはこれらの環境変数への変更に応答しなくなります。たとえば、1 つの環境でビルドされたスラグを別の環境にプロモートするために Heroku パイプラインを使用する場合や、単一の Docker イメージを複数の環境にデプロイする場合、すべての `NEXT_PUBLIC_` 変数はビルド時に評価された値で凍結されます。これらの値はプロジェクトがビルドされるときに適切に設定される必要があります。実行時の環境値にアクセスする必要がある場合、自分で API を設定してクライアントに提供する必要があります（オンデマンドまたは初期化時に）。
+
+```js title="pages/index.js"
+import setupAnalyticsService from '../lib/my-analytics-service'
+
+// 'NEXT_PUBLIC_ANALYTICS_ID' は 'NEXT_PUBLIC_' でプレフィックスされているため、ここで使用できます。
+// これはビルド時に `setupAnalyticsService('abcdefghijk')` に変換されます。
+setupAnalyticsService(process.env.NEXT_PUBLIC_ANALYTICS_ID)
+
+function HomePage() {
+  return <h1>Hello World</h1>
+}
+
+export default HomePage
+```
+
+動的な参照はインライン化されないことに注意してください。例えば:
+
+```js
+// これは変数を使用しているためインライン化されません
+const varName = 'NEXT_PUBLIC_ANALYTICS_ID'
+setupAnalyticsService(process.env[varName])
+
+// これは変数を使用しているためインライン化されません
+const env = process.env
+setupAnalyticsService(env.NEXT_PUBLIC_ANALYTICS_ID)
+```
+
+### 実行時環境変数 {#runtime-environment-variables}
+
+Next.js はビルド時と実行時の両方の環境変数をサポートできます。
+
+**デフォルトでは、環境変数はサーバーでのみ使用可能です**。ブラウザに環境変数を公開するには、`NEXT_PUBLIC_` をプレフィックスとして付ける必要があります。ただし、これらの公開環境変数は `next build` の際にJavaScript バンドルにインライン化されます。
+
+<PagesOnly>
+
+実行時環境変数を読み取るには、`getServerSideProps` または [app router を段階的に採用する](/docs/app/building-your-application/upgrading/app-router-migration)ことをお勧めします。
+
+</PagesOnly>
+
+<AppOnly>
+
+動的レンダリング中にサーバーで環境変数を安全に読み取ることができます:
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.ts" switcher
+import { connection } from 'next/server'
+
+export default async function Component() {
+  await connection()
+  // cookie、ヘッダー、およびその他の動的 API
+  // これらは動的レンダリングを選択するため、この環境変数は実行時に評価されます
+  const value = process.env.MY_VALUE
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { connection } from 'next/server'
+
+export default async function Component() {
+  await connection()
+  // cookie、ヘッダー、およびその他の動的 API
+  // これらは動的レンダリングを選択するため、この環境変数は実行時に評価されます
+  const value = process.env.MY_VALUE
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+これにより、異なる値を持つ複数の環境を通じてプロモートできる単一の Docker イメージを使用することができます。
+
+**知っておくと良いこと:**
+
+- [`register` 関数](/docs/app/building-your-application/optimizing/instrumentation)を使用してサーバースタートアップ時にコードを実行できます。
+- [runtimeConfig](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/runtime-configuration) オプションを使用することを推奨しません。これはスタンドアロンの出力モードでは機能しないためです。代わりに、app router を[段階的に採用する](/docs/app/building-your-application/upgrading/app-router-migration)ことをお勧めします。
+
+## デフォルトの環境変数 {#default-environment-variables}
+
+通常、必要なのは `.env*` ファイルのみです。ただし、`development` (`next dev`) または `production` (`next start`) 環境のためにいくつかのデフォルトを追加したい場合があります。
+
+Next.js は、`.env`（すべての環境）、`.env.development`（開発環境）、および `.env.production`（本番環境）にデフォルトを設定することを許可します。
+
+> **知っておくと良いこと**: `.env`、`.env.development`、および `.env.production` ファイルは、それらがデフォルトを定義しているため、リポジトリに含める必要があります。すべての `.env` ファイルはデフォルトで `.gitignore` に含まれておらず、これらの値をリポジトリにコミットすることを選択することができます。
+
+## Vercelでの環境変数 {#environment-variables-on-vercel}
+
+Next.js アプリケーションを [Vercel](https://vercel.com) にデプロイする際、[プロジェクト設定](https://vercel.com/docs/projects/environment-variables?utm_medium=docs&utm_source=next-site&utm_campaign=next-website)で環境変数を設定できます。
+
+すべての種類の環境変数はそこで設定する必要があります。開発で使用する環境変数でさえ、[ローカルデバイスにダウンロード可能です](https://vercel.com/docs/concepts/projects/environment-variables#development-environment-variables?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)。
+
+[開発環境変数](https://vercel.com/docs/concepts/projects/environment-variables#development-environment-variables?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)を設定している場合、次のコマンドを使用してローカルマシンで使用するために `.env.local` に取り込むことができます:
+
+```bash title="Terminal"
+vercel env pull
+```
+
+> **知っておくと良いこと**: Next.js アプリケーションを [Vercel](https://vercel.com) にデプロイした場合、`.env*` ファイル内の環境変数は、その名前に `NEXT_PUBLIC_` がプレフィックスとして付けられていない限り、Edge Runtime では利用できません。代わりに [プロジェクト設定](https://vercel.com/docs/projects/environment-variables?utm_medium=docs&utm_source=next-site&utm_campaign=next-website) で環境変数を管理することを強くお勧めします。そこからはすべての環境変数が利用可能です。
+
+## テスト環境変数 {#test-environment-variables}
+
+`development` および `production` 環境以外にも、3つ目のオプション : `test`が利用可能です。開発または本番環境のためにデフォルトを設定するのと同じように、`testing` 環境用に `.env.test` ファイルを使用してこれを行うことができます（ただし、これは前の2つほど一般的ではありません）。Next.js は、`testing` 環境で `.env.development` または `.env.production` から環境変数を読み込みません。
+
+これは、`jest` や `cypress` などのツールを使用してテストを実行する際に、テスト専用の環境変数を設定する必要がある場合に便利です。テストのデフォルト値は、`NODE_ENV` が `test` に設定されている場合に読み込まれますが、通常これを手動で行う必要はありません。テストツールがそれを処理してくれます。
+
+`test` 環境は、`development` および `production` の両方と少し異なる点があります。この点を理解しておく必要があります： `.env.local` は読み込まれません。テストはすべての人に同じ結果を期待します。このため、テストの実行は、デフォルトのセットを上書きする `local.env` を無視することで、異なる実行間で同じ環境デフォルトを使用します。
+
+> **知っておくと良いこと**: デフォルトの環境変数と同様に、`.env.test` ファイルはリポジトリに含まれる必要がありますが、`.env.test.local` は、`.env*.local` は無視されることを意図しているため含まれるべきではありません。
+
+ユニットテストを実行しながら、Next.jsが行うように環境変数を読み込むことを`@next/env`パッケージの`loadEnvConfig`関数を利用して確認できます。
+
+```js
+// 以下はJestのグローバル設定ファイルまたはテスト設定用の似たような場所で使用できます
+import { loadEnvConfig } from '@next/env'
+
+export default async () => {
+  const projectDir = process.cwd()
+  loadEnvConfig(projectDir)
+}
+```
+
+## 環境変数の読み込み順 {#environment-variable-load-order}
+
+環境変数は以下の場所で順に検索され、変数が見つかると停止します。
+
+1. `process.env`
+1. `.env.$(NODE_ENV).local`
+1. `.env.local` (`NODE_ENV` が `test` の場合、チェックされません。)
+1. `.env.$(NODE_ENV)`
+1. `.env`
+
+例えば、`NODE_ENV` が `development` で、`.env.development.local` と `.env` の両方に変数を定義している場合、`.env.development.local` の値が使用されます。
+
+> **知っておくと良いこと**: `NODE_ENV` の許可される値は `production`、`development`、および `test` です。
+
+## 知っておくと良いこと {#good-to-know}
+
+- [`/src` ディレクトリ](/docs/app/building-your-application/configuring/src-directory)を使用している場合、`.env.*` ファイルはプロジェクトの root に保持する必要があります。
+- 環境変数 `NODE_ENV` が指定されていない場合、Next.js は自動的に `next dev` コマンドを実行するときに `development` を割り当て、その他のすべてのコマンドでは `production` を割り当てます。
+
+## バージョン履歴 {#version-history}
+
+| Version  | 変更点                                              |
+| -------- | --------------------------------------------------- |
+| `v9.4.0` | `.env` と `NEXT_PUBLIC_` サポートが追加されました。 |

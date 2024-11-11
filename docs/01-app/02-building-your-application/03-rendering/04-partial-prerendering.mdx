@@ -1,0 +1,269 @@
+---
+title: '部分的プリレンダリング'
+description: '静的レンダリングと動的レンダリングの利点を組み合わせる方法を、部分的プリレンダリングについて学びます'
+---
+
+> **Note:** 部分的プリレンダリングは**実験的**な機能で、カナリーでのみ利用可能であり、変更される可能性があります。プロダクション環境での使用準備は整っていません。
+
+部分的プリレンダリング（PPR）は、同じルート内で静的コンポーネントと動的コンポーネントを組み合わせることを可能にします。
+
+ビルド時に、Next.js は可能な限りルートをプリレンダリングします。リクエストからの読み取りのような[動的](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)コードが検出された場合は、該当のコンポーネントを[React Suspense](https://react.dev/reference/react/Suspense)境界でラップできます。Suspense 境界のフォールバックは、その後プリレンダリングされた HTML に含まれます。
+
+<Image
+  alt="部分的にプリレンダリングされた製品ページは、静的なナビゲーションと製品情報、動的なカートと推奨商品を示しています"
+  srcLight="/learn/light/thinking-in-ppr.png"
+  srcDark="/learn/dark/thinking-in-ppr.png"
+  width="1600"
+  height="632"
+/>
+
+> **🎥 視聴:** なぜ PPR が必要で、どのように動作するのか → [YouTube (10 分)](https://www.youtube.com/watch?v=MTcPrTIBkpA)。
+
+## 背景 {#background}
+
+PPR は Next.js サーバーが即座にプリレンダリングされたコンテンツを送信することを可能にします。
+
+クライアントからサーバーへのウォーターフォールを防ぐため、動的コンポーネントは初期プリレンダリングが提供される間にサーバーから平行してストリーミングを開始します。これにより、動的コンポーネントはクライアントの JavaScript がブラウザで読み込まれる前にレンダリングを開始できるようになります。
+
+各動的コンポーネントのために多数の HTTP リクエストを作成することを防ぐため、PPR は静的プリレンダリングと動的コンポーネントを単一の HTTP リクエストに組み合わせることができます。これにより、各動的コンポーネントのためのネットワーク往復が複数回必要になることを防ぎます。
+
+## 部分的プリレンダリングの使用 {#using-partial-prerendering}
+
+### 増分採用 (バージョン 15) {#incremental-adoption-version-15}
+
+Next.js 15 では、[`ppr`](/docs/app/api-reference/config/next-config-js/ppr) オプションを `next.config.js` で `incremental` に設定し、ファイルの先頭で `experimental_ppr` [ルート設定オプション](/docs/app/api-reference/file-conventions/route-segment-config) をエクスポートすることで、[layouts](/docs/app/building-your-application/routing/layouts-and-templates) と[ページ](/docs/app/building-your-application/routing/pages)で部分的プリレンダリングを段階的に採用できます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    ppr: 'incremental',
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    ppr: 'incremental',
+  },
+}
+
+module.exports = nextConfig
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { Suspense } from "react"
+import { StaticComponent, DynamicComponent, Fallback } from "@/app/ui"
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return {
+     <>
+      <StaticComponent />
+      <Suspense fallback={<Fallback />}>
+        <DynamicComponent />
+      </Suspense>
+     </>
+  };
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { Suspense } from "react"
+import { StaticComponent, DynamicComponent, Fallback } from "@/app/ui"
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return {
+     <>
+      <StaticComponent />
+      <Suspense fallback={<Fallback />}>
+        <DynamicComponent />
+      </Suspense>
+     </>
+  };
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - `experimental_ppr` が設定されていないルートは、デフォルトで `false` となり、PPR を使用してプリレンダリングされません。各ルートごとに PPR を明示的に選択する必要があります。
+> - `experimental_ppr` は、ルートセグメントのすべての子（ネストされたレイアウトやページを含む）に適用されます。すべてのファイルに追加する必要はなく、ルートの最上位セグメントにのみ追加すれば済みます。
+> - 子セグメントの PPR を無効にするには、子セグメントで `experimental_ppr` を `false` に設定できます。
+
+## 動的コンポーネント {#dynamic-components}
+
+`next build` 中にルートのプリレンダリングを作成するとき、Next.js は動的 API が React Suspense でラップされていることを要求します。その `fallback` はプリレンダリングに含まれます。
+
+例えば、`cookies` や `headers` のような関数を使用する場合：
+
+<Tabs>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/user.js" switcher
+import { cookies } from 'next/headers'
+
+export async function User() {
+  const session = (await cookies()).get('session')?.value
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/user.tsx" switcher
+import { cookies } from 'next/headers'
+
+export async function User() {
+  const session = (await cookies()).get('session')?.value
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+このコンポーネントは、`cookies` を読み取るためにリクエストを参照する必要があります。これを PPR で使用するには、コンポーネントを Suspense でラップします：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { Suspense } from 'react'
+import { User, AvatarSkeleton } from './user'
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return (
+    <section>
+      <h1>これはプリレンダリングされます</h1>
+      <Suspense fallback={<AvatarSkeleton />}>
+        <User />
+      </Suspense>
+    </section>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { Suspense } from 'react'
+import { User, AvatarSkeleton } from './user'
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return (
+    <section>
+      <h1>これはプリレンダリングされます</h1>
+      <Suspense fallback={<AvatarSkeleton />}>
+        <User />
+      </Suspense>
+    </section>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+コンポーネントは値がアクセスされるときにのみ動的レンダリングに入ります。
+
+例えば、`page` から `searchParams` を読み取っている場合、この値を prop として別のコンポーネントに渡すことができます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { Table } from './table'
+
+export default function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort: string }>
+}) {
+  return (
+    <section>
+      <h1>これはプリレンダリングされます</h1>
+      <Table searchParams={searchParams} />
+    </section>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { Table } from './table'
+
+export default function Page({ searchParams }) {
+  return (
+    <section>
+      <h1>これはプリレンダリングされます</h1>
+      <Table searchParams={searchParams} />
+    </section>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+テーブルコンポーネント内で、`searchParams` から値をアクセスすることでコンポーネントは動的に実行されます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/table.tsx" switcher
+export async function Table({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort: string }>
+}) {
+  const sort = (await searchParams).sort === 'true'
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/table.js" switcher
+export async function Table({ searchParams }) {
+  const sort = (await searchParams).sort === 'true'
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>

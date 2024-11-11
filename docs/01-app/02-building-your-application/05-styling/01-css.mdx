@@ -1,0 +1,409 @@
+---
+title: 'CSS'
+nav_title: 'CSS'
+description: 'Next.jsアプリケーションをCSS Modules、グローバルスタイル、外部スタイルシートでスタイリングする。'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerの間で共有されています。Pages Routerに特化したコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有コンテンツはコンポーネントでラップしないでください。 */}
+
+<PagesOnly>
+
+<details open>
+  <summary>例</summary>
+
+- [基本的なCSSの例](https://github.com/vercel/next.js/tree/canary/examples/basic-css)
+
+</details>
+
+</PagesOnly>
+
+Next.jsは、CSSの処理方法として以下の複数の方法をサポートしています：
+
+- [CSS Modules](#css-modules)
+- [グローバルスタイル](#global-styles)
+- [外部スタイルシート](#external-stylesheets)
+
+## CSS Modules {#css-modules}
+
+Next.jsは、`.module.css`拡張子を使用して、CSS Modulesをネイティブにサポートしています。
+
+CSS Modulesは、一意なクラス名を自動的に作成することでCSSをローカルにスコープします。これにより、異なるファイルで同じクラス名を心配することなく使用できます。この動作により、CSS ModulesはコンポーネントレベルのCSSを含む理想的な方法となります。
+
+### 例 {#example}
+
+<AppOnly>
+CSS Modulesは、`app`ディレクトリ内の任意のファイルにインポートできます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/layout.tsx" switcher
+import styles from './styles.module.css'
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <section className={styles.dashboard}>{children}</section>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/layout.js" switcher
+import styles from './styles.module.css'
+
+export default function DashboardLayout({ children }) {
+  return <section className={styles.dashboard}>{children}</section>
+}
+```
+
+</TabItem>
+</Tabs>
+
+```css title="app/dashboard/styles.module.css"
+.dashboard {
+  padding: 24px;
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+例えば、`components/`フォルダに再利用可能な`Button`コンポーネントを考えてみます：
+
+まず、以下の内容で`components/Button.module.css`を作成します：
+
+```css title="Button.module.css"
+/*
+.error {}が他の`.css`や`.module.css`ファイルと衝突することを心配する必要はありません！
+*/
+.error {
+  color: white;
+  background-color: red;
+}
+```
+
+次に、上記のCSSファイルをインポートして使用する`components/Button.js`を作成します：
+
+```jsx title="components/Button.js"
+import styles from './Button.module.css'
+
+export function Button() {
+  return (
+    <button
+      type="button"
+      // インポートされた`styles`オブジェクトのプロパティとして
+      // "error"クラスにアクセスする方法に注目してください。
+      className={styles.error}
+    >
+      Destroy
+    </button>
+  )
+}
+```
+
+</PagesOnly>
+
+CSS Modulesは、**`.module.css`および`.module.sass`拡張子を持つファイルにのみ有効**になります。
+
+本番環境では、すべてのCSS Moduleファイルは自動的に結合され、**多くの最小化されたコード分割された**`.css`ファイルになります。これらの`.css`ファイルは、アプリケーションのホット実行パスを表し、アプリケーションを描画するために必要な最小限のCSSが確実に読み込まれます。
+
+## グローバルスタイル {#global-styles}
+
+<AppOnly>
+グローバルスタイルは、`app`ディレクトリ内の任意のレイアウト、ページ、またはコンポーネントにインポートできます。
+
+> **Good to know**：
+>
+> - これは`pages`ディレクトリとは異なり、グローバルスタイルを`_app.js`ファイル内だけにインポートできます。
+> - Next.jsは、実際にグローバルでない限り、グローバルスタイルの使用をサポートしていません。つまり、すべてのページに適用でき、アプリケーションのライフタイムで存続できる必要があります。これは、Next.jsがReactの組み込みスタイルシートサポートを使用してSuspenseと統合するためです。この組み込みサポートは現在、ルート間を移動する際にスタイルシートを削除しません。このため、グローバルスタイルよりもCSS Modulesの使用をお勧めします。
+
+例えば、`app/global.css`という名前のスタイルシートを考えてみます：
+
+```css title="app/global.css"
+body {
+  padding: 20px 20px 60px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+```
+
+root レイアウト（`app/layout.js`）内で`global.css`スタイルシートをインポートして、アプリケーション内のすべてのルートにスタイルを適用します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+// これらのスタイルは、アプリケーション内のすべてのルートに適用されます
+import './global.css'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+// これらのスタイルは、アプリケーション内のすべてのルートに適用されます
+import './global.css'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+アプリケーションにスタイルシートを追加するには、`pages/_app.js`内でCSSファイルをインポートします。
+
+例えば、以下の`styles.css`という名前のスタイルシートを考えてみます：
+
+```css title="styles.css"
+body {
+  font-family: 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', 'Helvetica',
+    'Arial', sans-serif;
+  padding: 20px 20px 60px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+```
+
+[`pages/_app.js`ファイル](https://nextjs.org/docs/canary/pages/building-your-application/routing/custom-app)を未作成の場合は作成します。
+それから、[`import`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/import)文を使用して、`styles.css`ファイルをインポートします。
+
+```jsx title="pages/_app.js"
+import '../styles.css'
+
+// このデフォルトエクスポートは、新しい`pages/_app.js`ファイルで必要です。
+export default function MyApp({ Component, pageProps }) {
+  return <Component {...pageProps} />
+}
+```
+
+これらのスタイル（`styles.css`）は、アプリケーション内のすべてのページとコンポーネントに適用されます。
+スタイルシートのグローバルな性質を考慮し、競合を避けるために、**[`pages/_app.js`](https://nextjs.org/docs/canary/pages/building-your-application/routing/custom-app)内でのみインポートしてください。**
+
+開発時には、スタイルシートをこのように表現することで、スタイルをホットリロードしながら編集できるようになり、アプリケーションの状態を保持できます。
+
+本番環境では、すべてのCSSファイルが自動で結合され、1つの最小化された`.css`ファイルになります。CSSが結合される順序は、`_app.js`ファイルにCSSがインポートされる順番に一致します。独自のCSSを含むインポートされたJSモジュールには特に注意してください；JSモジュールのCSSは、インポートされたCSSファイルと同じ順序ルールに従って結合されます。例えば：
+
+```jsx
+import '../styles.css'
+// ErrorBoundary内のCSSはstyles.cssのグローバルCSSに依存するため、styles.cssの後にインポートします。
+import ErrorBoundary from '../components/ErrorBoundary'
+
+export default function MyApp({ Component, pageProps }) {
+  return (
+    <ErrorBoundary>
+      <Component {...pageProps} />
+    </ErrorBoundary>
+  )
+}
+```
+
+</PagesOnly>
+
+## 外部スタイルシート {#external-stylesheets}
+
+<AppOnly>
+
+外部パッケージで公開されたスタイルシートは、colocatedコンポーネントを含む`app`ディレクトリ内の任意の場所でインポートできます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import 'bootstrap/dist/css/bootstrap.css'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body className="container">{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+import 'bootstrap/dist/css/bootstrap.css'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body className="container">{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: 外部スタイルシートはnpmパッケージから直接インポートするか、ダウンロードしてコードベースと一緒に配置する必要があります。`<link rel="stylesheet" />`を使用することはできません。
+
+</AppOnly>
+
+<PagesOnly>
+
+Next.jsでは、JavaScriptファイルからCSSファイルをインポートすることができます。
+これは、Next.jsが[`import`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/import)の概念をJavaScriptを超えて拡張しているためです。
+
+### `node_modules`からのスタイルのインポート {#import-styles-from-node-modules}
+
+Next.js **9.5.4**以降、`node_modules`からのCSSファイルのインポートがアプリケーション内の任意の場所で許可されています。
+
+`bootstrap`や`nprogress`のようなグローバルスタイルのスタイルシートの場合、`pages/_app.js`内でファイルをインポートする必要があります。
+例えば：
+
+```jsx title="pages/_app.js"
+import 'bootstrap/dist/css/bootstrap.css'
+
+export default function MyApp({ Component, pageProps }) {
+  return <Component {...pageProps} />
+}
+```
+
+サードパーティコンポーネントによって必要とされるCSSをインポートする場合、コンポーネント内でそれを行うことができます。例えば：
+
+```jsx title="components/example-dialog.js"
+import { useState } from 'react'
+import { Dialog } from '@reach/dialog'
+import VisuallyHidden from '@reach/visually-hidden'
+import '@reach/dialog/styles.css'
+
+function ExampleDialog(props) {
+  const [showDialog, setShowDialog] = useState(false)
+  const open = () => setShowDialog(true)
+  const close = () => setShowDialog(false)
+
+  return (
+    <div>
+      <button onClick={open}>Open Dialog</button>
+      <Dialog isOpen={showDialog} onDismiss={close}>
+        <button className="close-button" onClick={close}>
+          <VisuallyHidden>Close</VisuallyHidden>
+          <span aria-hidden>×</span>
+        </button>
+        <p>Hello there. I am a dialog</p>
+      </Dialog>
+    </div>
+  )
+}
+```
+
+</PagesOnly>
+
+<AppOnly>
+
+## 順序と統合 {#ordering-and-merging}
+
+Next.jsは、スタイルシートを自動でチャンク（統合）することによって、プロダクションビルド中のCSSを最適化します。CSSの順序は、スタイルシートをアプリケーションコードにインポートする順序によって決まります。
+
+例えば、`base-button.module.css`は`page.module.css`よりも先に順序付けされます。なぜなら、`<BaseButton>`が`<Page>`で先にインポートされているからです：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="base-button.tsx" switcher
+import styles from './base-button.module.css'
+
+export function BaseButton() {
+  return <button className={styles.primary} />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="base-button.js" switcher
+import styles from './base-button.module.css'
+
+export function BaseButton() {
+  return <button className={styles.primary} />
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="page.ts" switcher
+import { BaseButton } from './base-button'
+import styles from './page.module.css'
+
+export function Page() {
+  return <BaseButton className={styles.primary} />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="page.js" switcher
+import { BaseButton } from './base-button'
+import styles from './page.module.css'
+
+export function Page() {
+  return <BaseButton className={styles.primary} />
+}
+```
+
+</TabItem>
+</Tabs>
+
+予測可能な順序を維持するために、以下を推奨します：
+
+- 単一のJS/TSファイルでのみCSSファイルをインポートします。
+  - グローバルクラス名を使用する場合、適用したい順序で同じファイル内でグローバルスタイルをインポートします。
+- グローバルスタイルよりもCSS Modulesを優先します。
+  - CSS Modulesに一貫した命名規約を使用します。例えば、`<name>.module.css`よりも`<name>.tsx`を使用します。
+- 共有スタイルを別の共通コンポーネントに抽出します。
+- [Tailwind](/docs/app/building-your-application/styling/tailwind-css)を使用する場合、スタイルシートをファイルの先頭、できれば[Root レイアウト](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required)でインポートします。
+- インポートを自動的に並べ替えるあらゆるリンター/フォーマッター（例：ESLintの[`sort-import`](https://eslint.org/docs/latest/rules/sort-imports)）をオフにします。これは、CSSインポート順序が重要であるため、CSSに意図せず影響を与える可能性があります。
+
+> **Good to know:**
+>
+> - CSSの順序は開発モードでは異なる動作をすることがありますので、ビルド（`next build`）して最終的なCSSの順序を確認することを常にお勧めします。
+> - `next.config.js`の[`cssChunking`](/docs/app/api-reference/config/next-config-js/cssChunking)オプションを使用して、CSSのチャンク方法を制御できます。
+
+</AppOnly>
+
+## 追加機能 {#additional-features}
+
+Next.jsは、スタイルの追加の作成体験を改善するための追加機能を提供します：
+
+- `next dev`をローカルで実行しているとき、ローカルスタイルシート（グローバルまたはCSS Modulesのいずれか）は、編集が保存されるごとに変更を即座に反映する[Fast Refresh](/docs/architecture/fast-refresh)を利用します。
+- `next build`でプロダクション用にビルドするとき、CSSファイルはより少ない最小化された`.css`ファイルに結合され、スタイルの取得に必要なネットワークリクエスト数を減らします。
+- JavaScriptを無効にした場合でも、プロダクションビルド（`next start`）ではスタイルがロードされます。ただし、[Fast Refresh](/docs/architecture/fast-refresh)を有効にするためには、`next dev`にはJavaScriptが引き続き必要です。

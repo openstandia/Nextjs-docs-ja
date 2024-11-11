@@ -1,0 +1,156 @@
+---
+title: 'AMP'
+description: '最小限の設定で、React を離れることなく、AMP を追加してページのパフォーマンスと速度を向上させることができます。'
+---
+
+<details>
+  <summary>事例</summary>
+
+- [AMP](https://github.com/vercel/next.js/tree/canary/examples/amp)
+
+</details>
+
+Next.jsを使用すると、最小限の設定で、React を離れることなく、任意の React ページを AMP ページに変えることができます。
+
+AMP について詳しくは公式の [amp.dev](https://amp.dev/) サイトを参照してください。
+
+## AMP の有効化 {#enabling-amp}
+
+ページに AMP サポートを有効にする方法や、さまざまな AMP 設定に関する詳細については、[`next/amp` の API ドキュメント](https://nextjs.org/docs/canary/pages/building-your-application/configuring/amp)を参照してください。
+
+## 注意点 {#caveats}
+
+- CSS-in-JS のみがサポートされています。現時点では、[CSS モジュール](https://nextjs.org/docs/canary/pages/building-your-application/styling)は AMP ページでサポートされていません。Next.js に CSS モジュールのサポートを[貢献することができます](https://github.com/vercel/next.js/issues/10549)。
+
+## AMP コンポーネントの追加 {#adding-amp-components}
+
+AMP コミュニティは、AMP ページをよりインタラクティブにするための[多くのコンポーネント](https://amp.dev/documentation/components/)を提供しています。Next.js は、ページで使用されているすべてのコンポーネントを自動的にインポートするため、AMP コンポーネントのスクリプトを手動でインポートする必要はありません：
+
+```jsx
+export const config = { amp: true }
+
+function MyAmpPage() {
+  const date = new Date()
+
+  return (
+    <div>
+      <p>ある時刻: {date.toJSON()}</p>
+      <amp-timeago
+        width="0"
+        height="15"
+        datetime={date.toJSON()}
+        layout="responsive"
+      >
+        .
+      </amp-timeago>
+    </div>
+  )
+}
+
+export default MyAmpPage
+```
+
+上記の例では、[`amp-timeago`](https://amp.dev/documentation/components/amp-timeago/?format=websites)コンポーネントを使用しています。
+
+デフォルトでは、常に最新のバージョンのコンポーネントがインポートされます。バージョンをカスタマイズしたい場合は、以下の例のように `next/head` を使用できます：
+
+```jsx
+import Head from 'next/head'
+
+export const config = { amp: true }
+
+function MyAmpPage() {
+  const date = new Date()
+
+  return (
+    <div>
+      <Head>
+        <script
+          async
+          key="amp-timeago"
+          custom-element="amp-timeago"
+          src="https://cdn.ampproject.org/v0/amp-timeago-0.1.js"
+        />
+      </Head>
+
+      <p>ある時刻: {date.toJSON()}</p>
+      <amp-timeago
+        width="0"
+        height="15"
+        datetime={date.toJSON()}
+        layout="responsive"
+      >
+        .
+      </amp-timeago>
+    </div>
+  )
+}
+
+export default MyAmpPage
+```
+
+## AMP 検証 {#amp-validation}
+
+AMP ページは、開発中に [amphtml-validator](https://www.npmjs.com/package/amphtml-validator) により自動的に検証されます。エラーと警告は、Next.js を開始したターミナルに表示されます。
+
+ページは[静的 HTML エクスポート](https://nextjs.org/docs/canary/pages/building-your-application/deploying/static-exports)時にも検証され、警告やエラーがターミナルに出力されます。AMP エラーが発生すると、そのエクスポートは有効な AMP でないため、ステータスコード `1` を返して終了します。
+
+### カスタム検証ツール {#custom-validators}
+
+以下のように `next.config.js` にカスタム AMP バリデーターを設定できます：
+
+```js
+module.exports = {
+  amp: {
+    validator: './custom_validator.js',
+  },
+}
+```
+
+### AMP 検証のスキップ {#skip-amp-validation}
+
+AMP 検証を無効にするには、以下のコードを `next.config.js` に追加してください：
+
+```js
+experimental: {
+  amp: {
+    skipValidation: true
+  }
+}
+```
+
+### 静的 HTML エクスポートにおける AMP {#amp-in-static-html-export}
+
+[静的 HTML エクスポート](https://nextjs.org/docs/canary/pages/building-your-application/deploying/static-exports)でページを静的に事前レンダリングするとき、Next.js はページが AMP をサポートしているかを検出し、そのエクスポートの動作を変更します。
+
+たとえば、ハイブリッド AMP ページ `pages/about.js` は以下のように出力します：
+
+- `out/about.html` - クライアントサイドの React ランタイムを含む HTML ページ
+- `out/about.amp.html` - AMP ページ
+
+そして、`pages/about.js` が AMP 専用のページである場合、それは次のように出力されます：
+
+- `out/about.html` - 最適化された AMP ページ
+
+Next.js は、自動的に HTML バージョンのページの中に AMP バージョンへのリンクを挿入しますので、自分で行う必要はありません：
+
+```jsx
+<link rel="amphtml" href="/about.amp.html" />
+```
+
+そして、AMP バージョンのページには HTML ページへのリンクが含まれます：
+
+```jsx
+<link rel="canonical" href="/about" />
+```
+
+[`trailingSlash`](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/trailingSlash)が有効な場合、`pages/about.js` のエクスポートされたページは次のようになります：
+
+- `out/about/index.html` - HTML ページ
+- `out/about.amp/index.html` - AMP ページ
+
+## TypeScript {#typescript}
+
+現在、AMP には TypeScript 用の組み込み型がありませんが、ロードマップにあります（[#13791](https://github.com/ampproject/amphtml/issues/13791)）。
+
+その回避策として、プロジェクトの中に `amp.d.ts` というファイルを手動で作成し、これらの[カスタム型](https://stackoverflow.com/a/50601125)を追加できます。
