@@ -1,0 +1,156 @@
+---
+title: 'AMP'
+description: '最小限の設定で、Reactを使用したまま、AMPを追加してページのパフォーマンスと速度を向上させることができます。'
+---
+
+<details>
+  <summary>Examples</summary>
+
+- [AMP](https://github.com/vercel/next.js/tree/canary/examples/amp)
+
+</details>
+
+Next.jsを使用すると、最小限の設定で、Reactを使用したまま、任意のReactページをAMPページに変換できます。
+
+公式サイト[amp.dev](https://amp.dev/)でAMPについて詳しく読むことができます。
+
+## AMPを有効にする {#enabling-amp}
+
+ページでAMP対応を有効にする方法やさまざまなAMP設定について詳しくは、[APIドキュメント `next/amp`](https://nextjs.org/docs/canary/pages/building-your-application/configuring/amp)を参照してください。
+
+## 注意点 {#caveats}
+
+- CSS-in-JS のみがサポートされています。 [CSS Modules](https://nextjs.org/docs/canary/pages/building-your-application/styling)は、現在AMPページではサポートされていません。Next.jsにCSS Modulesのサポートを[貢献することができます](https://github.com/vercel/next.js/issues/10549)
+
+## AMPコンポーネントを追加する {#adding-amp-components}
+
+AMPコミュニティはAMPページをよりインタラクティブにするための[多くのコンポーネント](https://amp.dev/documentation/components/)を提供しています。Next.jsは、ページで使用されるすべてのコンポーネントを自動的にインポートするため、手動でAMPコンポーネントスクリプトをインポートする必要はありません：
+
+```jsx
+export const config = { amp: true }
+
+function MyAmpPage() {
+  const date = new Date()
+
+  return (
+    <div>
+      <p>Some time: {date.toJSON()}</p>
+      <amp-timeago
+        width="0"
+        height="15"
+        datetime={date.toJSON()}
+        layout="responsive"
+      >
+        .
+      </amp-timeago>
+    </div>
+  )
+}
+
+export default MyAmpPage
+```
+
+上記の例では、[`amp-timeago`](https://amp.dev/documentation/components/amp-timeago/?format=websites)コンポーネントを使用しています。
+
+デフォルトでは、コンポーネントの最新バージョンが常にインポートされます。バージョンをカスタマイズしたい場合は、次の例のように `next/head` を使用できます：
+
+```jsx
+import Head from 'next/head'
+
+export const config = { amp: true }
+
+function MyAmpPage() {
+  const date = new Date()
+
+  return (
+    <div>
+      <Head>
+        <script
+          async
+          key="amp-timeago"
+          custom-element="amp-timeago"
+          src="https://cdn.ampproject.org/v0/amp-timeago-0.1.js"
+        />
+      </Head>
+
+      <p>Some time: {date.toJSON()}</p>
+      <amp-timeago
+        width="0"
+        height="15"
+        datetime={date.toJSON()}
+        layout="responsive"
+      >
+        .
+      </amp-timeago>
+    </div>
+  )
+}
+
+export default MyAmpPage
+```
+
+## AMP検証 {#amp-validation}
+
+AMPページは開発中に[amphtml-validator](https://www.npmjs.com/package/amphtml-validator)で自動的に検証されます。エラーと警告はNext.jsを開始した端末に表示されます。
+
+ページは[静的HTMLエクスポート](https://nextjs.org/docs/canary/pages/building-your-application/deploying/static-exports)の際にも検証され、警告やエラーは端末に表示されます。AMPエラーが発生した場合、AMPが有効でないためエクスポートはステータスコード `1` で終了します。
+
+### カスタムバリデータ {#custom-validators}
+
+以下のように `next.config.js` でカスタムAMPバリデータを設定できます：
+
+```js
+module.exports = {
+  amp: {
+    validator: './custom_validator.js',
+  },
+}
+```
+
+### AMP検証をスキップする {#skip-amp-validation}
+
+AMP検証をオフにするには、以下のコードを `next.config.js` に追加します：
+
+```js
+experimental: {
+  amp: {
+    skipValidation: true
+  }
+}
+```
+
+### 静的HTMLエクスポートでのAMP {#amp-in-static-html-export}
+
+[静的HTMLエクスポート](https://nextjs.org/docs/canary/pages/building-your-application/deploying/static-exports) を使用して静的に事前レンダリングする場合、Next.jsはページがAMPをサポートしているかどうかを検出し、それに基づいてエクスポートの動作を変更します。
+
+たとえば、ハイブリッドAMPページ `pages/about.js` は以下を出力します：
+
+- `out/about.html` - クライアントサイドのReactランタイムを含むHTMLページ
+- `out/about.amp.html` - AMPページ
+
+そして、`pages/about.js` がAMP専用ページの場合、以下を出力します：
+
+- `out/about.html` - 最適化されたAMPページ
+
+Next.jsは、自動的にHTMLバージョンにページのAMPバージョンのリンクを挿入するため、手動で行う必要はありません：
+
+```jsx
+<link rel="amphtml" href="/about.amp.html" />
+```
+
+ページのAMPバージョンにはHTMLページへのリンクが含まれます：
+
+```jsx
+<link rel="canonical" href="/about" />
+```
+
+[`trailingSlash`](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/trailingSlash) が有効な場合、`pages/about.js` のエクスポートされたページは次のようになります：
+
+- `out/about/index.html` - HTMLページ
+- `out/about.amp/index.html` - AMPページ
+
+## TypeScriptにおけるAMP {#typescript}
+
+AMPは現在、TypeScript用のビルトイン型を持っていませんが、これは彼らのロードマップに含まれています（[#13791](https://github.com/ampproject/amphtml/issues/13791)）。
+
+回避策としては、プロジェクト内に `amp.d.ts` というファイルを手動で作成し、これらの[カスタム型](https://stackoverflow.com/a/50601125)を追加することができます。

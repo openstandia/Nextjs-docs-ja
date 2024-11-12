@@ -1,0 +1,238 @@
+---
+title: 'getStaticProps'
+description: 'getStaticPropsのAPIリファレンス。Next.jsでgetStaticPropsを使用して静的ページを生成する方法を学びます。'
+---
+
+`getStaticProps`という関数をエクスポートすると、その関数から返されたpropsを使用してビルド時にページをプリレンダリングします；
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/index.tsx" switcher
+import type { InferGetStaticPropsType, GetStaticProps } from 'next'
+
+type Repo = {
+  name: string
+  stargazers_count: number
+}
+
+export const getStaticProps = (async (context) => {
+  const res = await fetch('https://api.github.com/repos/vercel/next.js')
+  const repo = await res.json()
+  return { props: { repo } }
+}) satisfies GetStaticProps<{
+  repo: Repo
+}>
+
+export default function Page({
+  repo,
+}: InferGetStaticPropsType<typeof getStaticProps>) {
+  return repo.stargazers_count
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/index.js" switcher
+export async function getStaticProps() {
+  const res = await fetch('https://api.github.com/repos/vercel/next.js')
+  const repo = await res.json()
+  return { props: { repo } }
+}
+
+export default function Page({ repo }) {
+  return repo.stargazers_count
+}
+```
+
+</TabItem>
+</Tabs>
+
+`getStaticProps`で使用するために、トップレベルのスコープでモジュールをインポートすることができます。使用されるインポートは**クライアント側にはバンドルされません**。つまり、データベースからデータを取得することを含め、`getStaticProps`に**サーバー側のコードを直接記述する**ことができます。
+
+## Contextパラメータ {#context-parameter}
+
+`context`パラメータは、以下のキーを含むオブジェクトです；
+
+| 名前               | 説明                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `params`           | [dynamic routes](https://nextjs.org/docs/canary/pages/building-your-application/routing/dynamic-routes)を使用しているページのルートパラメータを含んでいます。例えば、ページ名が`[id].js`の場合、`params`は`{ id: ... }`のようになります。これは後で説明する`getStaticPaths`と一緒に使用する必要があります。                                                                                                                                                                                                                   |
+| `preview`          | (`draftMode`には非推奨) ページが[Preview Mode](https://nextjs.org/docs/canary/pages/building-your-application/configuring/preview-mode)にある場合は`true`、それ以外は`false`です。                                                                                                                                                                                                                                                                                                                                            |
+| `previewData`      | (`draftMode`には非推奨) [`setPreviewData`によって設定された[preview](https://nextjs.org/docs/canary/pages/building-your-application/configuring/preview-mode)のデータ](https://nextjs.org/docs/canary/pages/building-your-application/configuring/preview-mode)です。                                                                                                                                                                                                                                                         |
+| `draftMode`        | ページが[Draft Mode](https://nextjs.org/docs/canary/pages/building-your-application/configuring/draft-mode)にある場合は`true`、それ以外は`false`です。                                                                                                                                                                                                                                                                                                                                                                        |
+| `locale`           | 有効なロケールを含んでいます（有効な場合）。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `locales`          | サポートされているすべてのロケールを含んでいます（有効な場合）。                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `defaultLocale`    | 設定されたデフォルトのロケールを含んでいます（有効な場合）。                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `revalidateReason` | 関数が呼ばれた理由を提供します。次のいずれかを指定できます：「build」（ビルド時に実行される）、「stale」（再検証期間が期限切れ、または[development mode](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/get-static-props#runs-on-every-request-in-development)で実行されている）、"on-demand"（[on-demand再検証](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/incremental-static-regeneration#on-demand-revalidation-with-revalidatepath)経由でトリガーされた） |
+
+## getStaticPropsの返り値 {#getstaticprops-return-values}
+
+`getStaticProps`関数は、`props`、`redirect`、または`notFound`のいずれかを含むオブジェクトを返す必要があります；その後に**オプションの**`revalidate`プロパティが続きます。
+
+### `props` {#props}
+
+`props`オブジェクトはキーと値のペアであり、各値はページコンポーネントに受け渡されます。これは[シリアル化可能なオブジェクト](https://developer.mozilla.org/docs/Glossary/Serialization)である必要があります。したがって、渡されたpropsは[`JSON.stringify`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)でシリアル化可能である必要があります。
+
+```jsx
+export async function getStaticProps(context) {
+  return {
+    props: { message: `Next.jsは素晴らしい` }, // ページコンポーネントにpropsとして渡されます
+  }
+}
+```
+
+### `revalidate` {#revalidate}
+
+`revalidate`プロパティは、ページ再生成が発生するまでの秒数を指定します（デフォルトは`false`または再検証なし）。
+
+```js
+// この関数はサーバーサイドのビルド時に呼び出されます。
+// 再検証が有効で、新しいリクエストが来た場合、
+// サーバーレス関数で再び呼び出されるかもしれません
+export async function getStaticProps() {
+  const res = await fetch('https://.../posts')
+  const posts = await res.json()
+
+  return {
+    props: {
+      posts,
+    },
+    // Next.jsはページを再生成しようとします：
+    // - リクエストが来たとき
+    // - 最大でも10秒に1回
+    revalidate: 10, // 秒単位
+  }
+}
+```
+
+[増分的静的再生成](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/incremental-static-regeneration)について詳しく学びましょう。
+
+ISRを利用しているページのキャッシュ状態は、`x-nextjs-cache`レスポンスヘッダーの値を読むことで判断できます。可能な値は次のとおりです：
+
+- `MISS` - パスがキャッシュに存在しない（最初の訪問で1回のみ発生）
+- `STALE` - パスがキャッシュにあるが、再検証時間を超えたため、バックグラウンドで更新される
+- `HIT` - パスがキャッシュにあり、再検証時間を超えていない
+
+### `notFound` {#notfound}
+
+`notFound`ブール値を使用すると、ページを`404`ステータスと[[404 Page](https://nextjs.org/docs/canary/pages/building-your-application/routing/custom-error#404-page)]として返すことができます；`notFound: true`では、以前に成功したページ生成があっても`404`を返します。これは、ユーザー生成コンテンツが作成者によって削除されるようなユースケースをサポートすることを意図しています。なお、`notFound`は再検証の動作を[こちらに示す通り](#revalidate)に従います。
+
+```js
+export async function getStaticProps(context) {
+  const res = await fetch(`https://.../data`)
+  const data = await res.json()
+
+  if (!data) {
+    return {
+      notFound: true,
+    }
+  }
+
+  return {
+    props: { data }, // ページコンポーネントにpropsとして渡されます
+  }
+}
+```
+
+> **Good to know**: [`fallback: false`](https://nextjs.org/docs/canary/pages/api-reference/functions/get-static-paths#fallback-false)モードには`notFound`は必要ありません；`getStaticPaths`から返されたパスのみがプリレンダリングされます。
+
+### `redirect` {#redirect}
+
+`redirect`オブジェクトを使用すると、内部または外部リソースにリダイレクトすることができます；これは`{ destination: string, permanent: boolean }`の形をとる必要があります。
+
+稀なケースで、古い`HTTP`クライアントに対して適切にリダイレクトするためにカスタムステータスコードを割り当てる必要がある場合があります。そのような場合、`permanent`プロパティの代わりに`statusCode`プロパティを使用することができますが、**両方は使用できません**。また、`next.config.js`のリダイレクトと同様に`basePath: false`を設定することも可能です。
+
+```js
+export async function getStaticProps(context) {
+  const res = await fetch(`https://...`)
+  const data = await res.json()
+
+  if (!data) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+        // statusCode: 301
+      },
+    }
+  }
+
+  return {
+    props: { data }, // ページコンポーネントにpropsとして渡されます
+  }
+}
+```
+
+ビルド時にリダイレクトが判明している場合、それらは[`next.config.js`](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/redirects)に追加されるべきです。
+
+## ファイルの読み込み：`process.cwd()`を使う {#reading-files-use-process-cwd}
+
+`getStaticProps`でファイルシステムから直接ファイルを読み取ることができます；
+
+そのためには、ファイルへのフルパスを取得する必要があります。
+
+Next.jsがコードを別のディレクトリにコンパイルするため、`__dirname`を使用することはできません。返されるパスがPages Routerとは異なるためです。
+
+代わりに、Next.jsが実行されているディレクトリを示す`process.cwd()`を使用することができます。
+
+```jsx
+import { promises as fs } from 'fs'
+import path from 'path'
+
+// postsはgetStaticProps()によってビルド時に情報が入力されます
+function Blog({ posts }) {
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li>
+          <h3>{post.filename}</h3>
+          <p>{post.content}</p>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// この関数はサーバーサイドのビルド時に呼び出されます。
+// クライアントサイドでは呼び出されないため,
+// データベースクエリを直接行うことも可能です
+export async function getStaticProps() {
+  const postsDirectory = path.join(process.cwd(), 'posts')
+  const filenames = await fs.readdir(postsDirectory)
+
+  const posts = filenames.map(async (filename) => {
+    const filePath = path.join(postsDirectory, filename)
+    const fileContents = await fs.readFile(filePath, 'utf8')
+
+    // 一般的には内容を解析 / 変換する
+    // 例えばここでマークダウンをHTMLに変換することができます
+
+    return {
+      filename,
+      content: fileContents,
+    }
+  })
+  // { props: { posts } }を返すことで、
+  // Blogコンポーネントは ビルド時に`posts`をプロップとして受け取る
+  return {
+    props: {
+      posts: await Promise.all(posts),
+    },
+  }
+}
+
+export default Blog
+```
+
+## バージョン履歴 {#version-history}
+
+| バージョン | 変更点                                                                                                                                                                                                                     |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v13.4.0`  | [App Router](/docs/app/building-your-application/data-fetching)が安定しており、データ取得が簡素化されました                                                                                                                |
+| `v12.2.0`  | [オンデマンドでの増分的静的再生成](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/incremental-static-regeneration#on-demand-revalidation-with-revalidatepath)が安定しました;                 |
+| `v12.1.0`  | [オンデマンドでの増分的静的再生成](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/incremental-static-regeneration#on-demand-revalidation-with-revalidatepath) が追加されました（ベータ版）。 |
+| `v10.0.0`  | `locale`、`locales`、`defaultLocale`、および`notFound`オプションが追加されました。                                                                                                                                         |
+| `v10.0.0`  | `fallback: 'blocking'`の戻りオプションが追加されました。                                                                                                                                                                   |
+| `v9.5.0`   | 安定した[増分的静的再生成](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/incremental-static-regeneration)                                                                                   |
+| `v9.3.0`   | `getStaticProps`が導入されました。                                                                                                                                                                                         |

@@ -1,0 +1,146 @@
+---
+title: 'next.config.js'
+description: 'next.config.jsを使用してアプリケーションを設定する方法を学びましょう。'
+---
+
+{/* このドキュメントの内容はapp routerとpages routerで共有されています。Pages Routerに特有の内容を追加するには`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有される内容はコンポーネントでラップしないでください。 */}
+
+Next.jsはプロジェクトディレクトリのルート（例えば`package.json`の近く）にある`next.config.js`ファイルを介して設定できます。ファイルはデフォルトのエクスポートを持ちます。
+
+```js title="next.config.js"
+// @ts-check
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  /* 設定オプションはここに */
+}
+
+module.exports = nextConfig
+```
+
+## ECMAScriptモジュール {#ecmascript-modules}
+
+`next.config.js`は通常のNode.jsモジュールであり、JSONファイルではありません。Next.jsのサーバーとビルドフェーズで使用され、ブラウザのビルドには含まれません。
+
+もし[ECMAScriptモジュール](https://nodejs.org/api/esm.html)が必要な場合は、`next.config.mjs`を使用できます：
+
+```js title="next.config.mjs"
+// @ts-check
+
+/**
+ * @type {import('next').NextConfig}
+ */
+const nextConfig = {
+  /* 設定オプションはここに */
+}
+
+export default nextConfig
+```
+
+> **Good to know**: 拡張子が`.cjs`、`.cts`、または`.mts`の`next.config`は現在サポートされていません。
+
+## 関数としての設定 {#configuration-as-a-function}
+
+関数を使用することもできます：
+
+```js title="next.config.mjs"
+// @ts-check
+
+export default (phase, { defaultConfig }) => {
+  /**
+   * @type {import('next').NextConfig}
+   */
+  const nextConfig = {
+    /* 設定オプションはここに */
+  }
+  return nextConfig
+}
+```
+
+### 非同期設定 {#async-configuration}
+
+Next.js 12.1.0以降、非同期関数を使用できます：
+
+```js title="next.config.js"
+// @ts-check
+
+module.exports = async (phase, { defaultConfig }) => {
+  /**
+   * @type {import('next').NextConfig}
+   */
+  const nextConfig = {
+    /* 設定オプションはここに */
+  }
+  return nextConfig
+}
+```
+
+### フェーズ {#phase}
+
+`phase`は設定が読み込まれる現在のコンテキストです。[使用可能なフェーズ](https://github.com/vercel/next.js/blob/5e6b008b561caf2710ab7be63320a3d549474a5b/packages/next/shared/lib/constants.ts#L19-L23)を確認できます。フェーズは`next/constants`からインポートできます：
+
+```js title="next.config.js"
+// @ts-check
+
+const { PHASE_DEVELOPMENT_SERVER } = require('next/constants')
+
+module.exports = (phase, { defaultConfig }) => {
+  if (phase === PHASE_DEVELOPMENT_SERVER) {
+    return {
+      /* 開発専用の設定オプションはここに */
+    }
+  }
+
+  return {
+    /* 開発以外のすべてのフェーズ用の設定オプションはここに */
+  }
+}
+```
+
+## TypeScript {#typescript}
+
+プロジェクトでTypeScriptを使用している場合、設定にTypeScriptを使用するために`next.config.ts`を使用できます：
+
+```ts title="next.config.ts"
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  /* 設定オプションはここに */
+}
+
+export default nextConfig
+```
+
+コメント行は`next.config.js`で許可される設定を置く場所であり、[このファイルで定義されています](https://github.com/vercel/next.js/blob/canary/packages/next/src/server/config-shared.ts)。
+
+ただし、設定のどれも必須ではなく、それぞれの設定が何をするのかを理解する必要はありません。このセクションで有効化または修正したい機能を検索し、それが何をすべきかを示します。
+
+> ターゲットのNode.jsバージョンで利用できない新しいJavaScript機能の使用を避けてください。`next.config.js`はWebpackやBabelによって解析されません。
+
+このページには利用可能なすべての設定オプションが記載されています：
+
+## ユニットテスト（実験的） {#unit-testing-experimental}
+
+Next.js 15.1から、`next/experimental/testing/server`パッケージには`next.config.js`ファイルのユニットテストをサポートするユーティリティが含まれています。
+
+`unstable_getResponseFromNextConfig`関数は、`next.config.js`の[`headers`](/docs/app/api-reference/config/next-config-js/headers)、[`redirects`](/docs/app/api-reference/config/next-config-js/redirects)、[`rewrites`](/docs/app/api-reference/config/next-config-js/rewrites)関数を提供されたリクエスト情報で実行し、ルーティングの結果を含む`NextResponse`を返します。
+
+> `unstable_getResponseFromNextConfig`からのレスポンスは、`next.config.js`のフィールドのみを考慮し、ミドルウェアやファイルシステムのルートは考慮しないため、実際の運用ではユニットテストと異なる結果になる場合があります。
+
+```js
+import {
+  getRedirectUrl,
+  unstable_getResponseFromNextConfig,
+} from 'next/experimental/testing/server'
+
+const response = await unstable_getResponseFromNextConfig({
+  url: 'https://nextjs.org/test',
+  nextConfig: {
+    async redirects() {
+      return [{ source: '/test', destination: '/test2', permanent: false }]
+    },
+  },
+})
+expect(response.status).toEqual(307)
+expect(getRedirectUrl(response)).toEqual('https://nextjs.org/test2')
+```

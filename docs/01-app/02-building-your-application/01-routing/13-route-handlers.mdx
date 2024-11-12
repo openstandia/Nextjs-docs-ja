@@ -1,0 +1,788 @@
+---
+title: 'Route Handlers'
+description: 'WebのRequestとResponse APIを使用して、指定されたルートのカスタムリクエストハンドラーを作成します。'
+related:
+  title: 'APIリファレンス'
+  description: 'route.jsファイルについて詳しく学びます。'
+  links:
+    - app/api-reference/file-conventions/route
+---
+
+Route Handlersを使用すると、Webの[Request](https://developer.mozilla.org/docs/Web/API/Request)と[Response](https://developer.mozilla.org/docs/Web/API/Response) APIを使用して、指定されたルートのカスタムリクエストハンドラーを作成できます。
+
+<Image
+  alt="Route.js Special File"
+  srcLight="/docs/light/route-special-file.png"
+  srcDark="/docs/dark/route-special-file.png"
+  width="1600"
+  height="444"
+/>
+
+> **Good to know**: Route Handlersは、`app`ディレクトリ内でのみ利用可能です。これは、`pages`ディレクトリ内の[API Routes](https://nextjs.org/docs/canary/pages/building-your-application/routing/api-routes)の同等物であり、API RoutesとRoute Handlersを一緒に使用する必要は**ありません**。
+
+## 規約 {#convention}
+
+Route Handlersは、`app`ディレクトリ内の[`route.js|ts`ファイル](/docs/app/api-reference/file-conventions/route)で定義されます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+export async function GET(request: Request) {}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+export async function GET(request) {}
+```
+
+</TabItem>
+</Tabs>
+
+Route Handlersは、`page.js`や`layout.js`のように、`app`ディレクトリ内のどこにでもネストできます。ただし、`page.js`と同じルートセグメントレベルに`route.js`ファイルを置くことは**できません**。
+
+### 対応HTTPメソッド {#supported-http-methods}
+
+以下の[HTTPメソッド](https://developer.mozilla.org/docs/Web/HTTP/Methods)がサポートされています：`GET`、`POST`、`PUT`、`PATCH`、`DELETE`、`HEAD`、および`OPTIONS`。サポートされていないメソッドが呼び出されると、Next.jsは`405 Method Not Allowed`応答を返します。
+
+### 拡張された`NextRequest`と`NextResponse` API {#extended-nextrequest-and-nextresponse-apis}
+
+Next.jsは、ネイティブの[Request](https://developer.mozilla.org/docs/Web/API/Request)と[Response](https://developer.mozilla.org/docs/Web/API/Response) APIをサポートするだけでなく、[`NextRequest`](/docs/app/api-reference/functions/next-request)と[`NextResponse`](/docs/app/api-reference/functions/next-response)で拡張し、高度なユースケースに便利なヘルパーを提供します。
+
+## 振る舞い {#behavior}
+
+### キャッシング {#caching}
+
+Route Handlersはデフォルトではキャッシュされません。ただし、`GET`メソッドについてはキャッシュを選択できます。その他のサポートされているHTTPメソッドはキャッシュされ**ません**。`GET`メソッドをキャッシュするには、Route Handlerファイル内で`export const dynamic = 'force-static'`などの[ルート設定オプション](/docs/app/api-reference/file-conventions/route-segment-config#dynamic)を使用してください。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/items/route.ts" switcher
+export const dynamic = 'force-static'
+
+export async function GET() {
+  const res = await fetch('https://data.mongodb-api.com/...', {
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': process.env.DATA_API_KEY,
+    },
+  })
+  const data = await res.json()
+
+  return Response.json({ data })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/items/route.js" switcher
+export const dynamic = 'force-static'
+
+export async function GET() {
+  const res = await fetch('https://data.mongodb-api.com/...', {
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': process.env.DATA_API_KEY,
+    },
+  })
+  const data = await res.json()
+
+  return Response.json({ data })
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: サポートされているその他のHTTPメソッドは、同じファイル内でキャッシュされた`GET`メソッドが置かれていても、キャッシュされ**ません**。
+
+### 特別なRoute Handlers {#special-route-handlers}
+
+[`sitemap.ts`](/docs/app/api-reference/file-conventions/metadata/sitemap)、[`opengraph-image.tsx`](/docs/app/api-reference/file-conventions/metadata/opengraph-image)、および[`icon.tsx`](/docs/app/api-reference/file-conventions/metadata/app-icons)やその他の[メタデータファイル](/docs/app/api-reference/file-conventions/metadata)などの特別なRoute Handlersは、デフォルトでは静的です。Dynamic APIsやダイナミックな設定オプションを使用しない限り、そうなります。
+
+### ルートの解決 {#route-resolution}
+
+`route`は最下層のルーティングプリミティブとみなせます。
+
+- `page`のようにレイアウトやクライアントサイドのナビゲーションには**参加しません**。
+- `page.js`と同じルートに`route.js`ファイルを置くことは**できません**。
+
+| ページ               | ルート             | 結果                             |
+| -------------------- | ------------------ | -------------------------------- |
+| `app/page.js`        | `app/route.js`     | <Cross size={18} /> コンフリクト |
+| `app/page.js`        | `app/api/route.js` | <Check size={18} /> 有効         |
+| `app/[user]/page.js` | `app/api/route.js` | <Check size={18} /> 有効         |
+
+各`route.js`または`page.js`ファイルは、そのルートのすべてのHTTP動詞を担当します。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/page.ts" switcher
+export default function Page() {
+  return <h1>Hello, Next.js!</h1>
+}
+
+// ❌ コンフリクト
+// `app/route.ts`
+export async function POST(request: Request) {}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/page.js" switcher
+export default function Page() {
+  return <h1>Hello, Next.js!</h1>
+}
+
+// ❌ コンフリクト
+// `app/route.js`
+export async function POST(request) {}
+```
+
+</TabItem>
+</Tabs>
+
+## 例 {#examples}
+
+次の例は、Route Handlersを他のNext.js APIや機能と組み合わせる方法を示しています。
+
+### キャッシュされたデータの再検証 {#revalidating-cached-data}
+
+キャッシュされたデータを増分的静的リジェネレーション（ISR）を使用して[再検証](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)できます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/posts/route.ts" switcher
+export const revalidate = 60
+
+export async function GET() {
+  const data = await fetch('https://api.vercel.app/blog')
+  const posts = await data.json()
+
+  return Response.json(posts)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/posts/route.js" switcher
+export const revalidate = 60
+
+export async function GET() {
+  const data = await fetch('https://api.vercel.app/blog')
+  const posts = await data.json()
+
+  return Response.json(posts)
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Cookies {#cookies}
+
+`next/headers`の[`cookies`](/docs/app/api-reference/functions/cookies)を使用してcookieを読み取ったり設定したりできます。このサーバー関数は、Route Handler内で直接呼び出すか、他の関数内にネストすることができます。
+
+また、[`Set-Cookie`](https://developer.mozilla.org/docs/Web/HTTP/Headers/Set-Cookie)ヘッダーを使用して新しい`Response`を返すこともできます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+import { cookies } from 'next/headers'
+
+export async function GET(request: Request) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')
+
+  return new Response('Hello, Next.js!', {
+    status: 200,
+    headers: { 'Set-Cookie': `token=${token.value}` },
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+import { cookies } from 'next/headers'
+
+export async function GET(request) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')
+
+  return new Response('Hello, Next.js!', {
+    status: 200,
+    headers: { 'Set-Cookie': `token=${token}` },
+  })
+}
+```
+
+</TabItem>
+</Tabs>
+
+基礎となるWeb APIを使用して、リクエストからcookieを読み取ることもできます（[`NextRequest`](/docs/app/api-reference/functions/next-request)）：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+import { type NextRequest } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const token = request.cookies.get('token')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+export async function GET(request) {
+  const token = request.cookies.get('token')
+}
+```
+
+</TabItem>
+</Tabs>
+
+### ヘッダー {#headers}
+
+`next/headers`から[`headers`](/docs/app/api-reference/functions/headers)を使用してヘッダーを読み取ることができます。このサーバー関数は、Route Handler内で直接呼び出すか、他の関数内にネストすることができます。
+
+この`headers`インスタンスは読み取り専用です。ヘッダーを設定するには、新しい`Response`を新しい`headers`で返す必要があります。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+import { headers } from 'next/headers'
+
+export async function GET(request: Request) {
+  const headersList = await headers()
+  const referer = headersList.get('referer')
+
+  return new Response('Hello, Next.js!', {
+    status: 200,
+    headers: { referer: referer },
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+import { headers } from 'next/headers'
+
+export async function GET(request) {
+  const headersList = await headers()
+  const referer = headersList.get('referer')
+
+  return new Response('Hello, Next.js!', {
+    status: 200,
+    headers: { referer: referer },
+  })
+}
+```
+
+</TabItem>
+</Tabs>
+
+基礎となるWeb APIを使用して、リクエストからヘッダーを読み取ることもできます（[`NextRequest`](/docs/app/api-reference/functions/next-request)）：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+import { type NextRequest } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+export async function GET(request) {
+  const requestHeaders = new Headers(request.headers)
+}
+```
+
+</TabItem>
+</Tabs>
+
+### リダイレクト {#redirects}
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+import { redirect } from 'next/navigation'
+
+export async function GET(request: Request) {
+  redirect('https://nextjs.org/')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+import { redirect } from 'next/navigation'
+
+export async function GET(request) {
+  redirect('https://nextjs.org/')
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Dynamic Route Segments {#dynamic-route-segments}
+
+> 続行する前に、[ルートの定義](/docs/app/building-your-application/routing/defining-routes)ページを読むことをお勧めします。
+
+Route Handlersは[Dynamic Segments](/docs/app/building-your-application/routing/dynamic-routes)を使用して、動的データからリクエストハンドラーを作成できます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/items/[slug]/route.ts" switcher
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const slug = (await params).slug // 'a', 'b', or 'c'
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/items/[slug]/route.js" switcher
+export async function GET(request, { params }) {
+  const slug = (await params).slug // 'a', 'b', or 'c'
+}
+```
+
+</TabItem>
+</Tabs>
+
+| ルート                      | 例のURL    | `params`                 |
+| --------------------------- | ---------- | ------------------------ |
+| `app/items/[slug]/route.js` | `/items/a` | `Promise<{ slug: 'a' }>` |
+| `app/items/[slug]/route.js` | `/items/b` | `Promise<{ slug: 'b' }>` |
+| `app/items/[slug]/route.js` | `/items/c` | `Promise<{ slug: 'c' }>` |
+
+### URLクエリパラメータ {#url-query-parameters}
+
+Route Handlerに渡されるリクエストオブジェクトは`NextRequest`インスタンスであり、クエリパラメータをより簡単に処理できる[便利な追加メソッド](/docs/app/api-reference/functions/next-request#nexturl)を備えています。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/search/route.ts" switcher
+import { type NextRequest } from 'next/server'
+
+export function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const query = searchParams.get('query')
+  // query is "hello" for /api/search?query=hello
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/search/route.js" switcher
+export function GET(request) {
+  const searchParams = request.nextUrl.searchParams
+  const query = searchParams.get('query')
+  // query is "hello" for /api/search?query=hello
+}
+```
+
+</TabItem>
+</Tabs>
+
+### ストリーミング {#streaming}
+
+ストリーミングは、OpenAIなどの大規模言語モデル（LLMs）と組み合わせて、AI生成コンテンツ用に使用されることが一般的です。[AI SDK](https://sdk.vercel.ai/docs/introduction)について詳しく学びましょう。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/chat/route.ts" switcher
+import { openai } from '@ai-sdk/openai'
+import { StreamingTextResponse, streamText } from 'ai'
+
+export async function POST(req: Request) {
+  const { messages } = await req.json()
+  const result = await streamText({
+    model: openai('gpt-4-turbo'),
+    messages,
+  })
+
+  return new StreamingTextResponse(result.toAIStream())
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/chat/route.js" switcher
+import { openai } from '@ai-sdk/openai'
+import { StreamingTextResponse, streamText } from 'ai'
+
+export async function POST(req) {
+  const { messages } = await req.json()
+  const result = await streamText({
+    model: openai('gpt-4-turbo'),
+    messages,
+  })
+
+  return new StreamingTextResponse(result.toAIStream())
+}
+```
+
+</TabItem>
+</Tabs>
+
+これらの抽象化は、Web APIを使用してストリームを作成します。基盤となるWeb APIを直接利用することもできます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+// https://developer.mozilla.org/docs/Web/API/ReadableStream#convert_async_iterator_to_stream
+function iteratorToStream(iterator: any) {
+  return new ReadableStream({
+    async pull(controller) {
+      const { value, done } = await iterator.next()
+
+      if (done) {
+        controller.close()
+      } else {
+        controller.enqueue(value)
+      }
+    },
+  })
+}
+
+function sleep(time: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, time)
+  })
+}
+
+const encoder = new TextEncoder()
+
+async function* makeIterator() {
+  yield encoder.encode('<p>One</p>')
+  await sleep(200)
+  yield encoder.encode('<p>Two</p>')
+  await sleep(200)
+  yield encoder.encode('<p>Three</p>')
+}
+
+export async function GET() {
+  const iterator = makeIterator()
+  const stream = iteratorToStream(iterator)
+
+  return new Response(stream)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+// https://developer.mozilla.org/docs/Web/API/ReadableStream#convert_async_iterator_to_stream
+function iteratorToStream(iterator) {
+  return new ReadableStream({
+    async pull(controller) {
+      const { value, done } = await iterator.next()
+
+      if (done) {
+        controller.close()
+      } else {
+        controller.enqueue(value)
+      }
+    },
+  })
+}
+
+function sleep(time) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, time)
+  })
+}
+
+const encoder = new TextEncoder()
+
+async function* makeIterator() {
+  yield encoder.encode('<p>One</p>')
+  await sleep(200)
+  yield encoder.encode('<p>Two</p>')
+  await sleep(200)
+  yield encoder.encode('<p>Three</p>')
+}
+
+export async function GET() {
+  const iterator = makeIterator()
+  const stream = iteratorToStream(iterator)
+
+  return new Response(stream)
+}
+```
+
+</TabItem>
+</Tabs>
+
+### リクエストボディ {#request-body}
+
+標準のWeb APIメソッドを使用して`Request`ボディを読み取ることができます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/items/route.ts" switcher
+export async function POST(request: Request) {
+  const res = await request.json()
+  return Response.json({ res })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/items/route.js" switcher
+export async function POST(request) {
+  const res = await request.json()
+  return Response.json({ res })
+}
+```
+
+</TabItem>
+</Tabs>
+
+### リクエストボディのFormData {#request-body-formdata}
+
+`request.formData()`関数を使用して`FormData`を読み取ることができます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/items/route.ts" switcher
+export async function POST(request: Request) {
+  const formData = await request.formData()
+  const name = formData.get('name')
+  const email = formData.get('email')
+  return Response.json({ name, email })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/items/route.js" switcher
+export async function POST(request) {
+  const formData = await request.formData()
+  const name = formData.get('name')
+  const email = formData.get('email')
+  return Response.json({ name, email })
+}
+```
+
+</TabItem>
+</Tabs>
+
+`formData`データはすべて文字列なので、[`zod-form-data`](https://www.npmjs.com/zod-form-data)を使用してリクエストの検証を行い、好みの形式（例：`number`）でデータを取得することをお勧めします。
+
+### CORS {#cors}
+
+標準のWeb APIメソッドを使用して、特定のRoute Handlerに対してCORSヘッダーを設定できます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+export async function GET(request: Request) {
+  return new Response('Hello, Next.js!', {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+export async function GET(request) {
+  return new Response('Hello, Next.js!', {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  })
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - 複数のRoute HandlersにCORSヘッダーを追加するには、[Middleware](/docs/app/building-your-application/routing/middleware#cors)または[`next.config.js`ファイル](/docs/app/api-reference/config/next-config-js/headers#cors)を使用できます。
+> - また、[CORSの例](https://github.com/vercel/examples/blob/main/edge-functions/cors/lib/cors.ts)パッケージも参考にしてください。
+
+### Webhooks {#webhooks}
+
+Route Handlerを使用してサードパーティサービスからのWebhookを受信することができます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+export async function POST(request: Request) {
+  try {
+    const text = await request.text()
+    // Webhookペイロードを処理する
+  } catch (error) {
+    return new Response(`Webhook error: ${error.message}`, {
+      status: 400,
+    })
+  }
+
+  return new Response('Success!', {
+    status: 200,
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+export async function POST(request) {
+  try {
+    const text = await request.text()
+    // Webhookペイロードを処理する
+  } catch (error) {
+    return new Response(`Webhook error: ${error.message}`, {
+      status: 400,
+    })
+  }
+
+  return new Response('Success!', {
+    status: 200,
+  })
+}
+```
+
+</TabItem>
+</Tabs>
+
+特に、Pages Routerを使用したAPI Routesとは違い、追加の構成を行うために`bodyParser`を使用する必要はありません。
+
+### UI以外のレスポンス {#non-ui-responses}
+
+Route Handlersを使用してUI以外のコンテンツを返すことができます。[`sitemap.xml`](/docs/app/api-reference/file-conventions/metadata/sitemap#generating-a-sitemap-using-code-js-ts)、[`robots.txt`](/docs/app/api-reference/file-conventions/metadata/robots#generate-a-robots-file)、[`app icons`](/docs/app/api-reference/file-conventions/metadata/app-icons#generate-icons-using-code-js-ts-tsx)、および[open graph images](/docs/app/api-reference/file-conventions/metadata/opengraph-image)には、組み込みのサポートがあります。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/rss.xml/route.ts" switcher
+export async function GET() {
+  return new Response(
+    `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+
+<channel>
+  <title>Next.js Documentation</title>
+  <link>https://nextjs.org/docs</link>
+  <description>The React Framework for the Web</description>
+</channel>
+
+</rss>`,
+    {
+      headers: {
+        'Content-Type': 'text/xml',
+      },
+    }
+  )
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/rss.xml/route.js" switcher
+export async function GET() {
+  return new Response(`<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+
+<channel>
+  <title>Next.js Documentation</title>
+  <link>https://nextjs.org/docs</link>
+  <description>The React Framework for the Web</description>
+</channel>
+
+</rss>`)
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Segment Configオプション {#segment-config-options}
+
+Route Handlersはページやレイアウトと同じ[ルートセグメント設定](/docs/app/api-reference/file-conventions/route-segment-config)を使用します。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/items/route.ts" switcher
+export const dynamic = 'auto'
+export const dynamicParams = true
+export const revalidate = false
+export const fetchCache = 'auto'
+export const runtime = 'nodejs'
+export const preferredRegion = 'auto'
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/items/route.js" switcher
+export const dynamic = 'auto'
+export const dynamicParams = true
+export const revalidate = false
+export const fetchCache = 'auto'
+export const runtime = 'nodejs'
+export const preferredRegion = 'auto'
+```
+
+</TabItem>
+</Tabs>
+
+より詳細については[APIリファレンス](/docs/app/api-reference/file-conventions/route-segment-config)をご覧ください。
