@@ -1,0 +1,303 @@
+---
+title: 'Route Segment Config'
+description: 'Next.js のルートセグメントのオプションを設定する方法を学びましょう。'
+---
+
+> このページで説明されているオプションは、[`dynamicIO`](/docs/app/api-reference/config/next-config-js/dynamicIO)フラグがオンの場合無効化され、将来的には廃止される予定です。
+
+ルートセグメントオプションを使用すると、[Page](/docs/app/building-your-application/routing/layouts-and-templates)、[Layout](/docs/app/building-your-application/routing/layouts-and-templates)、または[Route Handler](/docs/app/building-your-application/routing/route-handlers)の動作を以下の変数を直接エクスポートすることで設定できます：
+
+| オプション                              | 型                                                                                                                        | デフォルト                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| [`experimental_ppr`](#experimental_ppr) | `boolean`                                                                                                                 |
+| [`dynamic`](#dynamic)                   | `'auto' \| 'force-dynamic' \| 'error' \| 'force-static'`                                                                  | `'auto'`                       |
+| [`dynamicParams`](#dynamicparams)       | `boolean`                                                                                                                 | `true`                         |
+| [`revalidate`](#revalidate)             | `false \| 0 \| number`                                                                                                    | `false`                        |
+| [`fetchCache`](#fetchcache)             | `'auto' \| 'default-cache' \| 'only-cache' \| 'force-cache' \| 'force-no-store' \| 'default-no-store' \| 'only-no-store'` | `'auto'`                       |
+| [`runtime`](#runtime)                   | `'nodejs' \| 'edge'`                                                                                                      | `'nodejs'`                     |
+| [`preferredRegion`](#preferredregion)   | `'auto' \| 'global' \| 'home' \| string \| string[]`                                                                      | `'auto'`                       |
+| [`maxDuration`](#maxduration)           | `number`                                                                                                                  | デプロイプラットフォームによる |
+
+## オプション {#options}
+
+### `experimental_ppr` {#experimental-ppr}
+
+Layout や Page に対して[Partial Prerendering (PPR)](/docs/app/building-your-application/rendering/partial-prerendering)を有効にします。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="layout.tsx | page.tsx " switcher
+export const experimental_ppr = true
+// true | false
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="layout.js | page.js " switcher
+export const experimental_ppr = true
+// true | false
+```
+
+</TabItem>
+</Tabs>
+
+### `dynamic` {#dynamic}
+
+Layout や Page の動的な動作を完全にスタティックまたは完全にダイナミックに変更します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="layout.tsx | page.tsx | route.ts" switcher
+export const dynamic = 'auto'
+// 'auto' | 'force-dynamic' | 'error' | 'force-static'
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="layout.js | page.js | route.js" switcher
+export const dynamic = 'auto'
+// 'auto' | 'force-dynamic' | 'error' | 'force-static'
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: `app`ディレクトリの新しいモデルは、`pages`ディレクトリのページレベルでの`getServerSideProps`と`getStaticProps`のバイナリの全か無のモデルよりも、`fetch`リクエストレベルでの細粒度のキャッシュ制御を優先します。`dynamic`オプションは、利便性のために以前のモデルに戻る方法であり、簡単な移行パスを提供します。
+
+- **`'auto'`** (デフォルト)：可能な限りキャッシュしながら、どのコンポーネントも動的な動作を採用できるようにします。
+- **`'force-dynamic'`**：[動的レンダリング](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)を強制し、ルートがリクエスト時に各ユーザーのためにレンダリングされるようにします。このオプションは次のように同等です：
+
+  - `pages`ディレクトリの`getServerSideProps()`。
+  - LayoutやPageのすべての`fetch()`リクエストのオプションを`{ cache: 'no-store', next: { revalidate: 0 } }`に設定する。
+  - セグメント設定を`export const fetchCache = 'force-no-store'`に設定する。
+
+- **`'error'`**：すべてのコンポーネントが[動的API](/docs/app/building-your-application/rendering/server-components#dynamic-apis)や非キャッシュデータを使用した場合にエラーを引き起こすことで、レイアウトやページのデータを静的にレンダリングし、キャッシュすることを強制します。このオプションは次のように同等です：
+  - `pages`ディレクトリの`getStaticProps()`。
+  - LayoutやPageのすべての`fetch()`リクエストのオプションを`{ cache: 'force-cache' }`に設定する。
+  - セグメント設定を`fetchCache = 'only-cache', dynamicParams = false`に設定する。
+  - `dynamic = 'error'`は、`dynamicParams`のデフォルトを`true`から`false`に変更します。手動で`dynamicParams = true`を設定することで、`generateStaticParams`で生成されない動的パラメータのページを動的にレンダリングできるようにできます。
+- **`'force-static'`**：[`cookies`](/docs/app/api-reference/functions/cookies)、[`headers()`](/docs/app/api-reference/functions/headers)および[`useSearchParams()`](/docs/app/api-reference/functions/use-search-params)が空の値を返すように強制し、レイアウトやページのデータを静的にレンダリングし、キャッシュします。
+
+> **Good to know**:
+>
+> - `getServerSideProps`と`getStaticProps`から`dynamic: 'force-dynamic'`および`dynamic: 'error'`への[移行方法](/docs/app/building-your-application/upgrading/app-router-migration#step-6-migrating-data-fetching-methods)の手順は、[アップグレードガイド](/docs/app/building-your-application/upgrading/app-router-migration#step-6-migrating-data-fetching-methods)で参照できます。
+
+### `dynamicParams` {#dynamicparams}
+
+動的セグメントが[generateStaticParams](/docs/app/api-reference/functions/generate-static-params)で生成されなかった際の処理を制御します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="layout.tsx | page.tsx" switcher
+export const dynamicParams = true // true | false,
+```
+
+</TabItem>
+</Tabs>
+<Tabs>
+<TabItem value="js" label="JavaScript">
+
+```js title="layout.js | page.js | route.js" switcher
+export const dynamicParams = true // true | false,
+```
+
+</TabItem>
+</Tabs>
+
+- **`true`** (デフォルト)：`generateStaticParams`に含まれていない動的セグメントは、オンデマンドで生成されます。
+- **`false`**：`generateStaticParams`に含まれていない動的セグメントは404を返します。
+
+> **Good to know**:
+>
+> - このオプションは、`pages`ディレクトリの`getStaticPaths`の`fallback: true | false | blocking`オプションを置き換えるものです。
+> - 初回に訪問されたパスをすべて静的にレンダリングするには、`generateStaticParams`で空の配列を返すか、`export const dynamic = 'force-static'`を利用する必要があります。
+> - `dynamicParams = true`の場合、セグメントは[Suspenseを使ったストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense)を使用します。
+> - `dynamic = 'error'`および`dynamic = 'force-static'`が使用されている場合、`dynamicParams`のデフォルトを`false`に変更します。
+
+### `revalidate` {#revalidate}
+
+レイアウトやページのデフォルトの再生成時間を設定します。このオプションは、個々の`fetch`リクエストで設定された`revalidate`の値を上書きしません。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="layout.tsx | page.tsx | route.ts" switcher
+export const revalidate = false
+// false | 0 | number
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="layout.js | page.js | route.js" switcher
+export const revalidate = false
+// false | 0 | number
+```
+
+</TabItem>
+</Tabs>
+
+- **`false`** (デフォルト)：`cache`オプションを設けた`fetch`リクエストをキャッシュする(動的APIが使用される前)。無期限にキャッシュするに等しい。個々の`fetch`リクエストは、キャッシュされることを回避するために`cache: 'no-store'`または`revalidate: 0`を使用してルートを動的にレンダリングしたり、ルートのデフォルトより低い数を設定して、ルートの再検証頻度を増やすことができます。
+- **`0`**：すべての動的APIやキャッシュされていないデータフェッチが発見されていなくても、常に動的にレンダリングされるようにレイアウトやページを確保します。このオプションにより、`cache`オプションが設定されていない`fetch`リクエストのデフォルトを`'no-store'`に変更します。ただし、`cache: 'force-cache'`を利用する`fetch`リクエストや `revalidate`を使用する場合はそのままにします。
+- **`number`**：レイアウトやページのデフォルトの再形成頻度を`n`秒に設定します。
+
+> **Good to know**:
+>
+> - `revalidate`の値は、静的に解析可能でなければなりません。例えば、`revalidate = 600`は有効ですが、`revalidate = 60 * 10`は無効です。
+> - `runtime = 'edge'`を使用している場合、`revalidate`の値は利用できません。
+> - 開発環境では、ページは常にオンデマンドでレンダリングされ、キャッシュされることはありません。これにより、再検証期間が経過するのを待つことなく、即座に変更を確認することができます。
+
+#### 再検証頻度 {#revalidation-frequency}
+
+- 単一ルートの各レイアウトおよびページにまたがる最も低い`revalidate`が、エンタイルートの再検証頻度を決定します。これにより、子ページが親レイアウトと同じ頻度で再検証されます。
+- 個別の `fetch` リクエストは、ルートのデフォルトの `revalidate`より低い `revalidate` を設定して、エンタイルートの再検証頻度を増やすことができます。これにより、特定の基準に基づいてより頻繁な再検証に動的にオプトインすることが可能です。
+
+### `fetchCache` {#fetchcache}
+
+<details>
+  <summary>これはデフォルトの動作を特に上書きする必要がある場合にのみ使用するべき高度なオプションです。</summary>
+
+デフォルトでは、Next.js は動的APIが使用される**前に到達可能な**`fetch()`リクエストをキャッシュし、動的APIが使用された**後に発見された**`fetch`リクエストをキャッシュしません。
+
+`fetchCache` は、レイアウトやページ内のすべての`fetch`リクエストのデフォルトの `cache` オプションをオーバーライドするためのものです。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="layout.tsx | page.tsx | route.ts" switcher
+export const fetchCache = 'auto'
+// 'auto' | 'default-cache' | 'only-cache'
+// 'force-cache' | 'force-no-store' | 'default-no-store' | 'only-no-store'
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="layout.js | page.js | route.js" switcher
+export const fetchCache = 'auto'
+// 'auto' | 'default-cache' | 'only-cache'
+// 'force-cache' | 'force-no-store' | 'default-no-store' | 'only-no-store'
+```
+
+</TabItem>
+</Tabs>
+
+- **`'auto'`** (デフォルト)：`fetch`リクエストを、提供された `cache` オプションで動的APIの前にキャッシュし、動的APIの後に`fetch`リクエストをキャッシュしないデフォルトオプション。
+- **`'default-cache'`**：`fetch`に任意の `cache` オプションを渡すことを許可しますが、オプションが提供されない場合、`cache` オプションを `'force-cache'` に設定します。これにより、動的APIの後にあっても`fetch`リクエストが静的であるとみなされます。
+- **`'only-cache'`**：あらゆる `fetch` リクエストがキャッシュされるように、何もオプションが提供されていない場合、デフォルトを `cache: 'force-cache'` に変更し、`cache: 'no-store'` を使用する`fetch`リクエストがある場合はエラーを引き起こします。
+- **`'force-cache'`**：あらゆる `fetch` リクエストがキャッシュされるように、すべての`fetch`リクエストの `cache` オプションを `'force-cache'` に設定します。
+- **`'default-no-store'`**：`fetch`に任意の `cache` オプションを渡すことを許可しますが、オプションが提供されない場合、`cache` オプションを `'no-store'` に設定します。これにより、動的APIの前にあっても`fetch`リクエストが動的であると進化されます。
+- **`'only-no-store'`**：あらゆる `fetch` リクエストがキャッシュされないことを確実にし、何もオプションが提供されていない場合、デフォルトを `cache: 'no-store'` に変更し、`cache: 'force-cache'` を使用する`fetch`リクエストがある場合はエラーを引き起こします。
+- **`'force-no-store'`**：あらゆる `fetch` リクエストがキャッシュされないことを確実にし、すべての`fetch`リクエストの `cache` オプションを `'no-store'` に設定します。これにより、`fetch`リクエストが `'force-cache'` オプションを提供している場合でも、毎回新しく取得されるように強制されます。
+
+#### クロスルートセグメントの動作 {#cross-route-segment-behavior}
+
+- 単一のルートの各レイアウトおよびページにまたがるすべてのオプションが互いに互換性がある必要があります。
+  - `'only-cache'`と`'force-cache'`の両方が提供されている場合、`'force-cache'`が優先されます。`'only-no-store'`と`'force-no-store'`の両方が提供されている場合、`'force-no-store'`が優先されます。forceオプションはルート全体の動作を変更するので、単一のセグメントが'force-_'を持つ場合、'only-_'によって引き起こされるエラーを防ぐことができます。
+  - `'only-*'`と`'force-*'`のオプションの意図は、ルート全体が完全に静的または完全に動的であることを保証することです。これにより、次のことが許可されていません：
+    - 単一のルートでの`'only-cache'`と`'only-no-store'`の組み合わせは許可されていません。
+    - 単一のルートでの`'force-cache'`と`'force-no-store'`の組み合わせは許可されていません。
+  - 親が`'auto'`や`'*-cache'`を提供する場合、子が`'default-no-store'`を提供することはできません。これは、同じ`fetch`が異なる動作をする可能性があるためです。
+- 一般的には、共有された親レイアウトを`'auto'`に保ち、子セグメントが分岐する場合にオプションをカスタマイズすることを推奨します。
+
+</details>
+
+### `runtime` {#runtime}
+
+アプリケーションをレンダリングする際には Node.js ランタイム、ミドルウェアには Edge ランタイムを使用することをお勧めします。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="layout.tsx | page.tsx | route.ts" switcher
+export const runtime = 'nodejs'
+// 'nodejs' | 'edge'
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="layout.js | page.js | route.js" switcher
+export const runtime = 'nodejs'
+// 'nodejs' | 'edge'
+```
+
+</TabItem>
+</Tabs>
+
+- **`'nodejs'`** (デフォルト)
+- **`'edge'`**
+
+さまざまな[ランタイムについての詳細](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)を学びましょう。
+
+### `preferredRegion` {#preferredregion}
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="layout.tsx | page.tsx | route.ts" switcher
+export const preferredRegion = 'auto'
+// 'auto' | 'global' | 'home' | ['iad1', 'sfo1']
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="layout.js | page.js | route.js" switcher
+export const preferredRegion = 'auto'
+// 'auto' | 'global' | 'home' | ['iad1', 'sfo1']
+```
+
+</TabItem>
+</Tabs>
+
+`preferredRegion`のサポート、および対応するリージョンのサポートは、デプロイメントプラットフォームによります。
+
+> **Good to know**:
+>
+> - `preferredRegion`が指定されていない場合、最も近い親レイアウトのオプションを継承します。
+> - root レイアウトはすべてのリージョンをデフォルトにします。
+
+### `maxDuration` {#maxduration}
+
+デフォルトでは、Next.js はサーバー側のロジックの実行時間（ページのレンダリングや API の処理）を制限しません。デプロイメントプラットフォームは、Next.js のビルド出力から `maxDuration`を使用して特定の実行制限を追加できます。例：[Vercel](https://vercel.com/docs/functions/serverless-functions/runtimes#max-duration)。
+
+**注意**：この設定には Next.js `13.4.10`以降が必要です。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="layout.tsx | page.tsx | route.ts" switcher
+export const maxDuration = 5
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="layout.js | page.js | route.js" switcher
+export const maxDuration = 5
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)を使用する場合、ページレベルで `maxDuration`を設定して、ページ上で使用されるすべての Server Actions のデフォルトタイムアウトを変更します。
+
+### `generateStaticParams` {#generatestaticparams}
+
+`generateStaticParams`関数は、[動的ルートセグメント](/docs/app/building-your-application/routing/dynamic-routes)と組み合わせて使用することで、ビルド時にオンデマンドではなく事前に生成されるルートセグメントパラメータのリストを定義できます。
+
+詳細については、[API リファレンス](/docs/app/api-reference/functions/generate-static-params)を参照してください。
+
+## バージョン履歴 {#version-history}
+
+| バージョン   |                                                                                                                                                                                                                                        |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v15.0.0-RC` | `export const runtime = "experimental-edge"`が廃止されました。[codemod](/docs/app/building-your-application/upgrading/codemods#transform-app-router-route-segment-config-runtime-value-from-experimental-edge-to-edge)が利用可能です。 |

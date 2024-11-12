@@ -110,7 +110,7 @@ async function resolveGitDiff(hashDiff: DiffFile['hash']): Promise<DiffFile> {
  */
 function filterDiffs(diffFile: DiffFile): DiffFile {
   const predicate = (diff: string) => {
-    if (diff.includes('docs/03-pages/')) {
+    if (diff.includes('docs/02-pages/')) {
       log(
         'normal',
         `ignore the diff because of the documentation about the pages router: ${diff}`

@@ -1,0 +1,144 @@
+---
+title: 'expirePath'
+description: 'expirePath関数のAPIリファレンス。'
+---
+
+`expirePath`は、特定のパスの[キャッシュデータ](/docs/app/building-your-application/caching)をオンデマンドで消去することを可能にします。
+
+> **Good to know**:
+>
+> - `expirePath`は[Node.jsおよびEdgeランタイム](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)の両方で利用可能です；
+> - `expirePath`は、含まれているパスが次に訪問されたときにのみキャッシュを無効化します。これは、`expirePath`をdynamic route segmentで呼び出しても、多くの無効化が一度にすぐにトリガーされないことを意味します。無効化は、次にそのパスが訪問されたときにのみ発生します；
+> - 現在、`expirePath`はサーバーアクションで使用されると、[クライアント側のRouter Cache](/docs/app/building-your-application/caching#client-side-router-cache)内のすべてのルートを無効化します。この動作は一時的なものであり、将来的には特定のパスのみに適用されるように更新されます；
+> - `expirePath`を使用すると、[サーバー側のRoute Cache](/docs/app/building-your-application/caching#full-route-cache)内の**特定のパスのみ**が無効化されます。
+
+## リファレンス {#reference}
+
+### パラメーター {#parameters}
+
+```tsx
+expirePath(path: string, type?: 'page' | 'layout'): void;
+```
+
+- `path`: 期限を切らしたいデータに関連付けられたファイルシステムパスを表す文字列（例：`/product/[slug]/page`）、またはリテラルルートセグメント（例：`/product/123`）を指定します。1024文字未満である必要があります。この値は大文字と小文字を区別します。
+- `type`:（オプション）`'page'`または`'layout'`文字列を指定して期限切れにするパスのタイプを変更します。もし`path`が動的セグメント（例：`/product/[slug]/page`）を含んでいる場合、このパラメーターは必須です。パスがリテラルルートセグメントを指す場合（例：動的ページに対する`/product/1`）、`type`を指定するべきではありません。
+
+### 戻り値 {#returns}
+
+`expirePath`は値を返しません。
+
+## 例 {#examples}
+
+### 特定のURLの期限切れ {#expiring-a-specific-url}
+
+```ts
+import { expirePath } from 'next/cache'
+expirePath('/blog/post-1')
+```
+
+これは、次のページ訪問時に特定のURLのキャッシュを消去します。
+
+### ページパスの期限切れ {#expiring-a-page-path}
+
+```ts
+import { expirePath } from 'next/cache'
+expirePath('/blog/[slug]', 'page')
+// もしくはルートグループを用いて
+expirePath('/(main)/blog/[slug]', 'page')
+```
+
+これは、次のページ訪問時に提供された`page`ファイルに一致する任意のURLのキャッシュを消去します。具体的なページより下のページは無効になりません。たとえば、`/blog/[slug]`は`/blog/[slug]/[author]`を無効化しません。
+
+### レイアウトパスの期限切れ {#expiring-a-layout-path}
+
+```ts
+import { expirePath } from 'next/cache'
+expirePath('/blog/[slug]', 'layout')
+// もしくはルートグループを用いて
+expirePath('/(main)/post/[slug]', 'layout')
+```
+
+これは、次のページ訪問時に提供された`layout`ファイルに一致する任意のURLのキャッシュを消去します。上記の場合であれば、次回の訪問時に`/blog/[slug]/[another]`も再検証されます。
+
+### 全データの期限切れ {#expiring-all-data}
+
+```ts
+import { expirePath } from 'next/cache'
+
+expirePath('/', 'layout')
+```
+
+これは、次のページ訪問時にデータキャッシュを消去します。
+
+### サーバーアクション {#server-action}
+
+`expirePath`をサーバーアクションで呼び出すことができます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+import { expirePath } from 'next/cache'
+
+export default async function submit() {
+  await submitForm()
+  expirePath('/')
+}
+```
+
+</TabItem>
+</Tabs>
+
+### ルートハンドラー {#route-handler}
+
+`expirePath`をルートハンドラーで呼び出すことができます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/expire/route.ts" switcher
+import { expirePath } from 'next/cache'
+import type { NextRequest } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const path = request.nextUrl.searchParams.get('path')
+
+  if (path) {
+    expirePath(path)
+    return Response.json({ revalidated: true, now: Date.now() })
+  }
+
+  return Response.json({
+    expired: false,
+    now: Date.now(),
+    message: '期限を切らしたいパスが見つかりません',
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/expire/route.js" switcher
+import { expirePath } from 'next/cache'
+
+export async function GET(request) {
+  const path = request.nextUrl.searchParams.get('path')
+
+  if (path) {
+    expirePath(path)
+    return Response.json({ expired: true, now: Date.now() })
+  }
+
+  return Response.json({
+    expired: false,
+    now: Date.now(),
+    message: '期限を切らしたいパスが見つかりません',
+  })
+}
+```
+
+</TabItem>
+</Tabs>

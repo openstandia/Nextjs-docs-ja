@@ -213,6 +213,9 @@ const config = {
       },
     },
   },
+  future: {
+    experimental_faster: true,
+  },
 }
 
 module.exports = config
