@@ -13,23 +13,10 @@ const walk = (itemOrItems, callback) => {
 
 export const officialNextJsDocsSidebarItemsAdapter = (items) => {
   const reduced = items.reduce((prev, current) => {
-    //index.mdは非表示
+    //index.mdは先頭に
     if (current.id === 'index') {
-      return [...prev]
+      return [current, ...prev]
     }
-
-    //Getting Startedにindexの内容を表示する
-    if (current?.link?.id === 'getting-started/index') {
-      current.link = { type: 'doc', id: 'index' }
-    }
-
-    //AppRouterのカテゴリは作らず、その配下をサイドバーに表示する
-    /*
-    if (current.link?.id === 'app/index') {
-      const children = current.items
-      return [...prev, ...children]
-    }
-     */
 
     //Pages Routerは利用しない
     if (current.link?.id === 'pages/index') {
@@ -45,6 +32,7 @@ export const officialNextJsDocsSidebarItemsAdapter = (items) => {
       [
         'index',
         'app/index',
+        'app/getting-started/index',
         'app/building-your-application/index',
         'app/api-reference/index',
         'architecture/index',
