@@ -21,6 +21,7 @@ const defaults = {
   lang: 'ja',
   promptDir: path.join(import.meta.dirname, `prompt`),
   isCI: process.env.CI ?? false,
+  temperature: 0,
 } as const
 
 const log = createLogger(basename(import.meta.filename))
@@ -52,7 +53,8 @@ const command = await (async () => {
     new OpenAI({
       apiKey: defaults.apiKey,
       maxRetries: defaults.maxRetries,
-    })
+    }),
+    { temperature: defaults.temperature }
   )
 
   const systemContent = (

@@ -240,7 +240,8 @@ export function createLogger(prefix: string) {
  * @returns {(prompt: { system: string; user: string }) => Promise<string>} A function that takes a prompt and returns the assistant's response as a string.
  */
 export function createOpenAIClient(
-  openai: OpenAI
+  openai: OpenAI,
+  options: { temperature?: number } = {}
 ): (prompt: { system: string; user: string }) => Promise<string> {
   async function fetch(prompt: {
     system: string
@@ -258,6 +259,7 @@ export function createOpenAIClient(
         model: 'gpt-4o',
         messages,
         stream: false,
+        temperature: options.temperature,
       })
 
       const choice = response.choices[0]
