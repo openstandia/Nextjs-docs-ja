@@ -241,7 +241,7 @@ export function createLogger(prefix: string) {
  */
 export function createOpenAIClient(
   openai: OpenAI,
-  options: { temperature?: number } = {}
+  options: Omit<OpenAI.ChatCompletionCreateParams, 'messages'>
 ): (prompt: { system: string; user: string }) => Promise<string> {
   async function fetch(prompt: {
     system: string
@@ -256,10 +256,9 @@ export function createOpenAIClient(
 
     while (!isComplete) {
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        ...options,
         messages,
         stream: false,
-        temperature: options.temperature,
       })
 
       const choice = response.choices[0]

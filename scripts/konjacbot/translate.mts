@@ -22,6 +22,7 @@ const defaults = {
   promptDir: path.join(import.meta.dirname, `prompt`),
   isCI: process.env.CI ?? false,
   temperature: 0,
+  model: 'gpt-4o',
 } as const
 
 const log = createLogger(basename(import.meta.filename))
@@ -54,7 +55,10 @@ const command = await (async () => {
       apiKey: defaults.apiKey,
       maxRetries: defaults.maxRetries,
     }),
-    { temperature: defaults.temperature }
+    {
+      temperature: defaults.temperature,
+      model: defaults.model,
+    }
   )
 
   const systemContent = (
