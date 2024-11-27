@@ -4,7 +4,6 @@ about: Standard issue template for Nextjs-docs-ja
 title: ''
 labels: ''
 assignees: ''
-
 ---
 
 #### Description
