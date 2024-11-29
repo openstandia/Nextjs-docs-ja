@@ -1,13 +1,13 @@
 ---
 title: 'fetch'
-description: '拡張された fetch 関数のAPIリファレンスです。'
+description: '拡張されたfetch関数のAPIリファレンス。'
 ---
 
-Next.jsは[Web `fetch()` API](https://developer.mozilla.org/docs/Web/API/Fetch_API)を拡張して、サーバの各リクエストが独自の永続的なキャッシングおよび再検証セマンティクスを設定できるようにします。
+Next.jsは、[Webの`fetch()` API](https://developer.mozilla.org/docs/Web/API/Fetch_API)を拡張し、サーバー上の各リクエストが独自の永続的なキャッシングと再検証セマンティクスを設定できるようにします。
 
-ブラウザでは、`cache`オプションは、fetchリクエストが*ブラウザの\_HTTPキャッシュとどのようにやり取りするかを示します。この拡張では、`cache`は*サーバー側の\_fetchリクエストがフレームワークの永続的な[Data Cache](/docs/app/building-your-application/caching#data-cache)とどのようにやり取りするかを示します。
+ブラウザでは、`cache` オプションは、fetchリクエストがブラウザのHTTPキャッシュとどのように相互作用するかを示します。この拡張により、`cache`はサーバーサイドのfetchリクエストがフレームワークの永続的な[Data Cache](/docs/app/building-your-application/caching#data-cache)とどのように相互作用するかを示します。
 
-Server Components内で`async`や`await`を使って直接`fetch`を呼び出すことができます。
+Server Component内で`async`と`await`を使用して`fetch`を直接呼び出すことができます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -15,7 +15,9 @@ Server Components内で`async`や`await`を使って直接`fetch`を呼び出す
 ```tsx title="app/page.tsx" switcher
 export default async function Page() {
   let data = await fetch('https://api.vercel.app/blog')
+  // データをJSON形式で取得
   let posts = await data.json()
+  // 投稿のタイトルをリストとして表示
   return (
     <ul>
       {posts.map((post) => (
@@ -32,7 +34,9 @@ export default async function Page() {
 ```jsx title="app/page.js" switcher
 export default async function Page() {
   let data = await fetch('https://api.vercel.app/blog')
+  // データをJSON形式で取得
   let posts = await data.json()
+  // 投稿のタイトルをリストとして表示
   return (
     <ul>
       {posts.map((post) => (
@@ -48,20 +52,21 @@ export default async function Page() {
 
 ## `fetch(url, options)` {#fetch-url-options}
 
-Next.jsは[Web `fetch()` API](https://developer.mozilla.org/docs/Web/API/Fetch_API)を拡張しているので、[利用可能なネイティブオプション](https://developer.mozilla.org/docs/Web/API/fetch#parameters)を使用できます。
+Next.jsは[Webの`fetch()` API](https://developer.mozilla.org/docs/Web/API/Fetch_API)を拡張しているので、[ネイティブオプション](https://developer.mozilla.org/docs/Web/API/fetch#parameters)をすべて使用できます。
 
 ### `options.cache` {#options-cache}
 
-Next.jsの[Data Cache](/docs/app/building-your-application/caching#data-cache)とリクエストがどのようにやり取りするかを設定します。
+Next.jsの[Data Cache](/docs/app/building-your-application/caching#data-cache)とのリクエストの相互作用を設定します。
 
 ```ts
 fetch(`https://...`, { cache: 'force-cache' | 'no-store' })
 ```
 
-- **`no-store`** （デフォルト）：Next.jsは、キャッシュを参照せず、すべてのリクエストでリモートサーバーからリソースを取得し、ダウンロードされたリソースでキャッシュを更新しません
-- **`force-cache`**：Next.jsはData Cache内で一致するリクエストを検索します
-  - 一致があり、それが新鮮であれば、キャッシュから返されます
-  - 一致がないか古い一致であれば、Next.jsはリモートサーバーからリソースを取得し、ダウンロードされたリソースでキャッシュを更新します
+- **`auto no cache`**（デフォルト）：Next.jsは、開発中はリモートのサーバーから毎回リソースをフェッチしますが、`next build`中は一度だけフェッチします（ルートが静的にプリレンダリングされるため）。ルートで[Dynamic API](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)が検出された場合、Next.jsは毎回リソースをフェッチします
+- **`no-store`**：ルートでDynamic APIが検出されていない場合でも、Next.jsは毎回リモートサーバーからリソースをフェッチします
+- **`force-cache`**：Next.jsは、Data Cache内で一致するリクエストを探します
+  - 一致があって新鮮である場合、キャッシュから返されます
+  - 一致がないか、古い一致の場合、Next.jsはリモートサーバーからリソースをフェッチし、キャッシュをダウンロードしたリソースで更新します
 
 ### `options.next.revalidate` {#options-next-revalidate}
 
@@ -69,18 +74,18 @@ fetch(`https://...`, { cache: 'force-cache' | 'no-store' })
 fetch(`https://...`, { next: { revalidate: false | 0 | number } })
 ```
 
-リソースのキャッシュの有効期間（秒単位）を設定します。
+リソースのキャッシュ有効期間を設定します（秒単位）。
 
-- **`false`** - リソースを無期限にキャッシュします。これにより、HTTPキャッシュは時間の経過とともに古いリソースを削除することがあります
+- **`false`** - リソースを無期限にキャッシュします。意味的には`revalidate: Infinity`と同じです。HTTPキャッシュは時間が経つと古いリソースを削除することがあります
 - **`0`** - リソースがキャッシュされないようにします
-- **`number`** - （秒単位）リソースが最大`n`秒間キャッシュされるべきであることを指定します
+- **`number`** - （秒単位）指定されたリソースが最大`n`秒のキャッシュ有効期間を持つことを指定します
 
 > **Good to know**:
 >
-> - 個々の`fetch()`リクエストがルートの[デフォルトの`revalidate`](/docs/app/api-reference/file-conventions/route-segment-config#revalidate)より低い`revalidate`数を設定した場合、ルート全体の再検証インターバルが短くなります
-> - 同一のルートにおいて、同じURLを持つ二つのfetchリクエストが異なる`revalidate`値を持つ場合、低い方の値が使用されます
-> - 便利なことに、`revalidate`が数値に設定されている場合、`cache`オプションを設定する必要はありません
-> - `{ revalidate: 3600, cache: 'no-store' }`のような矛盾したオプションはエラーを引き起こします
+> - 個々の`fetch()`リクエストがルートの[デフォルトの`revalidate`](/docs/app/api-reference/file-conventions/route-segment-config#revalidate)よりも低い`revalidate`を設定すると、ルート全体の再検証間隔が短くなります
+> - 同じルートにおける同じURLの2つの`fetch`リクエストが異なる`revalidate`を持つ場合、より低い値が使用されます
+> - 便宜上、`revalidate`が数値に設定されている場合、`cache`オプションを設定する必要はありません
+> - `{ revalidate: 3600, cache: 'no-store' }`のような矛盾するオプションはエラーを引き起こします
 
 ### `options.next.tags` {#options-next-tags}
 
@@ -88,17 +93,17 @@ fetch(`https://...`, { next: { revalidate: false | 0 | number } })
 fetch(`https://...`, { next: { tags: ['collection'] } })
 ```
 
-リソースのキャッシュタグを設定します。このデータは、[`revalidateTag`](https://nextjs.org/docs/app/api-reference/functions/revalidateTag)を使用してオンデマンドで再検証することができます。カスタムタグの最大長は256文字で、最大タグ項目数は64です。
+リソースのキャッシュタグを設定します。データは[`revalidateTag`](https://nextjs.org/docs/app/api-reference/functions/revalidateTag)を使用してオンデマンドで再検証できます。カスタムタグの最大長は256文字で、最大タグアイテム数は64です。
 
 ## トラブルシューティング {#troubleshooting}
 
-### 開発環境でfetch `cache: 'no-store'` が新鮮なデータを表示しない {#fetch-cache-no-store-not-showing-fresh-data-in-development}
+### fetchのデフォルト`auto no store`と`cache: 'no-store'`が開発で新しいデータを表示しない {#fetch-default-auto-no-store-and-cache-no-store-not-showing-fresh-data-in-development}
 
-Next.jsは、ローカル開発環境での高速な応答と課金API呼び出しのコストを削減するために、Server Components内の`fetch`レスポンスをホットモジュールリプレースメント（HMR）間でキャッシュします。
+Next.jsはローカル開発でホットモジュール置換（HMR）中にServer Component内の`fetch`レスポンスをキャッシュし、レスポンスを速くしてAPIコールにかかるコストを削減します。
 
-デフォルトでは、[HMR キャッシュ](/docs/app/api-reference/config/next-config-js/serverComponentsHmrCache)は、`cache: 'no-store'`オプションを含むすべてのfetchリクエストに適用されます。これにより、HMRの更新間でキャッシュされていないリクエストは新鮮なデータを表示しません。ただし、ナビゲーションまたはページ全体を再読み込みするとキャッシュがクリアされます。
+デフォルトでは、[HMRキャッシュ](/docs/app/api-reference/config/next-config-js/serverComponentsHmrCache)は、デフォルトの`auto no cache`や`cache: 'no-store'`オプションを含む全てのfetchリクエストに適用されます。つまり、キャッシュされていないリクエストはHMRリフレッシュ間で新しいデータを表示しません。ただし、ナビゲーションやページ全体のリロード時にはキャッシュがクリアされます。
 
-詳細は[`serverComponentsHmrCache`](/docs/app/api-reference/config/next-config-js/serverComponentsHmrCache)のドキュメントを参照してください。
+詳しくは、[`serverComponentsHmrCache`](/docs/app/api-reference/config/next-config-js/serverComponentsHmrCache)のドキュメントを参照してください。
 
 ## バージョン履歴 {#version-history}
 

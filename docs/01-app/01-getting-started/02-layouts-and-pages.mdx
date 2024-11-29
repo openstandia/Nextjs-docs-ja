@@ -1,0 +1,303 @@
+---
+title: 'レイアウトとページの作成方法'
+nav_title: 'レイアウトとページ'
+description: 'Next.js アプリケーションでレイアウトとページを作成し、それらをリンクさせる方法を学びます。'
+related:
+  links:
+    - 'app/api-reference/file-conventions/layout'
+    - 'app/api-reference/file-conventions/page'
+    - 'app/api-reference/components/link'
+---
+
+Next.js は **ファイルシステムベースのルーティング** を採用しており、フォルダとファイルを使用してルートを定義できます。このページでは、レイアウトとページの作成方法、およびそれらをリンクさせる方法を説明します。
+
+## ページの作成 {#creating-a-page}
+
+**ページ** は、特定のルートでレンダリングされる UI です。ページを作成するには、`app` ディレクトリ内に[`page`ファイル](/docs/app/api-reference/file-conventions/page)を追加し、React コンポーネントをデフォルトエクスポートします。たとえば、インデックスページ（`/`）を作成するには：
+
+<Image
+  alt="page.js 特殊ファイル"
+  srcLight="/docs/light/page-special-file.png"
+  srcDark="/docs/dark/page-special-file.png"
+  width="1600"
+  height="282"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+export default function Page() {
+  return <h1>Hello Next.js!</h1>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export default function Page() {
+  return <h1>Hello Next.js!</h1>
+}
+```
+
+</TabItem>
+</Tabs>
+
+## レイアウトの作成 {#creating-a-layout}
+
+レイアウトは、複数のページ間で**共有**される UI です。ナビゲーション時にレイアウトは状態を保持し、インタラクティブな状態を維持し、再レンダリングされません。
+
+レイアウトを定義するには、[`layout`ファイル](/docs/app/api-reference/file-conventions/layout)からReact コンポーネントをデフォルトエクスポートします。このコンポーネントは、ページまたは他の[レイアウト](#nesting-layouts)が含まれる`children` propを受け入れるべきです。
+
+たとえば、インデックスページを子として受け入れるレイアウトを作成するには、`app`ディレクトリ内に`layout`ファイルを追加します：
+
+<Image
+  alt="layout.js 特殊ファイル"
+  srcLight="/docs/light/layout-special-file.png"
+  srcDark="/docs/dark/layout-special-file.png"
+  width="1600"
+  height="363"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        {/* レイアウト UI */}
+        {/* ページまたはネストされたレイアウトをレンダリングする場所に children を配置します */}
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function DashboardLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        {/* レイアウト UI */}
+        {/* ページまたはネストされたレイアウトをレンダリングする場所に children を配置します */}
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+上記のレイアウトは、`app`ディレクトリのルートで定義されているため、[root レイアウト](/docs/app/api-reference/file-conventions/layout#root-layouts)と呼ばれます。root レイアウトは**必須**であり、`html`タグと`body`タグを含める必要があります。
+
+## ネストされたルートの作成 {#creating-a-nested-route}
+
+ネストされたルートは、複数のURL セグメントで構成されたルートです。たとえば、`/blog/[slug]`ルートは3つのセグメントで構成されています：
+
+- `/` (Root Segment)
+- `blog` (Segment)
+- `[slug]` (Leaf Segment)
+
+Next.jsでは：
+
+- **フォルダ** は、URL セグメントにマップされるルートセグメントを定義するために使用されます
+- **ファイル**（`page`や`layout`など）は、セグメントに表示されるUIを作成するために使用されます
+
+ネストされたルートを作成するには、フォルダを互いにネストすることができます。たとえば、 `/blog`のルートを追加するには、`app`ディレクトリに`blog`という名前のフォルダを作成します。次に、`/blog`を公開するには、`page`ファイルを追加します：
+
+<Image
+  alt="blog フォルダと page.js ファイルを示すファイル階層"
+  srcLight="/docs/light/blog-nested-route.png"
+  srcDark="/docs/dark/blog-nested-route.png"
+  width="1600"
+  height="525"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/page.tsx" switcher
+import { getPosts } from '@/lib/posts'
+import { Post } from '@/ui/post'
+
+export default async function Page() {
+  const posts = await getPosts()
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <Post key={post.id} post={post} />
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+<Tabs>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+import { getPosts } from '@/lib/posts'
+import { Post } from '@/ui/post'
+
+export default async function Page() {
+  const posts = await getPosts()
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <Post key={post.id} post={post} />
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+フォルダをネストし続けることで、ネストされたルートを作成できます。たとえば、特定のブログ記事のルートを作成するには、`blog`内に新しい`[slug]`フォルダを作成し、`page`ファイルを追加します：
+
+<Image
+  alt="slug フォルダをネストした blog フォルダと page.js ファイルを示すファイル階層"
+  srcLight="/docs/light/blog-post-nested-route.png"
+  srcDark="/docs/dark/blog-post-nested-route.png"
+  width="1600"
+  height="687"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+function generateStaticParams() {}
+
+export default function Page() {
+  return <h1>Hello, Blog Post Page!</h1>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+function generateStaticParams() {}
+
+export default function Page() {
+  return <h1>Hello, Blog Post Page!</h1>
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: フォルダ名を角括弧で囲む（例：`[slug]`）ことで、データから複数のページを生成するための特別な**dynamic route segment**が作成されます。これは、ブログ投稿や商品ページなどに便利です。[dynamic segments](/docs/app/building-your-application/routing/dynamic-routes)について詳しくはこちらをご覧ください。
+
+## レイアウトのネスト {#nesting-layouts}
+
+デフォルトでは、フォルダ階層内のレイアウトもネストされており、`children` propを介して子レイアウトをラップします。特定のルートセグメント（フォルダ）内に`layout`を追加することでレイアウトをネストできます。
+
+たとえば、 `/blog`ルート用のレイアウトを作成するには、`blog`フォルダ内に新しい`layout`ファイルを追加します。
+
+<Image
+  alt="ルートレイアウトがブログレイアウトを包んでいるファイル階層"
+  srcLight="/docs/light/nested-layouts.png"
+  srcDark="/docs/dark/nested-layouts.png"
+  width="1600"
+  height="768"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/layout.tsx" switcher
+export default function BlogLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <section>{children}</section>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/layout.js" switcher
+export default function BlogLayout({ children }) {
+  return <section>{children}</section>
+}
+```
+
+</TabItem>
+</Tabs>
+
+上記の 2 つのレイアウトを組み合わせると、root レイアウト（`app/layout.js`）はブログレイアウト（`app/blog/layout.js`）をラップし、ブログ（`app/blog/page.js`）およびブログ投稿ページ（`app/blog/[slug]/page.js`）をラップすることになります。
+
+## ページ間のリンク {#linking-between-pages}
+
+ルート間を移動するために、[`<Link>`コンポーネント](/docs/app/api-reference/components/link)を使用できます。`<Link>`は、先読みとクライアントサイドのナビゲーションを提供するためにHTMLの`<a>`タグを拡張したNext.jsのビルトインコンポーネントです。
+
+たとえば、ブログ投稿のリストを生成するには、`next/link`から`<Link>`をインポートし、コンポーネントに`href`プロップを渡します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/post.tsx" highlight={1,6} switcher
+import Link from 'next/link'
+
+export default async function Post({ post }) {
+  const posts = await getPosts()
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.slug}>
+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/post.js" highlight={1,6} switcher
+import Link from 'next/link'
+
+export default async function Post({ post }) {
+  const posts = await getPosts()
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.slug}>
+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+`<Link>`は、Next.jsアプリケーション内でルート間を移動するための主要で推奨される方法です。しかし、より高度なナビゲーションには[`useRouter`フック](/docs/app/api-reference/functions/use-router)も使用可能です。
