@@ -1,0 +1,288 @@
+---
+title: 'unauthorized'
+description: 'unauthorized 関数のAPIリファレンス。'
+version: 'canary'
+related:
+  links:
+    - 'app/api-reference/file-conventions/unauthorized'
+---
+
+`unauthorized` 関数は、Next.jsの401エラーページを表示するエラーをスローします；認証エラーをアプリケーションで処理する際に便利です；[`unauthorized.js` ファイル](/docs/app/api-reference/file-conventions/unauthorized)を使用してUIをカスタマイズすることができます；
+
+`unauthorized` を使用するには、`next.config.js` ファイルで実験的な [`authInterrupts`](/docs/app/api-reference/config/next-config-js/authInterrupts) 設定オプションを有効にします；
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    authInterrupts: true,
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+module.exports = {
+  experimental: {
+    authInterrupts: true,
+  },
+}
+```
+
+</TabItem>
+</Tabs>
+
+`unauthorized` は [Server Components](/docs/app/building-your-application/rendering/server-components)、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)、および [Route Handlers](/docs/app/building-your-application/routing/route-handlers) で呼び出すことができます；
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/page.tsx" switcher
+import { verifySession } from '@/app/lib/dal'
+import { unauthorized } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const session = await verifySession()
+
+  if (!session) {
+    unauthorized()
+  }
+
+  // 認証されたユーザー向けのダッシュボードを表示
+  return (
+    <main>
+      <h1>Welcome to the Dashboard</h1>
+      <p>Hi, {session.user.name}.</p>
+    </main>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/page.js" switcher
+import { verifySession } from '@/app/lib/dal'
+import { unauthorized } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const session = await verifySession()
+
+  if (!session) {
+    unauthorized()
+  }
+
+  // 認証されたユーザー向けのダッシュボードを表示
+  return (
+    <main>
+      <h1>Welcome to the Dashboard</h1>
+      <p>Hi, {session.user.name}.</p>
+    </main>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Good to know {#good-to-know}
+
+- `unauthorized` 関数は [root レイアウト](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required) 内で呼び出すことはできません；
+
+## Examples {#examples}
+
+### 認証されていないユーザーにログインUIを表示する {#displaying-login-ui-to-unauthenticated-users}
+
+ログインUIを持つ `unauthorized.js` ファイルを表示するために `unauthorized` 関数を使用できます；
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/page.tsx" switcher
+import { verifySession } from '@/app/lib/dal'
+import { unauthorized } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const session = await verifySession()
+
+  if (!session) {
+    unauthorized()
+  }
+
+  return <div>Dashboard</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/page.js" switcher
+import { verifySession } from '@/app/lib/dal'
+import { unauthorized } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const session = await verifySession()
+
+  if (!session) {
+    unauthorized()
+  }
+
+  return <div>Dashboard</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/unauthorized.tsx" switcher
+import Login from '@/app/components/Login'
+
+export default function UnauthorizedPage() {
+  return (
+    <main>
+      <h1>401 - Unauthorized</h1>
+      <p>Please log in to access this page.</p>
+      <Login />
+    </main>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/unauthorized.js" switcher
+import Login from '@/app/components/Login'
+
+export default function UnauthorizedPage() {
+  return (
+    <main>
+      <h1>401 - Unauthorized</h1>
+      <p>Please log in to access this page.</p>
+      <Login />
+    </main>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Server Actionsでのミューテーション {#mutations-with-server-actions}
+
+特定のミューテーションを実行する際に、認証されたユーザーのみがアクセスできるようにするためにServer Actionsで `unauthorized` を呼び出すことができます；
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions/update-profile.ts" switcher
+'use server'
+
+import { verifySession } from '@/app/lib/dal'
+import { unauthorized } from 'next/navigation'
+import db from '@/app/lib/db'
+
+export async function updateProfile(data: FormData) {
+  const session = await verifySession()
+
+  // ユーザーが認証されていない場合、401を返します
+  if (!session) {
+    unauthorized()
+  }
+
+  // ミューテーションを続行
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions/update-profile.js" switcher
+'use server'
+
+import { verifySession } from '@/app/lib/dal'
+import { unauthorized } from 'next/navigation'
+import db from '@/app/lib/db'
+
+export async function updateProfile(data) {
+  const session = await verifySession()
+
+  // ユーザーが認証されていない場合、401を返します
+  if (!session) {
+    unauthorized()
+  }
+
+  // ミューテーションを続行
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Route Handlersでデータをフェッチする {#fetching-data-with-route-handlers}
+
+認証されたユーザーのみがエンドポイントにアクセスできるようにするために、Route Handlersで `unauthorized` を使用できます；
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/api/profile/route.ts" switcher
+import { NextRequest, NextResponse } from 'next/server'
+import { verifySession } from '@/app/lib/dal'
+import { unauthorized } from 'next/navigation'
+
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // ユーザーのセッションを確認
+  const session = await verifySession()
+
+  // セッションが存在しない場合、401を返し、unauthorized.tsxを表示します
+  if (!session) {
+    unauthorized()
+  }
+
+  // データをフェッチ
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/api/profile/route.js" switcher
+import { verifySession } from '@/app/lib/dal'
+import { unauthorized } from 'next/navigation'
+
+export async function GET() {
+  const session = await verifySession()
+
+  // ユーザーが認証されていない場合、401を返し、unauthorized.tsxを表示します
+  if (!session) {
+    unauthorized()
+  }
+
+  // データをフェッチ
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+## バージョン履歴 {#version-history}
+
+| Version   | Changes               |
+| --------- | --------------------- |
+| `v15.1.0` | `unauthorized` を導入 |
