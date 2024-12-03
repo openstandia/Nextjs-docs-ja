@@ -240,7 +240,8 @@ export function createLogger(prefix: string) {
  * @returns {(prompt: { system: string; user: string }) => Promise<string>} A function that takes a prompt and returns the assistant's response as a string.
  */
 export function createOpenAIClient(
-  openai: OpenAI
+  openai: OpenAI,
+  options: Omit<OpenAI.ChatCompletionCreateParams, 'messages'>
 ): (prompt: { system: string; user: string }) => Promise<string> {
   async function fetch(prompt: {
     system: string
@@ -255,7 +256,7 @@ export function createOpenAIClient(
 
     while (!isComplete) {
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        ...options,
         messages,
         stream: false,
       })
