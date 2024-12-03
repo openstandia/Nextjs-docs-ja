@@ -27,6 +27,7 @@ const defaults = {
     github: 'https://github.com/vercel/next.js',
     web: 'https://nextjs.org/docs',
   },
+  model: 'gpt-4o',
 } as const
 
 $.verbose = true
@@ -94,7 +95,10 @@ async function buildPRSummary(): Promise<string> {
     new OpenAI({
       apiKey: defaults.apiKey,
       maxRetries: defaults.maxRetries,
-    })
+    }),
+    {
+      model: defaults.model,
+    }
   )
 
   try {
