@@ -1,0 +1,402 @@
+---
+title: 'データ取得とストリーミングの方法'
+nav_title: 'データの取得とストリーミング'
+description: 'Next.jsアプリケーションでデータを取得し、コンテンツをストリームする方法を学びます。'
+related:
+  links:
+    - 'app/api-reference/functions/fetch'
+    - 'app/api-reference/file-conventions/loading'
+---
+
+このページでは、[server component](#server-components)および[client component](#client-components)でデータを取得する方法と、データに依存するコンテンツを[ストリーム](#streaming)する方法を説明します。
+
+## データの取得 {#fetching-data}
+
+### Server Components {#server-components}
+
+Server Componentでは次の方法を使用してデータを取得できます：
+
+1. [`fetch` API](#with-the-fetch-api)を使用する
+2. [ORMやデータベース](#with-an-orm-or-database)を使用する
+
+#### `fetch` APIを使用する {#with-the-fetch-api}
+
+`fetch` APIを使用してデータを取得するには、コンポーネントを非同期関数に変更し、`fetch`の呼び出しをawaitします。例えば：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/page.tsx" switcher
+export default async function Page() {
+  const data = await fetch('https://api.vercel.app/blog')
+  const posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/page.js" switcher
+export default async function Page() {
+  const data = await fetch('https://api.vercel.app/blog')
+  const posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### ORMやデータベースを使用する {#with-an-orm-or-database}
+
+ORMやデータベースを使用してデータを取得する場合も、コンポーネントを非同期関数に変更し、呼び出しをawaitします：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/page.tsx" switcher
+import { db, posts } from '@/lib/db'
+
+export default async function Page() {
+  const allPosts = await db.select().from(posts)
+  return (
+    <ul>
+      {allPosts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/page.js" switcher
+import { db, posts } from '@/lib/db'
+
+export default async function Page() {
+  const allPosts = await db.select().from(posts)
+  return (
+    <ul>
+      {allPosts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Client Components {#client-components}
+
+Reactの[`use` フック](https://react.dev/reference/react/use)を利用して、サーバーからクライアントへデータを[ストリーム](#streaming)することができます。まず、Server Componentでデータを取得し、promiseをClient Componentにpropとして渡します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/page.tsx" switcher
+import Posts from '@/app/ui/posts'
+import { Suspense } from 'react'
+
+export default function Page() {
+  // データ取得関数をawaitしない
+  const posts = getPosts()
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Posts posts={posts} />
+    </Suspense>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/page.js" switcher
+import Posts from '@/app/ui/posts'
+import { Suspense } from 'react'
+
+export default function Page() {
+  // データ取得関数をawaitしない
+  const posts = getPosts()
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Posts posts={posts} />
+    </Suspense>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+次に、Client Component内で、`use`フックを用いてpromiseを読み込みます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/posts.tsx" switcher
+'use client'
+import { use } from 'react'
+
+export default function Posts({ posts }) {
+  const posts = use(posts)
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/posts.js" switcher
+'use client'
+import { use } from 'react'
+
+export default function Posts({ posts }) {
+  const posts = use(posts)
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+上記の例では、`<Posts />` コンポーネントを[`<Suspense>` バウンダリ](https://react.dev/reference/react/Suspense)でラップする必要があります。これは、promiseが解決される間、フォールバックが表示されることを意味します。[ストリーミング](#streaming)について詳しく学びます。
+
+代わりに、[SWR](https://swr.vercel.app/)や[React Query](https://tanstack.com/query/latest)のようなコミュニティライブラリを使用することもできます。これらのライブラリはキャッシュやストリーミング、その他の機能に関して独自のセマンティクスを持っています。例えば：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/page.tsx" switcher
+'use client'
+import useSWR from 'swr'
+
+const fetcher = (url) => fetch(url).then((r) => r.json())
+
+export default function BlogPage() {
+  const { data, error, isLoading } = useSWR(
+    'https://api.vercel.app/blog',
+    fetcher
+  )
+
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error: {error.message}</div>
+
+  return (
+    <ul>
+      {data.map((post: { id: string; title: string }) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/page.js" switcher
+'use client'
+import useSWR from 'swr'
+
+const fetcher = (url) => fetch(url).then((r) => r.json())
+
+export default function BlogPage() {
+  const { data, error, isLoading } = useSWR(
+    'https://api.vercel.app/blog',
+    fetcher
+  )
+
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error: {error.message}</div>
+
+  return (
+    <ul>
+      {data.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+## ストリーミング {#streaming}
+
+> **警告：** 以下の内容は、アプリケーションで[`dynamicIO` の設定オプション](/docs/app/api-reference/config/next-config-js/dynamicIO)が有効になっていることを前提としています。このフラグはNext.js 15のcanaryで導入されました。
+
+Server Componentで`async/await`を使用すると、Next.jsは**動的レンダリング**を選択します。これにより、データは各ユーザーリクエストに対してサーバーで取得され、レンダリングされます。データのリクエストが遅い場合は、ルート全体のレンダリングがブロックされます。
+
+初期読み込み時間とユーザーエクスペリエンスを改善するために、ストリーミングを使用してページのHTMLを小さなチャンクに分割し、それらのチャンクをサーバーからクライアントに段階的に送信できます。
+
+<Image
+  alt="ストリーミングを使ったサーバーレンダリングの仕組み"
+  srcLight="/docs/light/server-rendering-with-streaming.png"
+  srcDark="/docs/dark/server-rendering-with-streaming.png"
+  width="1600"
+  height="785"
+/>
+
+アプリケーションでストリーミングを実装する方法は2つあります：
+
+1. [`loading.js` ファイル](#with-loading-js)を使用する
+2. Reactの[`<Suspense>` コンポーネント](#with-suspense)を使用する
+
+### `loading.js`を使用する {#with-loading-js}
+
+`loading.js` ファイルをページと同じフォルダーに作成して、データが取得されている間、**ページ全体**をストリームできます。例えば、`app/blog/page.js`をストリームするには、`app/blog` フォルダー内にファイルを追加します。
+
+<Image
+  alt="loading.jsファイルを含むブログフォルダーの構造"
+  srcLight="/docs/light/loading-file.png"
+  srcDark="/docs/dark/loading-file.png"
+  width="1600"
+  height="525"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/loading.tsx" switcher
+export default function Loading() {
+  // ここでLoading UIを定義する
+  return <div>Loading...</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/loading.js" switcher
+export default function Loading() {
+  // ここでLoading UIを定義する
+  return <div>Loading...</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+ナビゲーション時に、ユーザーはページがレンダリングされている間、直ちにレイアウトと[読み込み状態](#creating-meaningful-loading-states)を見ることができ、新しいコンテンツがレンダリング完了とともに自動的に差し替えられます。
+
+<Image
+  alt="ローディングUI"
+  srcLight="/docs/light/loading-ui.png"
+  srcDark="/docs/dark/loading-ui.png"
+  width="1600"
+  height="691"
+/>
+
+内部的には、`loading.js` は `layout.js` にネストされ、`page.js` ファイルやその下のすべての子要素を自動的に `<Suspense>` バウンダリでラップします。
+
+<Image
+  alt="loading.jsの概要"
+  srcLight="/docs/light/loading-overview.png"
+  srcDark="/docs/dark/loading-overview.png"
+  width="1600"
+  height="768"
+/>
+
+このアプローチは、ルートセグメント（レイアウトとページ）にうまく機能しますが、より細かいストリーミングには`<Suspense>` が使用できます。
+
+### `<Suspense>`を使用する {#with-suspense}
+
+`<Suspense>` は、ページのどの部分をストリームするかをより細かく制御することができます。たとえば、`<Suspense>` バウンダリの外側にあるページコンテンツはすぐに表示し、バウンダリ内のブログ投稿のリストをストリーミングで読み込むことができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/page.tsx" switcher
+import { Suspense } from 'react'
+import BlogList from '@/components/BlogList'
+import BlogListSkeleton from '@/components/BlogListSkeleton'
+
+export default function BlogPage() {
+  return (
+    <div>
+      {/* このコンテンツは直ちにクライアントに送信されます */}
+      <header>
+        <h1>ブログへようこそ</h1>
+        <p>以下の最新記事をお読みください。</p>
+      </header>
+      <main>
+        {/* <Suspense> バウンダリにラップされたコンテンツはストリーミングされます */}
+        <Suspense fallback={<BlogListSkeleton />}>
+          <BlogList />
+        </Suspense>
+      </main>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/page.js" switcher
+import { Suspense } from 'react'
+import BlogList from '@/components/BlogList'
+import BlogListSkeleton from '@/components/BlogListSkeleton'
+
+export default function BlogPage() {
+  return (
+    <div>
+      {/* このコンテンツは直ちにクライアントに送信されます */}
+      <header>
+        <h1>ブログへようこそ</h1>
+        <p>以下の最新記事をお読みください。</p>
+      </header>
+      <main>
+        {/* <Suspense> バウンダリにラップされたコンテンツはストリーミングされます */}
+        <Suspense fallback={<BlogListSkeleton />}>
+          <BlogList />
+        </Suspense>
+      </main>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 意味のある読み込み状態を作成する {#creating-meaningful-loading-states}
+
+即時読み込み状態とは、ナビゲーション後にユーザーに直ちに表示されるフォールバックUIのことです。ユーザーエクスペリエンスを最大限に引き出すためには、意味のあるコンテンツで構成され、アプリが反応していることをユーザーに伝える読み込み状態を設計することをお勧めします。たとえば、スケルトンやスピナー、表紙やタイトルなどの未来の画面の小さな意味のある部分を利用することができます。
+
+開発環境では、[React Devtools](https://react.dev/learn/react-developer-tools)を使用してコンポーネントの読み込み状態をプレビューおよび検査することができます。
