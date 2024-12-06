@@ -1,64 +1,65 @@
 ---
-title: 'Next.jsのキャッシュ'
-nav_title: 'キャッシュ'
-description: 'Next.jsにおけるキャッシングメカニズムの概要。'
+title: 'Caching in Next.js'
+nav_title: 'Caching'
+description: 'Next.jsのキャッシュメカニズムの概要。'
 ---
 
-Next.jsは、レンダリング作業やデータリクエストをキャッシュすることで、アプリケーションのパフォーマンスを向上させ、コストを削減します。このページでは、Next.jsのキャッシングメカニズム、またそれらを設定するために使用できるAPI、およびそれらがどのように相互作用するかについて詳しく説明します。
+Next.jsはレンダリング処理とデータリクエストをキャッシュすることで、アプリケーションのパフォーマンスを向上させ、コストを削減します。このページでは、Next.jsのキャッシュメカニズム、設定するためのAPI、その相互作用について詳しく説明します。
 
-> **Good to know**: このページは、Next.jsが内部でどのように動作しているかを理解するのに役立ちますが、Next.jsを生産的に使用するための必須知識ではありません。ほとんどのNext.jsのキャッシングに関するユーリスティックは、APIの使用に基づいて決定され、最小限の設定で最高のパフォーマンスを発揮するためのデフォルトが設定されています。例を見たい場合は、[こちらから始めてください](/docs/app/building-your-application/data-fetching/fetching)。
+> **Good to know**: このページはNext.jsが内部でどのように動作しているかを理解するのに役立ちますが、Next.jsを使って生産的に作業するために必須の知識では**ありません**。多くのNext.jsのキャッシュヒューリスティックスはAPIの使用法によって決定され、ゼロまたは最小限の設定で最適なパフォーマンスをデフォルトで提供します。例に進みたい場合は、[ここから始めてください](/docs/app/building-your-application/data-fetching/fetching)。
 
 ## 概要 {#overview}
 
-以下は、さまざまなキャッシングメカニズムとその目的に関する高レベルの概要です:
+異なるキャッシュメカニズムの概要とその目的は以下のとおりです：
 
-| メカニズム                                  | 内容                | 場所         | 目的                                                       | 期間                                 |
-| ------------------------------------------- | ------------------- | ------------ | ---------------------------------------------------------- | ------------------------------------ |
-| [Request Memoization](#request-memoization) | 関数の戻り値        | サーバー     | React Component treeでデータを再利用するため               | リクエストライフサイクル中           |
-| [Data Cache](#data-cache)                   | データ              | サーバー     | ユーザーリクエストやデプロイメント間でデータを保持         | 永続的（再検証可能）                 |
-| [Full Route Cache](#full-route-cache)       | HTMLとRSCペイロード | サーバー     | レンダリングコストを削減し、パフォーマンスを向上させるため | 永続的（再検証可能）                 |
-| [Router Cache](#client-side-router-cache)   | RSCペイロード       | クライアント | ナビゲーション時のサーバーリクエストを削減するため         | ユーザーセッションまたは時間に基づく |
+| Mechanism                                   | What                | Where  | Purpose                                          | Duration                           |
+| ------------------------------------------- | ------------------- | ------ | ------------------------------------------------ | ---------------------------------- |
+| [Request Memoization](#request-memoization) | 関数の戻り値        | Server | React Component tree内でデータを再利用           | リクエストライフサイクルごと       |
+| [Data Cache](#data-cache)                   | データ              | Server | ユーザーリクエストとデプロイメント間でデータ保存 | 永続的 (再検証が可能)              |
+| [Full Route Cache](#full-route-cache)       | HTMLとRSCペイロード | Server | レンダリングコストを削減しパフォーマンス向上     | 永続的 (再検証が可能)              |
+| [Router Cache](#client-side-router-cache)   | RSCペイロード       | Client | ナビゲーション時のサーバーリクエストを削減       | ユーザーセッションまたは時間ベース |
 
-Next.jsは、デフォルトでパフォーマンスを向上させコストを削減するために、できる限り多くのキャッシュを行います。つまり、ルートは**静的にレンダリング**され、データリクエストは**キャッシュ**されますが、これは任意で無効にできます。以下のダイアグラムは、ビルド時にルートが静的にレンダリングされるおよび静的なルートが最初に訪れられたときのデフォルトのキャッシング動作を示しています。
+デフォルトでは、Next.jsはパフォーマンスを向上させコストを削減するためにできる限りキャッシュします。つまり、ルートは**静的にレンダリング**され、データリクエストは**キャッシュ**されます。ただし、選択することで設定を変更できます。下の図は、ルートがビルド時に静的にレンダリングされ、静的ルートが最初に訪問されたときのデフォルトのキャッシュ動作を示しています。
 
 <Image
-  alt="Next.jsのデフォルトキャッシング動作を示す図で、ビルド時と最初の訪問時のHIT、MISS、SETを示しています。"
+  alt="Next.jsにおける4つのメカニズムのデフォルトキャッシュ動作を示す図。ビルド時とルートが最初に訪れたときのHIT、MISS、SET。"
   srcLight="/docs/light/caching-overview.png"
   srcDark="/docs/dark/caching-overview.png"
   width="1600"
   height="1179"
 />
 
-キャッシング動作は、ルートが静的か動的か、データがキャッシュされているかされていないか、リクエストが初回訪問の一部なのか後続のナビゲーションによるものかによって変わります。ユースケースに応じて、個々のルートやデータリクエストのキャッシング動作を設定することができます。
+キャッシュ動作は、ルートが静的あるいは動的にレンダリングされるか、データがキャッシュされるかされないか、リクエストが初回訪問の一部なのか、後続のナビゲーションの一部かによって変わります。ユースケースに応じて、個々のルートとデータリクエストのキャッシュ動作を設定できます。
 
-## リクエストメモ化 {#request-memoization}
+## Request Memoization {#request-memoization}
 
-Reactは、同じURLとオプションを持つリクエストを自動的に**メモ化**するために[`fetch` API](#fetch)を拡張しています。これにより、Reactコンポーネントtree内の複数の場所で同じデータを取得するためのfetch関数を呼び出すことができますが、実行されるのは1度だけです。
+Reactは[`fetch` API](#fetch)を拡張し、同じURLとオプションを持つリクエストを自動的に**メモ化**します。つまり、React component treeの複数箇所で同じデータに対してfetch関数を呼び出しても、それは1度だけ実行されます。
 
 <Image
-  alt="重複排除されたFetchリクエスト"
+  alt="重複削除されたFetchリクエスト"
   srcLight="/docs/light/deduplicated-fetch-requests.png"
   srcDark="/docs/dark/deduplicated-fetch-requests.png"
   width="1600"
   height="857"
 />
 
-例えば、ルート全体で同じデータが必要な場合（例えば、Layout、Page、および複数のコンポーネントにおいて）、treeの最上部でデータをfetchし、コンポーネント間でpropsを転送する必要はありません。その代わりに、必要なコンポーネント内でデータを取得でき、同じデータに対するネットワーク上での複数リクエストのパフォーマンスへの影響を心配する必要はありません。
+例えば、ルート全体で同じデータを使用する必要がある場合（例：Layout、Page、複数のコンポーネント）、データをツリーの上位で取得して、コンポーネント間でpropsを渡す必要はありません。代わりに、必要とするコンポーネントでデータを取得し、同じデータのネットワークリクエストを複数回行うことのパフォーマンスへの影響を気にせず使用できます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
 
 ```tsx title="app/example.tsx" switcher
 async function getItem() {
-  // `fetch`関数は自動的にメモ化され、その結果はキャッシュされます
+  // `fetch`関数は自動的にメモ化され、結果は
+  // キャッシュされます
   const res = await fetch('https://.../item/1')
   return res.json()
 }
 
-// この関数は2回呼び出されますが、最初の1回のみ実行されます
+// この関数は2回呼び出されますが、最初にだけ実行されます
 const item = await getItem() // cache MISS
 
-// 二度目の呼び出しはルート内のどこでも可能です
+// 2回目の呼び出しはルートのどこからでも可能です
 const item = await getItem() // cache HIT
 ```
 
@@ -67,472 +68,474 @@ const item = await getItem() // cache HIT
 
 ```jsx title="app/example.js" switcher
 async function getItem() {
-  // `fetch`関数は自動的にメモ化され、その結果はキャッシュされます
+  // `fetch`関数は自動的にメモ化され、結果は
+  // キャッシュされます
   const res = await fetch('https://.../item/1')
   return res.json()
 }
 
-// この関数は2回呼び出されますが、最初の1回のみ実行されます
+// この関数は2回呼び出されますが、最初にだけ実行されます
 const item = await getItem() // cache MISS
 
-// 二度目の呼び出しはルート内のどこでも可能です
+// 2回目の呼び出しはルートのどこからでも可能です
 const item = await getItem() // cache HIT
 ```
 
 </TabItem>
 </Tabs>
 
-**リクエストメモ化の仕組み**
+**Request Memoizationの仕組み**
 
 <Image
-  alt="Reactレンダリング中にfetchメモ化がどのように機能するかを示すダイアグラム。"
+  alt="Reactレンダリング中のfetchメモ化の動作を示す図。"
   srcLight="/docs/light/request-memoization.png"
   srcDark="/docs/dark/request-memoization.png"
   width="1600"
   height="742"
 />
 
-- ルートをレンダリングする際に、特定のリクエストが初めて呼び出されたとき、その結果はメモリに存在せず、キャッシュの`MISS`となります。
-- したがって、関数が実行され、データが外部ソースから取得され、その結果がメモリに格納されます。
-- 同じレンダーパス内でのリクエストの後続の関数呼び出しはキャッシュの`HIT`となり、関数を実行することなくメモリからデータが返されます。
-- ルートがレンダリングされ、レンダリングパスが完了すると、メモリは「リセット」され、すべてのリクエストメモ化エントリがクリアされます。
+- ルートをレンダリングする際、特定のリクエストが初めて呼び出されたとき、その結果はメモリに存在しないため、キャッシュ`MISS`となります；
+- したがって、関数が実行され、データは外部ソースからフェッチされ、その結果はメモリに保存されます；
+- 同じレンダリングパス内で再度リクエストが呼ばれるとキャッシュ`HIT`となり、関数を実行せずにメモリからデータが返されます；
+- ルートがレンダリングされレンダリングパスが完了すると、メモリは「リセット」され、すべてのrequest memoizationエントリがクリアされます；
 
 > **Good to know**:
 >
-> - リクエストメモ化はReactの機能であり、Next.jsの機能ではありません。ここでは、他のキャッシングメカニズムとの相互作用を示すために含まれています。
-> - メモ化は`fetch`リクエストの`GET`メソッドにのみ適用されます。
-> - メモ化はReact Component treeにのみ適用されます。つまり：
->   - `generateMetadata`、`generateStaticParams`、Layouts、Pages、およびその他のServer Components内の`fetch`リクエストに適用されます。
->   - Route Handlers内の`fetch`リクエストには適用されません。なぜなら、それらはReact component treeの一部ではないからです。
-> - `fetch`が適さない場合（例：一部のデータベースクライアント、CMSクライアント、GraphQLクライアント）、関数をメモ化するために[Reactの`cache`関数](#react-cache-function)を使用できます。
+> - Request memoizationはNext.jsの機能ではなく、Reactの機能です；ここでは他のキャッシュメカニズムとの相互作用を示すために含まれています；
+> - メモ化は`fetch`リクエストの`GET`メソッドにのみ適用されます；
+> - メモ化はReact component treeにのみ適用されるため：
+>   - `generateMetadata`、`generateStaticParams`、Layouts、Pages、その他のServer Components内での`fetch`リクエストに適用されます；
+>   - Route Handlers内での`fetch`リクエストは適用されません、なぜならこれはReact component treeの一部ではないからです；
+> - `fetch`が適していないケース（例：一部のデータベースクライアント、CMSクライアント、GraphQLクライアント）では、[React `cache`関数](#react-cache-function)を使用して関数をメモ化できます；
 
-### 期間 {#duration}
+### Duration {#duration}
 
-キャッシュはサーバーリクエストのライフタイムが続く間、つまりReact component treeのレンダリングが完了するまで持続します。
+キャッシュはサーバーリクエストのライフタイム、及びReact component treeのレンダリングが終了するまで持続します；
 
-### 再検証 {#revalidating}
+### Revalidating {#revalidating}
 
-メモ化はサーバーリクエスト間で共有されず、レンダリング中のみに適用されるため、再検証する必要はありません。
+メモ化はサーバーリクエスト間で共有されず、レンダリング中にのみ適用されるため、それを再検証する必要はありません；
 
-### オプトアウト {#opting-out}
+### Opting out {#opting-out}
 
-メモ化は`fetch`リクエストの`GET`メソッドにのみ適用され、`POST`や`DELETE`などの他のメソッドはメモ化されません。このデフォルトの動作はReactの最適化であり、オプトアウトすることをお勧めしません。
+メモ化は`fetch`リクエストの`GET`メソッドにのみ適用され、`POST`や`DELETE`などの他のメソッドはメモ化されません。このデフォルトの動作はReactの最適化であり、オプトアウトすることは勧めません。
 
-個々のリクエストを管理するには、[`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)の[`signal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController/signal)プロパティを使用できます。ただし、これはメモ化からオプトアウトするのではなく、実行中のリクエストを中止するものです。
+個々のリクエストを管理するには、[`AbortController`](https://developer.mozilla.org/ja/docs/Web/API/AbortController)の[`signal`](https://developer.mozilla.org/ja/docs/Web/API/AbortController/signal)プロパティを使用できます。ただし、これはメモ化からのリクエストのオプトアウトではなく、フライト中のリクエストを中止します。
 
 ```js title="app/example.js"
 const { signal } = new AbortController()
 fetch(url, { signal })
 ```
 
-## データキャッシュ {#data-cache}
+## Data Cache {#data-cache}
 
-Next.jsには組み込みのデータキャッシュがあり、データの取得結果を**サーバーリクエスト**と**デプロイメント**間で**保持**します。これは、Next.jsがネイティブの`fetch` APIを拡張し、サーバー上の各リクエストが独自の永続的なキャッシングセマンティクスを設定できるようにすることで可能です。
+Next.jsには組み込みのData Cacheがあり、データフェッチの結果を**永続的に**、**サーバーリクエスト**および**デプロイメント**を跨いで保存します。これは、Next.jsがネイティブの`fetch` APIを拡張し、サーバーの各リクエストで独自の永続的なキャッシングセマンティクスを設定できるようになっているためです。
 
-> **Good to know**: ブラウザでは、`fetch`の`cache`オプションはリクエストがブラウザのHTTPキャッシュとどのように相互作用するかを示しますが、Next.jsでは、`cache`オプションはサーバー側のリクエストがサーバーのデータキャッシュとどのように相互作用するかを示します。
+> **Good to know**: ブラウザでは、`fetch`の`cache`オプションはリクエストがブラウザのHTTPキャッシュとどのように相互作用するかを示していますが、Next.jsでは、`cache`オプションはサーバー側のリクエストがサーバーのData Cacheとどのように相互作用するかを示します。
 
-`fetch`の[`cache`](#fetch-optionscache)および[`next.revalidate`](#fetch-optionsnextrevalidate)オプションを使用して、キャッシング動作を設定できます。
+以下の`fetch`の[`cache`](#fetch-optionscache)と[`next.revalidate`](#fetch-optionsnextrevalidate)オプションを使用して、キャッシング動作を設定できます。
 
-**データキャッシュの仕組み**
+**Data Cacheの仕組み**
 
 <Image
-  alt="データキャッシュと対話するキャッシュおよび非キャッシュのfetchリクエストの図。キャッシュリクエストはデータキャッシュに格納され、メモ化されます。非キャッシュリクエストはデータソースから取得され、データキャッシュに格納されず、メモ化されます。"
+  alt="キャッシュされたfetchリクエストとキャッシュされていないfetchリクエストがData Cacheとどのように相互作用するかを示す図。キャッシュされたリクエストはData Cacheに保存され、メモ化され、キャッシュされていないリクエストはデータソースからフェッチされ、Data Cacheには保存されず、メモ化されます。"
   srcLight="/docs/light/data-cache.png"
   srcDark="/docs/dark/data-cache.png"
   width="1600"
   height="661"
 />
 
-- `'force-cache'`オプション付きの`fetch`リクエストがレンダリング中に初めて呼び出されたとき、Next.jsはデータキャッシュにキャッシュされた応答があるか確認します。
-- キャッシュされた応答が見つかった場合、それはすぐに返され、[メモ化されます](#request-memoization)。
-- キャッシュされた応答が見つからなかった場合、リクエストがデータソースに送られ、その結果がデータキャッシュに保存され、メモ化されます。
-- 非キャッシュデータ（例：`cache`オプションが定義されていないまたは`{ cache: 'no-store' }`を使用）は、結果が常にデータソースから取得され、メモ化されます。
-- データがキャッシュされているかどうかにかかわらず、同じデータに対する重複したリクエストを防ぐためにリクエストは常にメモ化され、Reactレンダリングパス中に行われます。
+- レンダリング中に`'force-cache'`オプションを持つ`fetch`リクエストが初めて行われた場合、Next.jsはData Cacheにキャッシュされたレスポンスがあるかどうかを確認します；
+- キャッシュされたレスポンスが見つかれば、それが即座に返され、[メモ化](#request-memoization)されます；
+- キャッシュされたレスポンスが見つからない場合、リクエストはデータソースに対して行われ、その結果はData Cacheに保存され、メモ化されます；
+- キャッシュされていないデータ（例：`cache`オプションが定義されていない、または`{ cache: 'no-store' }`を使用している場合）は常にデータソースからフェッチされ、メモ化されます；
+- データがキャッシュされているかどうかにかかわらず、リクエストは常にメモ化され、Reactレンダーパス中に同じデータに対する重複要求を避けます；
 
-> **データキャッシュとリクエストメモ化の違い**
+> **Data CacheとRequest Memoizationの違い**
 >
-> 両方のキャッシングメカニズムは、キャッシュされたデータを再利用することによってパフォーマンスを向上させますが、データキャッシュはリクエストとデプロイメントにまたがって永続的に維持されるのに対し、メモ化はリクエストのライフタイム内でのみ持続します。
+> 両方のキャッシュメカニズムは、キャッシュされたデータを再利用することでパフォーマンスを向上させますが、Data Cacheはサーバーリクエストおよびデプロイメントを跨いで永続的であるのに対し、メモ化はリクエストのライフタイムだけです；
 
-### 期間 {#duration}
+### Duration {#duration}
 
-データキャッシュは、再検証またはオプトアウトが行われない限り、リクエストやデプロイメント間で永続的に保持されます。
+Data Cacheは、再検証またはオプトアウトするまで、サーバーリクエストおよびデプロイメントを跨いで永続的です；
 
-### 再検証 {#revalidating}
+### Revalidating {#revalidating}
 
-キャッシュされたデータは次の2つの方法で再検証できます：
+キャッシュされたデータは、以下の2つの方法で再検証できます：
 
-- **時間ベースの再検証**: 一定時間経過後の新しいリクエストでデータを再検証します。これは、データがあまり頻繁に変化せず、新鮮さがあまり重要でない場合に有用です。
-- **オンデマンドの再検証**: イベントに基づいてデータを再検証します（例：フォーム送信）。オンデマンドの再検証はタグベースまたはパスベースのアプローチを使用してデータのグループを一度に再検証できます。例えば、無頭CMSのコンテンツが更新されたときに最新のデータをすぐに表示したい場合に有効です。
+- **時間ベースの再検証**：ある一定期間が経過し新しいリクエストが行われた後にデータを再検証します。これは変更が頻繁ではなく新鮮さがそれほど重要でないデータに便利です。
+- **オンデマンド再検証**：イベントに基づいてデータを再検証します（例：フォーム送信）。オンデマンド再検証ではタグベースまたはパスベースのアプローチを使用して、データのグループを一度に再検証できます。これは（例：headless CMSのコンテンツが更新された場合）できるだけ早く最新のデータを表示したいときに便利です。
 
 #### 時間ベースの再検証 {#time-based-revalidation}
 
-特定の時間間隔でデータを再検証するには、`fetch`における`next.revalidate`オプションを使用して、リソースのキャッシュライフタイム（秒単位）を設定します。
+リソースのキャッシュライフタイムを設定するには、`fetch`の`next.revalidate`オプションを使用して指定します（秒単位）。
 
 ```js
-// 最大で毎時再生性を検証
+// 1時間ごとに再検証
 fetch('https://...', { next: { revalidate: 3600 } })
 ```
 
-または、[ルートセグメント設定オプション](#segment-config-options)を使用して、セグメント内のすべての`fetch`リクエストを設定したり、`fetch`を使用できない場合に設定できます。
+または、[Route Segment Configオプション](#segment-config-options)を使用して、セグメント内のすべての`fetch`リクエストを設定するか、`fetch`を使用できない場合に設定できます。
 
 **時間ベースの再検証の仕組み**
 
 <Image
-  alt="時間ベースの再検証の仕組みを示す図で、再検証期間後、最初のリクエストに対して古いデータが返され、次にデータが再検証されます。"
+  alt="時間ベースの再検証の仕組みを示す図、再検証期間後、最初のリクエストで古いデータが返され、その後データが再検証される。"
   srcLight="/docs/light/time-based-revalidation.png"
   srcDark="/docs/dark/time-based-revalidation.png"
   width="1600"
   height="1252"
 />
 
-- `fetch`リクエストが最初に`revalidate`を指定して呼び出されたとき、外部データソースからデータが取得され、データキャッシュに保存されます。
-- 指定された時間枠内に呼び出されたリクエストは、キャッシュされたデータを返します。
-- 時間枠が経過した後、次のリクエストはまだキャッシュ（現在は古い）データを返します。
-  - Next.jsはバックグラウンドでデータの再検証をトリガーします。
-  - データが正常に取得されると、Next.jsは新鮮なデータでデータキャッシュを更新します。
-  - バックグラウンド再検証が失敗した場合、前のデータはそのまま残ります。
+- `revalidate`を持つfetchリクエストが初めて呼ばれるとき、データは外部データソースからフェッチされ、Data Cacheに保存されます；
+- 指定された時間枠内（例：60秒）に呼ばれるリクエストはキャッシュされたデータを返します；
+- 時間枠を超えると、次のリクエストはまだキャッシュされた（今や古くなった）データを返します；
+  - Next.jsはバックグラウンドでデータの再検証をトリガーします；
+  - データが正常にフェッチされると、Next.jsはData Cacheを新鮮なデータで更新します；
+  - バックグラウンド再検証が失敗した場合、前のデータは維持されます；
 
-これは[**stale-while-revalidate**](https://web.dev/stale-while-revalidate/)動作に似ています。
+これは[**stale-while-revalidate**](https://web.dev/stale-while-revalidate/)の動作に似ています。
 
 #### オンデマンド再検証 {#on-demand-revalidation}
 
-データはパスごとに([`revalidatePath`](#revalidatepath))またはキャッシュタグごとに([`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag))オンデマンドで再検証できます。
+データは`path`（[`revalidatePath`](#revalidatepath)）やキャッシュタグ（[`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag)）でオンデマンドに再検証することができます。
 
 **オンデマンド再検証の仕組み**
 
 <Image
-  alt="オンデマンド再検証の仕組みを示す図で、データキャッシュが再検証リクエスト後に新鮮なデータで更新される仕組みを示します。"
+  alt="オンデマンド再検証の仕組みを示す図、再検証リクエスト後、Data Cacheが新鮮なデータで更新される。"
   srcLight="/docs/light/on-demand-revalidation.png"
   srcDark="/docs/dark/on-demand-revalidation.png"
   width="1600"
   height="1082"
 />
 
-- `fetch`リクエストが初めて呼び出されたとき、データが外部データソースから取得され、データキャッシュに保存されます。
-- オンデマンド再検証がトリガーされると、適切なキャッシュエントリはキャッシュから削除されます。
-  - これは、古いデータをキャッシュに保持する時間ベースの再検証とは異なり、データが取得されるまでキャッシュに残ります。
-- 次回のリクエストが行われたとき、再びキャッシュの`MISS`となり、データが外部データソースから取得され、データキャッシュに保存されます。
+- `fetch`リクエストが初めて呼ばれるとき、データは外部データソースからフェッチされ、Data Cacheに保存されます；
+- オンデマンド再検証がトリガーされると、適切なキャッシュエントリがキャッシュから削除されます；
+  - これが時間ベースの再検証とは異なる点で、古いデータが新しいデータがフェッチされるまでキャッシュに保持されます；
+- 次回リクエストが行われると、再びキャッシュ`MISS`が発生し、データは外部データソースからフェッチされ、Data Cacheに保存されます；
 
-### オプトアウト {#opting-out}
+### Opting out {#opting-out}
 
-`fetch`からの応答をキャッシュしたくない場合、以下のようにできます：
+`fetch`のレスポンスをキャッシュしたくない場合は、以下の方法があります：
 
 ```js
 let data = await fetch('https://api.vercel.app/blog', { cache: 'no-store' })
 ```
 
-## フルルートキャッシュ {#full-route-cache}
+## Full Route Cache {#full-route-cache}
 
-> **関連する用語**：
+> **関連用語**:
 >
-> 自動静的最適化、静的サイト生成、または静的レンダリングという用語が、アプリケーションのルートをビルド時にレンダリングおよびキャッシュするプロセスを指すために互換的に使用されることがあります。
+> このプロセスは自動静的最適化（Automatic Static Optimization）、静的サイト生成（Static Site Generation）、または静的レンダリング（Static Rendering）と呼ばれ、アプリケーションのルートをビルド時にレンダリングおよびキャッシュすることを指します。
 
-Next.jsはデフォルトでルートをビルドタイムにレンダリングし、キャッシュします。これは、個々のリクエストごとにサーバーでレンダリングする代わりにキャッシュされたルートを提供できる最適化であり、高速なページ読み込みを実現します。
+Next.jsは自動的にビルド時にルートをレンダリングし、キャッシュします。これは最適化で、毎回サーバーでレンダリングする代わりにキャッシュされたルートを提供することで、ページロードを高速化します。
 
-フルルートキャッシュがどのように機能するかを理解するために、Reactがレンダリングをどのように扱うか、およびNext.jsがその結果をどのようにキャッシュするかを見ると役立ちます：
+Full Route Cacheの仕組みを理解するためには、Reactがどのようにレンダリングを処理し、Next.jsがその結果をどのようにキャッシュするかを理解するのが役立ちます：
 
-### 1. サーバーにおけるReactレンダリング {#1-react-rendering-on-the-server}
+### 1. サーバーでのReactレンダリング {#1-react-rendering-on-the-server}
 
-サーバーでは、Next.jsはReactのAPIを使用してレンダリングを調整します。レンダリング作業は、個々のルートセグメントおよびSuspenseバウンダリーごとに分割されます。
+サーバーでは、Next.jsはReactのAPIを使用してレンダリングを操作します。レンダリング作業はチャンクに分割されます：個々のルートセグメントとSuspense境界によって。
 
 各チャンクは2つのステップでレンダリングされます：
 
-1. ReactはServer Componentsをストリーミングに最適化された特別なデータフォーマットにレンダリングします。これは**React Server Component Payload**と呼ばれます。
-2. Next.jsはReact Server Component PayloadとクライアントのJavaScript命令を使用して、サーバー上で**HTML**をレンダリングします。
+1. Reactは、Server Componentsをストリーミングに最適化された特別なデータ形式である**React Server Component Payload**にレンダリングします；
+2. Next.jsはReact Server Component PayloadとClient Component JavaScript命令を使用して、サーバー上で**HTML**をレンダリングします；
 
-これにより、すべてがレンダリングされるのを待たずに作業をキャッシュしたり、応答を送信することができます。代わりに、作業が完了するたびに応答をストリーミングできるようになります。
+これにより、すべてのレンダリングを待つことなく作業をキャッシュしたり、レスポンスを送信したりできます。代わりに、作業が完了するごとにレスポンスをストリームできます。
 
-> **React Server Component Payloadとは何か？**
+> **React Server Component Payloadとは？**
 >
-> React Server Component Payloadは、レンダリングされたReact Server Components treeのコンパクトなバイナリ表現です。クライアント上のReactにより、ブラウザのDOMを更新するために使用されます。React Server Component Payloadには以下が含まれます：
+> React Server Component Payloadは、レンダリング済みのReact Server Components treeの圧縮バイナリ表現です。クライアント上でReactがブラウザのDOMを更新するために使用されます。React Server Component Payloadには以下が含まれます：
 >
 > - Server Componentsのレンダリング結果
-> - クライアント ComponentsのJavaScriptファイルのプレースホルダーとその参照
-> - Server Componentsからクライアント Componentsに渡されたprops
+> - Client Componentsをどこにレンダリングするか、そのためのJavaScriptファイルへの参照
+> - Server ComponentからClient Componentに渡されるすべてのprops
 >
-> 詳細は、[Server Components](/docs/app/building-your-application/rendering/server-components)のドキュメントをご覧ください。
+> 詳細は、[Server Components](/docs/app/building-your-application/rendering/server-components)のドキュメントを参照してください。
 
-### 2. サーバーでのNext.jsキャッシング（フルルートキャッシュ） {#2-next-js-caching-on-the-server-full-route-cache}
+### 2. サーバー上でのNext.jsのキャッシュ (Full Route Cache) {#2-next-js-caching-on-the-server-full-route-cache}
 
 <Image
-  alt="Next.jsのデフォルトのフルルートキャッシュの動作を示しており、React Server Component PayloadとHTMLがサーバーでキャッシュされる様子を示しています。"
+  alt="静的にレンダリングされたルートに対して、サーバー上でReact Server ComponentペイロードとHTMLがキャッシュされるFull Route Cacheのデフォルト動作を示す図。"
   srcLight="/docs/light/full-route-cache.png"
   srcDark="/docs/dark/full-route-cache.png"
   width="1600"
   height="888"
 />
 
-Next.jsのデフォルトの動作は、ルートのレンダリング結果（React Server Component PayloadとHTML）をサーバーでキャッシュすることです。これはビルドタイムや再検証時に静的にレンダリングされたルートに適用されます。
+Next.jsのデフォルトの動作は、ルートのレンダリング結果（React Server Component PayloadとHTML）をサーバー上でキャッシュすることです。これはビルド時、あるいは再検証時に静的にレンダリングされたルートに適用されます。
 
-### 3. クライアントでのReact実行と同期 {#3-react-hydration-and-reconciliation-on-the-client}
+### 3. クライアントでのReact HydrationとReconciliation {#3-react-hydration-and-reconciliation-on-the-client}
 
-リクエスト時にクライアントでは：
+リクエスト時、クライアント上で：
 
-1. HTMLは、クライアントとServer Componentsの非対話型の初期プレビューをすぐに表示するために使用されます。
-2. React Server Components Payloadは、クライアントとレンダリングされたServer Component treesを統合して、DOMを更新するために使用されます。
-3. JavaScript命令は、クライアント Componentsを[実行](https://react.dev/reference/react-dom/client/hydrateRoot)してアプリケーションを対話型にします。
+1. HTMLを使用して、クライアントおよびサーバーコンポーネントの高速で非インタラクティブな初期プレビューを即座に表示します；
+2. React Server Components Payloadを使用して、クライアントとレンダリングされたServer Componentsのツリーを照合し、DOMを更新します；
+3. JavaScriptの指示を使用して、[hydrate](https://react.dev/reference/react-dom/client/hydrateRoot)のClient Componentsし、アプリケーションをインタラクティブにします；
 
-### 4. クライアントでのNext.jsキャッシング（ルーターキャッシュ） {#4-next-js-caching-on-the-client-router-cache}
+### 4. クライアントでのNext.jsのキャッシュ (Router Cache) {#4-next-js-caching-on-the-client-router-cache}
 
-React Server Component Payloadは、クライアント側の[Router Cache](#client-side-router-cache)に格納されます。これは、個々のルートセグメントごとに分割されたメモリキャッシュです。このRouter Cacheは、以前に訪問したルートを保存し、将来的に訪問する可能性のあるルートを事前に取得するために使用されます。
+React Server Component Payloadは、クライアント側Router Cacheに保存されます：レイアウト、ローディング状態、ページごとに分割されたメモリ内キャッシュです。このRouter Cacheは、以前に訪問したルートを保存し、将来のルートを事前にフェッチすることでナビゲーション体験を向上させます。
 
 ### 5. 後続のナビゲーション {#5-subsequent-navigations}
 
-後続のナビゲーションや事前取得中、Next.jsはRouter CacheにReact Server Components Payloadが保存されているかどうかを確認します。保存されている場合は、新しいサーバーリクエストを送信することをスキップします。
+後続のナビゲーション時や事前フェッチ時、Next.jsはReact Server Components PayloadがRouter Cacheに保存されているかどうかを確認します。保存されていれば、サーバーに新しいリクエストを送信することをスキップします。
 
-ルートセグメントがキャッシュにない場合、Next.jsはサーバーからReact Server Components Payloadを取得し、クライアントのRouter Cacheに追加します。
+ルートセグメントがキャッシュにない場合、Next.jsはサーバーからReact Server Components Payloadをフェッチし、クライアントのRouter Cacheを更新します。
 
-### 静的と動的レンダリング {#static-and-dynamic-rendering}
+### 静的および動的レンダリング {#static-and-dynamic-rendering}
 
-ルートがビルドタイムにキャッシュされるかどうかは、そのルートが静的または動的にレンダリングされるかどうかに依存します。静的ルートはデフォルトでキャッシュされ、動的ルートはリクエスト時にレンダリングされ、キャッシュされません。
+ルートがビルド時にキャッシュされるかどうかは、静的あるいは動的にレンダリングされるかどうかに依存します。静的ルートはデフォルトでキャッシュされ、動的ルートはリクエスト時にレンダリングされ、キャッシュされません。
 
-以下の図は、静的および動的にレンダリングされたルートの違いを示しており、キャッシュデータと非キャッシュデータが示されています：
+この図は、静的および動的にレンダリングされたルートと、キャッシュされたデータとキャッシュされていないデータの違いを示しています：
 
 <Image
-  alt="静的および動的レンダリングがフルルートキャッシュに与える影響を示す図。静的ルートはビルドタイムまたはデータ再検証後にキャッシュされ、動的ルートは決してキャッシュされない。"
+  alt="静的および動的レンダリングがFull Route Cacheに与える影響の説明。静的ルートはビルド時またはデータ再検証後にキャッシュされ、動的ルートは決してキャッシュされない。"
   srcLight="/docs/light/static-and-dynamic-routes.png"
   srcDark="/docs/dark/static-and-dynamic-routes.png"
   width="1600"
   height="1314"
 />
 
-[静的および動的レンダリング](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies)について詳しく学ぶ。
+[静的および動的レンダリング](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies)の詳細を参照してください。
 
-### 期間 {#duration}
+### Duration {#duration}
 
-デフォルトでは、フルルートキャッシュは永続的です。これは、レンダー出力がユーザーリクエスト間でキャッシュされることを意味します。
+デフォルトで、Full Route Cacheは永続的です。つまり、レンダリングされた出力はユーザーリクエスト間でキャッシュされます；
 
-### 無効化 {#invalidation}
+### Invalidation {#invalidation}
 
-フルルートキャッシュを無効化する方法は2つあります：
+Full Route Cacheを無効化する方法は2つあります：
 
-- **[データの再検証](/docs/app/building-your-application/caching#revalidating)**： データキャッシュを再検証すると、サーバー上でコンポーネントが再レンダリングされ、新しいレンダー出力がキャッシュされることでRouter Cacheも無効化されます。
-- **再デプロイ**： データキャッシュとは異なり、フルルートキャッシュは新しいデプロイメント時にクリアされます。
+- **[Revalidating Data](/docs/app/building-your-application/caching#revalidating)**: Data Cacheを再検証することにより、Router Cacheを無効化し、サーバー上でコンポーネントを再レンダリングし、新しいレンダリング出力をキャッシュします；
+- **再デプロイ**: Data Cacheとは異なり、再デプロイ時にFull Route Cacheはクリアされます；
 
-### オプトアウト {#opting-out}
+### Opting out {#opting-out}
 
-フルルートキャッシュからオプトアウトすることができます。言い換えれば、各インカミングリクエストごとにコンポーネントを動的にレンダリングすることができます：
+Full Route Cacheからオプトアウトする、つまり、各リクエストに対してコンポーネントを動的にレンダリングするには、以下の方法があります：
 
-- **[動的API](#dynamic-apis)の使用**： これはフルルートキャッシュからルートをオプトアウトし、リクエスト時に動的にレンダリングされることを意味します。データキャッシュは依然として使用できます。
-- ** `dynamic = 'force-dynamic'`または`revalidate = 0` ルートセグメント設定オプションを使用する**： これはフルルートキャッシュおよびデータキャッシュをスキップします。つまり、インカミングリクエストごとにサーバー上でコンポーネントがレンダリングされ、データが取得されます。ルートキャッシュはクライアント側のキャッシュであるため引き続き適用されます。
-- **[データキャッシュ](#data-cache)のオプトアウト**： `fetch`リクエストでキャッシュされないものがある場合、そのルートはフルルートキャッシュからオプトアウトします。特定の`fetch`リクエストに対して、インカミングリクエストごとにデータが取得されます。キャッシュオプトアウトしないその他の`fetch`リクエストは依然としてデータキャッシュにキャッシュされ続けます。これは、キャッシュされたデータとキャッシュされていないデータが共存するハイブリッドを可能にします。
+- **[Dynamic API](#dynamic-apis)を使用する**: これにより、ルートはFull Route Cacheからオプトアウトし、リクエスト時に動的にレンダリングされます。Data Cacheは依然として使用できます；
+- **`dynamic = 'force-dynamic'`または`revalidate = 0`のroute segment configオプションを使用する**: これにより、Full Route CacheおよびData Cacheがスキップされます。つまり、コンポーネントはサーバーへの各リクエスト時にレンダリングされ、データはフェッチされます。Router Cacheは、クライアント側のキャッシュであるため、依然として適用されます；
+- **[Data Cache](#data-cache)からオプトアウトする**: ルートにキャッシュされていない`fetch`リクエストがある場合、これによりルートはFull Route Cacheからオプトアウトされます。特定の`fetch`リクエストのデータは各リクエスト時にフェッチされます。キャッシュからオプトアウトしない他の`fetch`リクエストは、依然としてData Cacheにキャッシュされます。これにより、キャッシュされたデータとキャ
 
-## クライアントサイドのルーターキャッシュ {#client-side-router-cache}
+ッシュされないデータのハイブリッドが可能になります；
 
-Next.jsには、レイアウト、読み込み状態、ページごとに分割されたルートセグメントのRSCペイロードを格納するメモリ内クライアントサイドルーターキャッシュがあります。
+## クライアント側Router Cache {#client-side-router-cache}
 
-ユーザーがルート間を移動するとき、Next.jsは訪問したルートセグメントをキャッシュし、ユーザーが訪問する可能性があるルートを[事前取得](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)します。これにより、瞬時のバック/フォワードナビゲーション、ナビゲーション間の全ページ更新の不要、React状態やブラウザ状態の保持が実現されます。
+Next.jsには、ルートセグメントのRSCペイロードがレイアウト、ローディング状態、およびページごとに分割されたインメモリのクライアント側router cacheがあります。
 
-ルーターキャッシュを使用することで：
+ユーザーがルート間をナビゲートすると、Next.jsは訪問したルートセグメントをキャッシュし、ユーザーがナビゲートする可能性のあるルートを[事前にフェッチ](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)します。これにより、即時の前後のナビゲーションが可能になり、ナビゲーション間でのページ全体の再読み込みはなく、React stateおよびブラウザの状態が保持されます。
 
-- **レイアウト**はキャッシュされ、ナビゲーション時に再利用されます（[部分レンダリング](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)）。
-- **読み込み状態**はルート間の瞬時のナビゲーションのためにキャッシュされ再利用されます（[瞬時読み込み状態](/docs/app/building-your-application/routing/loading-ui-and-streaming#instant-loading-states)）。
-- **ページ** はデフォルトでキャッシュされませんが、ブラウザの前後のナビゲーション時に再利用されます。[実験オプション`staleTimes`](/docs/app/api-reference/config/next-config-js/staleTimes)を使ってページセグメントをキャッシュすることができます。
+Router Cacheを使用すると：
+
+- **レイアウト**は、ナビゲーション時にキャッシュされ再利用されます（[部分的レンダリング](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)）；
+- **ローディング状態**は、[即時ナビゲーション](/docs/app/building-your-application/routing/loading-ui-and-streaming#instant-loading-states)のために、ナビゲーション時にキャッシュされ再利用されます；
+- **ページ**はデフォルトではキャッシュされませんが、ブラウザの前進および後退ナビゲーション時に再利用されます。ページセグメントのキャッシュを有効にするには、実験的な[`staleTimes`](/docs/app/api-reference/config/next-config-js/staleTimes)構成オプションを使用できます；
 
 {/* TODO: 図をv15の動作に合わせて更新する */}
 
-> **Good to know:** このキャッシュはNext.jsとServer Componentsに特有であり、ブラウザの[bfcache](https://web.dev/bfcache/)とは異なりますが、似たような結果をもたらします。
+> **Good to know:** このキャッシュは専らNext.jsとServer Componentsに関連するものであり、ブラウザの[bfcache](https://web.dev/bfcache/)とは異なりますが、似た効果を持ちます；
 
-### 期間 {#duration}
+### Duration {#duration}
 
-キャッシュはブラウザの一時メモリに格納されます。2つの要因がルーターキャッシュの存続期間を決定します：
+キャッシュはブラウザの一時メモリに保存されます。2つの要素がrouter cacheの持続時間を決定します：
 
-- **セッション**： ナビゲーション中にキャッシュは持続します。ただし、ページの再読み込みでクリアされます。
-- **自動無効化期間**： レイアウトと読み込み状態のキャッシュは、指定された時間後に自動的に無効化されます。期間は、リソースがどのように[事前取得された](/docs/app/api-reference/components/link#prefetch)か、そしてリソースが[静的に生成された](/docs/app/building-your-application/rendering/server-components#static-rendering-default)かに依存します：
-  - **デフォルトの事前取得**（`prefetch={null}`または指定なし）： 動的ページにはキャッシュされません、静的ページには5分間。
-  - **完全な事前取得**（`prefetch={true}`または`router.prefetch`）： 静的および動的ページの両方に対して5分間。
+- **セッション**: キャッシュはナビゲーションを跨いで持続します。ただし、ページを更新するとクリアされます；
+- **自動無効化期間**：レイアウトとローディング状態のキャッシュは、特定の時間が経過すると自動的に無効化されます。期間は、リソースがどのように[事前にフェッチされた](/docs/app/api-reference/components/link#prefetch)か、リソースが[静的に生成された](/docs/app/building-your-application/rendering/server-components#static-rendering-default)かによります：
+  - **デフォルトの事前フェッチ**（`prefetch={null}`または未指定）：動的ページの場合はキャッシュされず、静的ページの場合は5分；
+  - **完全事前フェッチ**（`prefetch={true}`または`router.prefetch`）：静的および動的ページの両方の場合は5分；
 
-ページの再読み込みは**すべて**のキャッシュセグメントをクリアしますが、自動無効化期間は、事前取得された時間からの個々のセグメントのみに影響します。
+ページの更新は、**すべての**キャッシュされたセグメントをクリアしますが、自動無効化期間は事前フェッチされた個々のセグメントにのみ影響します；
 
-> **Good to know**: 実験オプション[`staleTimes`](/docs/app/api-reference/config/next-config-js/staleTimes)を使用して上記の自動無効化時間を調整することができます。
+> **Good to know**: この実験的な[`staleTimes`](/docs/app/api-reference/config/next-config-js/staleTimes)構成オプションを使用して、上記の自動無効化時間を調整できます；
 
-### 無効化 {#invalidation}
+### Invalidation {#invalidation}
 
-ルーターキャッシュを無効化する方法は次の2つです：
+Router Cacheを無効化する方法は2つあります：
 
-- **Server Action** の中で：
-  - パスでのオンデマンド再検証は（[`revalidatePath`](/docs/app/api-reference/functions/revalidatePath)）タグでのキャッシュ再検証は（[`revalidateTag`](/docs/app/api-reference/functions/revalidateTag)）
-  - [`cookies.set`](/docs/app/api-reference/functions/cookies#setting-a-cookie)または[`cookies.delete`](/docs/app/api-reference/functions/cookies#deleting-cookies)を使用してルーターキャッシュを無効にし、クッキーを使用するルートが古くなるのを防ぐ（例：認証）。
-- [`router.refresh`](/docs/app/api-reference/functions/use-router)を呼び出すことでルーターキャッシュを無効にし、現在のルートに対するサーバーへの新しいリクエストを行う。
+- **Server Action**内で：
+  - パスでのオンデマンドデータ再検証（[`revalidatePath`](/docs/app/api-reference/functions/revalidatePath)）またはキャッシュタグでのオンデマンドデータ再検証（[`revalidateTag`](/docs/app/api-reference/functions/revalidateTag)）；
+  - [`cookies.set`](/docs/app/api-reference/functions/cookies#setting-a-cookie)または[`cookies.delete`](/docs/app/api-reference/functions/cookies#deleting-cookies)を使用して、ルートが古くならないようにRouter Cacheを無効化します（例：認証）；
+- [`router.refresh`](/docs/app/api-reference/functions/use-router)を呼び出すことで、Router Cacheを無効化し、現在のルートに対してサーバーに新しいリクエストを送信します；
 
-### オプトアウト {#opting-out}
+### Opting out {#opting-out}
 
-Next.js 15以降、ページセグメントはデフォルトでオプトアウトされています。
+Next.js 15以降、ページセグメントはデフォルトでオプトアウトされます；
 
-> **Good to know:** `<Link>`コンポーネントの`prefetch`プロップを`false`に設定することで、[事前取得](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)をオプトアウトすることもできます。
+> **Good to know:** `<Link>`コンポーネントの`prefetch` propを`false`に設定することで、[事前フェッチ](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)からオプトアウトすることもできます；
 
-## キャッシュの相互作用 {#cache-interactions}
+## Cache Interactions {#cache-interactions}
 
-さまざまなキャッシングメカニズムを設定する際、相互作用を理解することが重要です：
+異なるキャッシュメカニズムを設定する際、それらがどのように互いに相互作用するかを理解することが重要です：
 
-### データキャッシュとフルルートキャッシュ {#data-cache-and-full-route-cache}
+### Data CacheとFull Route Cache {#data-cache-and-full-route-cache}
 
-- データキャッシュを再検証またはオプトアウトすることは、フルルートキャッシュを無効化します。なぜなら、レンダー出力はデータに依存しているからです。
-- フルルートキャッシュを無効化またはオプトアウトしても、データキャッシュには影響しません。キャッシュされたデータとキャッシュされていないデータの両方を持つルートを動的にレンダリングできます。たとえば、ほとんどのページがキャッシュされたデータを使用する場合でも、いくつかのコンポーネントがリクエスト時に取得する必要のあるデータに依存していることに有用です。すべてのデータを再取得する際のパフォーマンスへの影響を心配せずに動的レンダリングできます。
+- Data Cacheからオプトアウトするか再検証することは、Full Route Cacheの無効化につながります。なぜなら、レンダリング出力はデータに依存しているからです；
+- Full Route Cacheを無効化するかオプトアウトしても、Data Cacheには影響しません。キャッシュされたデータとキャッシュされていないデータを組み合わせて動的にルートをレンダリングすることができます。これは、ページのほとんどがキャッシュされたデータを使用しているが、リクエスト時にフェッチが必要なデータに依存するいくつかのコンポーネントがある場合に便利です。すべてのデータを再フェッチすることによるパフォーマンスへの影響を心配することなく動的にレンダリングできます；
 
-### データキャッシュとクライアントサイドのルーターキャッシュ {#data-cache-and-client-side-router-cache}
+### Data CacheとClient-side Router Cache {#data-cache-and-client-side-router-cache}
 
-- データキャッシュとルーターキャッシュを即座に無効化するには[Server Action](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)で[`revalidatePath`](#revalidatepath)または[`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag)を使用できます。
-- [Route Handler](/docs/app/building-your-application/routing/route-handlers)でデータキャッシュを再検証しても、Router Cacheは直ちには無効化されません。これらのRoute Handlerは特定のルートに結び付けられていないため、Router Cacheはハードリフレッシュまたは自動無効化期間が経過するまで以前のペイロードを提供し続けます。
+- [('revalidatePath')](/docs/app/api-reference/functions/revalidatePath)または[('revalidateTag')](/docs/app/api-reference/functions/revalidateTag)をServer Actionで使用すると、Data CacheとRouter Cacheを直ちに無効化できます；
+- Route HandlerでのData Cacheの再検証は直ちにはRouter Cacheを無効化しません。なぜなら、Route Handlerは特定のルートに結びついていないからです。これにより、Route Cacheはハードリフレッシュや自動無効化期間が経過するまで、以前のペイロードを提供し続けます；
 
-## API {#apis}
+## APIs {#apis}
 
-次の表は、さまざまなNext.js APIがキャッシングにどのような影響を与えるかの概要を示しています：
+以下の表は、異なるNext.js APIがキャッシュに与える影響の概要を示します：
 
-| API                                                                     | Router Cache               | フルルートキャッシュ  | Data Cache            | React Cache |
-| ----------------------------------------------------------------------- | -------------------------- | --------------------- | --------------------- | ----------- |
-| [`<Link prefetch>`](#link)                                              | Cache                      |                       |                       |             |
-| [`router.prefetch`](#routerprefetch)                                    | Cache                      |                       |                       |             |
-| [`router.refresh`](#routerrefresh)                                      | Revalidate                 |                       |                       |             |
-| [`fetch`](#fetch)                                                       |                            |                       | Cache                 | Cache       |
-| [`fetch` `options.cache`](#fetch-optionscache)                          |                            |                       | Cache or Opt out      |             |
-| [`fetch` `options.next.revalidate`](#fetch-optionsnextrevalidate)       |                            | Revalidate            | Revalidate            |             |
-| [`fetch` `options.next.tags`](#fetch-optionsnexttags-and-revalidatetag) |                            | Cache                 | Cache                 |             |
-| [`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag)             | Revalidate (Server Action) | Revalidate            | Revalidate            |             |
-| [`revalidatePath`](#revalidatepath)                                     | Revalidate (Server Action) | Revalidate            | Revalidate            |             |
-| [`const revalidate`](#segment-config-options)                           |                            | Revalidate or Opt out | Revalidate or Opt out |             |
-| [`const dynamic`](#segment-config-options)                              |                            | Cache or Opt out      | Cache or Opt out      |             |
-| [`cookies`](#cookies)                                                   | Revalidate (Server Action) | Opt out               |                       |             |
-| [`headers`, `searchParams`](#dynamic-apis)                              |                            | Opt out               |                       |             |
-| [`generateStaticParams`](#generatestaticparams)                         |                            | Cache                 |                       |             |
-| [`React.cache`](#react-cache-function)                                  |                            |                       |                       | Cache       |
-| [`unstable_cache`](/docs/app/api-reference/functions/unstable_cache)    |                            |                       | Cache                 |             |
+| API                                                                        | Router Cache               | Full Route Cache      | Data Cache            | React Cache |
+| -------------------------------------------------------------------------- | -------------------------- | --------------------- | --------------------- | ----------- |
+| [`<Link prefetch>`](#link)                                                 | Cache                      |                       |                       |             |
+| [`router.prefetch`](#router-prefetch)                                      | Cache                      |                       |                       |             |
+| [`router.refresh`](#router-refresh)                                        | Revalidate                 |                       |                       |             |
+| [`fetch`](#fetch)                                                          |                            |                       | Cache                 | Cache       |
+| [`fetch` `options.cache`](#fetch-options-cache)                            |                            |                       | Cache or Opt out      |             |
+| [`fetch` `options.next.revalidate`](#fetch-options-next-revalidate)        |                            | Revalidate            | Revalidate            |             |
+| [`fetch` `options.next.tags`](#fetch-options-next-tags-and-revalidate tag) |                            | Cache                 | Cache                 |             |
+| [`revalidateTag`](#fetch-options-next-tags-and-revalidate tag)             | Revalidate (Server Action) | Revalidate            | Revalidate            |             |
+| [`revalidatePath`](#revalidatepath)                                        | Revalidate (Server Action) | Revalidate            | Revalidate            |             |
+| [`const revalidate`](#segment-config-options)                              |                            | Revalidate or Opt out | Revalidate or Opt out |             |
+| [`const dynamic`](#segment-config-options)                                 |                            | Cache or Opt out      | Cache or Opt out      |             |
+| [`cookies`](#cookies)                                                      | Revalidate (Server Action) | Opt out               |                       |             |
+| [`headers`, `searchParams`](#dynamic-apis)                                 |                            | Opt out               |                       |             |
+| [`generateStaticParams`](#generatestaticparams)                            |                            | Cache                 |                       |             |
+| [`React.cache`](#react-cache-function)                                     |                            |                       |                       | Cache       |
+| [`unstable_cache`](/docs/app/api-reference/functions/unstable_cache)       |                            |                       | Cache                 |             |
 
 ### `<Link>` {#link}
 
-デフォルトでは、`<Link>`コンポーネントはフルルートキャッシュからルートを自動的に事前取得し、Router CacheにReact Server Component Payloadを追加します。
+デフォルトでは、`<Link>`コンポーネントはFull Route Cacheからルートを事前に自動的にフェッチし、React Server Component PayloadをRouter Cacheに追加します；
 
-事前取得を無効にするには、`prefetch`プロパティを`false`に設定します。ただし、これはキャッシュを永続的にスキップすることはなく、ユーザーがルートを訪問したときにルートセグメントはクライアント側でキャッシュされます。
+事前フェッチを無効にするには、`prefetch` propを`false`に設定できます。ただし、これはキャッシュを永続的にスキップするわけではありません。ユーザーがそのルートを訪れると、そのルートセグメントはクライアントサイドにキャッシュされます。
 
-[`<Link>`コンポーネント](/docs/app/api-reference/components/link)の詳細を学ぶ。
+[`<Link>`コンポーネント](/docs/app/api-reference/components/link)について詳しく学ぶ。
 
 ### `router.prefetch` {#router-prefetch}
 
-`useRouter`フックの`prefetch`プロパティを使用して、ルートを手動で事前取得できます。これにより、Router CacheにReact Server Component Payloadを追加します。
+`useRouter`フックの`prefetch`オプションは、ルートを手動で事前にフェッチするために使用できます。これにより、React Server Component PayloadがRouter Cacheに追加されます。
 
-[`useRouter`フック](/docs/app/api-reference/functions/use-router)のAPIリファレンスを参照してください。
+[`useRouter`フック](/docs/app/api-reference/functions/use-router) APIリファレンスを参照。
 
 ### `router.refresh` {#router-refresh}
 
-`useRouter`フックの`refresh`プロパティを使用して、ルートを手動で更新できます。これによりRouter Cacheが完全にクリアされ、現在のルートに対するサーバーへの新しいリクエストが行われます。`refresh`はデータキャッシュまたはフルルートキャッシュには影響を与えません。
+`useRouter`フックの`refresh`オプションは、ルートを手動でリフレッシュするために使用できます。これにより、Router Cacheが完全にクリアされ、現在のルートに対してサーバーに新しいリクエストが送信されます。`refresh`は、Data CacheやFull Route Cacheには影響しません。
 
-描画結果はクライアント側で統合され、React状態やブラウザ状態が保持されます。
+レンダリングされた結果は、React stateとブラウザの状態を保持しながらクライアントで統合されます。
 
-[`useRouter`フック](/docs/app/api-reference/functions/use-router)のAPIリファレンスを参照してください。
+[`useRouter`フック](/docs/app/api-reference/functions/use-router) APIリファレンスを参照。
 
 ### `fetch` {#fetch}
 
-`fetch`から返されたデータは、自動的にデータキャッシュにキャッシュされます。
+`fetch`から返されるデータは、Data Cacheに自動的にキャッシュされません。
 
-`fetch`からの応答をキャッシュしたくない場合、以下のようにできます：
+`fetch`のデフォルトキャッシング動作（例：`cache`オプションが指定されていない場合）は、`cache`オプションを`no-store`に設定した場合と同じです：
 
 ```js
 let data = await fetch('https://api.vercel.app/blog', { cache: 'no-store' })
 ```
 
-[`fetch` APIリファレンス](/docs/app/api-reference/functions/fetch)でその他のオプションを確認してください。
+[`fetch` APIリファレンス](/docs/app/api-reference/functions/fetch)で他のオプションを参照。
 
-### `fetch options.cache` {#fetch-options-cache}
+### `fetchオプション cache` {#fetch-options-cache}
 
-個々の`fetch`をキャッシュにオプトインする場合、`cache`オプションを`force-cache`に設定します：
+`cache`オプションを`force-cache`に設定することで、個々の`fetch`をキャッシュにオプトインできます：
 
 ```jsx
 // キャッシュにオプトイン
 fetch(`https://...`, { cache: 'force-cache' })
 ```
 
-[`fetch` APIリファレンス](/docs/app/api-reference/functions/fetch)でその他のオプションを確認してください。
+[`fetch` APIリファレンス](/docs/app/api-reference/functions/fetch)で他のオプションを参照。
 
-### `fetch options.next.revalidate` {#fetch-options-next-revalidate}
+### `fetchオプション next.revalidate` {#fetch-options-next-revalidate}
 
-`fetch`の`next.revalidate`オプションを使用して、個々の`fetch`リクエストの再検証期間（秒単位）を設定することができます。これによりデータキャッシュが再検証され、結果としてフルルートキャッシュも再検証されます。新鮮なデータが取得され、コンポーネントがサーバー上で再レンダリングされます。
+`fetch`の`next.revalidate`オプションを使って、個々の`fetch`リクエストの再検証期間（秒単位）を設定することができます。これにより、Data Cacheが再検証され、それに続いてFull Route Cacheが再検証されます。新鮮なデータがフェッチされ、コンポーネントがサーバー上で再レンダリングされます。
 
 ```jsx
-// 最大1時間後に再検証
+// 1時間後に再検証
 fetch(`https://...`, { next: { revalidate: 3600 } })
 ```
 
-[`fetch` APIリファレンス](/docs/app/api-reference/functions/fetch)でその他のオプションを確認してください。
+[`fetch` APIリファレンス](/docs/app/api-reference/functions/fetch)で他のオプションを参照。
 
-### `fetch options.next.tags` and `revalidateTag` {#fetch-options-next-tags-and-revalidatetag}
+### `fetchオプション next.tags` および `revalidateTag` {#fetch-options-next-tags-and-revalidatetag}
 
-Next.jsには、細かなデータキャッシングと再検証のためのキャッシュタグシステムがあります。
+Next.jsは細かいデータキャッシングと再検証のためのキャッシュタグシステムを持っています。
 
-1. `fetch`や[`unstable_cache`](/docs/app/api-reference/functions/unstable_cache)を使用するときに、キャッシュエントリを1つ以上のタグでタグ付けするオプションがあります。
-2. その後、タグに関連付けられたキャッシュエントリを削除するために`revalidateTag`を呼び出すことができます。
+1. `fetch`や[`unstable_cache`](/docs/app/api-reference/functions/unstable_cache)を使用する際、キャッシュエントリに1つ以上のタグを設定することができます；
+2. 次に、`revalidateTag`を呼び出して、そのタグに関連付けられたキャッシュエントリを削除します；
 
-たとえば、データを取得する際にタグを設定できます：
+例えば、データをフェッチする際にタグを設定できます：
 
 ```jsx
 // データをタグでキャッシュ
 fetch(`https://...`, { next: { tags: ['a', 'b', 'c'] } })
 ```
 
-次に、特定のタグを持つキャッシュエントリを削除して`revalidateTag`を呼び出します：
+その後、特定のタグで`revalidateTag`を呼び出してキャッシュエントリを削除します：
 
 ```jsx
 // 特定のタグを持つエントリを再検証
 revalidateTag('a')
 ```
 
-使用目的によって、`revalidateTag`を次の場所で使用できます：
+`revalidateTag`を使用できる場所は、目的に応じて次の2箇所があります：
 
-1. [Route Handlers](/docs/app/building-your-application/routing/route-handlers) - サードパーティーイベント（例：Webhook）の応答としてデータを再検証する。
-
-2. [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations) - ユーザーアクション（例：フォーム送信）後にデータを再検証する。 この場合、関連するルートのRouter Cacheは無効化されます。
+1. [Route Handlers](/docs/app/building-your-application/routing/route-handlers): サードパーティーイベント（例：ウェブフック）に応答してデータを再検証します。これはRouter Cacheに直ちには無効化されません。なぜなら、Router Handlerが特定のルートに関連付けられていないからです；
+2. [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations): ユーザーのアクション後（例：フォーム送信）にデータを再検証します。これは関連するルートのRouter Cacheを無効化します；
 
 ### `revalidatePath` {#revalidatepath}
 
-`revalidatePath`を使って、特定のパス以下のルートセグメントを再レンダリングしつつデータを手動で再検証することが可能です。このメソッドを呼び出すことでデータキャッシュが再検証され、その結果フルルートキャッシュも無効化されます。
+`revalidatePath`を使用すると、データを手動で再検証し**指定したパス以下のルートセグメントを1回の操作で再レンダリング**することができます。`revalidatePath`メソッドを呼び出すことで、Data Cacheが再検証され、それに続いてFull Route Cacheが無効化されます。
 
 ```jsx
 revalidatePath('/')
 ```
 
-使用目的によって、`revalidatePath`を次の場所で使用できます：
+`revalidatePath`を利用可能な場所は、目的に応じて次の2箇所があります：
 
-1. [Route Handlers](/docs/app/building-your-application/routing/route-handlers) - サードパーティーイベント（例：Webhook）の応答としてデータを再検証する。
-2. [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations) - ユーザーインタラクション（例：フォーム送信、ボタンのクリック）後にデータを再検証する。
+1. [Route Handlers](/docs/app/building-your-application/routing/route-handlers): サードパーティーイベント（例：ウェブフック）に応答してデータを再検証します；
+2. [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations): ユーザーの操作後（例：フォーム提出、ボタンのクリック）にデータを再検証します；
 
-[`revalidatePath` APIリファレンス](/docs/app/api-reference/functions/revalidatePath)で詳細を確認してください。
+詳しくは[`revalidatePath` APIリファレンス](/docs/app/api-reference/functions/revalidatePath)を参照してください。
 
-> **`revalidatePath`** と **`router.refresh`**：
+> **`revalidatePath`** vs. **`router.refresh`**:
 >
-> `router.refresh`を呼び出すと、Router Cacheがクリアされ、サーバー上でルートセグメントが再レンダリングされますが、データキャッシュやフルルートキャッシュは無効化されません。
+> `router.refresh`を呼び出すことでRouter Cacheがクリアされ、サーバー上でルートセグメントが再レンダリングされますが、Data CacheやFull Route Cacheは無効化されません；
 >
-> `revalidatePath`はデータキャッシュとフルルートキャッシュをクリアしますが、`router.refresh()`はデータキャッシュとフルルートキャッシュを変更しないという違いがあります。
+> `revalidatePath`はData CacheとFull Route Cacheを削除する一方で、`router.refresh()`はData CacheとFull Route Cacheに影響を与えません。これはクライアントサイドのAPIとして機能します。
 
-### 動的API {#dynamic-apis}
+### Dynamic APIs {#dynamic-apis}
 
-`cookies`や`headers`のような動的API、およびPages内の`searchParams`プロップは実行時のインカミングリクエスト情報に依存します。これらを使用すると、ルートがフルルートキャッシュからオプトアウトし、つまり、ルートが動的にレンダリングされることになります。
+`cookies`や`headers`のようなDynamic API、およびPages内の`searchParams` propは実行時の入ってくるリクエスト情報に依存しています。それらを使用することで、ルートはFull Route Cacheからオプトアウトされ、つまり、ルートは動的にレンダリングされます；
 
 #### `cookies` {#cookies}
 
-Server Action内で`cookies.set`または`cookies.delete`を使用すると、それを使用するルートが古くならないように、Router Cacheを無効にします（例：認証の変更を反映するため）。
+Server Action内で`cookies.set`または`cookies.delete`を使用することで、`cookies`を使用するルートが古くならないようにRouter Cacheを無効化します（例：認証の変更を反映する）；
 
-[`cookies`](/docs/app/api-reference/functions/cookies) APIリファレンスを参照してください。
+[`cookies`](/docs/app/api-reference/functions/cookies) APIリファレンスを参照；
 
-### セグメント設定オプション {#segment-config-options}
+### Segment Config Options {#segment-config-options}
 
-ルートセグメント設定オプションは、`fetch` APIを使用できない場合（例：データベースクライアントやサードパーティライブラリ）またはデフォルトを上書きする場合に、ルートセグメントの設定をオーバーライドするために使用できます。
+Route Segment Configオプションは、ルートセグメントのデフォルトを上書きするか、`fetch` APIを使用できない場合に使用できます（例：データベースクライアントやサードパーティライブラリ）；
 
-次のルートセグメント設定オプションはフルルートキャッシュをオプトアウトします：
+以下のRoute Segment ConfigオプションはFull Route Cacheからのオプトアウトを行います：
 
 - `const dynamic = 'force-dynamic'`
 
-この設定オプションは、すべてのフェッチをデータキャッシュからオプトアウトします（すなわち`no-store`）：
+この設定オプションは、Data Cacheから全ての`fetch`をオプトアウトします（つまり、`no-store`）：
 
 - `const fetchCache = 'default-no-store'`
 
-[`fetchCache`](/docs/app/api-reference/file-conventions/route-segment-config#fetchcache)でより高度なオプションを確認してください。
+より高度なオプションを参照するには、[`fetchCache`](/docs/app/api-reference/file-conventions/route-segment-config#fetchcache)を参照；
 
-[ルートセグメント設定](/docs/app/api-reference/file-conventions/route-segment-config)のドキュメントで詳細なオプションを確認してください。
+他のオプションについては[Route Segment Config](/docs/app/api-reference/file-conventions/route-segment-config) ドキュメンテーションを参照してください。
 
 ### `generateStaticParams` {#generatestaticparams}
 
-[動的セグメント](/docs/app/building-your-application/routing/dynamic-routes)（例：`app/blog/[slug]/page.js`）について、`generateStaticParams`によって提供されるパスはビルドタイムにフルルートキャッシュにキャッシュされます。リクエスト時にNext.jsはビルドタイムに知られていなかったパスを初めて訪問した際にもキャッシュします。
+[動的セグメント](/docs/app/building-your-application/routing/dynamic-routes)（例：`app/blog/[slug]/page.js`）の場合、`generateStaticParams`で提供されるパスはビルド時にFull Route Cacheにキャッシュされます。リクエスト時には、ビルド時に知られていなかったパスも初めて訪問されたときにキャッシュされます。
 
-ビルドタイムにすべてのパスを静的にレンダリングするには、`generateStaticParams`にパスの完全なリストを提供します：
+すべてのパスをビルド時に静的にレンダリングするには、パスの完全なリストを`generateStaticParams`に提供します：
 
 ```jsx title="app/blog/[slug]/page.js"
 export async function generateStaticParams() {
@@ -544,20 +547,20 @@ export async function generateStaticParams() {
 }
 ```
 
-ビルドタイムに一部のパスを静的にレンダリングし、残りは実行時に初めて訪問したときにレンダリングするには、部分的なパスのリストを返します：
+ビルド時に一部のパスを静的にレンダリングし、残りは実行時に最初に訪問されたときにレンダリングするには、パスの部分リストを返します：
 
 ```jsx title="app/blog/[slug]/page.js"
 export async function generateStaticParams() {
   const posts = await fetch('https://.../posts').then((res) => res.json())
 
-  // ビルドタイムに最初の10投稿をレンダリングする
+  // 最初の10ポストをビルド時にレンダリング
   return posts.slice(0, 10).map((post) => ({
     slug: post.slug,
   }))
 }
 ```
 
-訪問時に初めてすべてのパスを静的にレンダリングするには、空の配列を返します（ビルドタイムにはパスはレンダリングされませnん）または[`export const dynamic = 'force-static'`](/docs/app/api-reference/file-conventions/route-segment-config#dynamic)を利用します：
+最初に訪問されたときにすべてのパスを静的にレンダリングするには、空の配列を返します（ビルド時にパスはレンダリングされません）、または[`export const dynamic = 'force-static'`](/docs/app/api-reference/file-conventions/route-segment-config#dynamic)を利用してください。
 
 ```jsx title="app/blog/[slug]/page.js"
 export async function generateStaticParams() {
@@ -565,19 +568,19 @@ export async function generateStaticParams() {
 }
 ```
 
-> **Good to know:** `generateStaticParams`から配列を返す必要があります。たとえそれが空でもそうです。さもなければ、ルートは動的にレンダリングされます。
+> **Good to know:** `generateStaticParams`からは必ず配列を返す必要があります、たとえ空であっても。そうしないと、ルートは動的にレンダリングされます。
 
 ```jsx title="app/changelog/[slug]/page.js"
 export const dynamic = 'force-static'
 ```
 
-リクエスト時のキャッシングを無効にするには、ルートセグメントに`export const dynamicParams = false`オプションを追加します。この設定オプションが使用された場合、`generateStaticParams`によって提供されたパスのみが提供され、その他のルートは404になったり（一致した場合には[catch-all routes](/docs/app/building-your-application/routing/dynamic-routes#catch-all-segments)）になります。
+リクエスト時にキャッシュを無効化するには、ルートセグメントに`export const dynamicParams = false`オプションを追加します。この構成オプションが使用されている場合、`generateStaticParams`で提供されたパスのみが提供され、他のルートは404になるかマッチします（[全キャッチルート](/docs/app/building-your-application/routing/dynamic-routes#catch-all-segments)の場合）；
 
 ### React `cache`関数 {#react-cache-function}
 
-Reactの`cache`関数を使用すると、関数の戻り値をメモ化でき、同じ関数を複数回呼び出しながらも、一度だけ実行することができます。
+React `cache`関数は、関数の戻り値をメモ化することができ、同じ関数を複数回呼び出しても1度だけ実行されるようにします；
 
-`fetch`リクエストは自動的にメモ化されるため、React `cache`でラップする必要はありませんが、`fetch` APIが適さない場合にデータリクエストを手動でメモ化するために`cache`を使用することができます。例えば、一部のデータベースクライアント、CMSクライアント、またはGraphQLクライアントなどの場合。
+`fetch`リクエストは自動的にメモ化されるため、React `cache`でラップする必要はありません。ただし、`fetch` APIが適していないユースケースに対してデータリクエストを手動でメモ化するために`cache`を使用することができます。例えば、一部のデータベースクライアントやCMSクライアント、GraphQLクライアントです。
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">

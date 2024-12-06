@@ -12,14 +12,14 @@ description: 'Incremental Static Regenerationを使用して、実行時に静�
 
 </details>
 
-Incremental Static Regeneration (ISR)によって、以下のことが可能です：
+Incremental Static Regeneration（ISR）は以下を可能にします：
 
-- サイト全体をリビルドすることなく静的コンテンツを更新する
-- プリレンダリングされた静的ページをほとんどのリクエストに提供することで、サーバー負荷を軽減する
-- ページに正しい`cache-control`ヘッダーを自動的に加えるようにする
-- `next build`が長時間かかることなく、膨大なコンテンツページを処理する
+- サイト全体をビルドし直さずに静的コンテンツを更新する
+- ほとんどのリクエストに対して事前レンダリングされた静的ページを配信することでサーバーロードを削減する
+- 適切な`cache-control`ヘッダーをページに自動的に追加することを保証する
+- 長い`next build`時間なしで膨大な量のコンテンツページを処理する
 
-これが最小の例です：
+以下は最小の例です：
 
 <AppOnly>
 
@@ -33,14 +33,14 @@ interface Post {
   content: string
 }
 
-// リクエストが来た際、Next.jsはキャッシュを無効化し、
-// 最大60秒ごとに一度だけ更新します。
+// Next.jsは、リクエストが来たときにキャッシュを無効にします。
+// 最大60秒に1度までです。
 export const revalidate = 60
 
-// ビルド時には`generateStaticParams`によるパラメータのみをプリレンダリングします。
-// ランダムなリクエストがまだ生成されていないパスの場合、
-// Next.jsはそのページを要求時にサーバーレンダリングします。
-export const dynamicParams = true // またはfalseにして未確認パスで404を表示
+// ビルド時に`generateStaticParams`からのみparamsを事前レンダリングします。
+// 生成されていないパスへのリクエストが来た場合、
+// Next.jsはオンデマンドでページをサーバーレンダリングします。
+export const dynamicParams = true // またはfalseにすると、未知のパスで404になります
 
 export async function generateStaticParams() {
   const posts: Post[] = await fetch('https://api.vercel.app/blog').then((res) =>
@@ -51,10 +51,15 @@ export async function generateStaticParams() {
   }))
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const post: Post = await fetch(
-    `https://api.vercel.app/blog/${params.id}`
-  ).then((res) => res.json())
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const id = (await params).id
+  const post: Post = await fetch(`https://api.vercel.app/blog/${id}`).then(
+    (res) => res.json()
+  )
   return (
     <main>
       <h1>{post.title}</h1>
@@ -68,14 +73,14 @@ export default async function Page({ params }: { params: { id: string } }) {
 <TabItem value="jsx" label="JavaScript">
 
 ```jsx title="app/blog/[id]/page.js" switcher
-// リクエストが来た際、Next.jsはキャッシュを無効化し、
-// 最大60秒ごとに一度だけ更新します。
+// Next.jsは、リクエストが来たときにキャッシュを無効にします。
+// 最大60秒に1度までです。
 export const revalidate = 60
 
-// ビルド時には`generateStaticParams`によるパラメータのみをプリレンダリングします。
-// ランダムなリクエストがまだ生成されていないパスの場合、
-// Next.jsはそのページを要求時にサーバーレンダリングします。
-export const dynamicParams = true // またはfalseにして未確認パスで404を表示
+// ビルド時に`generateStaticParams`からのみparamsを事前レンダリングします。
+// 生成されていないパスへのリクエストが来た場合、
+// Next.jsはオンデマンドでページをサーバーレンダリングします。
+export const dynamicParams = true // またはfalseにすると、未知のパスで404になります
 
 export async function generateStaticParams() {
   const posts = await fetch('https://api.vercel.app/blog').then((res) =>
@@ -87,8 +92,9 @@ export async function generateStaticParams() {
 }
 
 export default async function Page({ params }) {
-  const post = await fetch(`https://api.vercel.app/blog/${params.id}`).then(
-    (res) => res.json()
+  const { id } = await params
+  const post = await fetch(`https://api.vercel.app/blog/${id}`).then((res) =>
+    res.json()
   )
   return (
     <main>
@@ -130,9 +136,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
     params: { id: String(post.id) },
   }))
 
-  // ビルド時にのみこれらのパスをプリレンダリングします。
-  // { fallback: 'blocking' }はパスが存在しない場合に
-  // サーバーがページを要求時にレンダリングします。
+  // ビルド時にのみこれらのパスを事前レンダリングします。
+  // { fallback: 'blocking' } は、パスが存在しない場合にオンデマンドでサーバーレンダリングします。
   return { paths, fallback: false }
 }
 
@@ -147,8 +152,8 @@ export const getStaticProps: GetStaticProps<Props> = async ({
 
   return {
     props: { post },
-    // リクエストが来た際、Next.jsはキャッシュを無効化し、
-    // 最大60秒ごとに一度だけ更新します。
+    // Next.jsは、リクエストが来たときにキャッシュを無効にします。
+    // 最大60秒に1度までです。
     revalidate: 60,
   }
 }
@@ -175,8 +180,8 @@ export async function getStaticPaths() {
     params: { id: post.id },
   }))
 
-  // ビルド時にのみこれらのパスをプリレンダリングします。
-  // { fallback: false }は他のルートが404であるべきことを意味します。
+  // ビルド時にのみこれらのパスを事前レンダリングします。
+  // { fallback: false } は他のルートは404であるべきことを意味します。
   return { paths, fallback: false }
 }
 
@@ -187,8 +192,8 @@ export async function getStaticProps({ params }) {
 
   return {
     props: { post },
-    // リクエストが来た際、Next.jsはキャッシュを無効化し、
-    // 最大60秒ごとに一度だけ更新します。
+    // Next.jsは、リクエストが来たときにキャッシュを無効にします。
+    // 最大60秒に1度までです。
     revalidate: 60,
   }
 }
@@ -208,14 +213,14 @@ export default function Page({ post }) {
 
 </PagesOnly>
 
-この例の動作は次のとおりです：
+この例の仕組みは以下のとおりです：
 
-1. `next build`の際、既知のブログ投稿がすべて生成されます（この例では25件あります）
-2. これらのページへのすべてのリクエスト（例：`/blog/1`）はキャッシュされ、瞬時に応答します
-3. 60秒が経過した後も、次のリクエストはキャッシュされた（古い）ページを表示します
-4. キャッシュが無効化され、新しいバージョンのページがバックグラウンドで生成され始めます
+1. `next build`中に、既知のブログ投稿がすべて生成されます（この例では25件あります）
+2. これらのページへのすべてのリクエスト（例：`/blog/1`）はキャッシュされ、瞬時に応答されます
+3. 60秒が経過した後、次のリクエストは依然としてキャッシュされた（古い）ページを表示します
+4. キャッシュが無効になり、ページの新しいバージョンがバックグラウンドで生成され始めます
 5. 正常に生成されると、Next.jsは更新されたページを表示し、キャッシュします
-6. `/blog/26`へのリクエストがあった場合、Next.jsはこのページを要求時に生成してキャッシュします
+6. `/blog/26`が要求されると、Next.jsはオンデマンドでこのページを生成してキャッシュします
 
 ## リファレンス {#reference}
 
@@ -246,9 +251,9 @@ export default function Page({ post }) {
 
 <AppOnly>
 
-### 時間に基づく再検証 {#time-based-revalidation}
+### 時間ベースのリバリデーション {#time-based-revalidation}
 
-これは`/blog`にブログ投稿のリストを表示します。1時間後、このページのキャッシュは次の訪問で無効化されます。そして、バックグラウンドで新しいバージョンのページが最新のブログ投稿を伴って生成されます。
+これは `/blog` にブログ投稿のリストを取得して表示します。1時間後、このページのキャッシュは次回の訪問で無効化されます。次に、バックグラウンドで最新のブログ投稿を使ってページの新しいバージョンが生成されます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -260,7 +265,7 @@ interface Post {
   content: string
 }
 
-export const revalidate = 3600 // 毎時間無効化
+export const revalidate = 3600 // 1時間ごとに無効化されます
 
 export default async function Page() {
   const data = await fetch('https://api.vercel.app/blog')
@@ -282,7 +287,7 @@ export default async function Page() {
 <TabItem value="jsx" label="JavaScript">
 
 ```jsx title="app/blog/page.js" switcher
-export const revalidate = 3600 // 毎時間無効化
+export const revalidate = 3600 // 1時間ごとに無効化されます
 
 export default async function Page() {
   const data = await fetch('https://api.vercel.app/blog')
@@ -303,13 +308,13 @@ export default async function Page() {
 </TabItem>
 </Tabs>
 
-高い再検証時間を設定することをお勧めします。例えば、1秒ではなく1時間にします。より正確な制御が必要な場合は、オンデマンドの再検証を検討してください。リアルタイムデータが必要な場合は、[dynamic rendering](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)に切り替えることを検討してください。
+高いリバリデーション時間を設定することをお勧めします。例えば、1秒ではなく1時間です。より高い精度が必要な場合は、オンデマンドリバリデーションを使用することを検討してください。リアルタイムデータが必要な場合は、[dynamic rendering](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)に切り替えることを検討してください。
 
-### `revalidatePath`を使ったオンデマンドの再検証 {#on-demand-revalidation-with-revalidatepath}
+### `revalidatePath`を使用したオンデマンドリバリデーション {#on-demand-revalidation-with-revalidatepath}
 
-再検証のより正確な方法として、`revalidatePath`関数を使用してオンデマンドでページを無効化します。
+オンデマンドでページを無効化するリバリデーションのより正確な方法として、`revalidatePath`関数を使用します。
 
-例えば、新しい投稿を追加した後にこのServer Actionが呼び出されるとします。Server Componentでデータを取得する方法に関係なく、either `fetch`やデータベースへの接続を使用して、これはルート全体のキャッシュをクリアし、Server Componentが最新のデータを取得できるようにします。
+たとえば、新しい投稿を追加した後にこのServer Actionが呼び出されます。`fetch`を使用するか、データベースに接続するかに関わらず、Server Componentでどのようにデータを取得するかに関係なく、これはルート全体のキャッシュをクリアし、Server Componentが新鮮なデータを取得できるようにします。
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -320,7 +325,7 @@ export default async function Page() {
 import { revalidatePath } from 'next/cache'
 
 export async function createPost() {
-  // キャッシュ内の/postsルートを無効化
+  // キャッシュ内の/postsルートを無効化します
   revalidatePath('/posts')
 }
 ```
@@ -334,7 +339,7 @@ export async function createPost() {
 import { revalidatePath } from 'next/cache'
 
 export async function createPost() {
-  // キャッシュ内の/postsルートを無効化
+  // キャッシュ内の/postsルートを無効化します
   revalidatePath('/posts')
 }
 ```
@@ -342,11 +347,11 @@ export async function createPost() {
 </TabItem>
 </Tabs>
 
-[デモを見る](https://on-demand-isr.vercel.app)と[ソースコードを探る](https://github.com/vercel/on-demand-isr).
+[デモを表示](https://on-demand-isr.vercel.app)し、[ソースコードを探索](https://github.com/vercel/on-demand-isr)します。
 
-### `revalidateTag`を使ったオンデマンドの再検証 {#on-demand-revalidation-with-revalidatetag}
+### `revalidateTag`を使用したオンデマンドリバリデーション {#on-demand-revalidation-with-revalidatetag}
 
-ほとんどのユースケースでは、パス全体を再検証することをお勧めします。より細かい制御が必要な場合は、`revalidateTag`関数を使用できます。例えば、個別の`fetch`呼び出しにタグを付けることができます：
+ほとんどのユースケースでは、全体のパスをリバリデーションすることをお勧めします。より細かな管理が必要な場合は、`revalidateTag`関数を使用できます。例えば、個々の`fetch`呼び出しにタグを付けることができます：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -377,7 +382,7 @@ export default async function Page() {
 </TabItem>
 </Tabs>
 
-ORMを使用している場合やデータベースに接続している場合は、`unstable_cache`を使用できます：
+あなたがORMを使用しているか、データベースに接続している場合、`unstable_cache`を使用できます：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -424,7 +429,7 @@ export default async function Page() {
 </TabItem>
 </Tabs>
 
-その後、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)や[Route Handler](/docs/app/building-your-application/routing/route-handlers)で`revalidateTag`を使用できます：
+次に、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)または[Route Handler](/docs/app/building-your-application/routing/route-handlers)で`revalidateTag`を使用できます：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -435,8 +440,7 @@ export default async function Page() {
 import { revalidateTag } from 'next/cache'
 
 export async function createPost() {
-  // キャッシュ内の'tags'でタグ付けされた
-  // すべてのデータを無効化
+  // キャッシュ内の"posts"としてタグ付けされたすべてのデータを無効化します
   revalidateTag('posts')
 }
 ```
@@ -450,8 +454,7 @@ export async function createPost() {
 import { revalidateTag } from 'next/cache'
 
 export async function createPost() {
-  // キャッシュ内の'tags'でタグ付けされた
-  // すべてのデータを無効化
+  // キャッシュ内の"posts"としてタグ付けされたすべてのデータを無効化します
   revalidateTag('posts')
 }
 ```
@@ -463,11 +466,11 @@ export async function createPost() {
 
 <PagesOnly>
 
-### `res.revalidate()`を用いたオンデマンド検証 {#on-demand-validation-with-res-revalidate}
+### `res.revalidate()`を使用したオンデマンドリバリデーション {#on-demand-validation-with-res-revalidate}
 
-再検証のより正確な方法として、`res.revalidate`を使用してAPIルーターからオンデマンドで新しいページを生成します。
+リバリデーションをより正確に行う方法として、`res.revalidate`を使用してAPI Routerからオンデマンドで新しいページを生成します。
 
-例えば、`/api/revalidate?secret=<token>`で指定されたブログポストを再検証できるこのAPIルートがあります。Next.jsアプリにのみ知られている秘密のトークンを作成します。この秘密は、再検証APIルートへの不正アクセスを防ぐために使用されます。
+たとえば、このAPI Routeは`/api/revalidate?secret=<token>` で特定のブログ投稿をリバリデートするように呼び出すことができます。Next.jsアプリだけが知っているシークレットトークンを作成します。このシークレットは、リバリデーションAPI Routeへの不正アクセスを防止するために使用されます。
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -479,18 +482,18 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // 秘密確認のために正当な要求かどうか確認します
+  // シークレットを確認してこのリクエストが有効であることを確認
   if (req.query.secret !== process.env.MY_SECRET_TOKEN) {
     return res.status(401).json({ message: 'Invalid token' })
   }
 
   try {
-    // 実際のパスであり、書き換えられていないパスであるべきです
-    // 例: "/posts/[id]"なら"/posts/1"であるべきです
+    // これは書き換えられたパスではなく、実際のパスであるべきです
+    // 例："/posts/[id]"の場合は、"/posts/1"とします
     await res.revalidate('/posts/1')
     return res.json({ revalidated: true })
   } catch (err) {
-    // エラーが発生した場合、Next.jsは
+    // エラーがあった場合、Next.jsは
     // 最後に正常に生成されたページを表示し続けます
     return res.status(500).send('Error revalidating')
   }
@@ -502,18 +505,18 @@ export default async function handler(
 
 ```js title="pages/api/revalidate.js" switcher
 export default async function handler(req, res) {
-  // 秘密確認のために正当な要求かどうか確認します
+  // シークレットを確認してこのリクエストが有効であることを確認
   if (req.query.secret !== process.env.MY_SECRET_TOKEN) {
     return res.status(401).json({ message: 'Invalid token' })
   }
 
   try {
-    // 実際のパスであり、書き換えられていないパスであるべきです
-    // 例: "/posts/[id]"なら"/posts/1"であるべきです
+    // これは書き換えられたパスではなく、実際のパスであるべきです
+    // 例："/posts/[id]"の場合は、"/posts/1"とします
     await res.revalidate('/posts/1')
     return res.json({ revalidated: true })
   } catch (err) {
-    // エラーが発生した場合、Next.jsは
+    // エラーがあった場合、Next.jsは
     // 最後に正常に生成されたページを表示し続けます
     return res.status(500).send('Error revalidating')
   }
@@ -523,21 +526,21 @@ export default async function handler(req, res) {
 </TabItem>
 </Tabs>
 
-オンデマンド再検証を使用している場合、`getStaticProps`内で`revalidate`時間を指定する必要はありません。Next.jsはデフォルト値の`false`（再検証なし）を使い、`res.revalidate()`が呼び出されたときにのみページを再検証します。
+オンデマンドリバリデーションを使用している場合、`getStaticProps`の内部で`revalidate`時間を指定する必要はありません。Next.jsはデフォルト値である`false`（再検証なし）を使用し、`res.revalidate()`が呼び出されたときにのみページをオンデマンドでリバリデーションします。
 
 </PagesOnly>
 
-### キャッシュされていない例外を処理する {#handling-uncaught-exceptions}
+### キャッチされない例外の処理 {#handling-uncaught-exceptions}
 
 <AppOnly>
 
-データを再検証しようとするときにエラーが発生した場合、最後に正常に生成されたデータがキャッシュから提供され続けます。次のリクエスト時に、Next.jsはデータの再検証を試みます。[エラー処理についての詳細を学ぶ](/docs/app/building-your-application/routing/error-handling).
+データのリバリデートを試みてエラーがスローされた場合、最後に成功した生成データがキャッシュから提供され続けます。次回以降のリクエスト時に、Next.jsはデータのリバリデートを再試行します。[エラー処理について詳しく学ぶ](/docs/app/building-your-application/routing/error-handling)。
 
 </AppOnly>
 
 <PagesOnly>
 
-バックグラウンド再生成を処理する際に`getStaticProps`内でエラーが発生した場合、またはエラーを手動で投げた場合、最後に正常に生成されたページが表示され続けます。次のリクエスト時には、Next.jsは`getStaticProps`を再度呼び出します。
+背景再生成を処理する際に`getStaticProps`内でエラーがある場合、または例外を手動でスローした場合、最後に正常に生成されたページが引き続き表示されます。次回以降のリクエスト時に、Next.jsは`getStaticProps`の呼び出しを再試行します。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -560,22 +563,23 @@ export const getStaticProps: GetStaticProps<Props> = async ({
 }: {
   params: { id: string }
 }) => {
-  // このリクエストがキャッチされないエラーを発生させた場合、Next.jsは
-  // 現在表示されているページを無効化せず、
-  // 次のリクエストで再度getStaticPropsを試みます。
+  // このリクエストが捕捉されないエラーをスローした場合、Next.jsは
+  // 現在表示されているページを無効にせず
+  // 次回のリクエストでgetStaticPropsを再試行します。
   const res = await fetch(`https://api.vercel.app/blog/${params.id}`)
   const post: Post = await res.json()
 
   if (!res.ok) {
-    // サーバーエラーがある場合、キャッシュの
-    // 更新を避けるためにエラーを投げたほうがよいかもしれません。
+    // サーバーエラーがある場合、キャッシュが更新されないように
+    // エラーをスローする代わりに返すことを検討してください
+    // 次に正常なリクエストが来るまで。
     throw new Error(`Failed to fetch posts, received status ${res.status}`)
   }
 
   return {
     props: { post },
-    // リクエストが来た際、Next.jsはキャッシュを無効化し、
-    // 最大60秒ごとに一度だけ更新します。
+    // Next.jsは、リクエストが来たときにキャッシュを無効にします。
+    // 最大60秒に1度までです。
     revalidate: 60,
   }
 }
@@ -586,22 +590,23 @@ export const getStaticProps: GetStaticProps<Props> = async ({
 
 ```jsx title="pages/blog/[id].jsx" switcher
 export async function getStaticProps({ params }) {
-  // このリクエストがキャッチされないエラーを発生させた場合、Next.jsは
-  // 現在表示されているページを無効化せず、
-  // 次のリクエストで再度getStaticPropsを試みます。
+  // このリクエストが捕捉されないエラーをスローした場合、Next.jsは
+  // 現在表示されているページを無効にせず
+  // 次回のリクエストでgetStaticPropsを再試行します。
   const res = await fetch(`https://api.vercel.app/blog/${params.id}`)
   const post = await res.json()
 
   if (!res.ok) {
-    // サーバーエラーがある場合、キャッシュの
-    // 更新を避けるためにエラーを投げたほうがよいかもしれません。
+    // サーバーエラーがある場合、キャッシュが更新されないように
+    // エラーをスローする代わりに返すことを検討してください
+    // 次に正常なリクエストが来るまで。
     throw new Error(`Failed to fetch posts, received status ${res.status}`)
   }
 
   return {
     props: { post },
-    // リクエストが来た際、Next.jsはキャッシュを無効化し、
-    // 最大60秒ごとに一度だけ更新します。
+    // Next.jsは、リクエストが来たときにキャッシュを無効にします。
+    // 最大60秒に1度までです。
     revalidate: 60,
   }
 }
@@ -612,19 +617,19 @@ export async function getStaticProps({ params }) {
 
 </PagesOnly>
 
-### キャッシュの保存場所をカスタマイズする {#customizing-the-cache-location}
+### キャッシュの保存場所のカスタマイズ {#customizing-the-cache-location}
 
-（Incremental Static Regenerationを使用して）ページをキャッシュし再検証するには、同じ共有キャッシュが使用されます。 [Vercelへデプロイする](https://vercel.com/docs/incremental-static-regeneration?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)場合、ISRキャッシュは自動的に耐久性のあるストレージに永続化されます。
+キャッシングとページのリバリデーション（Incremental Static Regenerationを使用）は同じ共有キャッシュを使用します。[Vercelへのデプロイ時](https://vercel.com/docs/incremental-static-regeneration?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)、ISRキャッシュは自動的に耐久性のあるストレージに保持されます。
 
-自己ホスティングする場合、ISRキャッシュはNext.jsサーバーでファイルシステム（ディスク上）に保存されます。これは、PagesやApp Routerを使用した自己ホスティング時に自動的に機能します。
+セルフホスティング時には、ISRキャッシュはNext.jsサーバー上のファイルシステム（ディスク上）に保存されます。これは、Pages RouterとApp Routerの両方を使用してセルフホスティング時に自動的に機能します。
 
-キャッシュされたページとデータを耐久性のあるストレージに永続化したり、Next.jsアプリケーションの複数のコンテナやインスタンス間でキャッシュを共有したい場合、Next.jsキャッシュロケーションを設定できます。[詳細を学ぶ](/docs/app/building-your-application/deploying#caching-and-isr).
+キャッシュされたページとデータを耐久性のあるストレージに保存するか、Next.jsアプリケーションの複数のコンテナまたはインスタンス間でキャッシュを共有したい場合は、Next.jsのキャッシュの場所を設定できます。[詳細を学ぶ](/docs/app/building-your-application/deploying#caching-and-isr).
 
 ## トラブルシューティング {#troubleshooting}
 
-### ローカル開発時にキャッシュデータをデバッグする {#debugging-cached-data-in-local-development}
+### ローカル開発におけるキャッシュデータのデバッグ {#debugging-cached-data-in-local-development}
 
-`fetch` APIを使用している場合、どのようなリクエストがキャッシュされているか非キャッシュされているかを理解するために追加のロギングを加えることができます。[`logging` オプションについて詳しく学ぶ](/docs/app/api-reference/config/next-config-js/logging).
+`fetch` APIを使用している場合、リクエストがキャッシュされているかどうかを理解するために追加のログを追加できます。[`logging`オプションについてもっと知る](/docs/app/api-reference/config/next-config-js/logging)。
 
 ```jsx title="next.config.js"
 module.exports = {
@@ -636,44 +641,44 @@ module.exports = {
 }
 ```
 
-### 正しい本番動作を確認する {#verifying-correct-production-behavior}
+### 正しいプロダクション動作の確認 {#verifying-correct-production-behavior}
 
-本番環境でページが正しくキャッシュされ再検証されることを確認するには、`next build`を実行してから`next start`で本番のNext.jsサーバーをローカルで実行することでテストできます。
+ページがプロダクション環境で正しくキャッシュされ、リバリデーションされることを確認するには、`next build`を実行し、その後`next start`を実行してプロダクションのNext.jsサーバーをローカルでテストできます。
 
-これにより、本番環境で動作するようにISRの動作をテストできます。さらにデバッグするには、以下の環境変数を`.env`ファイルに追加してください：
+これにより、プロダクション環境でISRの動作を確認することができます。さらなるデバッグのために、次の環境変数を`.env`ファイルに追加します：
 
 ```bash title=".env"
 NEXT_PRIVATE_DEBUG_CACHE=1
 ```
 
-これにより、Next.jsサーバーのコンソールログでISRキャッシュヒットとミスが表示されます。どのページが`next build`中に生成されるか、およびオンデマンドでパスがアクセスされる際にページがどのように更新されるかを出力を調査できます。
+これにより、Next.jsサーバーのコンソールログでISRキャッシュヒットとミスが表示されます。どのページが`next build`中に生成されるか、およびパスがオンデマンドでアクセスされるとページがどのように更新されるかを出力で確認できます。
 
-## 制約 {#caveats}
+## 注意事項 {#caveats}
 
 <AppOnly>
 
-- ISRは、Node.jsランタイム（デフォルト）の使用時のみサポートされています。
-- ISRは、 [Static Exportを作成する](/docs/app/building-your-application/deploying/static-exports)際にはサポートされていません。
-- 静的にレンダリングされたルートに複数の`fetch`リクエストがあり、それぞれ異なる`revalidate`頻度を持つ場合、最低の時間がISRに使われます。ただし、これらの再検証頻度は[Data Cache](/docs/app/building-your-application/caching#data-cache)によって引き続き尊重されます。
-- ルートで使用されている`fetch`リクエストのいずれかが`revalidate`時間を`0`に設定している場合、または明示的に`no-store`を使用している場合、そのルートは [dynamic renderingとしてレンダリングされます](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)。
-- オンデマンドISRリクエストではMiddlewareが実行されないため、Middleware内の任意のパス書き換えやロジックは適用されません。正確なパスを再検証していることを確認してください。例えば、書き換えられた`/post-1`ではなく、`/post/1`です。
+- ISRはNode.jsランタイム（デフォルト）を使用している場合にのみサポートされます。
+- ISRは[Static Export](/docs/app/building-your-application/deploying/static-exports)を作成する場合にはサポートされません。
+- 複数の`fetch`リクエストが静的レンダリングされたルートで行われ、それぞれが異なる`revalidate`頻度を持つ場合、ISRには最短の時間が使用されます。ただし、[Data Cache](/docs/app/building-your-application/caching#data-cache)によってこれらのリバリデート頻度は引き続き尊重されます。
+- ルートで使用される`fetch`リクエストのいずれかが`0`の`revalidate`時間を持つ場合、または明示的な`no-store`の場合、ルートは[動的にレンダリングされます](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)。
+- オンデマンドISRリクエストのためにミドルウェアは実行されません。したがって、ミドルウェア内のパス書き換えやロジックは適用されません。正確なパスをリバリデートしていることを確認してください。たとえば、書き換えられた`/post-1`ではなく、`/post/1`です。
 
 </AppOnly>
 
 <PagesOnly>
 
-- ISRは、Node.jsランタイム（デフォルト）の使用時のみサポートされています。
-- ISRは、 [Static Exportを作成する](/docs/app/building-your-application/deploying/static-exports)際にはサポートされていません。
-- オンデマンドISRリクエストではMiddlewareが実行されないため、Middleware内の任意のパス書き換えやロジックは適用されません。正確なパスを再検証していることを確認してください。例えば、書き換えられた`/post-1`ではなく、`/post/1`です。
+- ISRはNode.jsランタイム（デフォルト）を使用している場合にのみサポートされます。
+- ISRは[Static Export](/docs/app/building-your-application/deploying/static-exports)を作成する場合にはサポートされません。
+- オンデマンドISRリクエストのためにミドルウェアは実行されません。したがって、ミドルウェア内のパス書き換えやロジックは適用されません。正確なパスをリバリデートしていることを確認してください。たとえば、書き換えられた`/post-1`ではなく、`/post/1`です。
 
 </PagesOnly>
 
 ## バージョン履歴 {#version-history}
 
-| バージョン | 変更内容                                                                                              |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| `v14.1.0`  | カスタム`cacheHandler`が安定版になりました。                                                          |
-| `v13.0.0`  | App Routerが導入されました。                                                                          |
-| `v12.2.0`  | Pages Router：オンデマンドISRが安定しています                                                         |
-| `v12.0.0`  | Pages Router：[Bot-aware ISR fallback](https://nextjs.org/blog/next-12#bot-aware-isr-fallback) 追加。 |
-| `v9.5.0`   | Pages Router：[安定したISRが導入されました](https://nextjs.org/blog/next-9-5)。                       |
+| Version   | 変更内容                                                                                                       |
+| --------- | -------------------------------------------------------------------------------------------------------------- |
+| `v14.1.0` | カスタム`cacheHandler`が安定しました                                                                           |
+| `v13.0.0` | App Routerが導入されました                                                                                     |
+| `v12.2.0` | Pages Router: オンデマンドISRが安定しました                                                                    |
+| `v12.0.0` | Pages Router: [Bot-aware ISR fallback](https://nextjs.org/blog/next-12#bot-aware-isr-fallback)が追加されました |
+| `v9.5.0`  | Pages Router: [Stable ISRが導入されました](https://nextjs.org/blog/next-9-5)                                   |

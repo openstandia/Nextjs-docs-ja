@@ -1,43 +1,43 @@
 ---
 title: '認証'
-description: 'Next.jsアプリケーションで認証を実装する方法を学びます。'
+description: 'Next.js アプリケーションでの認証の実装方法を学びます。'
 ---
 
-認証を理解することは、アプリケーションのデータを保護するために重要です。この記事では、認証を実装するためにReactとNext.jsの機能をどのように使用するかについて説明します。
+アプリケーションのデータを保護するために、認証を理解することは極めて重要です。このページでは、React と Next.js の機能を利用して認証を実装する方法を説明します。
 
-始める前に、プロセスを次の3つの概念に分解すると役立ちます：
+始める前に、このプロセスを3つの概念に分解することが役立ちます：
 
-1. **[認証](#authentication)**：ユーザーが主張する人物であるかどうかを検証します。ユーザーがユーザー名やパスワードなどのもので自分の身元を証明することが必要です。
-2. **[セッション管理](#session-management)**：リクエスト間のユーザーの認証状態を追跡します。
-3. **[認可](#authorization)**：ユーザーがどのルートとデータにアクセスできるかを決定します。
+1. **[認証](#authentication)**: ユーザーが本当に自身が主張する人であるかを確認します。それは、ユーザーがユーザー名やパスワードなど手持ちのもので身元を証明する必要があります。
+2. **[セッション管理](#session-management)**: リクエスト全体を通じてユーザーの認証状態を追跡します。
+3. **[認可](#authorization)**: ユーザーがアクセスできるルートやデータを決定します。
 
-次の図は、ReactおよびNext.jsの機能を使用した認証フローを示しています：
+この図は、React と Next.js の機能を使用した認証フローを示しています：
 
 <Image
-  alt="ReactとNext.jsの機能を使用した認証フローを示す図"
+  alt="React と Next.js の機能を使用した認証フローを示す図"
   srcLight="/docs/light/authentication-overview.png"
   srcDark="/docs/dark/authentication-overview.png"
   width="1600"
   height="1383"
 />
 
-この記事の例では、教育的目的で基本的なユーザー名とパスワードの認証を説明しています。カスタムの認証ソリューションを実装することもできますが、セキュリティの向上とシンプルさのために、認証ライブラリの使用をお勧めします。これらは、認証、セッション管理、および認可のための組み込みソリューションに加えて、ソーシャルログイン、多要素認証、役割ベースのアクセス制御などの追加機能を提供します。[Auth Libraries](#auth-libraries)セクションでリストを見ることができます。
+このページの例は、教育目的のための基本的なユーザー名とパスワード認証を説明します。独自の認証ソリューションを実装することもできますが、セキュリティとシンプルさを高めるためには認証ライブラリを使用することをお勧めします。これらは、認証、セッション管理、認可の組み込みソリューションを提供するだけでなく、ソーシャルログイン、多要素認証、ロールベースのアクセス制御などの追加機能も提供します。詳細は [Auth Libraries](#auth-libraries) セクションで見つけることができます。
 
-## Authentication {#authentication}
+## 認証 {#authentication}
 
 <AppOnly>
 
-### 新規登録とログイン機能 {#sign-up-and-login-functionality}
+### サインアップとログイン機能 {#sign-up-and-login-functionality}
 
-Reactの[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)および`useFormState`と共に[`<form>`](https://react.dev/reference/react-dom/components/form)要素を使用して、ユーザーの資格情報を取得し、フォームフィールドを検証し、認証プロバイダーのAPIまたはデータベースを呼び出すことができます。
+ユーザーの資格情報をキャプチャし、フォームフィールドを検証し、あなたの認証プロバイダーの API またはデータベースを呼び出すために、React の [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations) と `useActionState` を使用して [`<form>`](https://react.dev/reference/react-dom/components/form) 要素を使用できます。
 
-Server Actionsは常にサーバー上で実行されるため、認証ロジックを処理するための安全な環境を提供します。
+Server Actions は常にサーバーで実行されるため、認証ロジックを処理するための安全な環境を提供します。
 
-新規登録/ログイン機能を実装するための手順は次のとおりです：
+サインアップ/ログイン機能を実装する手順は次のとおりです：
 
-#### 1. ユーザーの資格情報を取得する {#1-capture-user-credentials}
+#### 1. ユーザーの資格情報をキャプチャ {#1-capture-user-credentials}
 
-ユーザーの資格情報を取得するには、送信時にServer Actionを呼び出すフォームを作成します。例えば、ユーザーの名前、メール、およびパスワードを受け入れる登録フォーム：
+ユーザーの資格情報をキャプチャするには、送信時に Server Action を呼び出すフォームを作成します。例えば、ユーザーの名前、メールアドレス、パスワードを受け取るサインアップフォーム：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -113,11 +113,11 @@ export async function signup(formData) {}
 </TabItem>
 </Tabs>
 
-#### 2. フォームフィールドをサーバー側で検証する {#2-validate-form-fields-on-the-server}
+#### 2. フォームフィールドをサーバーで検証 {#2-validate-form-fields-on-the-server}
 
-Server Actionを使用して、フォームフィールドをサーバー上で検証します。認証プロバイダーがフォームの検証を提供していない場合は、[Zod](https://zod.dev/)や[Yup](https://github.com/jquense/yup)のようなスキーマバリデーションライブラリを使用できます。
+Server Action を使用して、サーバーでフォームフィールドを検証します。あなたの認証プロバイダーがフォームバリデーションを提供していない場合は、[Zod](https://zod.dev/) や [Yup](https://github.com/jquense/yup) のようなスキーマバリデーションライブラリを使用できます。
 
-Zodを例にとると、適切なエラーメッセージを含むフォームスキーマを定義できます：
+Zod を例にとって、適切なエラーメッセージでフォームスキーマを定義できます：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -181,7 +181,7 @@ export const SignupFormSchema = z.object({
 </TabItem>
 </Tabs>
 
-不要な認証プロバイダーのAPIやデータベースへの呼び出しを防ぐために、定義されたスキーマに一致しないフォームフィールドがある場合、Server Actionで早期に`return`することができます。
+認証プロバイダーの API やデータベースへの不要な呼び出しを防ぐために、定義されたスキーマと一致しないフォームフィールドがある場合は、Server Action で早期に `return` することができます。
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -190,21 +190,21 @@ export const SignupFormSchema = z.object({
 import { SignupFormSchema, FormState } from '@/app/lib/definitions'
 
 export async function signup(state: FormState, formData: FormData) {
-  // フォームフィールドを検証
+  // フォームフィールドを検証します
   const validatedFields = SignupFormSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
     password: formData.get('password'),
   })
 
-  // いずれかのフォームフィールドが無効な場合、早期に返す
+  // どのフォームフィールドも無効な場合、早期に return します
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
     }
   }
 
-  // プロバイダーまたはデータベースを呼び出してユーザーを作成...
+  // プロバイダーやデータベースを呼び出してユーザーを作成します...
 }
 ```
 
@@ -215,41 +215,41 @@ export async function signup(state: FormState, formData: FormData) {
 import { SignupFormSchema } from '@/app/lib/definitions'
 
 export async function signup(state, formData) {
-  // フォームフィールドを検証
+  // フォームフィールドを検証します
   const validatedFields = SignupFormSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
     password: formData.get('password'),
   })
 
-  // いずれかのフォームフィールドが無効な場合、早期に返す
+  // どのフォームフィールドも無効な場合、早期に return します
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
     }
   }
 
-  // プロバイダーまたはデータベースを呼び出してユーザーを作成...
+  // プロバイダーやデータベースを呼び出してユーザーを作成します...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-`<SignupForm />`内に戻り、フォームが送信されている間に検証エラーを表示するために、Reactの`useFormState`フックを使用できます：
+`<SignupForm />` で React の `useActionState` フックを使用して、フォーム送信中に検証エラーを表示することができます：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
 
 ```tsx title="app/ui/signup-form.tsx" switcher
-highlight={7,15,21,27-39}
+highlight={7,15,21,27-36}
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
 import { signup } from '@/app/actions/auth'
+import { useActionState } from 'react'
 
-export function SignupForm() {
-  const [state, action] = useFormState(signup, undefined)
+export default function SignupForm() {
+  const [state, action, pending] = useActionState(signup, undefined)
 
   return (
     <form action={action}>
@@ -279,18 +279,10 @@ export function SignupForm() {
           </ul>
         </div>
       )}
-      <SubmitButton />
+      <button disabled={pending} type="submit">
+        Sign Up
+      </button>
     </form>
-  )
-}
-
-function SubmitButton() {
-  const { pending } = useFormStatus()
-
-  return (
-    <button disabled={pending} type="submit">
-      Sign Up
-    </button>
   )
 }
 ```
@@ -299,26 +291,26 @@ function SubmitButton() {
 <TabItem value="jsx" label="JavaScript">
 
 ```jsx title="app/ui/signup-form.js" switcher
-highlight={7,15,21,27-39}
+highlight={7,15,21,27-36}
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
 import { signup } from '@/app/actions/auth'
+import { useActionState } from 'react'
 
-export function SignupForm() {
-  const [state, action] = useFormState(signup, undefined)
+export default function SignupForm() {
+  const [state, action, pending] = useActionState(signup, undefined)
 
   return (
     <form action={action}>
       <div>
         <label htmlFor="name">Name</label>
-        <input id="name" name="name" placeholder="John Doe" />
+        <input id="name" name="name" placeholder="Name" />
       </div>
       {state?.errors?.name && <p>{state.errors.name}</p>}
 
       <div>
         <label htmlFor="email">Email</label>
-        <input id="email" name="email" placeholder="john@example.com" />
+        <input id="email" name="email" placeholder="Email" />
       </div>
       {state?.errors?.email && <p>{state.errors.email}</p>}
 
@@ -336,18 +328,10 @@ export function SignupForm() {
           </ul>
         </div>
       )}
-      <SubmitButton />
+      <button disabled={pending} type="submit">
+        Sign Up
+      </button>
     </form>
-  )
-}
-
-function SubmitButton() {
-  const { pending } = useFormStatus()
-
-  return (
-    <button disabled={pending} type="submit">
-      Sign Up
-    </button>
   )
 }
 ```
@@ -357,31 +341,30 @@ function SubmitButton() {
 
 > **Good to know:**
 >
-> - これらの例では、Reactの`useFormState`フックを使用しています。これはNext.js App Routerにバンドルされています。React 19を使用している場合は、`useActionState`を代わりに使用してください。[React docs](https://react.dev/reference/react/useActionState)で詳しい情報を参照してください。
-> - React 19では、`useFormStatus`は追加されたオブジェクトのキーであるデータ、メソッド、およびアクションを含んでいます。React 19を使用していない場合は、`pending`キーのみが利用可能です。
-> - React 19では、`useActionState`も返された状態に`pending`キーを含んでいます。
-> - データを変更する前に、ユーザーがそのアクションを実行する許可を持っていることを確認してください。[Authentication and Authorization](#authorization)を参照してください。
+> - React 19の`useFormStatus`は、data、method、actionなど返されたオブジェクトに追加のキーを含みます。React 19を使用しない場合、使用可能なのは `pending`キーのみです。
+> - React 19の`useActionState`も、戻りstateに `pending`キーを含みます。
+> - データを変更する前に、ユーザーがアクションを実行する権限があることを確認する必要があります。詳しくは、[認証と認可](#authorization)をご覧ください。
 
-#### 3.ユーザーを作成またはユーザーの資格情報を確認する {#3-create-a-user-or-check-user-credentials}
+#### 3. ユーザー作成またはユーザー資格情報の確認 {#3-create-a-user-or-check-user-credentials}
 
-フォームフィールドを検証した後、認証プロバイダーのAPIまたはデータベースを呼び出して、新しいユーザーアカウントを作成するか、ユーザーが存在するか確認できます。
+フォームフィールドを検証した後、認証プロバイダーの API やデータベースを呼び出して新しいユーザーアカウントを作成するか、ユーザーが存在するかどうかを確認できます。
 
-前の例から続けて：
+前の例から続きます：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
 
 ```tsx title="app/actions/auth.tsx" switcher
 export async function signup(state: FormState, formData: FormData) {
-  // 1. フォームフィールドを検証
+  // 1. フォームフィールドを検証します
   // ...
 
-  // 2. データベースへの挿入のためのデータを準備
+  // 2. データベースへの挿入用のデータを準備します
   const { name, email, password } = validatedFields.data
-  // 例：ユーザーのパスワードを保存する前にハッシュ化する
+  // ユーザーのパスワードを保存する前にハッシュ化します
   const hashedPassword = await bcrypt.hash(password, 10)
 
-  // 3. データベースにユーザーを挿入するまたはAuth LibraryのAPIを呼び出す
+  // 3. ユーザーをデータベースに挿入する、または Auth Library の API を呼び出します
   const data = await db
     .insert(users)
     .values({
@@ -400,8 +383,8 @@ export async function signup(state: FormState, formData: FormData) {
   }
 
   // TODO:
-  // 4. ユーザーセッションを作成
-  // 5. ユーザーをリダイレクト
+  // 4. ユーザーセッションを作成します
+  // 5. ユーザーをリダイレクトします
 }
 ```
 
@@ -410,15 +393,15 @@ export async function signup(state: FormState, formData: FormData) {
 
 ```jsx title="app/actions/auth.js" switcher
 export async function signup(state, formData) {
-  // 1. フォームフィールドを検証
+  // 1. フォームフィールドを検証します
   // ...
 
-  // 2. データベースへの挿入のためのデータを準備
+  // 2. データベースへの挿入用のデータを準備します
   const { name, email, password } = validatedFields.data
-  // 例：ユーザーのパスワードを保存する前にハッシュ化する
+  // ユーザーのパスワードを保存する前にハッシュ化します
   const hashedPassword = await bcrypt.hash(password, 10)
 
-  // 3. データベースにユーザーを挿入するまたはLibrary APIを呼び出す
+  // 3. ユーザーをデータベースに挿入する、またはライブラリの API を呼び出します
   const data = await db
     .insert(users)
     .values({
@@ -437,30 +420,30 @@ export async function signup(state, formData) {
   }
 
   // TODO:
-  // 4. ユーザーセッションを作成
-  // 5. ユーザーをリダイレクト
+  // 4. ユーザーセッションを作成します
+  // 5. ユーザーをリダイレクトします
 }
 ```
 
 </TabItem>
 </Tabs>
 
-ユーザーアカウントを正常に作成するか、ユーザーの資格情報を確認した後、ユーザーの認証状態を管理するためのセッションを作成できます。セッション管理戦略によっては、セッションをcookie、データベース、またはその両方に保存することができます。[セッション管理](#session-management)セクションを続けて学びましょう。
+ユーザーアカウントを成功裏に作成したり、ユーザーの資格情報を確認した後、ユーザーの認証状態を管理するためのセッションを作成できます。セッション管理戦略に応じて、セッションは cookie やデータベース、あるいはその両方に保存されます。詳細は [セッション管理](#session-management) セクションを参照してください。
 
 > **Tips:**
 >
-> - 上記の例は、教育目的で手順をはっきりと示しているため冗長です。これは、セキュアなソリューションを独自に実装するのがすぐに複雑になることを示しています。プロセスを簡素化するために、[Auth Library](#auth-libraries)を使用することを検討してください。
-> - ユーザーエクスペリエンスを向上させるために、登録フローの早い段階で重複したメールやユーザー名を確認しようとするかもしれません。例として、ユーザーが入力するユーザー名や入力フィールドから焦点を外す際に確認することができます。これにより、不要なフォーム送信を防ぎ、ユーザーに即時のフィードバックを提供することができます。[use-debounce](https://www.npmjs.com/package/use-debounce)などのライブラリを使用してリクエストをデバウンスし、チェックの頻度を管理することができます。
+> - 上の例は教育目的のため、認証ステップを分解しているために詳細です。セキュリティを考慮して独自の安定したソリューションを実装することはすぐに複雑になる可能性があることを示しています。プロセスを簡素化するために、[Auth Library](#auth-libraries)を使用することを検討することをお勧めします。
+> - ユーザーエクスペリエンスを向上させるために、登録フローの早い段階で重複したメールやユーザー名をチェックすることを考慮するかもしれません。例えば、ユーザーがユーザー名を入力した際や、入力フィールドからフォーカスが外れた際に行います。これにより、不要なフォーム送信を防ぎ、ユーザーに即座にフィードバックを提供するため、このチェックの頻度を管理するために[use-debounce](https://www.npmjs.com/package/use-debounce)のようなライブラリを使用してリクエストをディバウンスすることができます。
 
 </AppOnly>
 
 <PagesOnly>
 
-ここにサインアップおよび/またはログインフォームを実装する手順を示します：
+サインアップやログインフォームを実装する手順は次のとおりです：
 
 1. ユーザーはフォームを通じて資格情報を送信します。
-2. フォームはAPIルートで処理されるリクエストを送信します。
-3. 検証が成功すると、プロセスは完了し、ユーザーの認証が成功したことを示します。
+2. フォームは、API ルートによって処理されるリクエストを送信します。
+3. 検証が成功すると、プロセスが完了し、ユーザーの認証が成功したことを示します。
 4. 検証が失敗した場合、エラーメッセージが表示されます。
 
 ユーザーが資格情報を入力できるログインフォームを考えてみましょう：
@@ -491,7 +474,7 @@ export default function LoginPage() {
     if (response.ok) {
       router.push('/profile')
     } else {
-      // エラーを処理する
+      // エラーを処理します
     }
   }
 
@@ -531,7 +514,7 @@ export default function LoginPage() {
     if (response.ok) {
       router.push('/profile')
     } else {
-      // エラーを処理する
+      // エラーを処理します
     }
   }
 
@@ -548,9 +531,9 @@ export default function LoginPage() {
 </TabItem>
 </Tabs>
 
-上記のフォームには、ユーザーのメールとパスワードをキャプチャするための2つの入力フィールドがあります。送信時に、`/api/auth/login`というAPIルートにPOSTリクエストを送信する関数をトリガーします。
+上記のフォームには、ユーザーのメールとパスワードをキャプチャするための2つの入力フィールドがあります。送信時に、APIルート（`/api/auth/login`）にPOSTリクエストを送信する関数をトリガーします。
 
-次に、APIルートで認証を処理するために、認証プロバイダーのAPIを呼び出すことができます：
+その後、認証を処理するためにAPIルート内で認証プロバイダーのAPIを呼び出すことができます：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -607,52 +590,52 @@ export default async function handler(req, res) {
 
 ## セッション管理 {#session-management}
 
-セッション管理は、リクエスト間でユーザーの認証された状態を保持することを保証します。セッションやトークンの作成、保存、リフレッシュ、削除を伴います。
+セッション管理は、ユーザーの認証済み状態をリクエスト間で維持するためのものです。セッションやトークンの作成、保存、更新、削除を含みます。
 
 セッションには2つのタイプがあります：
 
-1. [**ステートレス**](#stateless-sessions)：セッションデータ（またはトークン）はブラウザのcookieに保存されます。各リクエストとともにcookieが送信され、サーバー上でセッションが検証されます。この方法はシンプルですが、正しく実装されていないとセキュリティが低くなります。
-2. [**データベース**](#database-sessions)：セッションデータはデータベースに保存され、ユーザーのブラウザには暗号化されたセッションIDのみが送信されます。この方法はよりセキュアですが、より複雑でサーバーリソースを多く使用する可能性があります。
+1. [**ステートレス**](#stateless-sessions): セッションデータ（またはトークン）はブラウザの cookie に保存されます。cookie は各リクエストと共に送信され、サーバー上でセッションを検証できます。この方法は単純ですが、正しく実装されないとセキュリティが低下する可能性があります。
+2. [**データベース**](#database-sessions): セッションデータはデータベースに保存され、ユーザーのブラウザには暗号化されたセッション ID のみが届きます。この方法はより安全ですが、複雑でサーバーリソースを多く使用する可能性があります。
 
-> **Good to know:** どちらの方法も、どちらも使用することができますが、[iron-session](https://github.com/vvo/iron-session)や[Jose](https://github.com/panva/jose)のようなセッション管理ライブラリを使用することをお勧めします。
+> **Good to know:** どちらの方法も使用できますが、または両方とも、[iron-session](https://github.com/vvo/iron-session) や [Jose](https://github.com/panva/jose) のようなセッション管理ライブラリの使用をお勧めします。
 
 ### ステートレスセッション {#stateless-sessions}
 
 <AppOnly>
 
-ステートレスセッションを作成して管理するために、いくつかの手順を以下に示します：
+ステートレスセッションを作成し管理するためには、次のステップを行う必要があります：
 
-1. セッションに署名するための秘密鍵を生成し、[環境変数](/docs/app/building-your-application/configuring/environment-variables)として保存します。
-2. セッション管理ライブラリを使用して、セッションデータを暗号化/復号化するロジックを書きます。
-3. Next.jsの[`cookies`](/docs/app/api-reference/functions/cookies) APIを使用してcookieを管理します。
+1. セッション署名に使用するシークレットキーを生成し、環境変数として保存します。
+2. セッション管理ライブラリを使用してセッションデータを暗号化/復号化するロジックを書きます。
+3. Next.js の [`cookies`](/docs/app/api-reference/functions/cookies) API を使用して cookie を管理します。
 
-上記に加えて、[更新（またはリフレッシュ）](#updating-or-refreshing-sessions)する機能を追加し、ユーザーがアプリケーションに戻った際にセッションを更新することや、ユーザーがログアウトしたときにセッションを[削除](#deleting-the-session)することを考慮に入れてください。
+これに加えて、ユーザーがアプリケーションに戻ったときにセッションを更新（またはリフレッシュ）したり、ユーザーがログアウトしたときにセッションを削除する機能を追加することをお勧めします。
 
-> **Good to know:** [authライブラリ](#auth-libraries)がセッション管理を含んでいるかどうかを確認してください。
+> **Good to know:** [auth ライブラリ](#auth-libraries)がセッション管理を含んでいるかどうかを確認してください。
 
-#### 1. 秘密鍵を生成する {#1-generating-a-secret-key}
+#### 1. シークレットキーの生成 {#1-generating-a-secret-key}
 
-セッションに署名するための秘密鍵を生成する方法はいくつかあります。たとえば、ターミナルで`openssl`コマンドを使用することを選択することができます：
+セッションを署名するために使用されるシークレットキーを生成する方法はいくつかあります。例えば、ターミナルで `openssl` コマンドを使用することを選ぶことができます：
 
 ```bash title="terminal"
 openssl rand -base64 32
 ```
 
-このコマンドは、秘密鍵として使用し、[環境変数ファイル](/docs/app/building-your-application/configuring/environment-variables)に保存できる32文字のランダムな文字列を生成します：
+このコマンドは、シークレットキーとして使用し、[環境変数ファイル](/docs/app/building-your-application/configuring/environment-variables) に保存できる32文字のランダムな文字列を生成します：
 
 ```bash title=".env"
 SESSION_SECRET=your_secret_key
 ```
 
-次に、セッション管理ロジック内でこの鍵を参照できます：
+その後、セッション管理ロジックでこのキーを参照できます：
 
 ```js title="app/lib/session.js"
 const secretKey = process.env.SESSION_SECRET
 ```
 
-#### 2. セッションを暗号化および復号する {#2-encrypting-and-decrypting-sessions}
+#### 2. セッションの暗号化と復号化 {#2-encrypting-and-decrypting-sessions}
 
-次に、セッションを暗号化および復号化するための[セッション管理ライブラリ](#session-management-libraries)を使用できます。前の例から引き続き、[Jose](https://www.npmjs.com/package/jose)（[Edge Runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)との互換性あり）およびReactの[`server-only`](https://www.npmjs.com/package/server-only)パッケージを使用して、セッション管理ロジックがサーバーでのみ実行されることを保証します。
+次に、好みの[セッション管理ライブラリ](#session-management-libraries)を使用してセッションを暗号化および復号化できます。前の例から続けて、[Jose](https://www.npmjs.com/package/jose)（[Edge Runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)と互換性があります）と、セッション管理ロジックがサーバー上でのみ実行されるようにするReact の[`server-only`](https://www.npmjs.com/package/server-only) パッケージを使用します。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -720,19 +703,19 @@ export async function decrypt(session) {
 
 > **Tips**:
 >
-> - ペイロードには、今後のリクエストで使用される最小限のユニークなユーザーデータ、たとえばユーザーのIDや役割などを含めるべきです。電話番号やメールアドレス、クレジットカード情報などの個人を特定できる情報や、パスワードなどの機密データを含めないようにしてください。
+> - ペイロードには、ユーザー ID やロールなど、後続のリクエストで使用される最小限の一意のユーザーデータを含めるべきです。電話番号、メールアドレス、クレジットカード情報などの個人を特定できる情報や、パスワードなどの機密データを含むべきではありません。
 
-#### 3. Cookieの設定（推奨オプション） {#3-setting-cookies-recommended-options}
+#### 3. 推奨オプションで cookie を設定する {#3-setting-cookies-recommended-options}
 
-セッションをcookieに保存するには、Next.jsの[`cookies`](/docs/app/api-reference/functions/cookies) APIを使用します。Cookieはサーバー上で設定され、次の推奨オプションを含む必要があります：
+セッションをcookieに保存するには、Next.jsの [`cookies`](/docs/app/api-reference/functions/cookies) API を使用します。cookieはサーバー上で設定され、推奨オプションを含むべきです：
 
-- **HttpOnly**: クライアントサイドのJavaScriptからCookieをアクセスできないようにします。
-- **Secure**: httpsを使用してCookieを送信します。
-- **SameSite**: クロスサイトリクエストでCookieを送信できるかどうかを指定します。
-- **Max-AgeまたはExpires**: 一定期間後にCookieを削除します。
-- **Path**: CookieのURLパスを定義します。
+- **HttpOnly**: クライアント側の JavaScript が cookie にアクセスするのを防ぎます。
+- **Secure**: https を使用して cookie を送信します。
+- **SameSite**: cookie がクロスサイトリクエストで送信できるかどうかを指定します。
+- **Max-Age または Expires**: 一定期間後に cookie を削除します。
+- **Path**: cookie のURLパスを定義します。
 
-それぞれのオプションについては[MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)で詳しい情報を参照してください。
+各オプションの詳細については、[MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)を参照してください。
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -743,17 +726,16 @@ import { cookies } from 'next/headers'
 
 export async function createSession(userId: string) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  const session = await encrypt({ userId, expiresAt })(await cookies()).set(
-    'session',
-    session,
-    {
-      httpOnly: true,
-      secure: true,
-      expires: expiresAt,
-      sameSite: 'lax',
-      path: '/',
-    }
-  )
+  const session = await encrypt({ userId, expiresAt })
+  const cookieStore = await cookies()
+
+  cookieStore.set('session', session, {
+    httpOnly: true,
+    secure: true,
+    expires: expiresAt,
+    sameSite: 'lax',
+    path: '/',
+  })
 }
 ```
 
@@ -782,7 +764,7 @@ export async function createSession(userId) {
 </TabItem>
 </Tabs>
 
-サーバーアクション内で`createSession()`関数を呼び出し、ユーザーを適切なページにリダイレクトするために[`redirect()`](/docs/app/building-your-application/routing/redirecting) APIを使用します：
+Server Action では、`createSession()` 関数を呼び出し、[`redirect()`](/docs/app/building-your-application/routing/redirecting) API を使用してユーザーを適切なページにリダイレクトできます：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -792,14 +774,14 @@ import { createSession } from '@/app/lib/session'
 
 export async function signup(state: FormState, formData: FormData) {
   // 前のステップ：
-  // 1. フォームフィールドを検証
-  // 2. データベースへの挿入のためのデータを準備
-  // 3. データベースにユーザーを挿入するまたはLibrary APIを呼び出す
+  // 1. フォームフィールドを検証します
+  // 2. データベースへの挿入用のデータを準備します
+  // 3. ユーザーをデータベースに挿入する、またはライブラリの API を呼び出します
 
   // 現在のステップ：
-  // 4. ユーザーセッションを作成
+  // 4. ユーザーセッションを作成します
   await createSession(user.id)
-  // 5. ユーザーをリダイレクト
+  // 5. ユーザーをリダイレクトします
   redirect('/profile')
 }
 ```
@@ -812,14 +794,14 @@ import { createSession } from '@/app/lib/session'
 
 export async function signup(state, formData) {
   // 前のステップ：
-  // 1. フォームフィールドを検証
-  // 2. データベースへの挿入のためのデータを準備
-  // 3. データベースにユーザーを挿入するまたはLibrary APIを呼び出す
+  // 1. フォームフィールドを検証します
+  // 2. データベースへの挿入用のデータを準備します
+  // 3. ユーザーをデータベースに挿入する、またはライブラリの API を呼び出します
 
   // 現在のステップ：
-  // 4. ユーザーセッションを作成
+  // 4. ユーザーセッションを作成します
   await createSession(user.id)
-  // 5. ユーザーをリダイレクト
+  // 5. ユーザーをリダイレクトします
   redirect('/profile')
 }
 ```
@@ -829,12 +811,12 @@ export async function signup(state, formData) {
 
 > **Tips**:
 >
-> - **Cookieはサーバー側で設定されるべき**であり、クライアント側での改ざんを防ぐためです。
-> - 🎥 視聴：Next.jsを用いたステートレスセッションと認証についてさらに学びたい場合は → [YouTube (11分)](https://www.youtube.com/watch?v=DJvM2lSPn6w)。
+> - **cookie はサーバー側で設定されるべきです** クライアント側での改ざんを防ぐため。
+> - 🎥 視聴: 次の動画で、Next.js を使用したステートレスセッションと認証について詳しく学びます → [YouTube (11 分間)](https://www.youtube.com/watch?v=DJvM2lSPn6w)。
 
 #### セッションの更新（またはリフレッシュ） {#updating-or-refreshing-sessions}
 
-セッションの有効期限を延長することもできます。これは、ユーザーがアプリケーションに再度アクセスした際にログイン状態を保持するために役立ちます。例えば：
+セッションの有効期限を延長することもできます。これはユーザーが再びアプリケーションにアクセスした後、ログイン状態を維持するのに便利です。例：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -896,7 +878,7 @@ export async function updateSession() {
 </TabItem>
 </Tabs>
 
-> **Tip:** 認証ライブラリがリフレッシュトークンをサポートしているか確認してください。これはユーザーのセッションを延長するために使用できます。
+> **Tip:** 認証ライブラリがリフレッシュトークンをサポートしているか確認してください。これを使用してユーザーのセッションを延長できます。
 
 #### セッションの削除 {#deleting-the-session}
 
@@ -931,7 +913,7 @@ export async function deleteSession() {
 </TabItem>
 </Tabs>
 
-次に、アプリケーション内で`deleteSession()`関数を再利用できます。たとえば、ログアウト時に：
+その後、アプリケーションの、例えばログアウト時に `deleteSession()` 関数を再利用できます：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -966,9 +948,9 @@ export async function logout() {
 
 <PagesOnly>
 
-#### Cookieの設定と削除 {#setting-and-deleting-cookies}
+#### cookie の設定と削除 {#setting-and-deleting-cookies}
 
-[API Routes](https://nextjs.org/docs/canary/pages/building-your-application/routing/api-routes)を使用して、サーバーでcookieとしてセッションを設定できます：
+[API Routes](https://nextjs.org/docs/canary/pages/building-your-application/routing/api-routes)を使用して、サーバー上でセッションを cookie として設定できます：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -985,7 +967,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const cookie = serialize('session', encryptedSessionData, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7, // 一週間
+    maxAge: 60 * 60 * 24 * 7, // 1 週間
     path: '/',
   })
   res.setHeader('Set-Cookie', cookie)
@@ -1007,7 +989,7 @@ export default function handler(req, res) {
   const cookie = serialize('session', encryptedSessionData, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7, // 一週間
+    maxAge: 60 * 60 * 24 * 7, // 1 週間
     path: '/',
   })
   res.setHeader('Set-Cookie', cookie)
@@ -1022,15 +1004,15 @@ export default function handler(req, res) {
 
 ### データベースセッション {#database-sessions}
 
-データベースセッションを作成して管理するために、次のステップに従う必要があります：
+データベースセッションを作成し管理するには、次のステップを行う必要があります：
 
-1. セッションとデータを保存するためのデータベースにテーブルを作成します（またはAuth Libraryがこれを処理しているか確認します）。
-2. セッションを挿入、更新、削除する機能を実装します
-3. セッションIDをユーザーのブラウザに保存する前に暗号化し、データベースとcookieが同期していることを確認します（これはオプションですが、[Middleware](#optimistic-checks-with-middleware-optional)での楽観的な確認のために推奨されます）。
+1. セッションとデータを保存するためのテーブルをデータベースに作成する（または Auth ライブラリがこれを処理するかどうかを確認します）。
+2. セッションを挿入、更新、削除する機能を実装します。
+3. セッション ID をユーザーのブラウザに保存する前に暗号化し、データベースと cookie が同期するようにします（これはオプションですが、[Middleware](#optimistic-checks-with-middleware-optional)での楽観的な認証チェックには推奨されています）。
 
 <AppOnly>
 
-たとえば：
+例えば：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -1043,22 +1025,22 @@ import { encrypt } from '@/app/lib/session'
 export async function createSession(id: number) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
-  // 1. データベースにセッションを作成する
+  // 1. データベースにセッションを作成します
   const data = await db
     .insert(sessions)
     .values({
       userId: id,
       expiresAt,
     })
-    // セッションIDを返す
+    // セッション ID を返します
     .returning({ id: sessions.id })
 
   const sessionId = data[0].id
 
-  // 2. セッションIDを暗号化する
+  // 2. セッション ID を暗号化します
   const session = await encrypt({ sessionId, expiresAt })
 
-  // 3. 楽観的な認証チェックのためにクッキーにセッションを保存
+  // 3. 楽観的な認証チェックのために cookie にセッションを保存します
   const cookieStore = await cookies()
   cookieStore.set('session', session, {
     httpOnly: true,
@@ -1081,22 +1063,22 @@ import { encrypt } from '@/app/lib/session'
 export async function createSession(id) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
-  // 1. データベースにセッションを作成する
+  // 1. データベースにセッションを作成します
   const data = await db
     .insert(sessions)
     .values({
       userId: id,
       expiresAt,
     })
-    // セッションIDを返す
+    // セッション ID を返します
     .returning({ id: sessions.id })
 
   const sessionId = data[0].id
 
-  // 2. セッションIDを暗号化する
+  // 2. セッション ID を暗号化します
   const session = await encrypt({ sessionId, expiresAt })
 
-  // 3. 楽観的な認証チェックのためにクッキーにセッションを保存
+  // 3. 楽観的な認証チェックのために cookie にセッションを保存します
   const cookieStore = await cookies()
   cookieStore.set('session', session, {
     httpOnly: true,
@@ -1113,16 +1095,16 @@ export async function createSession(id) {
 
 > **Tips**:
 >
-> - より高速なデータ取得のために、[Vercel Redis](https://vercel.com/docs/storage/vercel-kv)のようなデータベースを使用することを検討してください。ただし、セッションデータをプライマリデータベースに保持し、データリクエストを組み合わせてクエリの数を減らすこともできます。
-> - ユーザーが最後にログインした時間やアクティブデバイスの数を追跡する、またはユーザーがすべてのデバイスからログアウトできるようにするなど、より高度なユースケースにデータベースセッションを使用することを選択するかもしれません。
+> - データの取得を高速化するために、[Vercel Redis](https://vercel.com/docs/storage/vercel-kv)のようなデータベースを使用することを検討してください。ただし、セッションデータはプライマリデータベースに保持することもでき、データ要求を組み合わせてクエリ数を減らすことができます。
+> - より高度なユースケースのために、データベースセッションを使用して、ユーザーが最後にログインした時間やアクティブなデバイスの数を追跡したり、ユーザーがすべてのデバイスからログアウトする機能を提供することを検討することができるかもしれません。
 
-セッション管理を実装した後、アプリケーション内でユーザーがアクセスおよび実行できる内容を制御するための認証ロジックを追加する必要があります。[Authorization](#authorization)セクションに進んでさらに学びましょう。
+セッション管理を実装した後、アプリケーション内でユーザーがアクセスできる内容や行動を制御するための認可ロジックを追加する必要があります。詳細は [認可](#authorization) セクションをご覧ください。
 
 </AppOnly>
 
 <PagesOnly>
 
-**サーバーでのセッションの作成**：
+**サーバー上でセッションを作成する**：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -1179,31 +1161,31 @@ export default async function handler(req, res) {
 
 </PagesOnly>
 
-## 認可 {#authorization}
+## 認可{#authorization}
 
-ユーザーが認証され、セッションが作成された後、アプリケーション内でユーザーがアクセスおよび実行できる内容を制御するための認証を実装できます。
+ユーザーが認証され、セッションが作成された後、ユーザーがアプリケーション内でアクセス可能なものを制御するために認可を実装することができます。
 
-認証チェックには2つの主なタイプがあります：
+認可チェックには2つの主なタイプがあります：
 
-1. **楽観的**: Cookieに保存されたセッションデータを使用して、ユーザーがルートにアクセスしたり、アクションを実行する権限があるかどうかをチェックします。これらのチェックは、UI要素を表示/非表示にする、または権限や役割に基づいてユーザーをリダイレクトするなど、クイック操作に役立ちます。
-2. **セキュア**: データベースに保存されたセッションデータを使用して、ユーザーがルートにアクセスしたり、アクションを実行する権限があるかどうかをチェックします。これらのチェックはよりセキュアであり、機密データまたはアクションにアクセスする必要がある操作に使用されます。
+1. **楽観的**: cookieに保存されたセッションデータを使用して、ユーザーがルートにアクセスする許可があるかどうか、またはアクションを実行する許可があるかどうかを確認します。これらのチェックは、UI要素の表示/非表示、または許可やロールに基づくユーザーのリダイレクトなどのクイック操作に便利です。
+2. **安全**: データベースに保存されたセッションデータを使用して、ユーザーがルートにアクセスする許可があるかどうか、またはアクションを実行する許可があるかどうかを確認します。これらのチェックはより安全であり、機密データにアクセスする必要がある操作やアクションに使用されます。
 
-両方のケースでお勧めすることは：
+両方のケースにおいて、以下をお勧めします：
 
-- 認証ロジックの集中化のために[データアクセス層（DAL）](#creating-a-data-access-layer-dal)を作成する。
-- 必要なデータのみを返すために[Data Transfer Objects（DTO）](#using-data-transfer-objects-dto)を使用する。
-- [Middleware](#optimistic-checks-with-middleware-optional)を使用して楽観的なチェックを行うことをオプションで行う。
+- 認可ロジックを集中化する[データアクセスレイヤー（DAL）](#creating-a-data-access-layer-dal)を作成します
+- 必要なデータのみを返すための[データ転送オブジェクト（DTO）](#using-data-transfer-objects-dto)を使用します
+- オプションで[Middleware（ミドルウェア）](#optimistic-checks-with-middleware-optional)を使用して楽観的なチェックを行います。
 
-### ミドルウェアによる楽観的なチェック（オプション） {#optimistic-checks-with-middleware-optional}
+### Middleware（ミドルウェア）による楽観的チェック（オプション） {#optimistic-checks-with-middleware-optional}
 
-いくつかの場合、[Middleware](/docs/app/building-your-application/routing/middleware)を使用してでユーザーの権限に基づくリダイレクトを行いたい場合があります：
+場合によっては、[Middleware](/docs/app/building-your-application/routing/middleware)を使用して、許可に基づいてユーザーをリダイレクトすることを検討する価値があります：
 
-- 楽観的なチェックを行うため。Middlewareはすべてのルートで実行されるため、リダイレクトロジックの集中化と未承認ユーザーの事前フィルタリングに便利な方法です。
-- ユーザー間でデータを共有する静的ルート（例：ペイウォールの背後にあるコンテンツ）を保護するため。
+- 楽観的なチェックを行うため。Middlewareはすべてのルートで実行されるので、リダイレクトロジックを集中化し、許可されていないユーザーを事前にフィルタリングするのに適しています。
+- ユーザー間でデータを共有する静的ルートを保護するため（例：有料コンテンツの背後など）。
 
-ただし、Middlewareがすべてのルートで、[prefetched](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)されたルートを含むため、ミドルウェアではcookieからセッションを読み取るだけ（楽観的チェック）にし、パフォーマンス問題を防ぐためにデータベースチェックを避けることが重要です。
+ただし、Middlewareはあらゆるルートで実行されるため、[prefetched](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)ルートを含む、cookieからセッションを読み取る（楽観的なチェック）だけにし、パフォーマンス問題を避けるためにデータベースチェックを避けるべきです。
 
-例として：
+例：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -1213,26 +1195,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { decrypt } from '@/app/lib/session'
 import { cookies } from 'next/headers'
 
-// 1. 保護されたルートと公開ルートを指定
+// 1. 保護されたルートと公開ルートを指定します
 const protectedRoutes = ['/dashboard']
 const publicRoutes = ['/login', '/signup', '/']
 
 export default async function middleware(req: NextRequest) {
-  // 2. 現在のルートが保護されているか公開されているかをチェック
+  // 2. 現在のルートが保護されたものか公開されたものであるかを確認します
   const path = req.nextUrl.pathname
   const isProtectedRoute = protectedRoutes.includes(path)
   const isPublicRoute = publicRoutes.includes(path)
 
-  // 3. Cookieからセッションを復号
+  // 3. cookieからセッションを復号します
   const cookie = (await cookies()).get('session')?.value
   const session = await decrypt(cookie)
 
-  // 4. ユーザーが認証されていない場合は/loginにリダイレクト
+  // 4. ユーザーが認証されていない場合は /login にリダイレクトします
   if (isProtectedRoute && !session?.userId) {
     return NextResponse.redirect(new URL('/login', req.nextUrl))
   }
 
-  // 5. ユーザーが認証されている場合は/dashboardにリダイレクト
+  // 5. ユーザーが認証されている場合は /dashboard にリダイレクトします
   if (
     isPublicRoute &&
     session?.userId &&
@@ -1244,7 +1226,7 @@ export default async function middleware(req: NextRequest) {
   return NextResponse.next()
 }
 
-// Middlewareが実行されるべきでないルート
+// Middleware を実行しないルート
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
 }
@@ -1258,26 +1240,26 @@ import { NextResponse } from 'next/server'
 import { decrypt } from '@/app/lib/session'
 import { cookies } from 'next/headers'
 
-// 1. 保護されたルートと公開ルートを指定
+// 1. 保護されたルートと公開ルートを指定します
 const protectedRoutes = ['/dashboard']
 const publicRoutes = ['/login', '/signup', '/']
 
 export default async function middleware(req) {
-  // 2. 現在のルートが保護されているか公開されているかをチェック
+  // 2. 現在のルートが保護されたものか公開されたものであるかを確認します
   const path = req.nextUrl.pathname
   const isProtectedRoute = protectedRoutes.includes(path)
   const isPublicRoute = publicRoutes.includes(path)
 
-  // 3. Cookieからセッションを復号
+  // 3. cookieからセッションを復号します
   const cookie = (await cookies()).get('session')?.value
   const session = await decrypt(cookie)
 
-  // 5. ユーザーが認証されていない場合は/loginにリダイレクト
+  // 4. ユーザーが認証されていない場合は /login にリダイレクトします
   if (isProtectedRoute && !session?.userId) {
     return NextResponse.redirect(new URL('/login', req.nextUrl))
   }
 
-  // 6. ユーザーが認証されている場合は/dashboardにリダイレクト
+  // 5. ユーザーが認証されている場合は /dashboard にリダイレクトします
   if (
     isPublicRoute &&
     session?.userId &&
@@ -1289,7 +1271,7 @@ export default async function middleware(req) {
   return NextResponse.next()
 }
 
-// Middlewareが実行されるべきでないルート
+// Middleware を実行しないルート
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
 }
@@ -1298,23 +1280,23 @@ export const config = {
 </TabItem>
 </Tabs>
 
-Middlewareは初期チェックに役立ちますが、それをデータ保護における唯一の防御手段にするべきではありません。ほとんどのセキュリティチェックはデータソースに可能な限り近い箇所で実行されるべきです。詳細については、[Data Access Layer](#creating-a-data-access-layer-dal)を参照してください。
+Middleware は初期チェックには役立ちますが、データを保護するための唯一の防御手段ではないべきです。大部分のセキュリティチェックは、データソースにできるだけ近いところで実行されるべきです。詳細は[データアクセスレイヤー](#creating-a-data-access-layer-dal)を参照してください。
 
 > **Tips**:
 >
-> - ミドルウェアでは、`req.cookies.get('session').value`を使用してCookieを読み取ることもできます。
-> - Middlewareは[Edge Runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)を使用します。認証ライブラリとセッション管理ライブラリが互換性があるか確認してください。
-> - Middleware内の`matcher`プロパティを使用して、Middlewareが実行されるルートを指定できます。ただし、認証の場合、Middlewareはすべてのルートで実行されることが推奨されます。
+> - Middleware では、`req.cookies.get('session').value` を使用して cookie を読み取ることもできます。
+> - Middleware は[Edge Runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)を使用します。あなたの認証ライブラリおよびセッション管理ライブラリが互換性があるか確認してください。
+> - ミドルウェアで`matcher`プロパティを使用して、Middlewareが実行されるルートを指定できます。ただし、認証のために、Middleware がすべてのルートで実行されることが推奨されます。
 
 <AppOnly>
 
-### データアクセス層（DAL）の作成 {#creating-a-data-access-layer-dal}
+### データアクセスレイヤー（DAL）の作成 {#creating-a-data-access-layer-dal}
 
-データ要求と認証ロジックを集中化するために、DALの作成をお勧めします。
+データリクエストと認可ロジックを集中させるために、DALを作成することをお勧めします。
 
-DALには、アプリケーションとやり取りする際にユーザーのセッションを確認する関数を含めるべきです。少なくとも、関数はセッションが有効であるかどうかを確認し、ユーザー情報をリダイレクトまたは返す必要があります。
+DALには、アプリケーションと対話中にユーザーのセッションを検証する関数を含めるべきです。最低限、この関数はセッションが有効かどうかを確認し、ユーザー情報を返しまたはその情報を使用してさらにリクエストを行う必要があります。
 
-たとえば、DALのための別のファイルを作成し、`verifySession()`関数を含めます。次に、Reactの[cache](https://react.dev/reference/react/cache) APIを使用してReactのレンダリングパス中に関数の戻り値をメモ化します：
+例として、DAL用の別ファイルを作成し、そこで`verifySession()`関数を含めます。その後、Reactの[キャッシュ](https://react.dev/reference/react/cache)APIを使用して、Reactのレンダリングパス中に関数の戻り値をメモ化します：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -1361,7 +1343,7 @@ export const verifySession = cache(async () => {
 </TabItem>
 </Tabs>
 
-次に、データリクエスト、サーバーアクション、ルートハンドラーで`verifySession()`関数を呼び出すことができます：
+その後、`verifySession()`関数をデータリクエストやServer Actions、Route Handlersで呼び出せます：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -1374,7 +1356,7 @@ export const getUser = cache(async () => {
   try {
     const data = await db.query.users.findMany({
       where: eq(users.id, session.userId),
-      // 必要な列を明示的に返し、ユーザーオブジェクト全体を返さない
+      // ユーザーオブジェクト全体ではなく、必要な列を明示的に返します
       columns: {
         id: true,
         name: true,
@@ -1403,7 +1385,7 @@ export const getUser = cache(async () => {
   try {
     const data = await db.query.users.findMany({
       where: eq(users.id, session.userId),
-      // 必要な列を明示的に返し、ユーザーオブジェクト全体を返さない
+      // ユーザーオブジェクト全体ではなく、必要な列を明示的に返します
       columns: {
         id: true,
         name: true,
@@ -1426,15 +1408,15 @@ export const getUser = cache(async () => {
 
 > **Tip**:
 >
-> - DALはリクエスト時にフェッチされるデータを保護するために使用される可能性があります。ただし、ユーザー間でデータを共有する静的ルートに対しては、データはビルド時にフェッチされ、リクエスト時には取得されません。静的ルートを保護するには[Middleware](#optimistic-checks-with-middleware-optional)を使用してください。
-> - セキュアなチェックのために、データベースとセッションIDを比較することで、セッションが有効であるか示すことができます。レンダリングパス中にデータベースへの不要な重複したリクエストを避けるために、Reactの[cache](https://react.dev/reference/react/cache)関数を使用してください。
-> - 関連するデータ要求をセッション確認前に実行するJavaScriptクラスを作成することを検討するかもしれません。
+> - DAL はリクエスト時に取得されるデータを保護するために使用できます。しかし、ユーザー間でデータが共有される静的ルートの場合、データはビルド時に取得され、リクエスト時には取得されません。[Middleware](#optimistic-checks-with-middleware-optional)を使用して静的ルートを保護してください。
+> - セキュアなチェックのために、セッション ID をデータベースと比較してセッションが有効かどうかを確認できます。Reactの[キャッシュ](https://react.dev/reference/react/cache)関数を使用して、レンダーパス中にデータベースへの重複したリクエストを避けます。
+> - 関連するデータリクエストをJavaScriptクラスに統合し、どのメソッドも実行する前に`verifySession()`を実行することを考慮するかもしれません。
 
-### Data Transfer Objects（DTO）の使用 {#using-data-transfer-objects-dto}
+### データ転送オブジェクト（DTO）を使用する {#using-data-transfer-objects-dto}
 
-データを取得する際には、アプリケーションで使用される必要なデータのみを返し、オブジェクト全体を返さないことをお勧めします。たとえば、ユーザーデータをフェッチしている場合、ユーザーのIDと名前だけを返すかもしれません、そしてユーザーオブジェクト全体を渡すことは好ましくありません。これには、パスワード、電話番号などが含まれる可能性があります。
+データを取得するとき、アプリケーションで使用される必要なデータのみを返し、オブジェクト全体を返さないことをお勧めします。たとえば、ユーザーデータを取得している場合、ユーザーのIDと名前のみを返すかもしれません。その際にパスワード、電話番号などのデータは含めません。
 
-ただし、返されるデータの構造を制御できない場合や、開発チームでオブジェクト全体がクライアントに渡されることを避けたい場合は、どのフィールドがクライアントに公開するのが安全かを決定する戦略を使用することができます。
+ただし、返されるデータ構造を制御できない場合や、チームで作業しておりクライアントに渡されるオブジェクト全体を避けたい場合は、クライアントに公開するフィールドを指定するような戦略を使用できます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -1454,13 +1436,13 @@ function canSeePhoneNumber(viewer: User, team: string) {
 export async function getProfileDTO(slug: string) {
   const data = await db.query.users.findMany({
     where: eq(users.slug, slug),
-    // ここで特定の列を返す
+    // 特定の列をここで返します
   })
   const user = data[0]
 
   const currentUser = await getUser(user.id)
 
-  // または、ここで特定の列を返す
+  // またはクエリの固有のものをここでだけ返します
   return {
     username: canSeeUsername(currentUser) ? user.username : null,
     phonenumber: canSeePhoneNumber(currentUser, user.team)
@@ -1488,13 +1470,13 @@ function canSeePhoneNumber(viewer, team) {
 export async function getProfileDTO(slug) {
   const data = await db.query.users.findMany({
     where: eq(users.slug, slug),
-    // ここで特定の列を返す
+    // 特定の列をここで返します
   })
   const user = data[0]
 
   const currentUser = await getUser(user.id)
 
-  // または、ここで特定の列を返す
+  // またはクエリの固有のものをここでだけ返します
   return {
     username: canSeeUsername(currentUser) ? user.username : null,
     phonenumber: canSeePhoneNumber(currentUser, user.team)
@@ -1507,16 +1489,16 @@ export async function getProfileDTO(slug) {
 </TabItem>
 </Tabs>
 
-データ要求と認証ロジックをDALに集中化しDTOを使用することで、すべてのデータ要求がセキュアで一貫性を持ち、アプリケーションがスケールするにつれて維持、監査、およびデバッグが容易になります。
+データリクエストと認可ロジックをDALに集中させ、DTOを使用することで、すべてのデータリクエストが安全で一貫していることを確認し、アプリケーションが拡張するにつれて、維持、監査、デバッグを簡単にすることができます。
 
 > **Good to know**:
 >
-> - DTOを定義する方法はいくつかあります。たとえば、`toJSON()`を使用する、個々の関数を使用する、またはJSクラスを使用するなどです。これらはJavaScriptのパターンであり、ReactまたはNext.jsの機能ではないため、アプリケーションの最適なパターンを見つけるためにリサーチをすることをお勧めします。
-> - [Next.jsの記事でのセキュリティについてのセキュリティベストプラクティス](https://nextjs.org/blog/security-nextjs-server-components-actions)について学びましょう。
+> - DTOを定義する方法はいくつかあります。例えば、`toJSON()`を使用する、上記の例のような個別の関数、またはJavaScriptクラスなどです。これらはJavaScriptパターンであり、ReactやNext.jsの機能ではないため、アプリケーションに最適なパターンを見つけるためにいくつかの調査をすることをお勧めします。
+> - ガードのベストプラクティスについて、[Security in Next.js article](https://nextjs.org/blog/security-nextjs-server-components-actions)を参照してください。
 
-### サーバーコンポーネント {#server-components}
+### Server Components {#server-components}
 
-[サーバーコンポーネント](/docs/app/building-your-application/rendering/server-components)におけるAuthチェックは、役割ベースのアクセスに役立ちます。たとえば、ユーザーの役割に基づいてコンポーネントを条件付きでレンダリングします：
+認証の確認は [Server Components](/docs/app/building-your-application/rendering/server-components) で行うことができ、役割ベースのアクセスに便利です。例えば、ユーザーの役割によってコンポーネントを条件付きでレンダリングします：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -1526,7 +1508,7 @@ import { verifySession } from '@/app/lib/dal'
 
 export default function Dashboard() {
   const session = await verifySession()
-  const userRole = session?.user?.role // セッションオブジェクトの一部である「role」を仮定しています
+  const userRole = session?.user?.role // 'role' がセッションオブジェクトの一部であると仮定しています
 
   if (userRole === 'admin') {
     return <AdminDashboard />
@@ -1546,7 +1528,7 @@ import { verifySession } from '@/app/lib/dal'
 
 export default function Dashboard() {
   const session = await verifySession()
-  const userRole = session.role // セッションオブジェクトの一部である「role」を仮定しています
+  const userRole = session.role // 'role' がセッションオブジェクトの一部であると仮定しています
 
   if (userRole === 'admin') {
     return <AdminDashboard />
@@ -1561,17 +1543,17 @@ export default function Dashboard() {
 </TabItem>
 </Tabs>
 
-この例では、'admin'、'user'、および未認証の役割を確認するためにDALの`verifySession()`関数を使用しています。このパターンは、各ユーザーが自分の役割に応じたコンポーネントと対話することを保証します。
+この例では、DALからの`verifySession()`関数を使用して、'admin'、'user'、および許可されていない役割をチェックします。このパターンは、各ユーザーがそれぞれの役割に適したコンポーネントと相互作用することを保証します。
 
-### Layoutsとauthチェック {#layouts-and-auth-checks}
+### レイアウトと認証チェック {#layouts-and-auth-checks}
 
-[Partial Rendering](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)により、[Layouts](/docs/app/building-your-application/routing/layouts-and-templates)でチェックを行う際は注意が必要です。これらはナビゲーション時に再レンダリングされません。つまり、ユーザーのセッションはルート変更時にすべてチェックされないということです。
+[部分レンダリング](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)のため、[Layouts](/docs/app/building-your-application/routing/layouts-and-templates) でチェックを行う際には注意が必要です。ナビゲーション時には再レンダリングされないため、ユーザーセッションはすべてのルート変更時にチェックされません。
 
-代わりに、データソースに近い場所や条件付きでレンダリングされるコンポーネントの近くでチェックを行う必要があります。
+代わりに、データソースや条件付きでレンダリングされるコンポーネントに近い場所でチェックを行うべきです。
 
-たとえば、ユーザーデータをフェッチし、ナビゲーションでユーザー画像を表示する共有レイアウトを考えます。レイアウト内で認証チェックを行う代わりに、レイアウトでユーザーデータ（`getUser()`）をフェッチしDALで認証チェックを行います。
+たとえば、ユーザーデータをフェッチし、ナビゲーションでユーザーイメージを表示する共有レイアウトを考えてみましょう。レイアウト内での認証チェックの代わりに、レイアウト内でユーザーデータ (`getUser()`) をフェッチし、DALで認証チェックを行うべきです。
 
-これにより、アプリケーション内で`getUser()`が呼び出される場所で認証チェックが行われ、開発者がデータへのアクセスが許可されていることを忘れるのを防ぎます。
+これにより、アプリケーション内で`getUser()` が呼び出されるどこでも認証チェックが行われることが保証され、開発者がデータにアクセスするユーザーが許可されていることを確認し忘れることを防ぎます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -1580,13 +1562,11 @@ export default function Dashboard() {
 export default async function Layout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  const user = await getUser();
+  const user = await getUser()
 
-  return (
-    // ...
-  )
+  return <div>{children}</div>
 }
 ```
 
@@ -1595,11 +1575,9 @@ export default async function Layout({
 
 ```jsx title="app/layout.js" switcher
 export default async function Layout({ children }) {
-  const user = await getUser();
+  const user = await getUser()
 
-  return (
-    // ...
-  )
+  return <div>{children}</div>
 }
 ```
 
@@ -1614,7 +1592,7 @@ export const getUser = cache(async () => {
   const session = await verifySession()
   if (!session) return null
 
-  // セッションからユーザーIDを取得しデータをフェッチ
+  // SessionからユーザーIDを取得し、データをフェッチします
 })
 ```
 
@@ -1626,7 +1604,7 @@ export const getUser = cache(async () => {
   const session = await verifySession()
   if (!session) return null
 
-  // セッションからユーザーIDを取得しデータをフェッチ
+  // セッションからユーザーIDを取得し、データをフェッチします
 })
 ```
 
@@ -1635,13 +1613,13 @@ export const getUser = cache(async () => {
 
 > **Good to know:**
 >
-> - SPAsで一般的なパターンは、ユーザーが未認証の場合、レイアウトやトップレベルコンポーネント内で`return null`を行うことです。これをすることはおすすめできません。なぜなら、Next.jsアプリケーションには複数のエントリポイントがあるため、ネストしたルートセグメントやサーバーアクションをアクセスするのを防ぐことはできないためです。
+> - SPAでの一般的なパターンは、ユーザーが許可されない場合にレイアウトまたはトップレベルコンポーネントで`return null`を実行することです。このパターンは**推奨されません**。Next.jsアプリケーションには複数のエントリーポイントがあり、これによりネストされたルートセグメントやServer Actionsへのアクセスを防ぐことができません。
 
-### サーバーアクション {#server-actions}
+### Server Actions {#server-actions}
 
-[サーバーアクション](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)を公開APIエンドポイントと同じセキュリティ考慮で扱い、ユーザーがその動作を行う権限を持っているか確認します。
+[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)は、公開されているAPIエンドポイントと同じセキュリティ上の配慮を持たせ、ユーザーが変更を行う権限があるかどうかを確認します。
 
-以下の例では、アクションを続行する前にユーザーの役割を確認しています：
+以下の例では、アクションを実行する前にユーザーの役割を確認しています：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -1654,12 +1632,12 @@ export async function serverAction(formData: FormData) {
   const session = await verifySession()
   const userRole = session?.user?.role
 
-  // ユーザーにアクションを実行する権限がない場合、早期に返す
+  // ユーザーがアクションを実行する権限がない場合は早期に return します
   if (userRole !== 'admin') {
     return null
   }
 
-  // 権限のあるユーザーのためにアクションを続行
+  // 許可されたユーザーのためにアクションを続行します
 }
 ```
 
@@ -1674,23 +1652,23 @@ export async function serverAction() {
   const session = await verifySession()
   const userRole = session.user.role
 
-  // ユーザーにアクションを実行する権限がない場合、早期に返す
+  // ユーザーがアクションを実行する権限がない場合は早期に return します
   if (userRole !== 'admin') {
     return null
   }
 
-  // 権限のあるユーザーのためにアクションを続行
+  // 許可されたユーザーのためにアクションを続行します
 }
 ```
 
 </TabItem>
 </Tabs>
 
-### ルートハンドラー {#route-handlers}
+### Route Handlers {#route-handlers}
 
-ルートハンドラーを公開APIエンドポイントと同じセキュリティ考慮で扱い、ユーザーがルートハンドラーにアクセスする権限を持っているか確認します。
+[Route Handlers](/docs/app/building-your-application/routing/route-handlers)は、公開されているAPIエンドポイントと同じセキュリティ上の配慮を持たせ、ユーザーがRoute Handlerにアクセスする許可があるかどうかを確認します。
 
-たとえば：
+例：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -1699,22 +1677,22 @@ export async function serverAction() {
 import { verifySession } from '@/app/lib/dal'
 
 export async function GET() {
-  // ユーザー認証と役割の確認
+  // ユーザー認証とロール検証
   const session = await verifySession()
 
-  // ユーザーが認証されているか確認
+  // ユーザーが認証されているかどうかを確認します
   if (!session) {
-    // ユーザーは認証されていません
+    // ユーザーが認証されていません
     return new Response(null, { status: 401 })
   }
 
-  // ユーザーが「admin」役割を持っているか確認
+  // ユーザーが 'admin' ロールを持っているかどうかを確認します
   if (session.user.role !== 'admin') {
-    // ユーザーは認証されていますが、正しい権限がありません
+    // ユーザーは認証されていますが、正しい権限を持っていません
     return new Response(null, { status: 403 })
   }
 
-  // 権限のあるユーザーのために継続
+  // 許可されたユーザーのために続行します
 }
 ```
 
@@ -1725,35 +1703,35 @@ export async function GET() {
 import { verifySession } from '@/app/lib/dal'
 
 export async function GET() {
-  // ユーザー認証と役割の確認
+  // ユーザー認証とロール検証
   const session = await verifySession()
 
-  // ユーザーが認証されているか確認
+  // ユーザーが認証されているかどうかを確認します
   if (!session) {
-    // ユーザーは認証されていません
+    // ユーザーが認証されていません
     return new Response(null, { status: 401 })
   }
 
-  // ユーザーが「admin」役割を持っているか確認
+  // ユーザーが 'admin' ロールを持っているかどうかを確認します
   if (session.user.role !== 'admin') {
-    // ユーザーは認証されていますが、正しい権限がありません
+    // ユーザーは認証されていますが、正しい権限を持っていません
     return new Response(null, { status: 403 })
   }
 
-  // 権限のあるユーザーのために継続
+  // 許可されたユーザーのために続行します
 }
 ```
 
 </TabItem>
 </Tabs>
 
-上記の例は、2段階のセキュリティチェックを持つルートハンドラーを示しています。まず、アクティブなセッションを確認し、次にログインしたユーザーが「admin」であるかを確認します。
+上記の例は、2段階のセキュリティチェックを持つ Route Handler を示しています。最初にアクティブなセッションをチェックし、ログインしているユーザーが 'admin' であるかどうかを確認します。
 
-## コンテキストプロバイダー {#context-providers}
+## Context Providers {#context-providers}
 
-認証にコンテキストプロバイダーを使用することは、[interleaving](/docs/app/building-your-application/rendering/composition-patterns#interleaving-server-and-client-components)により機能します。ただし、React `context`はサーバーコンポーネントでサポートされていないため、クライアントコンポーネントのみに適用可能です。
+アプリケーションでは、[interleaving](/docs/app/building-your-application/rendering/composition-patterns#interleaving-server-and-client-components)が可能なため、認証にコンテキストプロバイダーを使用できます。ただし、Reactの`context`はServer Componentsでサポートされていないため、クライアントコンポーネントにのみ適用されます。
 
-これは機能しますが、子サーバーコンポーネントは最初にサーバー上でレンダリングされ、コンテキストプロバイダーのセッションデータにアクセスできません：
+これは機能しますが、子 Server Components は最初にサーバー上でレンダリングされ、コンテキストプロバイダーのセッションデータにアクセスすることはありません：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -1776,48 +1754,44 @@ export default function RootLayout({ children }) {
 </Tabs>
 
 ```tsx title="app/ui/profile.ts switcher
-"use client";
+'use client'
 
-import { useSession } from "auth-lib";
+import { useSession } from 'auth-lib'
 
 export default function Profile() {
-  const { userId } = useSession();
+  const { userId } = useSession()
   const { data } = useSWR(`/api/user/${userId}`, fetcher)
 
-  return (
-    // ...
-  );
+  return <div>{data?.name}</div>
 }
 ```
 
 ```jsx title="app/ui/profile.js switcher
-"use client";
+'use client'
 
-import { useSession } from "auth-lib";
+import { useSession } from 'auth-lib'
 
 export default function Profile() {
-  const { userId } = useSession();
+  const { userId } = useSession()
   const { data } = useSWR(`/api/user/${userId}`, fetcher)
 
-  return (
-    // ...
-  );
+  return <div>{data?.name}</div>
 }
 ```
 
-クライアントコンポーネントでセッションデータが必要な場合（たとえば、クライアント側のデータフェッチに）、クライアントに機密のセッションデータが露出しないように、Reactの[`taintUniqueValue`](https://react.dev/reference/react/experimental_taintUniqueValue) APIを使用してください。
+クライアントコンポーネントでセッションデータが必要な場合（例：クライアントサイドのデータフェッチのため）、React の[`taintUniqueValue`](https://react.dev/reference/react/experimental_taintUniqueValue)APIを使用して、クライアントにセンシティブなセッションデータが漏れることを防ぐことができます。
 
 </AppOnly>
 
 <PagesOnly>
 
-### データアクセス層（DAL）の作成 {#creating-a-data-access-layer-dal}
+### データアクセスレイヤー（DAL）の作成{#creating-a-data-access-layer-dal}
 
-#### APIルートを保護する {#protecting-api-routes}
+#### APIルートの保護 {#protecting-api-routes}
 
-Next.jsでのAPIルートは、サーバーサイドのロジックとデータ管理を処理するために重要です。特定の機能にアクセスできるのは認可されたユーザーのみであることを確認するために、これらのルートを保護することが重要です。通常、ユーザーの認証状態と役割ベースの権限を確認することが含まれます。
+Next.jsのAPIルートは、サーバーサイドのロジックやデータ管理の処理に不可欠です。これらのルートを保護し、特定の機能にアクセスできるのは認可されたユーザのみとすることは重要です。通常、これはユーザの認証状況とその役割ベースの許可を検証することを含みます。
 
-APIルートを保護する例を以下に示します：
+以下にAPIルートを保護する方法の例を示します：
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
@@ -1831,7 +1805,7 @@ export default async function handler(
 ) {
   const session = await getSession(req)
 
-  // ユーザーが認証されているか確認
+  // ユーザーが認証されているかを確認します
   if (!session) {
     res.status(401).json({
       error: 'User is not authenticated',
@@ -1839,7 +1813,7 @@ export default async function handler(
     return
   }
 
-  // ユーザーが「admin」役割を持っているか確認
+  //ユーザーが 'admin' ロールを持っているかどうかを確認します
   if (session.user.role !== 'admin') {
     res.status(401).json({
       error: 'Unauthorized access: User does not have admin privileges.',
@@ -1847,8 +1821,8 @@ export default async function handler(
     return
   }
 
-  // 権限のあるユーザーのためにルートを継続
-  // ... APIルートの実装
+  // 許可されたユーザーのためのルートで続行します
+  // ... API ルートの実装
 }
 ```
 
@@ -1859,7 +1833,7 @@ export default async function handler(
 export default async function handler(req, res) {
   const session = await getSession(req)
 
-  // ユーザーが認証されているか確認
+  // ユーザーが認証されているかを確認します
   if (!session) {
     res.status(401).json({
       error: 'User is not authenticated',
@@ -1867,7 +1841,7 @@ export default async function handler(req, res) {
     return
   }
 
-  // ユーザーが「admin」役割を持っているか確認
+  // ユーザーが 'admin' ロールを持っているかどうかを確認します
   if (session.user.role !== 'admin') {
     res.status(401).json({
       error: 'Unauthorized access: User does not have admin privileges.',
@@ -1875,21 +1849,21 @@ export default async function handler(req, res) {
     return
   }
 
-  // 権限のあるユーザーのためにルートを継続
-  // ... APIルートの実装
+  // 許可されたユーザーのためのルートで続行します
+  // ... API ルートの実装
 }
 ```
 
 </TabItem>
 </Tabs>
 
-この例は、認証と認可の2段階のセキュリティチェックを持つAPIルートを示しています。最初にアクティブなセッションを確認し、次にログインしたユーザーが「admin」であることを確認します。このアプローチにより、要求の処理をセキュアにし、認証され認可されたユーザーに限定します。
+この例は、認証と認可に対する2段階のセキュリティチェックを持つAPIルートを示しています。最初にアクティブなセッションを確認し、続いてログインしているユーザーが 'admin' であるかどうかを検証します。このアプローチにより、リクエスト処理に対して認証され、許可されたユーザーのみに安全なアクセスが保証されます。
 
 </PagesOnly>
 
 ## リソース {#resources}
 
-Next.jsでの認証について学んだ後、セキュアな認証とセッション管理を実装するのに役立つNext.js互換のライブラリとリソースを以下に示します：
+Next.js での認証について学んだので、次に示すNext.js互換のライブラリやリソースを使用して、安全な認証とセッション管理を実装するのに役立ててください:
 
 ### 認証ライブラリ {#auth-libraries}
 
@@ -1908,11 +1882,11 @@ Next.jsでの認証について学んだ後、セキュアな認証とセッシ�
 - [Iron Session](https://github.com/vvo/iron-session)
 - [Jose](https://github.com/panva/jose)
 
-## 詳細な読み物 {#further-reading}
+## その他の参考文献 {#further-reading}
 
-認証とセキュリティについて学び続けるために、以下のリソースを確認してください：
+認証とセキュリティについてさらに学ぶために、以下のリソースをチェックしてください：
 
-- [Next.jsにおけるセキュリティを考える](https://nextjs.org/blog/security-nextjs-server-components-actions)
-- [XSS攻撃を理解する](https://vercel.com/guides/understanding-xss-attacks)
-- [CSRF攻撃を理解する](https://vercel.com/guides/understanding-csrf-attacks)
+- [Next.jsでのセキュリティの考え方](https://nextjs.org/blog/security-nextjs-server-components-actions)
+- [XSS攻撃の理解](https://vercel.com/guides/understanding-xss-attacks)
+- [CSRF攻撃の理解](https://vercel.com/guides/understanding-csrf-attacks)
 - [The Copenhagen Book](https://thecopenhagenbook.com/)
