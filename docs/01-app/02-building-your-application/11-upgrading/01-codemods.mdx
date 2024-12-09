@@ -1,42 +1,42 @@
 ---
 title: 'Codemods'
-description: '新しい機能がリリースされた際にNext.jsのコードベースをアップグレードするためにcodemodを使用します。'
+description: '新機能がリリースされたときに、Next.jsのコードベースをアップグレードするためにCodemodを使用します。'
 ---
 
-Codemodsは、コードベースに対してプログラム的に実行される変換です。これにより、多数の変更を手作業で各ファイルを調べることなくプログラムによって適用できます。
+Codemodは、プログラム的にコードベースを変換するツールです。これにより、すべてのファイルを手動で確認することなく、大量の変更をプログラム的に適用できます。
 
-Next.jsは、APIが更新または廃止された場合にあなたのNext.jsコードベースをアップグレードするのを助けるためにCodemod変換を提供します。
+Next.jsは、APIが更新または廃止された際に、Next.jsのコードベースをアップグレードするためのCodemod変換を提供します。
 
-## 使用法 {#usage}
+## 使用方法 {#usage}
 
-ターミナルで、プロジェクトのフォルダーに移動し（`cd`）、次のコマンドを実行します：
+ターミナルでプロジェクトのフォルダに移動（`cd`）し、次のコマンドを実行します：
 
 ```bash title="Terminal"
 npx @next/codemod <transform> <path>
 ```
 
-`<transform>`と`<path>`を適切な値に置き換えます。
+`<transform>` と `<path>` を適切な値に置き換えてください。
 
 - `transform` - 変換の名前
 - `path` - 変換するファイルまたはディレクトリ
-- `--dry` ドライランを実行しますが、コードは編集されません
-- `--print` 変更された出力を比較用に表示します
+- `--dry` 予行演習を行い、コードは編集されません
+- `--print` 比較のために変更された出力を表示
 
 ## Codemods {#codemods}
 
 ### 15.0 {#15-0}
 
-#### App Router Route Segment Configの`runtime`値を`experimental-edge`から`edge`に変換 {#transform-app-router-route-segment-config-runtime-value-from-experimental-edge-to-edge}
+#### App Router Route Segment Configの`runtime`値を`experimental-edge`から`edge`に変換する {#transform-app-router-route-segment-config-runtime-value-from-experimental-edge-to-edge}
 
 ##### `app-dir-runtime-config-experimental-edge` {#app-dir-runtime-config-experimental-edge}
 
-> **注意**: このcodemodはApp Router専用です。
+> **注意**: このCodemodはApp Router専用です。
 
 ```bash title="Terminal"
 npx @next/codemod@latest app-dir-runtime-config-experimental-edge .
 ```
 
-このcodemodは、[Route Segment Config `runtime`](https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config#runtime)の値を`experimental-edge`から`edge`に変換します。
+このCodemodは[Route Segment Config `runtime`](https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config#runtime)の値`experimental-edge`を`edge`に変換します。
 
 例えば：
 
@@ -44,7 +44,7 @@ npx @next/codemod@latest app-dir-runtime-config-experimental-edge .
 export const runtime = 'experimental-edge'
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```ts
 export const runtime = 'edge'
@@ -52,7 +52,7 @@ export const runtime = 'edge'
 
 #### 非同期Dynamic APIへの移行 {#migrate-to-async-dynamic-apis}
 
-動的レンダリングを選んでいたAPIで、以前は同期アクセスをサポートしていたものが非同期になりました。詳細な破壊的変更については[アップグレードガイド](/docs/app/building-your-application/upgrading/version-15)をご覧ください。
+以前は同期アクセスをサポートしていた動的レンダリングを使用するAPIが、今では非同期のものになりました。この破壊的変更については、[アップグレードガイド](/docs/app/building-your-application/upgrading/version-15)で詳しく読めます。
 
 ##### `next-async-request-api` {#next-async-request-api}
 
@@ -60,8 +60,8 @@ export const runtime = 'edge'
 npx @next/codemod@latest next-async-request-api .
 ```
 
-このcodemodは、現在非同期であるdynamic APIs（`cookies()`, `headers()`, `draftMode()` from `next/headers`）を適切にawaitさせるか、適用可能であれば`React.use()`でラップします。
-自動移行が不可能な場合、TypeScriptファイルであれば型キャストを追加するか、手動でレビュー＆更新する必要があることをユーザーに知らせるコメントを追加します。
+このCodemodは、動的API（`next/headers`からの`cookies()`、`headers()`、`draftMode()`）を非同期にし、適用可能であれば`React.use()`でラップするか、適切にawaitされるように変換します。
+自動移行が不可能な場合、このCodemodは型キャスト（TypeScriptファイルの場合）またはコメントを追加して、手動でレビューおよび更新する必要があることをユーザーに知らせます。
 
 例えば：
 
@@ -83,29 +83,33 @@ function getHeader() {
 }
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```tsx
 import { use } from 'react'
-import { cookies, headers, type UnsafeUnwrappedCookies } from 'next/headers'
-
-const token = (await cookies()).get('token')
+import {
+  cookies,
+  headers,
+  type UnsafeUnwrappedCookies,
+  type UnsafeUnwrappedHeaders,
+} from 'next/headers'
+const token = (cookies() as unknown as UnsafeUnwrappedCookies).get('token')
 
 function useToken() {
   const token = use(cookies()).get('token')
   return token
 }
 
-export default function Page() {
+export default async function Page() {
   const name = (await cookies()).get('name')
 }
 
 function getHeader() {
-  return (headers() as UnsafeUnwrappedCookies).get('x-foo')
+  return (headers() as unknown as UnsafeUnwrappedHeaders).get('x-foo')
 }
 ```
 
-`params`や`searchParams`プロップに対するプロパティアクセスがページ／ルートエントリー（`page.js`, `layout.js`, `route.js`, または`default.js`）や`generateMetadata`／`generateViewport` APIsで検出された場合、それを同期から非同期の関数に変換し、プロパティアクセスをawaitするよう試みます。非同期化できない場合（例えば、クライアントコンポーネントの場合）、`React.use`を使用してPromiseをアンラップします。
+ページまたはルートエントリ（`page.js`、`layout.js`、`route.js`、`default.js`）や`generateMetadata`/`generateViewport` API内で、`params`または`searchParams` propsへのプロパティアクセスが検出された場合、その呼び出し元を同期から非同期関数に変換し、プロパティアクセスをawaitします。クライアントコンポーネントなどで非同期にできない場合は、`React.use`を使用してPromiseをアンラップします。
 
 例えば：
 
@@ -125,38 +129,42 @@ export default function Page({
 }
 
 export function generateMetadata({ params }: { params: { slug: string } }) {
+  const { slug } = params
   return {
     title: `My Page - ${slug}`,
   }
 }
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```tsx
 // page.tsx
-export default function Page(props: {
-  params: { slug: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+export default async function Page(props: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const { value } = await props.searchParams
+  const searchParams = await props.searchParams
+  const { value } = searchParams
   if (value === 'foo') {
     // ...
   }
 }
 
-export function generateMetadata(props: { params: { slug: string } }) {
-  const { slug } = await props.params
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>
+}) {
+  const params = await props.params
+  const { slug } = params
   return {
     title: `My Page - ${slug}`,
   }
 }
 ```
 
-> **Good to know:** このcodemodが修正されるべき場所を特定したが、正確な修正を決定できない場合、コードにコメントまたは型キャストを追加してユーザーに手動更新が必要であることを知らせます。これらのコメントは**@next/codemod**で始まり、型キャストは`UnsafeUnwrapped`で始まります。
-> あなたのビルドは、これらのコメントが明示的に削除されるまでエラーになります。[詳細はこちら](https://nextjs.org/docs/messages/sync-dynamic-apis).
+> **Good to know:** もしこのCodemodが手動介入が必要と思われる箇所を識別したが、正確な修正を決定できない場合にはコメントまたは型キャストをコードに追加して、手動で更新が必要であることをユーザーに知らせます。これらのコメントは**@next/codemod**で始まり、型キャストは`UnsafeUnwrapped`で始まります。これらのコメントを明示的に削除するまで、ビルドはエラーとなります。 [もっと読む](https://nextjs.org/docs/messages/sync-dynamic-apis)。
 
-#### `NextRequest`の`geo`と`ip`プロパティを`@vercel/functions`で置き換える {#replace-geo-and-ip-properties-of-nextrequest-with-vercel-functions}
+#### `NextRequest`の`geo`と`ip`プロパティを`@vercel/functions`に置き換える {#replace-geo-and-ip-properties-of-nextrequest-with-vercel-functions}
 
 ##### `next-request-geo-ip` {#next-request-geo-ip}
 
@@ -164,7 +172,7 @@ export function generateMetadata(props: { params: { slug: string } }) {
 npx @next/codemod@latest next-request-geo-ip .
 ```
 
-このcodemodは、`@vercel/functions`をインストールし、`NextRequest`の`geo`と`ip`プロパティを対応する`@vercel/functions`機能で変換します。
+このCodemodは`@vercel/functions`をインストールし、`geo`と`ip`プロパティを対応する`@vercel/functions`の機能に変換します。
 
 例えば：
 
@@ -176,7 +184,7 @@ export function GET(req: NextRequest) {
 }
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```ts
 import type { NextRequest } from 'next/server'
@@ -190,7 +198,7 @@ export function GET(req: NextRequest) {
 
 ### 14.0 {#14-0}
 
-#### `ImageResponse`インポートを移行 {#migrate-imageresponse-imports}
+#### `ImageResponse`インポートの移行 {#migrate-imageresponse-imports}
 
 ##### `next-og-import` {#next-og-import}
 
@@ -198,7 +206,7 @@ export function GET(req: NextRequest) {
 npx @next/codemod@latest next-og-import .
 ```
 
-このcodemodは[Dynamic OG Image Generation](/docs/app/building-your-application/optimizing/metadata#dynamic-image-generation)の利用に向けて、インポートを`next/server`から`next/og`に移動します。
+このCodemodは、[Dynamic OG Image Generation](/docs/app/building-your-application/optimizing/metadata#dynamic-image-generation)の使用のために`next/server`から`next/og`へのインポートを移動変換します。
 
 例えば：
 
@@ -206,13 +214,13 @@ npx @next/codemod@latest next-og-import .
 import { ImageResponse } from 'next/server'
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```js
 import { ImageResponse } from 'next/og'
 ```
 
-#### `viewport`エクスポートを使用 {#use-viewport-export}
+#### `viewport`エクスポートを使用する {#use-viewport-export}
 
 ##### `metadata-to-viewport-export` {#metadata-to-viewport-export}
 
@@ -220,7 +228,7 @@ import { ImageResponse } from 'next/og'
 npx @next/codemod@latest metadata-to-viewport-export .
 ```
 
-このcodemodは、特定のviewportメタデータを`viewport`エクスポートに移行します。
+このCodemodは特定のviewportメタデータを`viewport`エクスポートに移行します。
 
 例えば：
 
@@ -234,7 +242,7 @@ export const metadata = {
 }
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```js
 export const metadata = {
@@ -249,7 +257,7 @@ export const viewport = {
 
 ### 13.2 {#13-2}
 
-#### 組み込みフォントを使用 {#use-built-in-font}
+#### 組み込みフォントを使用する {#use-built-in-font}
 
 ##### `built-in-next-font` {#built-in-next-font}
 
@@ -257,7 +265,7 @@ export const viewport = {
 npx @next/codemod@latest built-in-next-font .
 ```
 
-このcodemodは`@next/font`パッケージをアンインストールし、`@next/font`インポートを組み込みの`next/font`に変換します。
+このCodemodは`@next/font`パッケージをアンインストールし、`@next/font`のインポートを組み込みの`next/font`に変換します。
 
 例えば：
 
@@ -265,7 +273,7 @@ npx @next/codemod@latest built-in-next-font .
 import { Inter } from '@next/font/google'
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```js
 import { Inter } from 'next/font/google'
@@ -273,7 +281,7 @@ import { Inter } from 'next/font/google'
 
 ### 13.0 {#13-0}
 
-#### Next Imageインポートをリネーム {#rename-next-image-imports}
+#### Next Imageインポートのリネーム {#rename-next-image-imports}
 
 ##### `next-image-to-legacy-image` {#next-image-to-legacy-image}
 
@@ -281,7 +289,7 @@ import { Inter } from 'next/font/google'
 npx @next/codemod@latest next-image-to-legacy-image .
 ```
 
-既存のNext.js 10、11、または12アプリケーションの`next/image`インポートをNext.js 13で`next/legacy/image`に安全にリネームします。また、`next/future/image`を`next/image`にリネームします。
+既存のNext.js 10、11、または12のアプリケーションでの`next/image`インポートを、Next.js 13で`next/legacy/image`に安全にリネームします。また、`next/future/image`を`next/image`にリネームします。
 
 例えば：
 
@@ -299,7 +307,7 @@ export default function Home() {
 }
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```jsx title="pages/index.js"
 // 'next/image' becomes 'next/legacy/image'
@@ -325,15 +333,15 @@ export default function Home() {
 npx @next/codemod@latest next-image-experimental .
 ```
 
-`next/legacy/image`から新しい`next/image`に危険な移行を行い、インラインスタイルを追加し、未使用のpropsを削除します。
+インラインスタイルを追加し、未使用のpropsを削除することで、`next/legacy/image`から新しい`next/image`に危険な移行を行います。
 
-- `layout` propを削除し、`style`を追加します
-- `objectFit` propを削除し、`style`を追加します
-- `objectPosition` propを削除し、`style`を追加します
-- `lazyBoundary` propを削除します
-- `lazyRoot` propを削除します
+- `layout` propを削除し`style`を追加
+- `objectFit` propを削除し`style`を追加
+- `objectPosition` propを削除し`style`を追加
+- `lazyBoundary` propを削除
+- `lazyRoot` propを削除
 
-#### リンクコンポーネントから`<a>`タグを削除 {#remove-a-tags-from-link-components}
+#### Linkコンポーネントから`<a>`タグを削除 {#remove-a-tags-from-link-components}
 
 ##### `new-link` {#new-link}
 
@@ -343,13 +351,13 @@ npx @next/codemod@latest new-link .
 
 <AppOnly>
 
-[リンクコンポーネント](/docs/app/api-reference/components/link)内の`<a>`タグを削除するか、自動修正が不可能なリンクに`legacyBehavior` propを追加します。
+[Link Components](/docs/app/api-reference/components/link)内の`<a>`タグを削除するか、自動修正が不可能なリンクに`legacyBehavior` propを追加します。
 
 </AppOnly>
 
 <PagesOnly>
 
-[リンクコンポーネント](https://nextjs.org/docs/canary/pages/api-reference/components/link)内の`<a>`タグを削除するか、自動修正が不可能なリンクに`legacyBehavior` propを追加します。
+[Link Components](https://nextjs.org/docs/canary/pages/api-reference/components/link)内の`<a>`タグを削除するか、自動修正が不可能なリンクに`legacyBehavior` propを追加します。
 
 </PagesOnly>
 
@@ -359,7 +367,7 @@ npx @next/codemod@latest new-link .
 <Link href="/about">
   <a>About</a>
 </Link>
-// transforms into
+// 次のように変換されます
 <Link href="/about">
   About
 </Link>
@@ -367,13 +375,13 @@ npx @next/codemod@latest new-link .
 <Link href="/about">
   <a onClick={() => console.log('clicked')}>About</a>
 </Link>
-// transforms into
+// 次のように変換されます
 <Link href="/about" onClick={() => console.log('clicked')}>
   About
 </Link>
 ```
 
-自動修正が適用できない場合、`legacyBehavior` propが追加されます。これにより、その特定のリンクに対して古い動作を使用してあなたのアプリが機能を維持することができます。
+自動修正が適用できない場合には、`legacyBehavior` propが追加されます。これにより、その特定のリンクで旧動作を使用してアプリを継続的に機能させることができます。
 
 ```jsx
 const Component = () => <a>About</a>
@@ -381,7 +389,7 @@ const Component = () => <a>About</a>
 <Link href="/about">
   <Component />
 </Link>
-// becomes
+// 次のように変換されます
 <Link href="/about" legacyBehavior>
   <Component />
 </Link>
@@ -397,13 +405,13 @@ const Component = () => <a>About</a>
 npx @next/codemod cra-to-next
 ```
 
-Create React AppプロジェクトをNext.jsに移行し、Pages Routerと動作を一致させるための必要な設定を作成します。クライアントサイドのみのレンダリングが最初に活用され、SSR中の`window`の使用による互換性の破壊を防ぎ、Next.jsの特定の機能を徐々に採用することが可能となります。
+Create React AppプロジェクトをNext.jsに移行し、Pages Routerと必要な設定を作成して動作を一致させます。クライアントサイドのみのレンダリングが最初に利用され、SSR中の`window`使用による互換性の破壊を防ぎ、Next.jsの特定の機能の逐次採用を可能にします。
 
-この変換に関するフィードバックを[こちらのディスカッション](https://github.com/vercel/next.js/discussions/25858)で共有してください。
+この変換に関するフィードバックを[このディスカッション](https://github.com/vercel/next.js/discussions/25858)で共有してください。
 
 ### 10 {#10}
 
-#### Reactインポートを追加 {#add-react-imports}
+#### Reactインポートの追加 {#add-react-imports}
 
 ##### `add-missing-react-import` {#add-missing-react-import}
 
@@ -411,7 +419,7 @@ Create React AppプロジェクトをNext.jsに移行し、Pages Routerと動作
 npx @next/codemod add-missing-react-import
 ```
 
-`React`をインポートしていないファイルを変換し、新しい[React JSX変換](https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html)が機能するためにインポートを追加します。
+新しい[React JSX変換](https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html)が機能するために、`React`をimportしていないファイルにimportを追加します。
 
 例えば：
 
@@ -423,7 +431,7 @@ export default class Home extends React.Component {
 }
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```jsx title="my-component.js"
 import React from 'react'
@@ -436,7 +444,7 @@ export default class Home extends React.Component {
 
 ### 9 {#9}
 
-#### 無名コンポーネントを名前付きコンポーネントに変換 {#transform-anonymous-components-into-named-components}
+#### 匿名コンポーネントを名前付きコンポーネントに変換 {#transform-anonymous-components-into-named-components}
 
 ##### `name-default-component` {#name-default-component}
 
@@ -444,9 +452,9 @@ export default class Home extends React.Component {
 npx @next/codemod name-default-component
 ```
 
-**バージョン9以上。**
+**バージョン9以降。**
 
-無名コンポーネントを名前付きコンポーネントに変換し、[Fast Refresh](https://nextjs.org/blog/next-9-4#fast-refresh)で動作するようにします。
+匿名コンポーネントを名前付きコンポーネントに変換して、[Fast Refresh](https://nextjs.org/blog/next-9-4#fast-refresh)で動作するようにします。
 
 例えば：
 
@@ -456,7 +464,7 @@ export default function () {
 }
 ```
 
-は以下に変換されます：
+次のように変換されます：
 
 ```jsx title="my-component.js"
 export default function MyComponent() {
@@ -464,7 +472,7 @@ export default function MyComponent() {
 }
 ```
 
-コンポーネントには、ファイル名に基づいてキャメルケースの名前が付けられ、矢印関数でも動作します。
+コンポーネントには、ファイルの名前に基づいたキャメルケース名が付けられ、アロー関数もサポートします。
 
 ### 8 {#8}
 
@@ -504,7 +512,7 @@ export const config = {
 
 ### 6 {#6}
 
-#### `withRouter`を使用 {#use-withrouter}
+#### `withRouter`を使用する {#use-withrouter}
 
 ##### `url-to-withrouter` {#url-to-withrouter}
 
@@ -512,7 +520,7 @@ export const config = {
 npx @next/codemod url-to-withrouter
 ```
 
-トップレベルのページに自動的に注入される`url`プロパティを、非推奨の`withRouter`とそれが注入する`router`プロパティを使用するように変換します。詳細はこちらをご覧ください：[https://nextjs.org/docs/messages/url-deprecated](https://nextjs.org/docs/messages/url-deprecated)
+トップレベルのページで自動的に注入される`url`プロパティを、`withRouter`とこれが注入する`router`プロパティを使用するように変換します。詳しくはこちらをお読みください：[https://nextjs.org/docs/messages/url-deprecated](https://nextjs.org/docs/messages/url-deprecated)
 
 例えば：
 
@@ -539,4 +547,4 @@ export default withRouter(
 )
 ```
 
-これは1つのケースです。変換され（およびテストされた）すべてのケースは、[`__testfixtures__`ディレクトリ](https://github.com/vercel/next.js/tree/canary/packages/next-codemod/transforms/__testfixtures__/url-to-withrouter)で見つけることができます。
+これは一例です。変換（およびテスト）されるすべてのケースは、[`__testfixtures__`ディレクトリ](https://github.com/vercel/next.js/tree/canary/packages/next-codemod/transforms/__testfixtures__/url-to-withrouter)で見つけることができます。
