@@ -1,0 +1,208 @@
+---
+title: 'forbidden'
+description: 'forbidden 関数のAPI リファレンス。'
+version: 'canary'
+related:
+  links:
+    - app/api-reference/file-conventions/forbidden
+---
+
+`forbidden` 関数は、Next.js の403エラーページを表示するエラーをスローします。これは、アプリケーション内での認可エラーを処理するために役立ちます。UIをカスタマイズするには、[`forbidden.js` ファイル](/docs/app/api-reference/file-conventions/forbidden)を使用できます。
+
+`forbidden`の使用を開始するには、`next.config.js`ファイルで実験的な[`authInterrupts`](/docs/app/api-reference/config/next-config-js/authInterrupts)構成オプションを有効にします：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    authInterrupts: true,
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+module.exports = {
+  experimental: {
+    authInterrupts: true,
+  },
+}
+```
+
+</TabItem>
+</Tabs>
+
+`forbidden` は[Server Components](/docs/app/building-your-application/rendering/server-components)、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)、および[Route Handlers](/docs/app/building-your-application/routing/route-handlers)で呼び出すことができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/auth/page.tsx" switcher
+import { verifySession } from '@/app/lib/dal'
+import { forbidden } from 'next/navigation'
+
+export default async function AdminPage() {
+  const session = await verifySession()
+
+  // ユーザーが 'admin' ロールを持っているか確認
+  if (session.role !== 'admin') {
+    forbidden()
+  }
+
+  // 権限を持つユーザーのために管理者ページをレンダリング
+  return <></>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/auth/page.js" switcher
+import { verifySession } from '@/app/lib/dal'
+import { forbidden } from 'next/navigation'
+
+export default async function AdminPage() {
+  const session = await verifySession()
+
+  // ユーザーが 'admin' ロールを持っているか確認
+  if (session.role !== 'admin') {
+    forbidden()
+  }
+
+  // 権限を持つユーザーのために管理者ページをレンダリング
+  return <></>
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Good to know {#good-to-know}
+
+- `forbidden` 関数は、[root layout](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required)内で呼び出すことはできません。
+
+## Examples {#examples}
+
+### ロールベースのルート保護 {#role-based-route-protection}
+
+`forbidden` を使用して、ユーザーロールに基づいて特定のルートへのアクセスを制限できます。これにより、認証されているが必要な権限を持たないユーザーがルートにアクセスできないようにすることができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/admin/page.tsx" switcher
+import { verifySession } from '@/app/lib/dal'
+import { forbidden } from 'next/navigation'
+
+export default async function AdminPage() {
+  const session = await verifySession()
+
+  // ユーザーが 'admin' ロールを持っているか確認
+  if (session.role !== 'admin') {
+    forbidden()
+  }
+
+  // 権限を持つユーザーのために管理者ページをレンダリング
+  return (
+    <main>
+      <h1>Admin Dashboard</h1>
+      <p>Welcome, {session.user.name}!</p>
+    </main>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/admin/page.js" switcher
+import { verifySession } from '@/app/lib/dal'
+import { forbidden } from 'next/navigation'
+
+export default async function AdminPage() {
+  const session = await verifySession()
+
+  // ユーザーが 'admin' ロールを持っているか確認
+  if (session.role !== 'admin') {
+    forbidden()
+  }
+
+  // 権限を持つユーザーのために管理者ページをレンダリング
+  return (
+    <main>
+      <h1>Admin Dashboard</h1>
+      <p>Welcome, {session.user.name}!</p>
+    </main>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Server Actionsでのミューテーション {#mutations-with-server-actions}
+
+Server Actionsでミューテーションを実装する際、`forbidden`を使用して特定のロールを持つユーザーにのみ敏感なデータの更新を許可することができます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions/update-role.ts" switcher
+'use server'
+
+import { verifySession } from '@/app/lib/dal'
+import { forbidden } from 'next/navigation'
+import db from '@/app/lib/db'
+
+export async function updateRole(formData: FormData) {
+  const session = await verifySession()
+
+  // 管理者のみがロールを更新できるようにする
+  if (session.role !== 'admin') {
+    forbidden()
+  }
+
+  // 権限を持つユーザーのためにロールの更新を実行
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions/update-role.js" switcher
+'use server'
+
+import { verifySession } from '@/app/lib/dal'
+import { forbidden } from 'next/navigation'
+import db from '@/app/lib/db'
+
+export async function updateRole(formData) {
+  const session = await verifySession()
+
+  // 管理者のみがロールを更新できるようにする
+  if (session.role !== 'admin') {
+    forbidden()
+  }
+
+  // 権限を持つユーザーのためにロールの更新を実行
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+## バージョン履歴 {#version-history}
+
+| バージョン | 変更内容                       |
+| ---------- | ------------------------------ |
+| `v15.1.0`  | `forbidden` が導入されました。 |
