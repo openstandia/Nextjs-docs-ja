@@ -1,22 +1,22 @@
 ---
-title: '国際化'
-description: '国際化されたルーティングと地域化されたコンテンツで複数言語のサポートを追加します'
+title: 'Internationalization'
+description: '国際化されたルーティングとローカライズされたコンテンツで複数言語をサポートする'
 ---
 
-Next.jsは、コンテンツのルーティングとレンダリングを構成して、複数の言語をサポートすることを可能にします。異なるロケールにサイトを適応させることには、翻訳されたコンテンツ（地域化）と国際化されたルートが含まれます。
+Next.jsは、複数の言語をサポートするためにコンテンツのルーティングとレンダリングを設定することを可能にします。異なるロケールに適応するサイトを作ることには、翻訳されたコンテンツ（ローカリゼーション）と国際化されたルートが含まれます。
 
 ## 用語 {#terminology}
 
-- **Locale:** 一連の言語および形式設定の優先事項の識別子。通常、ユーザーの好みの言語とおそらく地理的な地域が含まれます。
-  - `en-US`: アメリカで話される英語
-  - `nl-NL`: オランダで話されるオランダ語
-  - `nl`: 特定の地域が指定されていないオランダ語
+- **Locale（ロケール）:** 言語と書式設定の好みのセットを示す識別子です。これは通常、ユーザーの希望する言語とおそらくその地理的な地域を含みます
+  - `en-US`: アメリカで話されている英語
+  - `nl-NL`: オランダで話されているオランダ語
+  - `nl`: 特定の地域を指定しないオランダ語
 
 ## ルーティングの概要 {#routing-overview}
 
-ブラウザでのユーザーの言語優先順位を使用して、どのロケールを使用するかを選択することをお勧めします。好みの言語を変更すると、アプリケーションに到着する`Accept-Language`ヘッダーが変更されます。
+ユーザーのブラウザの言語設定を使用して、使用するロケールを選択することが推奨されます。希望する言語を変更することで、アプリケーションに送信される`Accept-Language`ヘッダーが変更されます。
 
-例えば、以下のライブラリを使用して、受信する`Request`を見て、`Headers`、サポート予定のロケール、およびデフォルトのロケールに基づいて、どのロケールを選択するかを決定することができます。
+例えば、以下のライブラリを使用して、`Request`を受け取り、`Headers`、サポートする予定のロケール、およびデフォルトのロケールに基づいてどのロケールを選択するかを判断できます。
 
 ```js title="middleware.js"
 import { match } from '@formatjs/intl-localematcher'
@@ -30,18 +30,18 @@ let defaultLocale = 'en-US'
 match(languages, locales, defaultLocale) // -> 'en-US'
 ```
 
-ルーティングはサブパス (`/fr/products`) またはドメイン (`my-site.fr/products`) を使用して国際化できます。この情報を使用して、[Middleware](/docs/app/building-your-application/routing/middleware)内でロケールに基づいてユーザーをリダイレクトすることができます。
+ルーティングはサブパス（`/fr/products`）またはドメイン（`my-site.fr/products`）によって国際化することができます。この情報を用いることで、[Middleware](/docs/app/building-your-application/routing/middleware)内でロケールに基づいてユーザーをリダイレクトすることができます。
 
 ```js title="middleware.js"
 import { NextResponse } from "next/server";
 
 let locales = ['en-US', 'nl-NL', 'nl']
 
-// 上記と同様にまたはライブラリを用いて、好みのロケールを取得する
+// 上記またはライブラリを使用して、優先されるロケールを取得
 function getLocale(request) { ... }
 
 export function middleware(request) {
-  // パス名にサポートされているロケールがあるかどうかを確認
+  // パス名にサポートされているロケールがあるか確認
   const { pathname } = request.nextUrl
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
@@ -49,41 +49,41 @@ export function middleware(request) {
 
   if (pathnameHasLocale) return
 
-  // ロケールがない場合はリダイレクト
+  // ロケールがない場合、リダイレクト
   const locale = getLocale(request)
   request.nextUrl.pathname = `/${locale}${pathname}`
-  // 例: 受信リクエストが/productsの場合
-  // 新しいURLは/en-US/productsになります
+  // 例）受信リクエストが /products の場合
+  // 新しいURLは /en-US/products になります
   return NextResponse.redirect(request.nextUrl)
 }
 
 export const config = {
   matcher: [
-    // すべての内部パス (_next) をスキップ
+    // 内部パス（_next）をすべてスキップ
     '/((?!_next).*)',
-    // 任意: root (/) URL でのみ実行
+    // オプション: ルート（/）URLでのみ実行
     // '/'
   ],
 }
 ```
 
-最後に、`app/`内のすべての特別なファイルが`app/[lang]`の下にネストされていることを確認してください。これにより、Next.js routerはルート内の異なるロケールを動的に処理し、`lang`パラメータをすべてのレイアウトとページに転送できるようになります。例えば:
+最後に、`app/`内のすべての特別なファイルが`app/[lang]`の下に入れられるようにしてください。これにより、Next.jsのルーターがルート内の異なるロケールを動的に処理し、`lang`パラメータをレイアウトやページに転送できます。たとえば：
 
 ```jsx title="app/[lang]/page.js"
 // 現在のロケールにアクセスできるようになります
-// 例: /en-US/products -> `lang`は"en-US"
+// 例）/en-US/products -> `lang`は "en-US"
 export default async function Page({ params: { lang } }) {
   return ...
 }
 ```
 
-root レイアウトも新しいフォルダー（例: `app/[lang]/layout.js`）にネストできます。
+root レイアウトも新しいフォルダ内にネストできます（例：`app/[lang]/layout.js`）。
 
-## 地域化 {#localization}
+## ローカリゼーション {#localization}
 
-ユーザーの好みのロケールに基づいて表示されるコンテンツを変更する、つまり地域化はNext.jsに特有のものではありません。以下で説明するパターンは、任意のWebアプリケーションでも同様に機能します。
+ユーザーの希望するロケールに基づいて表示されるコンテンツを変更する、すなわちローカリゼーションは、Next.jsに特有のものではありません。以下に説明するパターンは、あらゆるWebアプリケーションでも同様に機能します。
 
-アプリケーション内で英語とオランダ語のコンテンツの両方をサポートしたいと仮定しましょう。いくつかのキーから地域化された文字列へのマッピングを提供するオブジェクトである2つの異なる「辞書」を管理するかもしれません。例えば:
+アプリケーション内で英語とオランダ語のコンテンツをサポートしたいとします。2つの異なる「辞書」を保持するかもしれません。これはあるキーからローカライズされた文字列へのマッピングを提供するオブジェクトです。たとえば：
 
 ```json title="dictionaries/en.json"
 {
@@ -101,7 +101,7 @@ root レイアウトも新しいフォルダー（例: `app/[lang]/layout.js`）
 }
 ```
 
-次に、要求されたロケールの翻訳をロードするための`getDictionary`関数を作成できます:
+次に、要求されたロケールの翻訳を読み込むために`getDictionary`関数を作成できます：
 
 ```jsx title="app/[lang]/dictionaries.js"
 import 'server-only'
@@ -114,22 +114,22 @@ const dictionaries = {
 export const getDictionary = async (locale) => dictionaries[locale]()
 ```
 
-現在選択されている言語に基づいて、レイアウトやページ内で辞書を取得できます。
+現在選択されている言語をもとに、レイアウトやページ内で辞書を取得できます。
 
 ```jsx title="app/[lang]/page.js"
 import { getDictionary } from './dictionaries'
 
 export default async function Page({ params: { lang } }) {
   const dict = await getDictionary(lang) // en
-  return <button>{dict.products.cart}</button> // カートに追加
+  return <button>{dict.products.cart}</button> // Add to Cart
 }
 ```
 
-`app/`ディレクトリ内のすべてのレイアウトとページがデフォルトで[Server Components](/docs/app/building-your-application/rendering/server-components)であるため、翻訳ファイルのサイズがクライアント側JavaScriptバンドルサイズに影響を与えることを心配する必要はありません。このコードは**サーバー上でのみ実行され**、結果として得られるHTMLのみがブラウザーに送信されます。
+`app/`ディレクトリ内のすべてのレイアウトとページはデフォルトで[Server Components](/docs/app/building-your-application/rendering/server-components)となるため、翻訳ファイルのサイズがクライアント側のJavaScriptバンドルサイズに影響することを心配する必要はありません。このコードは**サーバーでのみ実行**され、結果として得られるHTMLのみがブラウザに送信されます。
 
 ## 静的生成 {#static-generation}
 
-特定のロケールセットに対して静的ルートを生成するには、`generateStaticParams`をページやレイアウトで使用します。例えば、root レイアウトでこれをグローバルに行うことができます:
+特定のロケールセットに対して静的ルートを生成するには、任意のページまたはレイアウトで`generateStaticParams`を使用できます。たとえば、次のようにグローバルなものにすることができます。
 
 ```jsx title="app/[lang]/layout.js"
 export async function generateStaticParams() {
@@ -147,7 +147,7 @@ export default function Root({ children, params }) {
 
 ## リソース {#resources}
 
-- [Minimal i18n routing and translations](https://github.com/vercel/next.js/tree/canary/examples/app-dir-i18n-routing)
+- [最小限のi18nルーティングと翻訳](https://github.com/vercel/next.js/tree/canary/examples/i18n-routing)
 - [`next-intl`](https://next-intl-docs.vercel.app/docs/next-13)
 - [`next-international`](https://github.com/QuiiBz/next-international)
 - [`next-i18n-router`](https://github.com/i18nexus/next-i18n-router)
