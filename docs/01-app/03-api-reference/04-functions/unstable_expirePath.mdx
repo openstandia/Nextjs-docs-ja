@@ -1,0 +1,145 @@
+---
+title: 'unstable_expirePath'
+description: 'unstable_expirePath 関数のAPIリファレンス'
+version: 'unstable'
+---
+
+`unstable_expirePath` を使用すると、特定のパスに対してオンデマンドで[キャッシュされたデータ](/docs/app/building-your-application/caching)を消去できます。
+
+> **Good to know**:
+>
+> - `unstable_expirePath` は、[Node.js および Edge ランタイム](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)の両方で利用可能です。
+> - `unstable_expirePath` を呼び出した際、含まれるパスが次に訪問されたときにのみキャッシュが無効になります。つまり、`unstable_expirePath` を dynamic route segment と共に呼び出しても、一度に多くのキャッシュを一気に無効化することはありません。無効化は、パスが次に訪問されたときにのみ行われます。
+> - 現在、`unstable_expirePath` は、server actionで使用される場合、[client-side Router Cache](/docs/app/building-your-application/caching#client-side-router-cache)内のすべてのルートを無効化します。この動作は一時的なもので、将来的には特定のパスのみに適用されるように更新される予定です。
+> - `unstable_expirePath` を使用すると、[server-side Route Cache](/docs/app/building-your-application/caching#full-route-cache)において**特定のパスのみ**が無効化されます。
+
+## リファレンス {#reference}
+
+### パラメータ {#parameters}
+
+```tsx
+unstable_expirePath(path: string, type?: 'page' | 'layout'): void;
+```
+
+- `path`: 期限切れにしたいデータに関連するファイルシステムパス（例: `/product/[slug]/page`）またはリテラルなroute segment（例: `/product/123`）を表す文字列。1024文字未満である必要があります。この値は大文字と小文字を区別します。
+- `type`: （任意）パスのタイプを変更するための `'page'` または `'layout'` の文字列。パスにdynamic segment（例: `/product/[slug]/page`）が含まれる場合、このパラメータが必要です。パスがリテラルなroute segment, 例: dynamicページに対する`/product/1`を参照する場合、この `type` は提供しないでください。
+
+### 戻り値 {#returns}
+
+`unstable_expirePath` は値を返しません。
+
+## 例 {#examples}
+
+### 特定のURLを期限切れにする {#expiring-a-specific-url}
+
+```ts
+import { unstable_expirePath } from 'next/cache'
+unstable_expirePath('/blog/post-1')
+```
+
+これは次回のページ訪問時に特定のURLのキャッシュを消去します。
+
+### ページパスを期限切れにする {#expiring-a-page-path}
+
+```ts
+import { unstable_expirePath } from 'next/cache'
+unstable_expirePath('/blog/[slug]', 'page')
+// ルートグループを使用する場合
+unstable_expirePath('/(main)/blog/[slug]', 'page')
+```
+
+これは次回のページ訪問時に提供された `page` ファイルに一致するURLのキャッシュを消去します。これは特定のページ以下のページを無効にはしません。例えば、`/blog/[slug]` は`/blog/[slug]/[author]`を無効化しません。
+
+### レイアウトパスを期限切れにする {#expiring-a-layout-path}
+
+```ts
+import { unstable_expirePath } from 'next/cache'
+unstable_expirePath('/blog/[slug]', 'layout')
+// ルートグループを使用する場合
+unstable_expirePath('/(main)/post/[slug]', 'layout')
+```
+
+これは次回のページ訪問時に提供された `layout` ファイルに一致するURLのキャッシュを消去します。これにより、同じレイアウトを持つ下位のページが次回訪問時に再検証されます。例えば、上記の場合、`/blog/[slug]/[another]` も次回訪問時に再検証されます。
+
+### すべてのデータを期限切れにする {#expiring-all-data}
+
+```ts
+import { unstable_expirePath } from 'next/cache'
+
+unstable_expirePath('/', 'layout')
+```
+
+これは次回のページ訪問時にデータキャッシュを消去します。
+
+### サーバーアクション {#server-action}
+
+Server Actionで `unstable_expirePath` を呼び出すことができます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+import { unstable_expirePath } from 'next/cache'
+
+export default async function submit() {
+  await submitForm()
+  unstable_expirePath('/')
+}
+```
+
+</TabItem>
+</Tabs>
+
+### ルートハンドラー {#route-handler}
+
+Route Handlerで `unstable_expirePath` を呼び出すことができます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/expire/route.ts" switcher
+import { unstable_expirePath } from 'next/cache'
+import type { NextRequest } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const path = request.nextUrl.searchParams.get('path')
+
+  if (path) {
+    unstable_expirePath(path)
+    return Response.json({ revalidated: true, now: Date.now() })
+  }
+
+  return Response.json({
+    expired: false,
+    now: Date.now(),
+    message: 'Missing path to expire',
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/expire/route.js" switcher
+import { unstable_expirePath } from 'next/cache'
+
+export async function GET(request) {
+  const path = request.nextUrl.searchParams.get('path')
+
+  if (path) {
+    unstable_expirePath(path)
+    return Response.json({ expired: true, now: Date.now() })
+  }
+
+  return Response.json({
+    expired: false,
+    now: Date.now(),
+    message: 'Missing path to expire',
+  })
+}
+```
+
+</TabItem>
+</Tabs>

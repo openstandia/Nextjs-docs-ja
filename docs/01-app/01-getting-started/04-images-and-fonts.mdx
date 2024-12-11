@@ -1,0 +1,433 @@
+---
+title: '画像とフォントの最適化方法'
+nav_title: '画像とフォント'
+description: '画像とフォントを最適化する方法を学びましょう。'
+related:
+  title: 'APIリファレンス'
+  description: 'APIリファレンスを読んで、このページで紹介されている機能についてさらに詳しく学びましょう。'
+  links:
+    - app/api-reference/components/font
+    - app/api-reference/components/image
+---
+
+Next.jsには、パフォーマンスとユーザー体験を向上させるために、画像とフォントの自動最適化機能が備わっています。このページでは、それらを使い始める方法を紹介します。
+
+## 静的アセットの扱い {#handling-static-assets}
+
+画像やフォントなどの静的ファイルは、ルートディレクトリにある `public` と呼ばれるフォルダに保存できます。 `public` 内のファイルは、ベースURL (`/`) から始めてコードで参照できます。
+
+<Image
+  alt="アプリとパブリックフォルダーを示すフォルダ構造"
+  srcLight="/docs/light/public-folder.png"
+  srcDark="/docs/dark/public-folder.png"
+  width="1600"
+  height="282"
+/>
+
+## 画像の最適化 {#optmizing-images}
+
+Next.jsの[`<Image>`](/docs/app/building-your-application/optimizing/images)コンポーネントは、HTMLの`<img>`要素を拡張し、以下の機能を提供します：
+
+- **サイズ最適化：** WebPやAVIFなどの現代的な画像フォーマットを使用して、各デバイスに適したサイズの画像を自動で提供
+- **ビジュアルの安定性：** 画像の読み込み時に自動的に[レイアウトシフト](https://web.dev/articles/cls)を防止
+- **ページロードの高速化：** ネイティブブラウザの遅延読み込みを使用して、画像がビューポートに入ったときのみ画像を読み込み、オプションでブラーアッププレースホルダーを使用可能
+- **アセットの柔軟性：** リモートサーバーに保存された画像であっても、オンデマンドでの画像のリサイズが可能
+
+`<Image>`を使い始めるには、`next/image`からインポートして、コンポーネント内でレンダリングします。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import Image from 'next/image'
+
+export default function Page() {
+  return <Image src="" alt="" />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import Image from 'next/image'
+
+export default function Page() {
+  return <Image src="" alt="" />
+}
+```
+
+</TabItem>
+</Tabs>
+
+`src`プロパティには、[ローカル](#local-images)画像か[リモート](#remote-images)画像を指定できます。
+
+### ローカル画像 {#local-images}
+
+ローカル画像を使用するには、[`public`フォルダ](#handling-static-assets)から`.jpg`、`.png`、または`.webp`の画像ファイルを`import`します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import Image from 'next/image'
+import profilePic from './me.png'
+
+export default function Page() {
+  return (
+    <Image
+      src={profilePic}
+      alt="著者の写真"
+      // width={500} 自動的に提供される
+      // height={500} 自動的に提供される
+      // blurDataURL="data:..." 自動的に提供される
+      // placeholder="blur" // ロード中にブラーアップを表示するオプション
+    />
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import Image from 'next/image'
+import profilePic from './me.png'
+
+export default function Page() {
+  return (
+    <Image
+      src={profilePic}
+      alt="著者の写真"
+      // width={500} 自動的に提供される
+      // height={500} 自動的に提供される
+      // blurDataURL="data:..." 自動的に提供される
+      // placeholder="blur" // ロード中にブラーアップを表示するオプション
+    />
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+Next.jsは、インポートされたファイルに基づいて画像の固有の[`幅`](/docs/app/api-reference/components/image#width)と[`高さ`](/docs/app/api-reference/components/image#height)を自動的に決定します。これらの値は、画像比率を決定し、画像の読み込み中に[Cumulative Layout Shift](https://web.dev/articles/cls)を防ぐために使用されます。
+
+### リモート画像 {#remote-images}
+
+リモート画像を使用するには、`src`プロパティにURL文字列を指定できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.ts" switcher
+import Image from 'next/image'
+
+export default function Page() {
+  return (
+    <Image
+      src="https://s3.amazonaws.com/my-bucket/profile.png"
+      alt="著者の写真"
+      width={500}
+      height={500}
+    />
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import Image from 'next/image'
+
+export default function Page() {
+  return (
+    <Image
+      src="https://s3.amazonaws.com/my-bucket/profile.png"
+      alt="著者の写真"
+      width={500}
+      height={500}
+    />
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+Next.jsはビルドプロセス中にリモートファイルにアクセスできないため、[`width`](/docs/app/api-reference/components/image#width)、[`height`](/docs/app/api-reference/components/image#height)、およびオプションの[`blurDataURL`](/docs/app/api-reference/components/image#blurdataurl)プロップは手動で指定する必要があります。`width`と`height`属性は、画像の正確なアスペクト比を推測し、画像の読み込みによるレイアウトのシフトを防ぐために使用されます。
+
+次に、リモートサーバーから画像を安全に許可するには、[`next.config.js`](/docs/app/api-reference/config/next-config-js)でサポートされるURLパターンのリストを定義する必要があります。不正使用を防ぐため、可能な限り具体的に指定してください。たとえば、次の設定では、特定のAWS S3バケットからの画像のみを許可します：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import { NextConfig } from 'next'
+
+const config: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 's3.amazonaws.com',
+        port: '',
+        pathname: '/my-bucket/**',
+        search: '',
+      },
+    ],
+  },
+}
+
+export default config
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 's3.amazonaws.com',
+        port: '',
+        pathname: '/my-bucket/**',
+        search: '',
+      },
+    ],
+  },
+}
+```
+
+</TabItem>
+</Tabs>
+
+## フォントの最適化 {#optimizing-fonts}
+
+[`next/font`](/docs/app/api-reference/components/font)モジュールはフォントを自動的に最適化し、外部ネットワークリクエストを削除してプライバシーとパフォーマンスを向上させます。
+
+_どんな_ フォントファイルでも、**組み込みの自動セルフホスティング**を含んでいます。これにより、レイアウトシフトなしでWebフォントを最適に読み込むことができます。
+
+`next/font`を使い始めるには、[`next/font/local`](#local-fonts)または[`next/font/google`](#google-fonts)からインポートし、適切なオプションで関数として呼び出し、フォントを適用する要素の`className`を設定します。例：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" highlight={1,3-5,9} switcher
+import { Geist } from 'next/font/google'
+
+const geist = Geist({
+  subsets: ['latin'],
+})
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={geist.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" highlight={1,3-5,9} switcher
+import { Geist } from 'next/font/google'
+
+const geist = Geist({
+  subsets: ['latin'],
+})
+
+export default function Layout({ children }) {
+  return (
+    <html className={geist.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Googleフォント {#google-fonts}
+
+どんなGoogleフォントでも自動的にセルフホスティングできます。フォントはデプロイメントに含まれ、デプロイメントと同じドメインから提供されるため、ユーザーがサイトを訪れた際にブラウザからGoogleへのリクエストは送信されません。
+
+Googleフォントを使い始めるには、`next/font/google`から選んだフォントをインポートします：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import { Geist } from 'next/font/google'
+
+const geist = Geist({
+  subsets: ['latin'],
+})
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" className={geist.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+import { Geist } from 'next/font/google'
+
+const geist = Geist({
+  subsets: ['latin'],
+})
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={geist.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+パフォーマンスと柔軟性を最大限に引き出すために、[可変フォント](https://fonts.google.com/variablefonts)の使用をおすすめします。しかし、可変フォントが使用できない場合は、**フォントのウェイトを指定する必要があります**：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import { Roboto } from 'next/font/google'
+
+const roboto = Roboto({
+  weight: '400',
+  subsets: ['latin'],
+})
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" className={roboto.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" highlight={1,3-5,9} switcher
+import { Roboto } from 'next/font/google'
+
+const roboto = Roboto({
+  weight: '400',
+  subsets: ['latin'],
+})
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={roboto.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### ローカルフォント {#local-fonts}
+
+ローカルフォントを使用するには、`next/font/local`からフォントをインポートし、[`public`フォルダ](#handling-static-assets)にあるローカルフォントファイルの`src`を指定します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import localFont from 'next/font/local'
+
+const myFont = localFont({
+  src: './my-font.woff2',
+})
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" className={myFont.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+import localFont from 'next/font/local'
+
+const myFont = localFont({
+  src: './my-font.woff2',
+})
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={myFont.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+単一フォントファミリーに複数のファイルを使用したい場合、`src`は配列にできます：
+
+```js
+const roboto = localFont({
+  src: [
+    {
+      path: './Roboto-Regular.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: './Roboto-Italic.woff2',
+      weight: '400',
+      style: 'italic',
+    },
+    {
+      path: './Roboto-Bold.woff2',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: './Roboto-BoldItalic.woff2',
+      weight: '700',
+      style: 'italic',
+    },
+  ],
+})
+```

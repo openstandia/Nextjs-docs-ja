@@ -1,0 +1,103 @@
+---
+title: 'unstable_expireTag'
+description: 'unstable_expireTag 関数の API リファレンス'
+version: '不安定'
+---
+
+`unstable_expireTag` を使用すると、特定のキャッシュタグに対してオンデマンドで[キャッシュされたデータ](/docs/app/building-your-application/caching)をパージすることができます。
+
+> **Good to know**:
+>
+> - `unstable_expireTag` は [Node.js と Edge ランタイム](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)の双方で利用可能です。
+> - `unstable_expireTag` は、キャッシュを無効化するのはそのパスが次回訪問されたときのみです。これにより、`unstable_expireTag` を dynamic route segment で呼び出しても、一度に多くの無効化を即座には引き起こさないことになります。無効化は、そのパスが次に訪問されたときにのみ行われます。
+
+## 参照 {#reference}
+
+### パラメーター {#parameters}
+
+```tsx
+unstable_expireTag(...tags: string[]): void;
+```
+
+- `tags`: 削除したいデータに関連付けられたキャッシュタグを表す文字列引数。各文字列の長さは 256 文字以下にする必要があります。この値は大文字と小文字を区別します。
+
+`fetch` にタグを次のように追加できます:
+
+```tsx
+fetch(url, { next: { tags: [...] } });
+```
+
+### 返り値 {#returns}
+
+`unstable_expireTag` は値を返しません。
+
+## 例 {#examples}
+
+### Server Action {#server-action}
+
+Server Action 内で `unstable_expireTag` を呼び出すことができます:
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+import { unstable_expireTag } from 'next/cache'
+
+export default async function submit() {
+  await addPost()
+  unstable_expireTag('posts', 'blog')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { unstable_expireTag } from 'next/cache'
+
+export default async function submit() {
+  await addPost()
+  unstable_expireTag('posts', 'blog')
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Route Handler {#route-handler}
+
+Route Handler 内で `unstable_expireTag` を呼び出すことができます:
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/revalidate/route.ts" switcher
+import type { NextRequest } from 'next/server'
+import { unstable_expireTag } from 'next/cache'
+
+export async function GET(request: NextRequest) {
+  const tag = request.nextUrl.searchParams.get('tag')
+  unstable_expireTag(tag)
+  return Response.json({ revalidated: true, now: Date.now() })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/revalidate/route.js" switcher
+import { unstable_expireTag } from 'next/cache'
+
+export async function GET(request) {
+  const tag = request.nextUrl.searchParams.get('tag')
+  unstable_expireTag(tag)
+  return Response.json({ revalidated: true, now: Date.now() })
+}
+```
+
+</TabItem>
+</Tabs>
