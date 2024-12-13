@@ -1,0 +1,137 @@
+---
+title: 'after'
+description: 'after 関数のAPI参照'
+---
+
+`after` は、レスポンス（または事前レンダリング）が完了した後に実行する作業をスケジュールするためのものです。これは、ログや分析のように、レスポンスをブロックすべきでないタスクやその他の副作用に役立ちます。
+
+これは、[Server Component](/docs/app/building-your-application/rendering/server-components)（[`generateMetadata`](https://nextjs.org/docs/app/api-reference/functions/generate-metadata) を含む）、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)、[Route Handler](/docs/app/building-your-application/routing/route-handlers)、および[Middleware](/docs/app/building-your-application/routing/middleware)で使用できます。
+
+この関数は、レスポンス（または事前レンダリング）が完了した後に実行されるコールバックを受け入れます：
+
+```tsx title="app/layout.tsx switcher
+import { after } from 'next/server'
+// カスタムロギング関数
+import { log } from '@/app/utils'
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  after(() => {
+    // レイアウトがレンダリングされ、ユーザーに送信された後に実行します
+    log()
+  })
+  return <>{children}</>
+}
+```
+
+```jsx filename="app/layout.js switcher
+import { after } from 'next/server'
+// カスタムロギング関数
+import { log } from '@/app/utils'
+
+export default function Layout({ children }) {
+  after(() => {
+    // レイアウトがレンダリングされ、ユーザーに送信された後に実行します
+    log()
+  })
+  return <>{children}</>
+}
+```
+
+> **Good to know:** `after`は[動的API](/docs/app/building-your-application/rendering/server-components#dynamic-apis)ではなく、これを呼び出してもルートが動的になることはありません。静的ページ内で使用されている場合、コールバックはビルド時、またはページが再検証されるたびに実行されます。
+
+## リファレンス {#reference}
+
+### パラメータ {#parameters}
+
+- レスポンス（または事前レンダリング）が完了した後に実行されるコールバック関数
+
+### 期間 {#duration}
+
+`after`はプラットフォームのデフォルトまたは設定済みのルートの最大期間で実行されます。プラットフォームが対応している場合は、[`maxDuration`](/docs/app/api-reference/file-conventions/route-segment-config#maxduration)ルートセグメント設定を使用してタイムアウト制限を構成できます。
+
+## Good to know {#good-to-know}
+
+- `after`は、レスポンスが正常に完了しなかった場合でも実行されます。エラーが発生した場合や、`notFound`や`redirect`が呼び出された場合も含まれます。
+- React の `cache` を使用して、`after` 内で呼び出される関数を重複排除することができます。
+- `after` は他の `after` 呼び出しの中にネストできます。例えば、`after` 呼び出しをラップして追加の機能を追加するユーティリティ関数を作成できます。
+
+## 代替案 {#alternatives}
+
+`after` のユースケースは、主要なレスポンスをブロックせずに二次的なタスクを処理することです。これはプラットフォームの[`waitUntil()`](https://vercel.com/docs/functions/functions-api-reference)を使用したり、promiseから`await`を削除するのと似ていますが、次の違いがあります：
+
+- **`waitUntil()`**: promiseを受け取り、リクエストのライフサイクル中に実行されるタスクをキューに入れますが、`after`はレスポンスが完了**した後**に実行されるコールバックを受け取ります。
+- **`await`の削除**: レスポンス中に実行を開始するため、リソースを使用します。また、サーバーレス環境ではレスポンスが送信された直後に計算が停止するため、タスクが中断される可能性があり信頼性がありません。
+
+`after`を使用することをお勧めします。これは、他のNext.js APIやコンテキストを考慮して設計されています。
+
+## 例 {#examples}
+
+### リクエストAPIと共に {#with-request-apis}
+
+[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)や[Route Handlers](/docs/app/api-reference/file-conventions/route)で、`after` 内で [`cookies`](/docs/app/api-reference/functions/cookies)や [`headers`](/docs/app/api-reference/functions/headers) などのリクエストAPIを使用できます。これは、ミューテーション後のアクティビティをログに記録するのに役立ちます。例えば：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" highlight={2,7-9} switcher
+import { after } from 'next/server'
+import { cookies, headers } from 'next/headers'
+import { logUserAction } from '@/app/utils'
+
+export async function POST(request: Request) {
+  // ミューテーションを実行
+  // ...
+
+  // 分析のためにユーザー活動をログ
+  after(async () => {
+    const userAgent = (await headers().get('user-agent')) || 'unknown'
+    const sessionCookie =
+      (await cookies().get('session-id'))?.value || 'anonymous'
+
+    logUserAction({ sessionCookie, userAgent })
+  })
+
+  return new Response(JSON.stringify({ status: 'success' }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" highlight={2,7-9} switcher
+import { after } from 'next/server'
+import { cookies, headers } from 'next/headers'
+import { logUserAction } from '@/app/utils'
+
+export async function POST(request) {
+  // ミューテーションを実行
+  // ...
+
+  // 分析のためにユーザー活動をログ
+  after(async () => {
+    const userAgent = (await headers().get('user-agent')) || 'unknown'
+    const sessionCookie =
+      (await cookies().get('session-id'))?.value || 'anonymous'
+
+    logUserAction({ sessionCookie, userAgent })
+  })
+
+  return new Response(JSON.stringify({ status: 'success' }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+```
+
+</TabItem>
+</Tabs>
+
+ただし、[Server Component](/docs/app/building-your-application/rendering/server-components)内の`after`ではこれらのリクエストAPIを使用できません。これは、Next.jsがどの部分のtreeがリクエストAPIにアクセスするかを知る必要があるためです。[Partial Prerendering](/docs/app/building-your-application/rendering/partial-prerendering)をサポートするためですが、`after`はReactのレンダリングライフサイクルの後に実行されます。
+
+| バージョン履歴 | 説明                              |
+| -------------- | --------------------------------- |
+| `v15.1.0`      | `after`が安定版になりました       |
+| `v15.0.0-rc`   | `unstable_after` が導入されました |

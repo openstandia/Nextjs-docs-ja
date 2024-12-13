@@ -1,0 +1,77 @@
+---
+title: 'inlineCss'
+description: 'インラインCSSのサポートを有効にします。'
+version: 'experimental'
+---
+
+## 使用法 {#usage}
+
+`<head>`内でのインラインCSSの実験的サポート。このフラグを有効にすると、通常は`<link>`タグを生成する場所に、`<style>`タグが生成されます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="next.config.ts" switcher
+import type { NextConfig } from 'next'
+
+// 実験的にインラインCSSを有効にします
+const nextConfig: NextConfig = {
+  experimental: {
+    inlineCss: true,
+  },
+}
+
+export default nextConfig
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="next.config.js" switcher
+/** @type {import('next').NextConfig} */
+// 実験的にインラインCSSを有効にします
+const nextConfig = {
+  experimental: {
+    inlineCss: true,
+  },
+}
+
+module.exports = nextConfig
+```
+
+</TabItem>
+</Tabs>
+
+## トレードオフ {#trade-offs}
+
+### インラインCSSを使用するタイミング {#when-to-use-inline-css}
+
+インラインCSSは、いくつかのシナリオで有益です：
+
+- **初めての訪問者**：CSSファイルはレンダーブロックリソースであるため、インライン化により初回ダウンロード遅延をなくし、ページの読み込み性能を向上させます
+
+- **パフォーマンス指標**：CSSファイルの追加ネットワークリクエストを排除することで、インライン化はFirst Contentful Paint（FCP）やLargest Contentful Paint（LCP）などの重要な指標を大幅に改善できます
+
+- **遅い接続**：各リクエストがかなりの遅延を引き起こすような遅いネットワークのユーザー向けに、インラインCSSはネットワーク往復を減らすことで目に見える性能向上を提供します
+
+- **Atomic CSS バンドル（例：Tailwind）**：Tailwind CSSのようなユーティリティファーストのフレームワークでは、ページに必要なスタイルのサイズはデザインの複雑さに対してしばしばO(1)です。これにより、インライン化は魅力的な選択肢となります。現在ページ用のスタイル全体が軽量で、ページサイズに伴って増大することはありません。Tailwindスタイルのインライン化は、最小限のペイロードを確保し、追加のネットワークリクエストを排除することで性能をさらに向上させます
+
+### インラインCSSを使用しないタイミング {#when-not-to-use-inline-css}
+
+インラインCSSは性能に大きな利点をもたらしますが、以下のように適していないこともあります：
+
+- **大型CSSバンドル**：CSSバンドルが大きすぎる場合、インライン化はHTMLのサイズを大幅に増やし、Time to First Byte（TTFB）が遅くなる可能性があり、遅い接続のユーザーにとって性能が悪化するかもしれません
+- **動的またはページ特有のCSS**：非常に動的なスタイルや異なるCSSセットを使うページを持つアプリケーションでは、全ページのCSSを繰り返しインライン化する必要があるため、冗長さと膨張を招く可能性があります
+
+- **ブラウザのキャッシュ**：頻繁に再訪する訪問者の場合、外部CSSファイルはスタイルを効率的にキャッシュすることで、後続の訪問でデータ転送を削減します。インラインCSSではこの利点がなくなります
+
+これらのトレードオフを慎重に評価し、クリティカルCSS抽出やハイブリッドアプローチなど他の戦略と組み合わせて、サイトのニーズに合わせた最良の結果を検討してください。
+
+> **Good to know**:
+>
+> この機能は現在、実験的であり、以下の既知の制限があります：
+>
+> - CSSインラインはグローバルに適用され、ページ単位での設定はできません
+> - 初期ページロード時に`<style>`タグ内でSSR用とRSCペイロード内でスタイルが重複します
+> - 静的にレンダリングされたページにナビゲートする際は、重複を避けるためにインラインCSSではなく`<link>`タグが使用されます
+> - この機能は開発モードでは利用できず、本番ビルドでのみ動作します
