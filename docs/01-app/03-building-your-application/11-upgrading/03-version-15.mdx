@@ -1,0 +1,653 @@
+---
+title: 'アップグレード ノート'
+description: 'Next.js アプリケーションをバージョン 14 から 15 にアップグレードします。'
+---
+
+{/* このドキュメントの内容は app router と pages router の間で共有されています。Pages Router に特化した内容を追加するには、 `<PagesOnly>Content</PagesOnly>` コンポーネントを使用できます。共有されたコンテンツにはコンポーネントをラップしないでください。 */}
+
+## 14 から 15 へのアップグレード {#upgrading-from-14-to-15}
+
+Next.js バージョン 15 に更新するには、`upgrade` codemod を使用できます：
+
+```bash title="Terminal"
+npx @next/codemod@canary upgrade latest
+```
+
+手動で行いたい場合は、最新の Next & React RC をインストールしていることを確認してください。例：
+
+```bash title="Terminal"
+npm i next@latest react@rc react-dom@rc eslint-config-next@latest
+```
+
+> **参考情報：**
+>
+> - ピアデペンデンシーの警告が表示された場合、`react` と `react-dom` を推奨バージョンに更新するか、警告を無視するために `--force` または `--legacy-peer-deps` フラグを使用する必要があります。これは、Next.js 15 と React 19 が安定版になれば不要になります。
+
+## React 19 {#react-19}
+
+- `react` と `react-dom` の最小バージョンが 19 になりました。
+- `useFormState` は `useActionState` に置き換えられました。`useFormState` フックは React 19 で利用可能ですが、今後のリリースで削除される予定です。`useActionState` が推奨され、`pending` ステートを直接読むような追加プロパティを含んでいます。[詳細はこちら](https://react.dev/reference/react/useActionState)。
+- `useFormStatus` は `data`、`method`、`action` などの追加キーを含むようになりました。React 19 を使用していない場合は、`pending` キーのみ利用可能です。[詳細はこちら](https://react.dev/reference/react-dom/hooks/useFormStatus)。
+- [React 19 アップグレードガイド](https://react.dev/blog/2024/04/25/react-19-upgrade-guide)で詳しく読むことができます。
+
+> **参考情報：** TypeScript を使用している場合は、`@types/react` と `@types/react-dom` も最新バージョンにアップグレードしてください。
+
+## 非同期要求API（重大な変更）{#async-request-apis-breaking-change}
+
+これまで同期的だった実行時情報に依存する Dynamic API は、**非同期**になりました：
+
+- [`cookies`](/docs/app/api-reference/functions/cookies)
+- [`headers`](/docs/app/api-reference/functions/headers)
+- [`draftMode`](/docs/app/api-reference/functions/draft-mode)
+- [`layout.js`](/docs/app/api-reference/file-conventions/layout)、[`page.js`](/docs/app/api-reference/file-conventions/page)、[`route.js`](/docs/app/api-reference/file-conventions/route)、[`default.js`](/docs/app/api-reference/file-conventions/default)、[`opengraph-image`](/docs/app/api-reference/file-conventions/metadata/opengraph-image)、[`twitter-image`](/docs/app/api-reference/file-conventions/metadata/opengraph-image)、[`icon`](/docs/app/api-reference/file-conventions/metadata/app-icons)、[`apple-icon`](/docs/app/api-reference/file-conventions/metadata/app-icons) の `params`
+- [`page.js`](/docs/app/api-reference/file-conventions/page) の `searchParams`
+
+移行の負担を軽減するため、移行を自動化するための [codemod が用意されています](/docs/app/building-your-application/upgrading/codemods#150)。API は一時的に同期的にアクセスできます。
+
+### `cookies` {#cookies}
+
+#### 推奨の非同期使用法 {#recommended-async-usage}
+
+```tsx
+import { cookies } from 'next/headers'
+
+// Before
+const cookieStore = cookies()
+const token = cookieStore.get('token')
+
+// After
+const cookieStore = await cookies()
+const token = cookieStore.get('token')
+```
+
+#### 一時的な同期使用法 {#temporary-synchronous-usage}
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { cookies, type UnsafeUnwrappedCookies } from 'next/headers'
+
+// Before
+const cookieStore = cookies()
+const token = cookieStore.get('token')
+
+// After
+const cookieStore = cookies() as unknown as UnsafeUnwrappedCookies
+// 開発中に警告がログに記録されます
+const token = cookieStore.get('token')
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { cookies } from 'next/headers'
+
+// Before
+const cookieStore = cookies()
+const token = cookieStore.get('token')
+
+// After
+const cookieStore = cookies()
+// 開発中に警告がログに記録されます
+const token = cookieStore.get('token')
+```
+
+</TabItem>
+</Tabs>
+
+### `headers` {#headers}
+
+#### 推奨の非同期使用法 {#recommended-async-usage}
+
+```tsx
+import { headers } from 'next/headers'
+
+// Before
+const headersList = headers()
+const userAgent = headersList.get('user-agent')
+
+// After
+const headersList = await headers()
+const userAgent = headersList.get('user-agent')
+```
+
+#### 一時的な同期使用法 {#temporary-synchronous-usage}
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { headers, type UnsafeUnwrappedHeaders } from 'next/headers'
+
+// Before
+const headersList = headers()
+const userAgent = headersList.get('user-agent')
+
+// After
+const headersList = headers() as unknown as UnsafeUnwrappedHeaders
+// 開発中に警告がログに記録されます
+const userAgent = headersList.get('user-agent')
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { headers } from 'next/headers'
+
+// Before
+const headersList = headers()
+const userAgent = headersList.get('user-agent')
+
+// After
+const headersList = headers()
+// 開発中に警告がログに記録されます
+const userAgent = headersList.get('user-agent')
+```
+
+</TabItem>
+</Tabs>
+
+### `draftMode` {#draftmode}
+
+#### 推奨の非同期使用法 {#recommended-async-usage}
+
+```tsx
+import { draftMode } from 'next/headers'
+
+// Before
+const { isEnabled } = draftMode()
+
+// After
+const { isEnabled } = await draftMode()
+```
+
+#### 一時的な同期使用法 {#temporary-synchronous-usage}
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { draftMode, type UnsafeUnwrappedDraftMode } from 'next/headers'
+
+// Before
+const { isEnabled } = draftMode()
+
+// After
+// 開発中に警告がログに記録されます
+const { isEnabled } = draftMode() as unknown as UnsafeUnwrappedDraftMode
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { draftMode } from 'next/headers'
+
+// Before
+const { isEnabled } = draftMode()
+
+// After
+// 開発中に警告がログに記録されます
+const { isEnabled } = draftMode()
+```
+
+</TabItem>
+</Tabs>
+
+### `params` & `searchParams` {#params-searchparams}
+
+#### 非同期レイアウト {#asynchronous-layout}
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+// Before
+type Params = { slug: string }
+
+export function generateMetadata({ params }: { params: Params }) {
+  const { slug } = params
+}
+
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Params
+}) {
+  const { slug } = params
+}
+
+// After
+type Params = Promise<{ slug: string }>
+
+export async function generateMetadata({ params }: { params: Params }) {
+  const { slug } = await params
+}
+
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Params
+}) {
+  const { slug } = await params
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+// Before
+export function generateMetadata({ params }) {
+  const { slug } = params
+}
+
+export default async function Layout({ children, params }) {
+  const { slug } = params
+}
+
+// After
+export async function generateMetadata({ params }) {
+  const { slug } = await params
+}
+
+export default async function Layout({ children, params }) {
+  const { slug } = await params
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### 同期レイアウト {#synchronous-layout}
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+// Before
+type Params = { slug: string }
+
+export default function Layout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Params
+}) {
+  const { slug } = params
+}
+
+// After
+import { use } from 'react'
+
+type Params = Promise<{ slug: string }>
+
+export default function Layout(props: {
+  children: React.ReactNode
+  params: Params
+}) {
+  const params = use(props.params)
+  const slug = params.slug
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+// Before
+export default function Layout({ children, params }) {
+  const { slug } = params
+}
+
+// After
+import { use } from 'react'
+export default async function Layout(props) {
+  const params = use(props.params)
+  const slug = params.slug
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### 非同期ページ {#asynchronous-page}
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+// Before
+type Params = { slug: string }
+type SearchParams = { [key: string]: string | string[] | undefined }
+
+export function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Params
+  searchParams: SearchParams
+}) {
+  const { slug } = params
+  const { query } = searchParams
+}
+
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Params
+  searchParams: SearchParams
+}) {
+  const { slug } = params
+  const { query } = searchParams
+}
+
+// After
+type Params = Promise<{ slug: string }>
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
+
+export async function generateMetadata(props: {
+  params: Params
+  searchParams: SearchParams
+}) {
+  const params = await props.params
+  const searchParams = await props.searchParams
+  const slug = params.slug
+  const query = searchParams.query
+}
+
+export default async function Page(props: {
+  params: Params
+  searchParams: SearchParams
+}) {
+  const params = await props.params
+  const searchParams = await props.searchParams
+  const slug = params.slug
+  const query = searchParams.query
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+// Before
+export function generateMetadata({ params, searchParams }) {
+  const { slug } = params
+  const { query } = searchParams
+}
+
+export default function Page({ params, searchParams }) {
+  const { slug } = params
+  const { query } = searchParams
+}
+
+// After
+export async function generateMetadata(props) {
+  const params = await props.params
+  const searchParams = await props.searchParams
+  const slug = params.slug
+  const query = searchParams.query
+}
+
+export async function Page(props) {
+  const params = await props.params
+  const searchParams = await props.searchParams
+  const slug = params.slug
+  const query = searchParams.query
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### 同期ページ {#synchronous-page}
+
+```tsx
+'use client'
+
+// Before
+type Params = { slug: string }
+type SearchParams = { [key: string]: string | string[] | undefined }
+
+export default function Page({
+  params,
+  searchParams,
+}: {
+  params: Params
+  searchParams: SearchParams
+}) {
+  const { slug } = params
+  const { query } = searchParams
+}
+
+// After
+import { use } from 'react'
+
+type Params = Promise<{ slug: string }>
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
+
+export default function Page(props: {
+  params: Params
+  searchParams: SearchParams
+}) {
+  const params = use(props.params)
+  const searchParams = use(props.searchParams)
+  const slug = params.slug
+  const query = searchParams.query
+}
+```
+
+```jsx
+// Before
+export default function Page({ params, searchParams }) {
+  const { slug } = params
+  const { query } = searchParams
+}
+
+// After
+import { use } from "react"
+
+export default function Page(props) {
+  const params = use(props.params)
+  const searchParams = use(props.searchParams)
+  const slug = params.slug
+  const query = searchParams.query
+}
+```
+
+#### ルートハンドラー {# route-handlers}
+
+```tsx title="app/api/route.ts"
+// Before
+type Params = { slug: string }
+
+export async function GET(request: Request, segmentData: { params: Params }) {
+  const params = segmentData.params
+  const slug = params.slug
+}
+
+// After
+type Params = Promise<{ slug: string }>
+
+export async function GET(request: Request, segmentData: { params: Params }) {
+  const params = await segmentData.params
+  const slug = params.slug
+}
+```
+
+```js title="app/api/route.js"
+// Before
+export async function GET(request, segmentData) {
+  const params = segmentData.params
+  const slug = params.slug
+}
+
+// After
+export async function GET(request, segmentData) {
+  const params = await segmentData.params
+  const slug = params.slug
+}
+```
+
+<AppOnly>
+
+## `runtime` コンフィギュレーション（重大な変更）{#runtime-configuration-breaking-change}
+
+以前の`runtime`[segment コンフィギュレーション](/docs/app/api-reference/file-conventions/route-segment-config#runtime)は、`experimental-edge`の値を`edge`とともにサポートしていました。どちらのコンフィギュレーションも同じものであり、選択肢を簡素化するため、`experimental-edge`が使用されているとエラーが発生します。これを修正するには、`runtime`コンフィギュレーションを`edge`に更新してください。[codemod](/docs/app/building-your-application/upgrading/codemods#app-dir-runtime-config-experimental-edge)がこの作業を自動的に行います。
+
+</AppOnly>
+
+## `fetch` リクエスト {#fetch-requests}
+
+[`fetch`リクエスト](/docs/app/api-reference/functions/fetch)は、デフォルトでキャッシュされなくなりました。
+
+特定の`fetch`リクエストをキャッシュに参加させたい場合は、`cache: 'force-cache'`オプションを渡すことができます。
+
+```js title="app/layout.js"
+export default async function RootLayout() {
+  const a = await fetch('https://...') // キャッシュされません
+  const b = await fetch('https://...', { cache: 'force-cache' }) // キャッシュされます
+
+  // ...
+}
+```
+
+レイアウトやページ内のすべての`fetch`リクエストをキャッシュに参加させたい場合は、`export const fetchCache = 'default-cache'`[segment config オプション](/docs/app/api-reference/file-conventions/route-segment-config)を使用できます。個々の`fetch`リクエストが`cache`オプションを指定している場合は、それが代わりに使用されます。
+
+```js title="app/layout.js"
+// これはrootレイアウトなので、アプリ内のキャッシュオプションを設定していないすべてのfetchリクエストはキャッシュされます。
+export const fetchCache = 'default-cache'
+
+export default async function RootLayout() {
+  const a = await fetch('https://...') // キャッシュされます
+  const b = await fetch('https://...', { cache: 'no-store' }) // キャッシュされません
+
+  // ...
+}
+```
+
+## ルートハンドラー {#route-handlers}
+
+[Route Handlers](/docs/app/api-reference/file-conventions/route)の`GET`メソッドはデフォルトでキャッシュされなくなりました。`GET`メソッドをキャッシュに登録するには、[ルートコンフィギュレーションオプション](/docs/app/api-reference/file-conventions/route-segment-config)を使用し、例えば`export const dynamic = 'force-static'`をルートハンドラーファイルに設定します。
+
+```js title="app/api/route.js"
+export const dynamic = 'force-static'
+
+export async function GET() {}
+```
+
+## クライアントサイドルーターキャッシュ {#client-side-router-cache}
+
+`<Link>`や`useRouter`を介してページ間を移動する際、[page](/docs/app/api-reference/file-conventions/page)セグメントはクライアントサイドのrouter cacheから再利用されなくなりました。ただし、これらはブラウザの前後の移動中や共有レイアウトに対しては再利用されます。
+
+ページセグメントをキャッシュに参加させたい場合は、[`staleTimes`](/docs/app/api-reference/config/next-config-js/staleTimes)コンフィギュレーションオプションを使用できます：
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
+}
+
+module.exports = nextConfig
+```
+
+[Layouts](/docs/app/api-reference/file-conventions/layout)や[loading states](/docs/app/api-reference/file-conventions/loading)は引き続きキャッシュされ、ナビゲーション時に再利用されます。
+
+## `next/font` {#next-font}
+
+`@next/font`パッケージは、組み込みの[`next/font`](/docs/app/api-reference/components/font)に置き換えられました。[codemod が用意されており](/docs/app/building-your-application/upgrading/codemods#built-in-next-font)、インポートを安全かつ自動的にリネームできます。
+
+```js title="app/layout.js"
+// Before
+import { Inter } from '@next/font/google'
+
+// After
+import { Inter } from 'next/font/google'
+```
+
+## `bundlePagesRouterDependencies` {#bundlepagesrouterdependencies}
+
+`experimental.bundlePagesExternals`が安定し、`bundlePagesRouterDependencies`にリネームされました。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Before
+  experimental: {
+    bundlePagesExternals: true,
+  },
+
+  // After
+  bundlePagesRouterDependencies: true,
+}
+
+module.exports = nextConfig
+```
+
+## `serverExternalPackages` {#serverexternalpackages}
+
+`experimental.serverComponentsExternalPackages`が安定し、`serverExternalPackages`にリネームされました。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Before
+  experimental: {
+    serverComponentsExternalPackages: ['package-name'],
+  },
+
+  // After
+  serverExternalPackages: ['package-name'],
+}
+
+module.exports = nextConfig
+```
+
+## Speed Insights {#speed-insights}
+
+Speed Insightsの自動instrumentationはNext.js 15から削除されました。
+
+Speed Insightsの使用を続けるには、[Vercel Speed Insights Quickstart](https://vercel.com/docs/speed-insights/quickstart)ガイドに従ってください。
+
+## `NextRequest` ジオロケーション {#nextrequest-geolocation}
+
+`NextRequest`の`geo`および`ip`プロパティは、これらの値がホスティングプロバイダーによって提供されているため削除されました。[移行を自動化するためのcodemodが用意されています](/docs/app/building-your-application/upgrading/codemods#150)。
+
+Vercelを使用している場合は、`@vercel/functions`から`geolocation`と`ipAddress`関数を代替として使用できます：[詳細はこちら](https://vercel.com/docs/functions/vercel-functions-package)。
+
+```ts title="middleware.ts"
+import { geolocation } from '@vercel/functions'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  const { city } = geolocation(request)
+
+  // ...
+}
+```
+
+```ts title="middleware.ts"
+import { ipAddress } from '@vercel/functions'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  const ip = ipAddress(request)
+
+  // ...
+}
+```

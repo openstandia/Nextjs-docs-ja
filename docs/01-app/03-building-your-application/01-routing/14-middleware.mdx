@@ -1,0 +1,670 @@
+---
+title: 'Middleware'
+description: 'Middleware を使用して、リクエスト完了前にコードを実行する方法を学びます。'
+---
+
+{/* 本ドキュメントの内容は、app router と pages router の間で共有されています。Pages Router に特化した内容を追加するには `<PagesOnly>Content</PagesOnly>` コンポーネントを使用します。共有されるコンテンツはコンポーネントでラップしないでください。 */}
+
+Middleware を使用すると、リクエストが完了する前にコードを実行できます。その後、受信したリクエストに基づいて、レスポンスをリライティング、リダイレクト、リクエストまたはレスポンスヘッダーの変更、または直接的なレスポンスの応答などで修正できます。
+
+Middleware はキャッシュされたコンテンツやルートが一致する前に実行されます。詳細は[マッチングパス](#matching-paths)をご覧ください。
+
+## ユースケース {#use-cases}
+
+Middleware をアプリケーションに統合することで、パフォーマンス、セキュリティ、およびユーザーエクスペリエンスを大幅に向上させることができます。特に効果的な一般的なシナリオには次のようなものがあります：
+
+- 認証と認可：特定のページや API ルートへのアクセスを許可する前に、ユーザーのアイデンティティを確認し、セッションの cookie をチェックします
+- サーバーサイドリダイレクト：特定の条件に基づいて、サーバーレベルでユーザーをリダイレクトします（例：ロケール、ユーザーロール）
+- パスリライティング：リクエストプロパティに基づいて API ルートやページへのパスを動的に書き換えることで、A/B テスト、機能のロールアウト、またはレガシーパスをサポートします
+- ボットの検出：ボットトラフィックを検出してブロックすることで、リソースを保護します
+- ロギングと分析：ページや API によって処理される前に、リクエストデータをキャプチャし、分析してインサイトを得ます
+- フラグ管理機能：シームレスな機能のロールアウトやテストのために、機能を動的に有効化または無効化します
+
+Middleware が最適なアプローチでない場合を認識することも同様に重要です。考慮すべきシナリオは次のとおりです：
+
+- 複雑なデータ取得と操作：Middleware は直接的なデータ取得や操作を目的としていません。代わりに Route Handlers やサーバーサイドのユーティリティで行うべきです
+- 重い計算タスク：Middleware は軽量で迅速に応答する必要があります。重い計算タスクや長時間実行されるプロセスは専用の Route Handlers 内で行うべきです
+- 広範なセッション管理：Middleware は基本的なセッションタスクを管理できますが、広範なセッション管理は専用の認証サービスまたは Route Handlers 内で管理するべきです
+- 直接的なデータベース操作：Middleware 内で直接的なデータベース操作を行うことは推奨されません。データベースとの対話は Route Handlers やサーバーサイドのユーティリティで行うべきです
+
+## 規約 {#convention}
+
+Middleware を定義するには、プロジェクトのルートに `middleware.ts` (または `.js`) ファイルを使用します。例として、`pages` または `app` と同じレベルか、該当する場合は `src` 内に配置します。
+
+> **Note**: プロジェクトごとにサポートされるのは 1 つの `middleware.ts` ファイルのみですが、ミドルウェアロジックをモジュール化して整理することは可能です。ミドルウェアの機能を個別の `.ts` または `.js` ファイルに分割し、メインの `middleware.ts` ファイルにインポートします。これによりクリーンなルート固有のミドルウェアの管理が可能になり、`middleware.ts` 内で一元的に制御できます。単一のミドルウェアファイルを設定することで、設定が簡素化され、潜在的な競合が防止され、複数のミドルウェアレイヤーを回避することでパフォーマンスが最適化されます。
+
+## 例 {#example}
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="middleware.ts" switcher
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+// この関数は `await` を使用する場合、`async` としてマークできます
+export function middleware(request: NextRequest) {
+  return NextResponse.redirect(new URL('/home', request.url))
+}
+
+// 詳しくは下記の「マッチングパス」を参照してください
+export const config = {
+  matcher: '/about/:path*',
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="middleware.js" switcher
+import { NextResponse } from 'next/server'
+
+// この関数は `await` を使用する場合、`async` としてマークできます
+export function middleware(request) {
+  return NextResponse.redirect(new URL('/home', request.url))
+}
+
+// 詳しくは下記の「マッチングパス」を参照してください
+export const config = {
+  matcher: '/about/:path*',
+}
+```
+
+</TabItem>
+</Tabs>
+
+## マッチングパス {#matching-paths}
+
+Middleware は**プロジェクト内のすべてのルートに対して**呼び出されます。そのため、特定のルートを正確にターゲットにするか除外するために、マッチャーの使用が重要です。以下が実行順序です：
+
+1. `next.config.js` の `headers`
+2. `next.config.js` の `redirects`
+3. Middleware（`rewrites`、`redirects`、など）
+4. `next.config.js` の `beforeFiles`（`rewrites`）
+5. ファイルシステムのルート (`public/`, `_next/static/`, `pages/`, `app/` など)
+6. `next.config.js` の `afterFiles`（`rewrites`）
+7. 動的ルート (`/blog/[slug]`)
+8. `next.config.js` の `fallback`（`rewrites`）
+
+Middleware の実行対象となるパスを指定する方法は 2 つあります：
+
+1. [カスタムマッチャー設定](#matcher)
+2. [条件文](#conditional-statements)
+
+### マッチャー {#matcher}
+
+`matcher` を使用すると、特定のパスでのみ Middleware を実行するようフィルタリングできます。
+
+```js title="middleware.js"
+export const config = {
+  matcher: '/about/:path*',
+}
+```
+
+単一のパスまたは配列構文を使った複数のパスをマッチングできます：
+
+```js title="middleware.js"
+export const config = {
+  matcher: ['/about/:path*', '/dashboard/:path*'],
+}
+```
+
+`matcher` 設定ではフル正規表現が可能で、否定の先読みマッチングや文字マッチングがサポートされています。特定のパスを除いたすべてをマッチングする否定の先読みの例を以下に示します：
+
+```js title="middleware.js"
+export const config = {
+  matcher: [
+    /*
+     * 以下のパスで始まるものを除くすべてのリクエストパスをマッチングします：
+     * - api（APIルート）
+     * - _next/static（静的ファイル）
+     * - _next/image（画像最適化ファイル）
+     * - favicon.ico, sitemap.xml, robots.txt（メタデータファイル）
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+  ],
+}
+```
+
+`missing` または `has` 配列、またはその両方の組み合わせを使用して特定のリクエストを Middleware からバイパスすることもできます：
+
+```js title="middleware.js"
+export const config = {
+  matcher: [
+    /*
+     * 以下のパスで始まるものを除くすべてのリクエストパスをマッチングします：
+     * - api（APIルート）
+     * - _next/static（静的ファイル）
+     * - _next/image（画像最適化ファイル）
+     * - favicon.ico, sitemap.xml, robots.txt（メタデータファイル）
+     */
+    {
+      source:
+        '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+
+    {
+      source:
+        '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+      has: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+
+    {
+      source:
+        '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+      has: [{ type: 'header', key: 'x-present' }],
+      missing: [{ type: 'header', key: 'x-missing', value: 'prefetch' }],
+    },
+  ],
+}
+```
+
+> **Good to know**: `matcher` の値はビルド時に静的に解析できる必要があるため、定数である必要があります。変数などの動的値は無視されます。
+
+構成されたマッチャー：
+
+1. MUST `/` で始まります
+2. 名前付きパラメーターを含めることができます：`/about/:path` は `/about/a` や `/about/b` にマッチしますが、`/about/a/c` にはマッチしません
+3. 名前付きパラメーターに修飾子（`:`で始まる）を使用することができます：`/about/:path*` は `/about/a/b/c` にマッチします；`*` は「0 またはそれ以上」を意味します。`?` は「0 または 1」、`+` は「1 以上」です
+4. 正規表現を使用することで、括弧で囲むことができます：`/about/(.*)` は `/about/:path*` と同じです
+
+詳細は [path-to-regexp](https://github.com/pillarjs/path-to-regexp#path-to-regexp-1) のドキュメントを確認してください。
+
+> **Good to know**: 後方互換性のため、Next.js は常に `/public` を `/public/index` とみなします。そのため、`/public/:path` のマッチャーはマッチします。
+
+### 条件文 {#conditional-statements}
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="middleware.ts" switcher
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/about')) {
+    return NextResponse.rewrite(new URL('/about-2', request.url))
+  }
+
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.rewrite(new URL('/dashboard/user', request.url))
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="middleware.js" switcher
+import { NextResponse } from 'next/server'
+
+export function middleware(request) {
+  if (request.nextUrl.pathname.startsWith('/about')) {
+    return NextResponse.rewrite(new URL('/about-2', request.url))
+  }
+
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.rewrite(new URL('/dashboard/user', request.url))
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## NextResponse {#nextresponse}
+
+`NextResponse` API を使用すると、以下のことができます：
+
+- リクエストを異なる URL に `redirect` する
+- 特定の URL を表示してレスポンスを `rewrite` する
+- API ルートや `getServerSideProps`、 `rewrite` の宛先に対するリクエストヘッダーを設定する
+- レスポンスの cookie を設定する
+- レスポンスヘッダーを設定する
+
+<AppOnly>
+
+Middleware からレスポンスを生成するには：
+
+1. レスポンスを生成するルート（[Page](/docs/app/api-reference/file-conventions/page) または [Route Handler](/docs/app/building-your-application/routing/route-handlers)）に `rewrite` する
+2. `NextResponse` を直接返します。[レスポンスを生成する](#producing-a-response) を参照してください
+
+</AppOnly>
+
+<PagesOnly>
+
+Middleware からレスポンスを生成するには：
+
+1. レスポンスを生成するルート（[Page](https://nextjs.org/docs/canary/pages/building-your-application/routing/pages-and-layouts) または [Edge API Route](https://nextjs.org/docs/canary/pages/building-your-application/routing/api-routes)）に `rewrite` する
+2. `NextResponse` を直接返します。[レスポンスを生成する](#producing-a-response) を参照してください
+
+</PagesOnly>
+
+## Cookie の使用方法 {#using-cookies}
+
+Cookie は通常のヘッダーです。`Request` では `Cookie` ヘッダーに格納されます。`Response` では `Set-Cookie` ヘッダーに格納されます。Next.js は `NextRequest` および `NextResponse` 上の `cookies` 拡張機能を通じて、これらの cookie にアクセスし操作できる便利な方法を提供します。
+
+1. 受信したリクエストに対する `cookies` は、以下のメソッドで操作できます：`get`、`getAll`、`set`、`delete` cookie。`has` を使って cookie の存在を確認したり、`clear` ですべての cookie を削除したりできます
+2. 送信するレスポンスに対する `cookies` には、以下のメソッドがあります：`get`、`getAll`、`set`、`delete`
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="middleware.ts" switcher
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  // 受信するリクエストに "Cookie:nextjs=fast" ヘッダーが存在するものとします
+  // `RequestCookies` の API を使ってリクエストから cookie を取得
+  let cookie = request.cookies.get('nextjs')
+  console.log(cookie) // => { name: 'nextjs', value: 'fast', Path: '/' }
+  const allCookies = request.cookies.getAll()
+  console.log(allCookies) // => [{ name: 'nextjs', value: 'fast' }]
+
+  request.cookies.has('nextjs') // => true
+  request.cookies.delete('nextjs')
+  request.cookies.has('nextjs') // => false
+
+  // `ResponseCookies` の API を使ってレスポンスに cookie を設定
+  const response = NextResponse.next()
+  response.cookies.set('vercel', 'fast')
+  response.cookies.set({
+    name: 'vercel',
+    value: 'fast',
+    path: '/',
+  })
+  cookie = response.cookies.get('vercel')
+  console.log(cookie) // => { name: 'vercel', value: 'fast', Path: '/' }
+  // 送信されるレスポンスには `Set-Cookie:vercel=fast;path=/` ヘッダーが含まれます
+
+  return response
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="middleware.js" switcher
+import { NextResponse } from 'next/server'
+
+export function middleware(request) {
+  // 受信するリクエストに "Cookie:nextjs=fast" ヘッダーが存在するものとします
+  // `RequestCookies` の API を使ってリクエストから cookie を取得
+  let cookie = request.cookies.get('nextjs')
+  console.log(cookie) // => { name: 'nextjs', value: 'fast', Path: '/' }
+  const allCookies = request.cookies.getAll()
+  console.log(allCookies) // => [{ name: 'nextjs', value: 'fast' }]
+
+  request.cookies.has('nextjs') // => true
+  request.cookies.delete('nextjs')
+  request.cookies.has('nextjs') // => false
+
+  // `ResponseCookies` の API を使ってレスポンスに cookie を設定
+  const response = NextResponse.next()
+  response.cookies.set('vercel', 'fast')
+  response.cookies.set({
+    name: 'vercel',
+    value: 'fast',
+    path: '/',
+  })
+  cookie = response.cookies.get('vercel')
+  console.log(cookie) // => { name: 'vercel', value: 'fast', Path: '/' }
+  // 送信されるレスポンスには `Set-Cookie:vercel=fast;path=/test` ヘッダーが含まれます
+
+  return response
+}
+```
+
+</TabItem>
+</Tabs>
+
+## ヘッダーの設定 {#setting-headers}
+
+`NextResponse` API を使用して、リクエストとレスポンスのヘッダーを設定できます（_リクエスト_ ヘッダーの設定は Next.js v13.0.0 からサポートされています）。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="middleware.ts" switcher
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  // リクエストヘッダーをクローンして、新しいヘッダー `x-hello-from-middleware1` を設定
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-hello-from-middleware1', 'hello')
+
+  // NextResponse.next でリクエストヘッダーを設定することもできます
+  const response = NextResponse.next({
+    request: {
+      // 新しいリクエストヘッダー
+      headers: requestHeaders,
+    },
+  })
+
+  // 新しいレスポンスヘッダー `x-hello-from-middleware2` を設定
+  response.headers.set('x-hello-from-middleware2', 'hello')
+  return response
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="middleware.js" switcher
+import { NextResponse } from 'next/server'
+
+export function middleware(request) {
+  // リクエストヘッダーをクローンして、新しいヘッダー `x-hello-from-middleware1` を設定
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-hello-from-middleware1', 'hello')
+
+  // NextResponse.next でリクエストヘッダーを設定することもできます
+  const response = NextResponse.next({
+    request: {
+      // 新しいリクエストヘッダー
+      headers: requestHeaders,
+    },
+  })
+
+  // 新しいレスポンスヘッダー `x-hello-from-middleware2` を設定
+  response.headers.set('x-hello-from-middleware2', 'hello')
+  return response
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: 大きなヘッダーを設定すると、バックエンドの Web サーバーの設定に依存して [431 Request Header Fields Too Large](https://developer.mozilla.org/docs/Web/HTTP/Status/431) エラーが発生する可能性があるため、避けるべきです。
+
+### CORS {#cors}
+
+Middleware で CORS ヘッダーを設定し、クロスオリジンリクエストを許可できます（[simple](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests) と [preflighted](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#preflighted_requests) リクエストを含む）。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="middleware.ts" switcher
+import { NextRequest, NextResponse } from 'next/server'
+
+const allowedOrigins = ['https://acme.com', 'https://my-app.org']
+
+const corsOptions = {
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+export function middleware(request: NextRequest) {
+  // リクエストからオリジンを確認
+  const origin = request.headers.get('origin') ?? ''
+  const isAllowedOrigin = allowedOrigins.includes(origin)
+
+  // プリフライトリクエストの処理
+  const isPreflight = request.method === 'OPTIONS'
+
+  if (isPreflight) {
+    const preflightHeaders = {
+      ...(isAllowedOrigin && { 'Access-Control-Allow-Origin': origin }),
+      ...corsOptions,
+    }
+    return NextResponse.json({}, { headers: preflightHeaders })
+  }
+
+  // シンプルリクエストの処理
+  const response = NextResponse.next()
+
+  if (isAllowedOrigin) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+  }
+
+  Object.entries(corsOptions).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+
+  return response
+}
+
+export const config = {
+  matcher: '/api/:path*',
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="middleware.js" switcher
+import { NextResponse } from 'next/server'
+
+const allowedOrigins = ['https://acme.com', 'https://my-app.org']
+
+const corsOptions = {
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+export function middleware(request) {
+  // リクエストからオリジンを確認
+  const origin = request.headers.get('origin') ?? ''
+  const isAllowedOrigin = allowedOrigins.includes(origin)
+
+  // プリフライトリクエストの処理
+  const isPreflight = request.method === 'OPTIONS'
+
+  if (isPreflight) {
+    const preflightHeaders = {
+      ...(isAllowedOrigin && { 'Access-Control-Allow-Origin': origin }),
+      ...corsOptions,
+    }
+    return NextResponse.json({}, { headers: preflightHeaders })
+  }
+
+  // シンプルリクエストの処理
+  const response = NextResponse.next()
+
+  if (isAllowedOrigin) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+  }
+
+  Object.entries(corsOptions).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+
+  return response
+}
+
+export const config = {
+  matcher: '/api/:path*',
+}
+```
+
+</TabItem>
+</Tabs>
+
+<AppOnly>
+
+> **Good to know:** 特定のルートにおける CORS ヘッダーは [Route Handlers](/docs/app/building-your-application/routing/route-handlers#cors) で設定できます。
+
+</AppOnly>
+
+## レスポンスを生成する {#producing-a-response}
+
+Middleware から直接 `Response` または `NextResponse` インスタンスを返すことで応答できます。([Next.js v13.1.0](https://nextjs.org/blog/next-13-1#nextjs-advanced-middleware) から利用可能です)
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="middleware.ts" switcher
+import type { NextRequest } from 'next/server'
+import { isAuthenticated } from '@lib/auth'
+
+// Middleware の適用を `/api/` で始まるパスに限定
+export const config = {
+  matcher: '/api/:function*',
+}
+
+export function middleware(request: NextRequest) {
+  // リクエストをチェックするために認証関数を呼び出します
+  if (!isAuthenticated(request)) {
+    // エラーメッセージを示す JSON で応答します
+    return Response.json(
+      { success: false, message: 'authentication failed' },
+      { status: 401 }
+    )
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="middleware.js" switcher
+import { isAuthenticated } from '@lib/auth'
+
+// Middleware の適用を `/api/` で始まるパスに限定
+export const config = {
+  matcher: '/api/:function*',
+}
+
+export function middleware(request) {
+  // リクエストをチェックするために認証関数を呼び出します
+  if (!isAuthenticated(request)) {
+    // エラーメッセージを示す JSON で応答します
+    return Response.json(
+      { success: false, message: 'authentication failed' },
+      { status: 401 }
+    )
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### `waitUntil` と `NextFetchEvent` {#waituntil-and-nextfetchevent}
+
+`NextFetchEvent` オブジェクトはネイティブの [`FetchEvent`](https://developer.mozilla.org/docs/Web/API/FetchEvent) オブジェクトを拡張していて、[`waitUntil()`](https://developer.mozilla.org/docs/Web/API/ExtendableEvent/waitUntil) メソッドを含んでいます。
+
+`waitUntil()` メソッドは、promises を引数として受け取り、これが完了するまで Middleware の寿命を延ばします。バックグラウンドでの作業を実行するのに便利です。
+
+```ts title="middleware.ts"
+import { NextResponse } from 'next/server'
+import type { NextFetchEvent, NextRequest } from 'next/server'
+
+export function middleware(req: NextRequest, event: NextFetchEvent) {
+  event.waitUntil(
+    fetch('https://my-analytics-platform.com', {
+      method: 'POST',
+      body: JSON.stringify({ pathname: req.nextUrl.pathname }),
+    })
+  )
+
+  return NextResponse.next()
+}
+```
+
+## 高度なミドルウェアフラグ {#advanced-middleware-flags}
+
+Next.js の `v13.1` では、`skipMiddlewareUrlNormalize` および `skipTrailingSlashRedirect` の 2 つの追加フラグがミドルウェアに導入され、高度なユースケースを処理できます。
+
+`skipTrailingSlashRedirect` 次のズリダイレクトを無効にすると、いくつかのパスのトレーリングスラッシュを保持し、他のパスを無視する、インクリメンタルな移行のカスタム処理が可能になります。
+
+```js title="next.config.js"
+module.exports = {
+  skipTrailingSlashRedirect: true,
+}
+```
+
+```js title="middleware.js"
+const legacyPrefixes = ['/docs', '/blog']
+
+export default async function middleware(req) {
+  const { pathname } = req.nextUrl
+
+  if (legacyPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+    return NextResponse.next()
+  }
+
+  // トレーリングスラッシュの処理を適用します
+  if (
+    !pathname.endsWith('/') &&
+    !pathname.match(/((?!\.well-known(?:\/.*)?)(?:[^/]+\/)*[^/]+\.\w+)/)
+  ) {
+    return NextResponse.redirect(
+      new URL(`${req.nextUrl.pathname}/`, req.nextUrl)
+    )
+  }
+}
+```
+
+`skipMiddlewareUrlNormalize` により、URL 正規化を無効にし、直接訪問やクライアントトランジションの処理を同じにすることができます。いくつかの高度な場合において、このオプションはオリジナルの URL を使用することで完全なコントロールを提供します。
+
+```js title="next.config.js"
+module.exports = {
+  skipMiddlewareUrlNormalize: true,
+}
+```
+
+```js title="middleware.js"
+export default async function middleware(req) {
+  const { pathname } = req.nextUrl
+
+  // GET /_next/data/build-id/hello.json
+
+  console.log(pathname)
+  // フラグがあると /_next/data/build-id/hello.json
+  // フラグがないと /hello に正規化されます
+}
+```
+
+## 単体テスト（実験的） {#unit-testing-experimental}
+
+Next.js 15.1 より、`next/experimental/testing/server` パッケージにはミドルウェアファイルをユニットテストするためのユーティリティが含まれています。ミドルウェアのユニットテストは、意図したパスでのみ実行されることを確認し、実際にコードが本番環境に到達する前にカスタムルーティングロジックが期待どおりに動作することを保証するのに役立ちます。
+
+`unstable_doesMiddlewareMatch` 関数を使用して、指定された URL、ヘッダー、および cookie に対してミドルウェアが動作するかどうかを確認できます。
+
+```js
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server'
+
+expect(
+  unstable_doesMiddlewareMatch({
+    config,
+    nextConfig,
+    url: '/test',
+  })
+).toEqual(false)
+```
+
+ミドルウェア関数全体もテストできます。
+
+```js
+import { isRewrite, getRewrittenUrl } from 'next/experimental/testing/server'
+
+const request = new NextRequest('https://nextjs.org/docs')
+const response = await middleware(request)
+expect(isRewrite(response)).toEqual(true)
+expect(getRewrittenUrl(response)).toEqual('https://other-domain.com/docs')
+// 応答がリダイレクトされた場合には getRedirectUrl も使用できます
+```
+
+## ランタイム {#runtime}
+
+Middleware は現在、[Edge ランタイム](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes) に互換性のある API のみをサポートしています。Node.js に専用の API は[未対応](/docs/app/api-reference/edge#unsupported-apis)です。
+
+## バージョン履歴 {#version-history}
+
+| バージョン | 変更                                                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `v13.1.0`  | 高度なミドルウェアフラグが追加されました                                                                                                   |
+| `v13.0.0`  | Middleware はリクエストヘッダー、レスポンスヘッダーを変更したり、レスポンスを送信できるようになりました                                    |
+| `v12.2.0`  | Middleware は安定版になりました。詳しくは[アップグレードガイド](https://nextjs.org/docs/messages/middleware-upgrade-guide)をご覧ください。 |
+| `v12.0.9`  | Edge ランタイムにおける絶対 URL を強制 ([PR](https://github.com/vercel/next.js/pull/33410))                                                |
+| `v12.0.0`  | Middleware（ベータ版）が追加されました                                                                                                     |

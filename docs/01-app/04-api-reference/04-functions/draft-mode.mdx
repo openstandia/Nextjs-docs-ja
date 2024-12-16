@@ -1,0 +1,173 @@
+---
+title: 'draftMode'
+description: 'draftMode 関数の API リファレンス。'
+related:
+  title: 'Next Steps'
+  description: 'このステップバイステップガイドで下書きモードの使用方法を学ぶ。'
+  links:
+    - app/building-your-application/configuring/draft-mode
+---
+
+`draftMode` は、[Draft Mode](/docs/app/building-your-application/configuring/draft-mode) を有効または無効にし、[Server Component](/docs/app/building-your-application/rendering/server-components) 内で Draft Mode が有効かどうかを確認することができる **非同期** 関数です。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.ts" switcher
+import { draftMode } from 'next/headers'
+
+export default async function Page() {
+  const { isEnabled } = await draftMode()
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { draftMode } from 'next/headers'
+
+export default async function Page() {
+  const { isEnabled } = await draftMode()
+}
+```
+
+</TabItem>
+</Tabs>
+
+## リファレンス {#reference}
+
+以下のメソッドとプロパティが利用可能です：
+
+| メソッド    | 説明                                                                                       |
+| ----------- | ------------------------------------------------------------------------------------------ |
+| `isEnabled` | Draft Mode が有効かどうかを示すブール値。                                                  |
+| `enable()`  | cookie (`__prerender_bypass`) を設定することで、Route Handler で Draft Mode を有効にする。 |
+| `disable()` | cookie を削除することで、Route Handler で Draft Mode を無効にする。                        |
+
+## 知っておくとよいこと {#good-to-know}
+
+- `draftMode` は Promise を返す **非同期** 関数であるため、`async/await` もしくは React の [`use`](https://react.dev/reference/react/use) 関数を使用する必要があります。
+  - バージョン 14 以前では、`draftMode` は同期関数でした。後方互換性を保持するために、Next.js 15 ではまだ同期的にアクセスできますが、この動作は将来的には非推奨になります。
+- `next build` を実行するたびに、新しいバイパス cookie 値が生成されます。これにより、バイパス cookie が推測されないことが保証されます。
+- HTTP 経由でローカルで Draft Mode をテストするには、ブラウザがサードパーティの cookie およびローカルストレージへのアクセスを許可する必要があります。
+
+## 例 {#examples}
+
+### Draft Mode を有効にする {#enabling-draft-mode}
+
+Draft Mode を有効にするには、新しい [Route Handler](/docs/app/building-your-application/routing/route-handlers) を作成し、`enable()` メソッドを呼び出します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/draft/route.ts" switcher
+import { draftMode } from 'next/headers'
+
+export async function GET(request: Request) {
+  const draft = await draftMode()
+  draft().enable()
+  return new Response('Draft mode is enabled')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/draft/route.js" switcher
+import { draftMode } from 'next/headers'
+
+export async function GET(request) {
+  const draft = await draftMode()
+  draft().enable()
+  return new Response('Draft mode is enabled')
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Draft Mode を無効にする {#disabling-draft-mode}
+
+デフォルトでは、ブラウザを閉じると Draft Mode セッションが終了します。
+
+Draft Mode を手動で無効にするには、[Route Handler](/docs/app/building-your-application/routing/route-handlers) 内で `disable()` メソッドを呼びます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/draft/route.ts" switcher
+import { draftMode } from 'next/headers'
+
+export async function GET(request: Request) {
+  const draft = await draftMode()
+  draft().disable()
+  return new Response('Draft mode is disabled')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/draft/route.js" switcher
+import { draftMode } from 'next/headers'
+
+export async function GET(request) {
+  const draft = await draftMode()
+  draft().disable()
+  return new Response('Draft mode is disabled')
+}
+```
+
+</TabItem>
+</Tabs>
+
+その後、Route Handler を呼び出すリクエストを送信します。[`<Link>` コンポーネント](/docs/app/api-reference/components/link) を使ってルートを呼び出す場合、プリフェッチで誤って cookie を削除しないように、`prefetch={false}` を渡さなければなりません。
+
+### Draft Mode が有効かどうかを確認する {#checking-if-draft-mode-is-enabled}
+
+`isEnabled` プロパティを使用して、Server Component 内で Draft Mode が有効かどうかを確認できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.ts" switcher
+import { draftMode } from 'next/headers'
+
+export default async function Page() {
+  const { isEnabled } = await draftMode()
+  return (
+    <main>
+      <h1>My Blog Post</h1>
+      <p>Draft Mode is currently {isEnabled ? 'Enabled' : 'Disabled'}</p>
+    </main>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { draftMode } from 'next/headers'
+
+export default async function Page() {
+  const { isEnabled } = await draftMode()
+  return (
+    <main>
+      <h1>My Blog Post</h1>
+      <p>Draft Mode is currently {isEnabled ? 'Enabled' : 'Disabled'}</p>
+    </main>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+## バージョン履歴 {#version-history}
+
+| バージョン   | 変更内容                                                                                                                          |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `v15.0.0-RC` | `draftMode` は非同期関数に変更されました。 [codemod](/docs/app/building-your-application/upgrading/codemods#150) が利用可能です。 |
+| `v13.4.0`    | `draftMode` を初導入。                                                                                                            |

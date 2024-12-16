@@ -1,0 +1,249 @@
+---
+title: 'Vitestを使用したNext.jsのセットアップ'
+nav_title: 'Vitest'
+description: 'Next.js でのユニットテストのためにVitestをセットアップする方法を学ぶ。'
+---
+
+ViteとReact Testing Libraryは、**ユニットテスト** においてよく一緒に使用されます。このガイドでは、Next.jsとVitestのセットアップ方法と最初のテストを書く方法を紹介します。
+
+> **お役立ち情報:** `async` Server ComponentはReactエコシステムでは新しいため、Vitestは現在これをサポートしていません。同期のServer ComponentやClient Componentの**ユニットテスト**は実行できますが、`async`コンポーネントには**E2Eテスト**を使用することをおすすめします。
+
+## クイックスタート {#quickstart}
+
+`create-next-app`をNext.jsの[with-vitest](https://github.com/vercel/next.js/tree/canary/examples/with-vitest)例とともに使用することで、すぐに始められます：
+
+```bash title="Terminal"
+npx create-next-app@latest --example with-vitest with-vitest-app
+```
+
+## 手動セットアップ {#manual-setup}
+
+Vitestを手動でセットアップするには、`vitest`と次のパッケージをdev依存関係としてインストールします：
+
+```bash title="Terminal"
+# TypeScriptを使用する場合 {#using-typescript}
+npm install -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom vite-tsconfig-paths
+# JavaScriptを使用する場合 {#using-javascript}
+npm install -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom
+```
+
+プロジェクトのrootに`vitest.config.mts|js`ファイルを作成し、次のオプションを追加します：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="vitest.config.mts" switcher
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import tsconfigPaths from 'vite-tsconfig-paths'
+
+export default defineConfig({
+  plugins: [tsconfigPaths(), react()],
+  test: {
+    environment: 'jsdom',
+  },
+})
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="vitest.config.js" switcher
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+  },
+})
+```
+
+</TabItem>
+</Tabs>
+
+Vitestの設定に関する詳細は、[Vitest Configuration](https://vitest.dev/config/#configuration)のドキュメントを参照してください。
+
+次に、`package.json`に`test`スクリプトを追加します：
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest"
+  }
+}
+```
+
+`npm run test`を実行すると、Vitestはデフォルトでプロジェクトの変更を**監視**します。
+
+## 最初のVitestユニットテストの作成 {#creating-your-first-vitest-unit-test}
+
+すべてが正常に動作するか確認するために、`<Page />`コンポーネントが見出しを正常にレンダリングするかをチェックするテストを作成します：
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <div>
+      <h1>Home</h1>
+      <Link href="/about">About</Link>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.jsx" switcher
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <div>
+      <h1>Home</h1>
+      <Link href="/about">About</Link>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="__tests__/page.test.tsx" switcher
+import { expect, test } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import Page from '../app/page'
+
+test('Page', () => {
+  render(<Page />)
+  expect(screen.getByRole('heading', { level: 1, name: 'Home' })).toBeDefined()
+})
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="__tests__/page.test.jsx" switcher
+import { expect, test } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import Page from '../app/page'
+
+test('Page', () => {
+  render(<Page />)
+  expect(screen.getByRole('heading', { level: 1, name: 'Home' })).toBeDefined()
+})
+```
+
+</TabItem>
+</Tabs>
+
+> **お役立ち情報:** 上記の例は一般的な`__tests__`規約を使用していますが、テストファイルは`app` router内に配置することもできます。
+
+</AppOnly>
+
+<PagesOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/index.tsx" switcher
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <div>
+      <h1>Home</h1>
+      <Link href="/about">About</Link>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/index.jsx" switcher
+import Link from 'next/link'
+
+export default function Page() {
+  return (
+    <div>
+      <h1>Home</h1>
+      <Link href="/about">About</Link>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="__tests__/index.test.tsx" switcher
+import { expect, test } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import Page from '../pages/index'
+
+test('Page', () => {
+  render(<Page />)
+  expect(screen.getByRole('heading', { level: 1, name: 'Home' })).toBeDefined()
+})
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="__tests__/index.test.jsx" switcher
+import { expect, test } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import Page from '../pages/index'
+
+test('Page', () => {
+  render(<Page />)
+  expect(screen.getByRole('heading', { level: 1, name: 'Home' })).toBeDefined()
+})
+```
+
+</TabItem>
+</Tabs>
+
+</PagesOnly>
+
+## テストの実行 {#running-your-tests}
+
+次に、テストを実行するために以下のコマンドを実行します：
+
+```bash title="Terminal"
+npm run test
+# または {#or}
+yarn test
+# または {#or}
+pnpm test
+# または {#or}
+bun test
+```
+
+## 追加リソース {#additional-resources}
+
+これらのリソースがお役に立つかもしれません：
+
+- [Next.js with Vitestの例](https://github.com/vercel/next.js/tree/canary/examples/with-vitest)
+- [Vitest ドキュメント](https://vitest.dev/guide/)
+- [React Testing Library ドキュメント](https://testing-library.com/docs/react-testing-library/intro/)

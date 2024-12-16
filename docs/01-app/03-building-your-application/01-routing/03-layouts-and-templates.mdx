@@ -1,0 +1,369 @@
+---
+title: 'LayoutsとTemplates'
+description: 'Next.jsで最初の共有レイアウトを作成します'
+---
+
+特別なファイルである[layout.js](#layouts)と[template.js](#templates)を使用して、ルート間で共有されるUIを作成できます。このページでは、これらの特別なファイルの使用方法と使用時期を案内します。
+
+## Layouts {#layouts}
+
+レイアウトは、複数のルート間で**共有**されるUIです。ナビゲーション時、レイアウトは状態を保持し、インタラクティブなままであり、再レンダリングされません。レイアウトは[ネストすることもできます](#nesting-layouts)。
+
+`layout.js`ファイルからReactコンポーネントをデフォルトでエクスポートすることで、レイアウトを定義できます。コンポーネントは、レンダリング中に子レイアウト（存在する場合）やページで埋められる`children` propを受け入れる必要があります。
+
+たとえば、このレイアウトは`/dashboard`と`/dashboard/settings`ページで共有されます：
+
+<Image
+  alt="layout.js特別なファイル"
+  srcLight="/docs/light/layout-special-file.png"
+  srcDark="/docs/dark/layout-special-file.png"
+  width="1600"
+  height="606"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/layout.tsx" switcher
+export default function DashboardLayout({
+  children, // ページまたはネストされたレイアウトになります
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <section>
+      {/* ここに共有UIを含めます。例として、ヘッダーやサイドバーなど */}
+      <nav></nav>
+
+      {children}
+    </section>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/layout.js" switcher
+export default function DashboardLayout({
+  children, // ページまたはネストされたレイアウトになります
+}) {
+  return (
+    <section>
+      {/* ここに共有UIを含めます。例として、ヘッダーやサイドバーなど */}
+      <nav></nav>
+
+      {children}
+    </section>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Root Layout (必須) {#root-layout-required}
+
+root レイアウトはアプリのディレクトリのトップレベルで定義され、すべてのルートに適用されます。このレイアウトは**必須**であり、`html`と`body`タグを含んでいる必要があります。これにより、サーバーから返される初期HTMLを修正することができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        {/* レイアウトUI */}
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        {/* レイアウトUI */}
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### レイアウトのネスト {#nesting-layouts}
+
+フォルダ階層内のレイアウトはデフォルトで**ネストされ**、`children` propを通じて子レイアウトをラップします。特定のルートセグメント（フォルダー）内に`layout.js`を追加することで、レイアウトをネストできます。
+
+例えば、`/dashboard`ルート用のレイアウトを作成するには、`dashboard`フォルダー内に新しい`layout.js`ファイルを追加します：
+
+<Image
+  alt="ネストされたレイアウト"
+  srcLight="/docs/light/nested-layout.png"
+  srcDark="/docs/dark/nested-layout.png"
+  width="1600"
+  height="606"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/layout.tsx" switcher
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <section>{children}</section>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/layout.js" switcher
+export default function DashboardLayout({ children }) {
+  return <section>{children}</section>
+}
+```
+
+</TabItem>
+</Tabs>
+
+上記の2つのレイアウトを組み合わせると、root レイアウト（`app/layout.js`）がダッシュボードレイアウト（`app/dashboard/layout.js`）をラップし、その結果、`app/dashboard/*`内のルートセグメントがラップされます。
+
+2つのレイアウトは次のようにネストされます：
+
+<Image
+  alt="ネストされたレイアウト"
+  srcLight="/docs/light/nested-layouts-ui.png"
+  srcDark="/docs/dark/nested-layouts-ui.png"
+  width="1600"
+  height="1026"
+/>
+
+> **Good to know**:
+>
+> - レイアウトには`.js`、`.jsx`、または`.tsx`ファイル拡張子を使うことができます
+> - root レイアウトだけが`<html>`と`<body>`タグを含むことができます
+> - 同じフォルダーに`layout.js`と`page.js`ファイルが定義されている場合、レイアウトはページをラップします
+> - レイアウトはデフォルトで[Server Components](/docs/app/building-your-application/rendering/server-components)ですが、[Client Component](/docs/app/building-your-application/rendering/client-components)に設定することもできます
+> - レイアウトはデータを取得することができます。詳細については[データ取得](/docs/app/building-your-application/data-fetching)セクションをご覧ください
+> - 親レイアウトとその子間でデータを渡すことはできません。ただし、Reactがパフォーマンスに影響を与えることなく[リクエストを自動的に重複排除する](/docs/app/building-your-application/caching#request-memoization)ため、同じルート内でデータを複数回取得することが可能です
+> - レイアウトは`pathname`にアクセスできません（[詳細はこちら](/docs/app/api-reference/file-conventions/layout)）。ただし、インポートされたClient Componentsは[`usePathname`](/docs/app/api-reference/functions/use-pathname)フックを使用して`pathname`にアクセスできます
+> - レイアウトはそれ自身の下のルートセグメントにアクセスできません。すべてのルートセグメントにアクセスするには、Client Componentで[`useSelectedLayoutSegment`](/docs/app/api-reference/functions/use-selected-layout-segment)または[`useSelectedLayoutSegments`](/docs/app/api-reference/functions/use-selected-layout-segments)を使用できます
+> - [Route Groups](/docs/app/building-your-application/routing/route-groups)を使用して特定のルートセグメントを共有レイアウトの内外に選択できます
+> - [Route Groups](/docs/app/building-your-application/routing/route-groups)を使用して複数のroot レイアウトを作成できます。[こちらの例を参照してください](/docs/app/building-your-application/routing/route-groups#creating-multiple-root-layouts)
+> - **`pages`ディレクトリからの移行：** root レイアウトは[`_app.js`](https://nextjs.org/docs/canary/pages/building-your-application/routing/custom-app)と[`_document.js`](https://nextjs.org/docs/canary/pages/building-your-application/routing/custom-document)ファイルの代わりになります。[移行ガイドを参照してください](/docs/app/building-your-application/upgrading/app-router-migration#migrating-_documentjs-and-_appjs)
+
+## Templates {#templates}
+
+テンプレートはレイアウトと似ており、子レイアウトやページをラップします。ルート間で状態を維持し、パーシステンスがあるレイアウトとは異なり、テンプレートはナビゲーションごとにその子要素の新しいインスタンスを作成します。これは、ユーザーがテンプレートを共有するルート間でナビゲートするときに、新しいインスタンスの子がマウントされ、DOM要素が再作成され、stateがClient Componentsで**保持されず**、エフェクトが再同期されることを意味します。
+
+特定の動作が必要な場合、テンプレートはレイアウトよりも適しているかもしれません。以下の場合です：
+
+- ナビゲーション時に`useEffect`を再同期します
+- ナビゲーション時に子Client Componentの状態をリセットします
+
+テンプレートはReactコンポーネントをデフォルトで`template.js`ファイルからエクスポートして定義できます。コンポーネントは`children` propを受け入れる必要があります。
+
+<Image
+  alt="template.js特別なファイル"
+  srcLight="/docs/light/template-special-file.png"
+  srcDark="/docs/dark/template-special-file.png"
+  width="1600"
+  height="444"
+/>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/template.tsx" switcher
+export default function Template({ children }: { children: React.ReactNode }) {
+  return <div>{children}</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/template.js" switcher
+export default function Template({ children }) {
+  return <div>{children}</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+ネストに関しては、`template.js`はレイアウトとその子の間にレンダリングされます。以下は簡略化された出力です：
+
+```jsx title="Output"
+<Layout>
+  {/* テンプレートには一意のキーが与えられていることに注意してください */}
+  <Template key={routeParam}>{children}</Template>
+</Layout>
+```
+
+## 例 {#examples}
+
+### Metadata {#metadata}
+
+[Metadata APIs](/docs/app/building-your-application/optimizing/metadata)を使用して、`title`や`meta`といった`<head>` HTML要素を変更できます。
+
+メタデータは[`layout.js`](/docs/app/api-reference/file-conventions/layout)または[`page.js`](/docs/app/api-reference/file-conventions/page)ファイルに[`metadata`オブジェクト](/docs/app/api-reference/functions/generate-metadata#the-metadata-object)や[`generateMetadata`関数](/docs/app/api-reference/functions/generate-metadata#generatemetadata-function)をエクスポートすることによって定義できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Next.js',
+}
+
+export default function Page() {
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export const metadata = {
+  title: 'Next.js',
+}
+
+export default function Page() {
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: `<title>`や`<meta>`などの`<head>`タグをroot レイアウトに手動で追加すべきではありません。その代わり、[Metadata API](/docs/app/api-reference/functions/generate-metadata)を使用し、ストリーミングや`<head>`要素の重複排除といった高度な要件を自動的に処理します。
+
+利用可能なメタデータオプションについては、[APIリファレンス](/docs/app/api-reference/functions/generate-metadata)をご覧ください。
+
+### アクティブなナビゲーションリンク {#active-nav-links}
+
+[usePathname()](/docs/app/api-reference/functions/use-pathname)フックを使用して、ナビゲーションリンクがアクティブかどうかを判断できます。
+
+`usePathname()`はクライアントフックであるため、ナビゲーションリンクをClient Componentへ抽出する必要があります。このコンポーネントは、レイアウトまたはテンプレートにインポートできます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/nav-links.tsx" switcher
+'use client'
+
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
+
+export function NavLinks() {
+  const pathname = usePathname()
+
+  return (
+    <nav>
+      <Link className={`link ${pathname === '/' ? 'active' : ''}`} href="/">
+        Home
+      </Link>
+
+      <Link
+        className={`link ${pathname === '/about' ? 'active' : ''}`}
+        href="/about"
+      >
+        About
+      </Link>
+    </nav>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/nav-links.js" switcher
+'use client'
+
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
+
+export function Links() {
+  const pathname = usePathname()
+
+  return (
+    <nav>
+      <Link className={`link ${pathname === '/' ? 'active' : ''}`} href="/">
+        Home
+      </Link>
+
+      <Link
+        className={`link ${pathname === '/about' ? 'active' : ''}`}
+        href="/about"
+      >
+        About
+      </Link>
+    </nav>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import { NavLinks } from '@/app/ui/nav-links'
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <NavLinks />
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+import { NavLinks } from '@/app/ui/nav-links'
+
+export default function Layout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <NavLinks />
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
