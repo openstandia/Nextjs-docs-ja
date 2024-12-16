@@ -1,0 +1,674 @@
+---
+title: 'サーバーおよびクライアントの構成パターン'
+nav_title: '構成パターン'
+description: 'Server Component と Client Component を使用する推奨パターンについて'
+---
+
+React アプリケーションを構築する際には、アプリケーションのどの部分をサーバーでレンダリングするべきか、またはクライアントでレンダリングするべきかを考慮する必要があります。このページでは、Server Component および Client Component を使用する際の推奨される構成パターンについて説明します。
+
+## Server Component と Client Component はいつ使用するべきか？ {#when-to-use-server-and-client-components}
+
+Server Component と Client Component のさまざまな使用ケースの簡単なまとめは次のとおりです：
+
+| どんなことをする必要がありますか？                                                      | Server Component    | Client Component    |
+| --------------------------------------------------------------------------------------- | ------------------- | ------------------- |
+| データを取得する                                                                        | <Check size={18} /> | <Cross size={18} /> |
+| バックエンドのリソースに直接アクセスする                                                | <Check size={18} /> | <Cross size={18} /> |
+| センシティブな情報（アクセストークン、API キーなど）をサーバーに保存する                | <Check size={18} /> | <Cross size={18} /> |
+| 大きな依存関係をサーバーに保存する / クライアントサイドの JavaScript を減らす           | <Check size={18} /> | <Cross size={18} /> |
+| インタラクティブ性とイベントリスナー（`onClick()`, `onChange()`, など）を追加する       | <Cross size={18} /> | <Check size={18} /> |
+| 状態とライフサイクル効果（`useState()`, `useReducer()`, `useEffect()`, など）を使用する | <Cross size={18} /> | <Check size={18} /> |
+| ブラウザ専用の API を使用する                                                           | <Cross size={18} /> | <Check size={18} /> |
+| 状態、効果、ブラウザ専用 API に依存するカスタムフックを使用する                         | <Cross size={18} /> | <Check size={18} /> |
+| [React クラスコンポーネント](https://react.dev/reference/react/Component) を使用する    | <Cross size={18} /> | <Check size={18} /> |
+
+## Server Component のパターン {#server-component-patterns}
+
+クライアントサイドのレンダリングをオプトインする前に、データの取得やデータベースまたはバックエンドサービスへのアクセスなど、サーバー上での作業を行いたい場合があります。
+
+以下に、Server Component で作業する際の一般的なパターンを示します：
+
+### コンポーネント間でデータを共有する {#sharing-data-between-components}
+
+サーバーでデータを取得する際に、異なるコンポーネント間でデータを共有する必要がある場合があります。たとえば、同じデータに依存するレイアウトとページがあるかもしれません。
+
+[React Context](https://react.dev/learn/passing-data-deeply-with-context)（サーバーでは利用できません）や props を使ってデータを渡す代わりに、`fetch` や React の `cache` 関数を使用して、同じデータを必要とするコンポーネント内で同じデータを取得できます。同じデータに対して重複したリクエストを行う心配はありません。これは、React が `fetch` を拡張してデータリクエストを自動的にメモ化し、`fetch` が利用できない場合に `cache` 関数を使用できるためです。
+
+[このパターンの例を表示する](/docs/app/building-your-application/data-fetching/fetching#reusing-data-across-multiple-functions)
+
+### サーバー専用のコードをクライアント環境から排除する {#keeping-server-only-code-out-of-the-client-environment}
+
+JavaScript モジュールは Server Component と Client Component の両方のモジュール間で共有できるため、サーバーでのみ実行されることを意図していたコードがクライアントに紛れ込むことがあります。
+
+たとえば、次のデータ取得関数を考えてみます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="lib/data.ts" switcher
+export async function getData() {
+  const res = await fetch('https://external-service.com/data', {
+    headers: {
+      authorization: process.env.API_KEY,
+    },
+  })
+
+  return res.json()
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="lib/data.js" switcher
+export async function getData() {
+  const res = await fetch('https://external-service.com/data', {
+    headers: {
+      authorization: process.env.API_KEY,
+    },
+  })
+
+  return res.json()
+}
+```
+
+</TabItem>
+</Tabs>
+
+一見すると、`getData` 関数はサーバーとクライアントの両方で動作するように見えます。しかし、この関数には `API_KEY` が含まれており、これがサーバー上でのみ実行されることを意図しています。
+
+環境変数 `API_KEY` は `NEXT_PUBLIC` で始まっていないため、サーバーでのみアクセス可能なプライベート変数です。環境変数がクライアントに漏れないように、Next.js はプライベート環境変数を空文字列に置き換えます。
+
+その結果、`getData()` のクライアントへのインポートおよび実行が可能であっても、期待どおりには動作しません。変数を公開するとクライアントでの動作が可能になりますが、機密情報をクライアントに公開するのは避けたいかもしれません。
+
+サーバーのコードの意図しないクライアントでの利用を防ぐために、`server-only` パッケージを使用して、これらのモジュールを Client Component に誤ってインポートした場合、他の開発者にビルド時のエラーを提示します。
+
+`server-only` を使用するには、最初にパッケージをインストールします：
+
+```bash title="Terminal"
+npm install server-only
+```
+
+次に、サーバー専用コードを含む任意のモジュールにパッケージをインポートします：
+
+```js title="lib/data.js"
+import 'server-only'
+
+export async function getData() {
+  const res = await fetch('https://external-service.com/data', {
+    headers: {
+      authorization: process.env.API_KEY,
+    },
+  })
+
+  return res.json()
+}
+```
+
+これで、`getData()` をインポートする任意の Client Component は、このモジュールがサーバーでのみ使用できることを説明するビルド時のエラーを受け取ります。
+
+対応する `client-only` パッケージを使用して、`window` オブジェクトにアクセスするコードなどのクライアント専用コードを含むモジュールにマークを付けることもできます。
+
+### サードパーティパッケージとプロバイダーを使用する {#using-third-party-packages-and-providers}
+
+Server Component は新しい React の機能であるため、エコシステム内のサードパーティパッケージやプロバイダーは `useState`, `useEffect`, `createContext` などのクライアント専用の機能を使用するコンポーネントに `"use client"` ディレクティブを追加し始めているところです。
+
+今日、多くの `npm` パッケージのコンポーネントはクライアント専用の機能を使用していますが、まだこのディレクティブを持っていません。これらのサードパーティコンポーネントは Client Component 内では期待通りに動作します（`"use client"` ディレクティブを持っています）が、Server Component 内では動作しません。
+
+たとえば、`acme-carousel` という仮のパッケージをインストールしてあり、そのパッケージに `<Carousel />` コンポーネントがあるとします。このコンポーネントは `useState` を使用していますが、まだ `"use client"` ディレクティブを持っていません。
+
+`<Carousel />` を Client Component 内で使用する場合、期待通りに動作します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/gallery.tsx" switcher
+'use client'
+
+import { useState } from 'react'
+import { Carousel } from 'acme-carousel'
+
+export default function Gallery() {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div>
+      <button onClick={() => setIsOpen(true)}>View pictures</button>
+
+      {/* Client Component 内で使用されているため動作します */}
+      {isOpen && <Carousel />}
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/gallery.js" switcher
+'use client'
+
+import { useState } from 'react'
+import { Carousel } from 'acme-carousel'
+
+export default function Gallery() {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div>
+      <button onClick={() => setIsOpen(true)}>View pictures</button>
+
+      {/* Client Component 内で使用されているため動作します */}
+      {isOpen && <Carousel />}
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+ただし、Server Component 内で直接使用しようとするとエラーが表示されます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { Carousel } from 'acme-carousel'
+
+export default function Page() {
+  return (
+    <div>
+      <p>View pictures</p>
+
+      {/* エラー: `useState` は Server Component 内では使用できません */}
+      <Carousel />
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { Carousel } from 'acme-carousel'
+
+export default function Page() {
+  return (
+    <div>
+      <p>View pictures</p>
+
+      {/* エラー: `useState` は Server Component 内では使用できません */}
+      <Carousel />
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+これは Next.js が `<Carousel />` がクライアント専用の機能を使用していることを知らないためです。
+
+これを修正するためには、クライアント専用機能に依存しているサードパーティのコンポーネントを自分の Client Component 内でラップできます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/carousel.tsx" switcher
+'use client'
+
+import { Carousel } from 'acme-carousel'
+
+export default Carousel
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/carousel.js" switcher
+'use client'
+
+import { Carousel } from 'acme-carousel'
+
+export default Carousel
+```
+
+</TabItem>
+</Tabs>
+
+これで、`<Carousel />` をクライアントコンポーネントとして直接 Server Component 内で使用できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import Carousel from './carousel'
+
+export default function Page() {
+  return (
+    <div>
+      <p>View pictures</p>
+
+      {/* クライアントコンポーネントであるため動作します */}
+      <Carousel />
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import Carousel from './carousel'
+
+export default function Page() {
+  return (
+    <div>
+      <p>View pictures</p>
+
+      {/* クライアントコンポーネントであるため動作します */}
+      <Carousel />
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+サードパーティコンポーネントの多くをラップする必要はないと考えていますが、1つの例外はプロバイダーです。プロバイダーは React の状態とコンテキストに依存しており、アプリケーションの root で必要とされることが通常です。[以下でサードパーティのコンテキストプロバイダーについて詳しく学ぶ](#using-context-providers)
+
+#### コンテキストプロバイダーを使用する {#using-context-providers}
+
+コンテキストプロバイダーは通常、現在のテーマなどのグローバルな関心事を共有するためにアプリケーションの root にレンダリングされます。[React コンテキスト](https://react.dev/learn/passing-data-deeply-with-context) は Server Component ではサポートされていないため、アプリケーションの root でコンテキストを作成しようとするとエラーが発生します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import { createContext } from 'react'
+
+// createContext は Server Component ではサポートされていません
+export const ThemeContext = createContext({})
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html>
+      <body>
+        <ThemeContext.Provider value="dark">{children}</ThemeContext.Provider>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+import { createContext } from 'react'
+
+// createContext は Server Component ではサポートされていません
+export const ThemeContext = createContext({})
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <ThemeContext.Provider value="dark">{children}</ThemeContext.Provider>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+これを修正するには、クライアントコンポーネント内でコンテキストを作成し、そのプロバイダーをレンダリングします：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/theme-provider.tsx" switcher
+'use client'
+
+import { createContext } from 'react'
+
+export const ThemeContext = createContext({})
+
+export default function ThemeProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <ThemeContext.Provider value="dark">{children}</ThemeContext.Provider>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/theme-provider.js" switcher
+'use client'
+
+import { createContext } from 'react'
+
+export const ThemeContext = createContext({})
+
+export default function ThemeProvider({ children }) {
+  return <ThemeContext.Provider value="dark">{children}</ThemeContext.Provider>
+}
+```
+
+</TabItem>
+</Tabs>
+
+Server Component はプロバイダーが Client Component としてマークされているため、今すぐ直接レンダリングできます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import ThemeProvider from './theme-provider'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+import ThemeProvider from './theme-provider'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+root にレンダリングされたプロバイダーによって、アプリ全体の他の Client Component はこのコンテキストを利用できます。
+
+> **Good to know**: プロバイダーはツリー内で可能な限り深くレンダリングするべきです。`ThemeProvider` が全 `<html>` ドキュメントの代わりに `{children}` のみをラップしていることに注目してください。これにより、Next.js が Server Component の静的な部分を最適化しやすくなります。
+
+#### ライブラリアーサーへのアドバイス {#advice-for-library-authors}
+
+同様の方法で、他の開発者が利用するためのパッケージを作成するライブラリアーサーは、クライアントのエントリーポイントをマークするために `"use client"` ディレクティブを使用できます。これにより、パッケージのユーザーはラッピングボーダーを作成することなく、Server Component に直接パッケージコンポーネントをインポートできます。
+
+[`'use client' をツリーの奥深くで使用することによってパッケージを最適化すること](/#moving-client-components-down-the-tree)ができます。また、インポートされたモジュールは Server Component モジュールグラフの一部になります。
+
+一部のバンドラーが `"use client"` ディレクティブを取り除く可能性があることに留意してください。[React Wrap Balancer](https://github.com/shuding/react-wrap-balancer/blob/main/tsup.config.ts#L10-L13) と [Vercel Analytics](https://github.com/vercel/analytics/blob/main/packages/web/tsup.config.js#L26-L30) リポジトリの中で `"use client"` ディレクティブを含めるように esbuild を設定する方法の例を見つけることができます。
+
+## Client Component {#client-components}
+
+### Client Component をツリーの下に移動する {#moving-client-components-down-the-tree}
+
+Client JavaScript バンドルサイズを小さくするために、Client Component をコンポーネントツリーの下に移動することをお勧めします。
+
+例えば、静的要素（例：ロゴ、リンクなど）と状態を持つインタラクティブな検索バーがあるレイアウトがあるかもしれません。
+
+レイアウト全体を Client Component にする代わりに、インタラクティブなロジックを Client Component（例：`<SearchBar />`）に移動し、レイアウトを Server Component のままにしておきます。これにより、レイアウトのすべてのコンポーネント JavaScript をクライアントに送信する必要がありません。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+// SearchBar は Client Component です
+import SearchBar from './searchbar'
+// Logo は Server Component です
+import Logo from './logo'
+
+// レイアウトはデフォルトで Server Component です
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <nav>
+        <Logo />
+        <SearchBar />
+      </nav>
+      <main>{children}</main>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+// SearchBar は Client Component です
+import SearchBar from './searchbar'
+// Logo は Server Component です
+import Logo from './logo'
+
+// レイアウトはデフォルトで Server Component です
+export default function Layout({ children }) {
+  return (
+    <>
+      <nav>
+        <Logo />
+        <SearchBar />
+      </nav>
+      <main>{children}</main>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Server Component から Client Component に props を渡す（シリアライズ) {#passing-props-from-server-to-client-components-serialization}
+
+Server Component でデータを取得する場合、そのデータを Client Component に props として渡したいことがあるでしょう。Server から Client Component に渡される props は、React によって[シリアライズ可能](https://react.dev/reference/react/use-server#serializable-parameters-and-return-values)である必要があります。
+
+Client Component がシリアライズ可能でないデータに依存している場合は、[サードパーティライブラリでクライアント上でデータを取得する](/docs/app/building-your-application/data-fetching/fetching#fetching-data-on-the-client)か、[ルートハンドラーでサーバー上でデータを取得します](/docs/app/building-your-application/routing/route-handlers)。
+
+## Server Component と Client Component のインターリーブ {#interleaving-server-and-client-components}
+
+Client Component と Server Component をインターリーブする際には、UI をコンポーネントツリーとして可視化することが役立ちます。[root レイアウト](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required) を起点として、コンポーネントの特定のサブツリーをクライアントでレンダリングするには、`"use client"` ディレクティブを追加できます。
+
+{/* 図解 - インターリーブ */}
+
+これらのクライアントサブツリー内で、Server Component をネストしたり Server Actions を呼び出したりすることができます。ただし、いくつか注意すべき点があります：
+
+- リクエスト・レスポンスのライフサイクル中に、コードはサーバーからクライアントに移動します。クライアントでサーバー上のデータやリソースにアクセスする必要がある場合は、サーバーへの**新しい**リクエストを行うことになります - 行ったり来たりすることはありません。
+- 新しいリクエストがサーバーに行われると、すべての Server Component が最初にレンダリングされます。Client Component 内にネストされているものも含みます。レンダリング結果（[RSC Payload](/docs/app/building-your-application/rendering/server-components#what-is-the-react-server-component-payload-rsc)) には Client Component の位置への参照が含まれます。次にクライアント上で、React は RSC Payload を使用して Server Component と Client Component を単一のツリーに統合します。
+
+{/* 図解 */}
+
+- Client Component は Server Component の後にレンダリングされるため、Server Component を Client Component モジュールにインポートすることはできません（サーバーへの新しいリクエストが必要になるため）。代わりに、Server Component を`props` として Client Component に渡すことができます。以下の[サポートされないパターン](#unsupported-pattern-importing-server-components-into-client-components)と[サポートされるパターン](#supported-pattern-passing-server-components-to-client-components-as-props)のセクションを参照してください。
+
+### サポートされないパターン: Server Component を Client Component にインポートする {#unsupported-pattern-importing-server-components-into-client-components}
+
+以下のパターンはサポートされていません。Server Component を Client Component にインポートすることはできません：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/client-component.tsx" switcher
+highlight={3,4,17}
+'use client'
+
+// Server Component を Client Component にインポートすることはできません。
+import ServerComponent from './Server-Component'
+
+export default function ClientComponent({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const [count, setCount] = useState(0)
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+
+      <ServerComponent />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/client-component.js" switcher
+highlight={3,13}
+'use client'
+
+// Server Component を Client Component にインポートすることはできません。
+import ServerComponent from './Server-Component'
+
+export default function ClientComponent({ children }) {
+  const [count, setCount] = useState(0)
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+
+      <ServerComponent />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### サポートされるパターン: Server Component を Client Component に props として渡す {#supported-pattern-passing-server-components-to-client-components-as-props}
+
+以下のパターンはサポートされています。Server Component を Client Component に prop として渡すことができます。
+
+一般的なパターンは、React の `children` prop を使用して、Client Component 内に*"スロット"*を作成することです。
+
+以下の例では、`<ClientComponent>` は `children` prop を受け取ります：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/client-component.tsx" switcher
+highlight={6,15}
+'use client'
+
+import { useState } from 'react'
+
+export default function ClientComponent({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const [count, setCount] = useState(0)
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+      {children}
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/client-component.js" switcher
+highlight={5,12}
+'use client'
+
+import { useState } from 'react'
+
+export default function ClientComponent({ children }) {
+  const [count, setCount] = useState(0)
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+
+      {children}
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+`<ClientComponent>` は `children` が Server Component の結果によって最終的に埋められることを知りません。`<ClientComponent>` の唯一の責任は `children` を最終的に**どこ**に配置するかを決定することです。
+
+親 Server Component では、`<ClientComponent>` と `<ServerComponent>` の両方をインポートし、`<ServerComponent>` を `<ClientComponent>` の子として渡すことができます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" highlight={11} switcher
+// このパターンは動作します：
+// Server Component を Client Component の子または prop として渡すことができます。
+import ClientComponent from './client-component'
+import ServerComponent from './server-component'
+
+// Next.js のページはデフォルトで Server Component です。
+export default function Page() {
+  return (
+    <ClientComponent>
+      <ServerComponent />
+    </ClientComponent>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" highlight={11} switcher
+// このパターンは動作します：
+// Server Component を Client Component の子または prop として渡すことができます。
+import ClientComponent from './client-component'
+import ServerComponent from './server-component'
+
+// Next.js のページはデフォルトで Server Component です。
+export default function Page() {
+  return (
+    <ClientComponent>
+      <ServerComponent />
+    </ClientComponent>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+このアプローチでは、`<ClientComponent>` と `<ServerComponent>` は独立してレンダリング可能です。この場合、子の `<ServerComponent>` はクライアントで `<ClientComponent>` がレンダリングされる前にサーバーでレンダリングできます。
+
+> **Good to know:**
+>
+> - 親コンポーネントが再レンダリングされたときにネストされた子コンポーネントが再レンダリングされるのを避けるために、"コンテンツの持ち上げ" パターンが使用されてきました。
+> - `children` prop に制限はありません。任意の prop を使用して JSX を渡すことができます。

@@ -1,0 +1,67 @@
+---
+title: 'default.js'
+description: 'default.js ファイルの API リファレンス。'
+related:
+  title: 'Parallel Routes について詳しく学ぶ'
+  links:
+    - app/building-your-application/routing/parallel-routes
+---
+
+`default.js` ファイルは、Next.js が完全なページロード後に [slot](/docs/app/building-your-application/routing/parallel-routes#slots) のアクティブ状態を復元できない場合に、[Parallel Routes](/docs/app/building-your-application/routing/parallel-routes) でフォールバックをレンダリングするために使用されます。
+
+[ソフトナビゲーション](/docs/app/building-your-application/routing/linking-and-navigating#5-soft-navigation) の間、Next.js は各 slot のアクティブな「状態」（サブページ）を追跡します。しかし、ハードナビゲーション（完全なページロード）の場合、Next.js はアクティブ状態を復元できません。この場合、現在の URL に一致しないサブページに対して `default.js` ファイルがレンダリングされます。
+
+以下のフォルダー構造を考えてみましょう。`@team` slot には `settings` ページがありますが、`@analytics` にはありません。
+
+<Image
+  alt="一致しないルートを持つ Parallel Routes"
+  srcLight="/docs/light/parallel-routes-unmatched-routes.png"
+  srcDark="/docs/dark/parallel-routes-unmatched-routes.png"
+  width="1600"
+  height="930"
+/>
+
+`/settings` にナビゲートする際、 `@team` slot は `settings` ページをレンダリングしながら、`@analytics` slot の現在のアクティブなページを保持します。
+
+リフレッシュ時に、Next.js は `@analytics` に対して `default.js` をレンダリングします。 `default.js` が存在しない場合は `404` が代わりにレンダリングされます。
+
+さらに、`children` が暗黙の slot であるため、Next.js が親ページのアクティブ状態を復元できない場合にフォールバックとして `children` に対して `default.js` ファイルを作成する必要があります。
+
+## リファレンス {#reference}
+
+### `params` （オプション） {#params-optional}
+
+root セグメントから slot のサブページまでの[動的ルートパラメーター](/docs/app/building-your-application/routing/dynamic-routes)を含むオブジェクトに解決されるプロミスです。例えば：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/[artist]/@sidebar/default.js" switcher
+export default async function Default({
+  params,
+}: {
+  params: Promise<{ artist: string }>
+}) {
+  const artist = (await params).artist
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/[artist]/@sidebar/default.js" switcher
+export default async function Default({ params }) {
+  const artist = (await params).artist
+}
+```
+
+</TabItem>
+</Tabs>
+
+| 例                                         | URL          | `params`                                     |
+| ------------------------------------------ | ------------ | -------------------------------------------- |
+| `app/[artist]/@sidebar/default.js`         | `/zack`      | `Promise<{ artist: 'zack' }>`                |
+| `app/[artist]/[album]/@sidebar/default.js` | `/zack/next` | `Promise<{ artist: 'zack', album: 'next' }>` |
+
+- `params` prop はプロミスであるため、値にアクセスするには `async/await` または React の [`use`](https://react.dev/reference/react/use) 関数を使用する必要があります：
+  - バージョン 14 とそれ以前では、`params` は同期的な prop でした。後方互換性を助けるために、Next.js 15 でもまだ同期的にアクセスできますが、この動作は将来非推奨となるでしょう。

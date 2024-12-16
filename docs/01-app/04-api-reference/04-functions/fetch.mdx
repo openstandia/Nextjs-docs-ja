@@ -1,0 +1,108 @@
+---
+title: 'fetch'
+description: '拡張された fetch 関数の API リファレンス。'
+---
+
+Next.js は [Web `fetch()` API](https://developer.mozilla.org/docs/Web/API/Fetch_API) を拡張し、サーバー上の各リクエストが自身の永続的なキャッシュと再検証のセマンティクスを設定できるようにしています。
+
+ブラウザでは、`cache` オプションはフェッチリクエストが _ブラウザの_ HTTP キャッシュとどのように相互作用するかを示します。この拡張により、`cache` は _サーバーサイド_ のフェッチリクエストがフレームワークの永続的な [Data Cache](/docs/app/building-your-application/caching#data-cache) とどのように相互作用するかを示します。
+
+Server Components の中で直接 `async` と `await` を使って `fetch` を呼び出すことができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+export default async function Page() {
+  let data = await fetch('https://api.vercel.app/blog')
+  let posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export default async function Page() {
+  let data = await fetch('https://api.vercel.app/blog')
+  let posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+## `fetch(url, options)` {#fetch-url-options}
+
+Next.js は [Web `fetch()` API](https://developer.mozilla.org/docs/Web/API/Fetch_API) を拡張しているため、[ネイティブオプション](https://developer.mozilla.org/docs/Web/API/fetch#parameters)のいずれも使用できます。
+
+### `options.cache` {#options-cache}
+
+Next.js [Data Cache](/docs/app/building-your-application/caching#data-cache) とどのようにリクエストが相互作用するべきか設定します。
+
+```ts
+fetch(`https://...`, { cache: 'force-cache' | 'no-store' })
+```
+
+- **`auto no cache`** (デフォルト): Next.js は開発環境で毎回リモートサーバーからリソースをフェッチしますが、`next build` 時には一度だけフェッチします。これはルートが静的にプリレンダリングされるためです。[Dynamic APIs](/docs/app/building-your-application/rendering/server-components#dynamic-rendering) がルートで検出された場合、Next.js は毎回リソースをフェッチします
+- **`no-store`**: Next.js はルートで Dynamic APIs が検出されていない場合でも、毎回リモートサーバーからリソースをフェッチします
+- **`force-cache`**: Next.js は Data Cache にマッチするリクエストを探します
+  - マッチが新鮮である場合、キャッシュから返されます
+  - マッチがない、あるいは陳腐化したマッチがある場合、Next.js はリモートサーバーからリソースをフェッチし、ダウンロードしたリソースでキャッシュを更新します
+
+### `options.next.revalidate` {#options-next-revalidate}
+
+```ts
+fetch(`https://...`, { next: { revalidate: false | 0 | number } })
+```
+
+リソースのキャッシュ寿命を（秒単位で）設定します。
+
+- **`false`** - リソースを無期限でキャッシュします。セマンティクス的には `revalidate: Infinity` と同等です。HTTP キャッシュは時間とともに古いリソースを削除することがあります
+- **`0`** - リソースをキャッシュしないようにします
+- **`number`** - （秒単位で）リソースが最大 `n` 秒のキャッシュ寿命を持つように指定します
+
+> **Good to know**:
+>
+> - 個々の `fetch()` リクエストがルートの [デフォルトの `revalidate`](/docs/app/api-reference/file-conventions/route-segment-config#revalidate) より低い `revalidate` 番号を設定すると、全体のルート再検証間隔が短縮されます
+> - 同じルート内の同じ URL を持つ2つのフェッチリクエストが異なる `revalidate` 値を持つ場合、低い方の値が使用されます
+> - 便宜上、`revalidate` を数字に設定している場合、`cache` オプションを設定する必要はありません
+> - `{ revalidate: 3600, cache: 'no-store' }` のような矛盾したオプションはエラーを引き起こします
+
+### `options.next.tags` {#options-next-tags}
+
+```ts
+fetch(`https://...`, { next: { tags: ['collection'] } })
+```
+
+リソースのキャッシュタグを設定します。データは[`revalidateTag`](https://nextjs.org/docs/app/api-reference/functions/revalidateTag)を使用してオンデマンドで再検証できます。カスタムタグの最大長は 256 文字で、タグ項目の最大数は 128 です。
+
+## トラブルシューティング {#troubleshooting}
+
+### フェッチのデフォルト `auto no store` と `cache: 'no-store'` が開発環境で新しいデータを表示しない {#fetch-default-auto-no-store-and-cache-no-store-not-showing-fresh-data-in-development}
+
+Next.js はローカル開発での高速な応答と請求される API 呼び出しのコスト削減のために、Server Componentsにおける `fetch` のレスポンスをホットモジュールリプレースメント（HMR）でキャッシュします。
+
+デフォルトでは、[HMR キャッシュ](/docs/app/api-reference/config/next-config-js/serverComponentsHmrCache) はすべてのフェッチリクエストに適用され、デフォルトの `auto no cache` および `cache: 'no-store'` オプションも含まれます。これは、HMR リフレッシュ間で未キャッシュのリクエストが新しいデータを表示しないことを意味します。ただし、ナビゲーションやフルページのリロード時にキャッシュはクリアされます。
+
+詳細については、[`serverComponentsHmrCache`](/docs/app/api-reference/config/next-config-js/serverComponentsHmrCache) ドキュメントを参照してください。
+
+## バージョン履歴 {#version-history}
+
+| バージョン | 変更点                   |
+| ---------- | ------------------------ |
+| `v13.0.0`  | `fetch` が導入されました |
