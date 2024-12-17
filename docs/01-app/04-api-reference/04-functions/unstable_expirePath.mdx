@@ -1,0 +1,145 @@
+---
+title: 'unstable_expirePath'
+description: 'unstable_expirePath 関数の API リファレンス'
+version: 'unstable'
+---
+
+`unstable_expirePath` は、特定のパスに対してキャッシュされた[データ](/docs/app/building-your-application/caching)をオンデマンドでパージすることを可能にします。
+
+> **Good to know**:
+>
+> - `unstable_expirePath` は、[Node.js と Edge ランタイム](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)の両方で利用可能です。
+> - `unstable_expirePath` は、含まれるパスが次に訪問されたときにのみキャッシュを無効化します。これは、`unstable_expirePath`を dynamic route segment と共に呼び出した場合、すぐに大量の期限切れが発生するわけではないことを意味します。無効化は、パスが次に訪問されたときにのみ発生します。
+> - 現在、`unstable_expirePath` は server action で使用されたとき、[クライアントサイドの Router Cache](/docs/app/building-your-application/caching#client-side-router-cache)にあるすべてのルートを無効化します。この動作は一時的なものであり、将来的には特定のパスのみに適用されるように更新されます。
+> - `unstable_expirePath` を使用すると、[サーバーサイドの Route Cache](/docs/app/building-your-application/caching#full-route-cache)では**特定のパスのみ**を無効化します。
+
+## リファレンス {#reference}
+
+### パラメータ {#parameters}
+
+```tsx
+unstable_expirePath(path: string, type?: 'page' | 'layout'): void;
+```
+
+- `path`: 期限を切らせたいデータに関連付けられているファイルシステムパスを表す文字列（例：`/product/[slug]/page`）、もしくはリテラル route segment（例：`/product/123`）。1024文字未満でなければなりません。この値は大文字と小文字を区別します。
+- `type`: （オプション）期限を切らせたいパスのタイプを変更するための `'page'` または `'layout'` の文字列。`path` に dynamic segment（例えば `/product/[slug]/page`）が含まれている場合、このパラメータが必要です。パスがリテラルの route segment を指す場合、例えば dynamic page（例：`/product/[slug]/page`）の `/product/1` の場合、`type` を指定する必要はありません。
+
+### 返り値 {#returns}
+
+`unstable_expirePath` は値を返しません。
+
+## 例 {#examples}
+
+### 特定の URL の期限を切らせる {#expiring-a-specific-url}
+
+```ts
+import { unstable_expirePath } from 'next/cache'
+unstable_expirePath('/blog/post-1')
+```
+
+これは、次のページ訪問時に特定の URL のキャッシュをパージします。
+
+### ページパスの期限を切らせる {#expiring-a-page-path}
+
+```ts
+import { unstable_expirePath } from 'next/cache'
+unstable_expirePath('/blog/[slug]', 'page')
+// またはルートグループと共に
+unstable_expirePath('/(main)/blog/[slug]', 'page')
+```
+
+これは、次のページ訪問時に指定された `page` ファイルに一致する任意の URL のキャッシュをパージします。特定のページの下にあるページを無効化することは _ありません_。例えば、`/blog/[slug]` は `/blog/[slug]/[author]` を無効化しません。
+
+### レイアウトパスの期限を切らせる {#expiring-a-layout-path}
+
+```ts
+import { unstable_expirePath } from 'next/cache'
+unstable_expirePath('/blog/[slug]', 'layout')
+// またはルートグループと共に
+unstable_expirePath('/(main)/post/[slug]', 'layout')
+```
+
+これは、次のページ訪問時に指定された `layout` ファイルに一致する任意の URL のキャッシュをパージします。これにより、同じレイアウトを持つ下位ページが次の訪問時に再検証されます。例えば、上記の場合、`/blog/[slug]/[another]` も次の訪問時に再検証されます。
+
+### すべてのデータの期限を切らせる {#expiring-all-data}
+
+```ts
+import { unstable_expirePath } from 'next/cache'
+
+unstable_expirePath('/', 'layout')
+```
+
+これは、次のページ訪問時にデータキャッシュをパージします。
+
+### サーバーアクション {#server-action}
+
+Server Action 内で `unstable_expirePath` を呼び出すことができます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+import { unstable_expirePath } from 'next/cache'
+
+export default async function submit() {
+  await submitForm()
+  unstable_expirePath('/')
+}
+```
+
+</TabItem>
+</Tabs>
+
+### ルートハンドラー {#route-handler}
+
+Route Handler 内で `unstable_expirePath` を呼び出すことができます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/expire/route.ts" switcher
+import { unstable_expirePath } from 'next/cache'
+import type { NextRequest } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const path = request.nextUrl.searchParams.get('path')
+
+  if (path) {
+    unstable_expirePath(path)
+    return Response.json({ revalidated: true, now: Date.now() })
+  }
+
+  return Response.json({
+    expired: false,
+    now: Date.now(),
+    message: '期限を切らせるパスが見つからない',
+  })
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/expire/route.js" switcher
+import { unstable_expirePath } from 'next/cache'
+
+export async function GET(request) {
+  const path = request.nextUrl.searchParams.get('path')
+
+  if (path) {
+    unstable_expirePath(path)
+    return Response.json({ expired: true, now: Date.now() })
+  }
+
+  return Response.json({
+    expired: false,
+    now: Date.now(),
+    message: '期限を切らせるパスが見つからない',
+  })
+}
+```
+
+</TabItem>
+</Tabs>

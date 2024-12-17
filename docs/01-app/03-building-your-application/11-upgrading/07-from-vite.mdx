@@ -1,0 +1,621 @@
+---
+title: 'Vite からの移行'
+description: '既存の React アプリケーションを Vite から Next.js に移行する方法を学びます。'
+---
+
+このガイドでは、既存の Vite アプリケーションを Next.js に移行する方法を説明します。
+
+## なぜスイッチするのか？ {#why-switch}
+
+Vite から Next.js に移行したいと考える理由はいくつかあります：
+
+### 初期ページの読み込み時間が遅い {#slow-initial-page-loading-time}
+
+[React 用のデフォルトの Vite プラグイン](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react)でアプリケーションを構築した場合、アプリケーションは純粋なクライアントサイドアプリケーションです。クライアントサイドのみのアプリケーション、つまりシングルページアプリケーション（SPA）は、初期ページの読み込み時間が遅くなることがあります。これは次のような理由で起こります：
+
+1. ブラウザは、React のコードとアプリケーション全体のバンドルがダウンロードされ実行されるまでデータを取得するリクエストを送信できるようになるのを待つ必要があります。
+2. 新しい機能や依存関係を追加するたびに、アプリケーションのコードが増加します。
+
+### 自動コード分割がない {#no-automatic-code-splitting}
+
+前述の読み込み時間の遅延は、コード分割で多少管理できます。しかし、コード分割を手動で試みると、パフォーマンスが悪化することがよくあります。手動でコード分割を行うと、意図せずにネットワークの滝を導入することが簡単です。Next.js では、自動コード分割がルーターに組み込まれています。
+
+### ネットワークの滝 {#network-waterfalls}
+
+アプリケーションがデータを取得するために順次クライアントサーバーリクエストを行う場合、パフォーマンスが悪化する一般的な原因です。SPA でのデータ取得の一般的なパターンは、プレースホルダーを最初に表示し、その後にコンポーネントがマウントされた後にデータを取得することです。残念ながら、これは子コンポーネントがデータを取得するまでに、親コンポーネントが自身のデータの読み込みを完了する必要があることを意味します。
+
+Next.js ではクライアントでのデータ取得をサポートしつつ、データ取得をサーバー側に移すことで、クライアントサーバー間の滝を排除することも可能です。
+
+### 高速で意図的な読み込み状態 {#fast-and-intentional-loading-states}
+
+[React Suspense を通じたストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense)の組み込みサポートにより、UIのどの部分を最初に読み込み、どの順序で読み込むかをネットワークの滝を導入することなく意図的に制御できます。
+
+これにより、読み込みが高速で、[レイアウトシフト](https://vercel.com/blog/how-core-web-vitals-affect-seo)を排除するページを構築できます。
+
+### データ取得戦略の選択 {#choose-the-data-fetching-strategy}
+
+必要に応じて、Next.js はページやコンポーネント単位でデータ取得戦略を選択することができます。ビルド時、サーバーでのリクエスト時、またはクライアントでの取得を決定できます。例えば、CMS からデータを取得し、ビルド時にブログ投稿をレンダリングすることで、CDN に効率的にキャッシュできます。
+
+### ミドルウェア {#middleware}
+
+[Next.js ミドルウェア](/docs/app/building-your-application/routing/middleware)は、リクエストが完了する前にサーバーでコードを実行することを可能にします。これは、認証されたページにユーザーがアクセスした際に、認証されていないコンテンツのフラッシュを避けてログインページにリダイレクトするのに特に有用です。ミドルウェアは、エクスペリメンテーションや[国際化](/docs/app/building-your-application/routing/internationalization)にも役立ちます。
+
+### 組み込みの最適化 {#built-in-optimizations}
+
+アプリケーションのパフォーマンスに大きく影響する[画像](/docs/app/building-your-application/optimizing/images)、[フォント](/docs/app/building-your-application/optimizing/fonts)、および[サードパーティのスクリプト](/docs/app/building-your-application/optimizing/scripts)を自動で最適化する組み込みコンポーネントを Next.js は備えています。
+
+## 移行手順 {#migration-steps}
+
+私たちの目標は、Next.js のアプリケーションをできるだけ早く動作させ、その後段階的に Next.js の機能を採用できるようにすることです。まずは既存のルーターを移行せずに、純粋なクライアントサイドアプリケーション（SPA）としてそのままにしておきます。これにより、移行プロセス中に問題が発生する可能性が最小限に抑えられ、マージ衝突が軽減されます。
+
+### ステップ 1: Next.js の依存関係をインストールする {#step-1-install-the-next-js-dependency}
+
+最初に行うことは、`next` を依存関係としてインストールすることです：
+
+```bash title="Terminal"
+npm install next@latest
+```
+
+### ステップ 2: Next.js の設定ファイルを作成する {#step-2-create-the-next-js-configuration-file}
+
+プロジェクトのルートに `next.config.mjs` を作成します。このファイルには[Next.js の設定オプション](/docs/app/api-reference/config/next-config-js)が含まれます。
+
+```js title="next.config.mjs"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export', // シングルページアプリケーション (SPA) を出力します。
+  distDir: './dist', // ビルド出力先ディレクトリを `./dist/` に変更します。
+}
+
+export default nextConfig
+```
+
+> **Good to know:** Next.js の設定ファイルには `.js` または `.mjs` のどちらも利用できます。
+
+### ステップ 3: TypeScript 設定を更新する {#step-3-update-typescript-configuration}
+
+TypeScript を使用している場合、次の変更を行って `tsconfig.json` ファイルを Next.js と互換性のあるように更新する必要があります。TypeScript を使用していない場合、このステップはスキップできます。
+
+1. `tsconfig.node.json` に対する[プロジェクト参照](https://www.typescriptlang.org/tsconfig#references)を削除します
+2. [`include 配列`](https://www.typescriptlang.org/tsconfig#include)に `./dist/types/**/*.ts` と `./next-env.d.ts` を追加します
+3. [`exclude 配列`](https://www.typescriptlang.org/tsconfig#exclude)に `./node_modules` を追加します
+4. [`compilerOptions` の `plugins` 配列](https://www.typescriptlang.org/tsconfig#plugins)に `{ "name": "next" }` を追加します：`"plugins": [{ "name": "next" }]`
+5. [`esModuleInterop`](https://www.typescriptlang.org/tsconfig#esModuleInterop) を `true` に設定します：`"esModuleInterop": true`
+6. [`jsx`](https://www.typescriptlang.org/tsconfig#jsx) を `preserve` に設定します：`"jsx": "preserve"`
+7. [`allowJs`](https://www.typescriptlang.org/tsconfig#allowJs) を `true` に設定します：`"allowJs": true`
+8. [`forceConsistentCasingInFileNames`](https://www.typescriptlang.org/tsconfig#forceConsistentCasingInFileNames) を `true` に設定します：`"forceConsistentCasingInFileNames": true`
+9. [`incremental`](https://www.typescriptlang.org/tsconfig#incremental) を `true` に設定します：`"incremental": true`
+
+次の変更が加えられた `tsconfig.json` の作業例です：
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "plugins": [{ "name": "next" }]
+  },
+  "include": ["./src", "./dist/types/**/*.ts", "./next-env.d.ts"],
+  "exclude": ["./node_modules"]
+}
+```
+
+TypeScript の設定方法についてさらに詳しい情報は[Next.js のドキュメント](/docs/app/api-reference/config/typescript#ide-plugin)を参照してください。
+
+### ステップ 4: root レイアウトを作成する {#step-4-create-the-root-layout}
+
+Next.js の [App Router](/docs/app) アプリケーションには、アプリケーション内のすべてのページをラップするための [root レイアウト](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required)ファイルが必要です。このファイルは、アプリケーションの `app` ディレクトリのトップレベルに定義されています。
+
+Vite アプリケーションの root レイアウトファイルに最も近いものは、`<html>`、`<head>`、および `<body>` タグを含む [`index.html` ファイル](https://vitejs.dev/guide/#index-html-and-project-root)です。
+
+このステップでは、`index.html` ファイルを root レイアウトファイルに変換します：
+
+1. `src` ディレクトリ内に新たな `app` ディレクトリを作成します。
+2. その `app` ディレクトリ内に新たな `layout.tsx` ファイルを作成します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: レイアウトファイルには `.js`、`.jsx`、または `.tsx` が使用できます。
+
+3. `index.html` ファイルの内容を `<RootLayout>` コンポーネントにコピーし、`body.div#root` と `body.script` タグを `<div id="root">{children}</div>` に置き換えます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+4. Next.js はデフォルトで既に[meta charset](https://developer.mozilla.org/docs/Web/HTML/Element/meta#charset)と[meta viewport](https://developer.mozilla.org/docs/Web/HTML/Viewport_meta_tag) タグを含んでいるため、これらを `<head>` から安全に削除できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+5. `favicon.ico`、`icon.png`、`robots.txt` のような[メタデータファイル](/docs/app/building-your-application/optimizing/metadata#file-based-metadata)は、アプリケーションの `<head>` タグに自動的に追加されます。`app` ディレクトリのトップレベルに配置している限り、[すべてのサポートされているファイル](/docs/app/building-your-application/optimizing/metadata#file-based-metadata)を `app` ディレクトリに移動させた後には、それらの `<link>` タグを安全に削除できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+6. 最後に、Next.js は[メタデータ API](/docs/app/building-your-application/optimizing/metadata)によって最後の `<head>` タグを管理できます。最終的なメタデータ情報をエクスポートされた[`metadata` オブジェクト](/docs/app/api-reference/functions/generate-metadata#metadata-object)に移動します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'My App',
+  description: 'My App is a...',
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export const metadata = {
+  title: 'My App',
+  description: 'My App is a...',
+}
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+上記の変更により、`index.html` で宣言していたものを Next.js の規約に基づくアプローチにシフトしました。このアプローチにより、SEO の改善やページの Web 共有性の向上をより簡単に行うことができます。
+
+### ステップ 5: エントリポイントページを作成する {#step-5-create-the-entrypoint-page}
+
+Next.js では、`page.tsx` ファイルを作成することでアプリケーションのエントリポイントを宣言します。Vite の最も近い相当は `main.tsx` ファイルです。このステップでは、アプリケーションのエントリポイントを設定します。
+
+1. **`app` ディレクトリに `[[...slug]]` ディレクトリを作成します。**
+
+このガイドでは、SPA（シングルページアプリケーション）として次のように設定することを目指しているので、アプリケーションのすべての可能なルートをキャッチするために、エントリポイントページが必要です。そのために、`app` ディレクトリに新たな `[[...slug]]` ディレクトリを作成します。
+
+このディレクトリは[オプションの catch-all route segment](/docs/app/building-your-application/routing/dynamic-routes#optional-catch-all-segments)と呼ばれます。Next.js はファイルシステムベースのルーターを使用しており、フォルダーはルートを定義するために使用されます。この特別なディレクトリはアプリケーションのすべてのルートがその中にある `page.tsx` ファイルに向かうことを保証します。
+
+2. **`app/[[...slug]]` ディレクトリ内に新たな `page.tsx` ファイルを次の内容で作成します：**
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/[[...slug]]/page.tsx" switcher
+import '../../index.css'
+
+export function generateStaticParams() {
+  return [{ slug: [''] }]
+}
+
+export default function Page() {
+  return '...' // 後で更新します
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/[[...slug]]/page.js" switcher
+import '../../index.css'
+
+export function generateStaticParams() {
+  return [{ slug: [''] }]
+}
+
+export default function Page() {
+  return '...' // 後で更新します
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: Page ファイルには `.js`、`.jsx`、または `.tsx` が使用できます。
+
+このファイルは[Server Component](/docs/app/building-your-application/rendering/server-components)です。`next build` を実行すると、このファイルは静的アセットとしてプリレンダリングされます。動的なコードは必要ありません。
+
+このファイルはグローバル CSS をインポートし、`/` のインデックスルートのみを生成するつもりであることを [`generateStaticParams`](/docs/app/api-reference/functions/generate-static-params) に伝えています。
+
+次に、クライアントのみで動作する Vite アプリケーションの残りを移動します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/[[...slug]]/client.tsx" switcher
+'use client'
+
+import React from 'react'
+import dynamic from 'next/dynamic'
+
+const App = dynamic(() => import('../../App'), { ssr: false })
+
+export function ClientOnly() {
+  return <App />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/[[...slug]]/client.js" switcher
+'use client'
+
+import React from 'react'
+import dynamic from 'next/dynamic'
+
+const App = dynamic(() => import('../../App'), { ssr: false })
+
+export function ClientOnly() {
+  return <App />
+}
+```
+
+</TabItem>
+</Tabs>
+
+このファイルは、`'use client'` ディレクティブによって定義される[Client Component](/docs/app/building-your-application/rendering/client-components)です。Client Component はサーバー上で[HTML にプリレンダリング](/docs/app/building-your-application/rendering/client-components#how-are-client-components-rendered)されてからクライアントに送信されます。
+
+クライアントのみのアプリケーションの実行を開始したい場合、`App` コンポーネントからプリレンダリングを無効にするように Next.js を設定できます：
+
+```tsx
+const App = dynamic(() => import('../../App'), { ssr: false })
+```
+
+次に、エントリポイントページを更新して新しいコンポーネントを使用します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/[[...slug]]/page.tsx" switcher
+import '../../index.css'
+import { ClientOnly } from './client'
+
+export function generateStaticParams() {
+  return [{ slug: [''] }]
+}
+
+export default function Page() {
+  return <ClientOnly />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/[[...slug]]/page.js" switcher
+import '../../index.css'
+import { ClientOnly } from './client'
+
+export function generateStaticParams() {
+  return [{ slug: [''] }]
+}
+
+export default function Page() {
+  return <ClientOnly />
+}
+```
+
+</TabItem>
+</Tabs>
+
+### ステップ 6: 静的画像インポートを更新する {#step-6-update-static-image-imports}
+
+Next.js では、Vite とは少し異なる方法で静的画像をインポートします。Vite では、画像ファイルをインポートすると、そのパブリック URL が文字列として返されます：
+
+```tsx title="App.tsx"
+import image from './img.png' // `image` は本番環境で '/assets/img.2d8efhg.png' になります
+
+export default function App() {
+  return <img src={image} />
+}
+```
+
+Next.js では、静的画像インポートがオブジェクトとして返されます。このオブジェクトは Next.js の [`<Image>` コンポーネント](/docs/app/api-reference/components/image)で直接使用するか、既存の `<img>` タグとともにオブジェクトの `src` プロパティを使用できます。
+
+`<Image>` コンポーネントには[自動画像最適化](/docs/app/building-your-application/optimizing/images)の追加の利点があります。`<Image>` コンポーネントは、画像の寸法に基づいて結果として得られる `<img>` の `width` と `height` 属性を自動的に設定します。これにより、画像の読み込み時のレイアウトシフトを防ぐことができます。しかし、これはアプリケーション内の画像の寸法の一部だけがスタイルされ、他方が `auto` にスタイルされていない場合に問題を引き起こす可能性があります。`auto` にスタイルされていない場合、その寸法は `<img>` の寸法属性の値にデフォルトされるため、画像が歪んで表示される可能性があります。
+
+`<img>` タグを維持することで、アプリケーションの変更を減らし、上記の問題を防ぐことができます。後で[ローダーを設定して](/docs/app/building-your-application/optimizing/images#loaders)画像を最適化する `<Image>` コンポーネントに移行するか、自動画像最適化を備えたデフォルトの Next.js サーバーに移行することもできます。
+
+1. **`/public` からインポートされる画像の絶対インポートパスを相対インポートに変換します：**
+
+```tsx
+// 以前は
+import logo from '/logo.png'
+
+// その後
+import logo from '../public/logo.png'
+```
+
+2. **既存の `<img>` タグに image オブジェクト全体ではなく `src` プロパティを渡します：**
+
+```tsx
+// 以前は
+<img src={logo} />
+
+// その後
+<img src={logo.src} />
+```
+
+別の方法として、ファイル名に基づいて画像アセットのパブリック URL を参照することもできます。例えば、`public/logo.png` はあなたのアプリケーション用に `/logo.png` で画像を配信します。これが `src` 値になります。
+
+> **Warning:** TypeScript を使用している場合、`src` プロパティにアクセスしたときに型のエラーが出る可能性があります。これらは一時的に無視しても安全です。このガイドの最後で修正されます。
+
+### ステップ 7: 環境変数を移行する {#step-7-migrate-the-environment-variables}
+
+Next.js には Vite と同様に `.env` [環境変数](/docs/app/building-your-application/configuring/environment-variables)のサポートがあります。主な違いは、クライアント側で環境変数を公開するのに使用する接頭辞です。
+
+- `VITE_` プレフィックスの環境変数を `NEXT_PUBLIC_` に変更します。
+
+Vite は特別な `import.meta.env` オブジェクト上でいくつかの組み込み環境変数を公開していますが、これは Next.js ではサポートされていません。次のようにその使用法を更新する必要があります：
+
+- `import.meta.env.MODE` ⇒ `process.env.NODE_ENV`
+- `import.meta.env.PROD` ⇒ `process.env.NODE_ENV === 'production'`
+- `import.meta.env.DEV` ⇒ `process.env.NODE_ENV !== 'production'`
+- `import.meta.env.SSR` ⇒ `typeof window !== 'undefined'`
+
+Next.js は組み込みの `BASE_URL` 環境変数を提供していません。しかし、必要に応じて設定は可能です：
+
+1. **次を `.env` ファイルに追加します：**
+
+```bash title=".env"
+# ... {#}
+NEXT_PUBLIC_BASE_PATH="/some-base-path"
+```
+
+2. **`next.config.mjs` ファイルの [`basePath`](/docs/app/api-reference/config/next-config-js/basePath) を `process.env.NEXT_PUBLIC_BASE_PATH` に設定します：**
+
+```js title="next.config.mjs"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export', // シングルページアプリケーション (SPA) を出力します。
+  distDir: './dist', // ビルド出力先ディレクトリを `./dist/` に変更します。
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH, // 基本パスを `/some-base-path` に設定します。
+}
+
+export default nextConfig
+```
+
+3. **`import.meta.env.BASE_URL` の使用を `process.env.NEXT_PUBLIC_BASE_PATH` に更新します**
+
+### ステップ 8: `package.json` のスクリプトを更新する {#step-8-update-scripts-in-package-json}
+
+アプリケーションを実行して Next.js への移行が成功したかどうかをテストできるようになりました。しかし、その前に、Next.js に関連するコマンドを用いて `package.json` 内の `scripts` を更新し、`.next` と `next-env.d.ts` を `.gitignore` に追加する必要があります：
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+```txt title=".gitignore"
+# ... {#}
+.next
+next-env.d.ts
+dist
+```
+
+次に `npm run dev` を実行し、[`http://localhost:3000`](http://localhost:3000) を開いてください。Next.js 上でアプリケーションが動作していることが確認できるはずです。
+
+> **Example:** Vite のアプリケーションを Next.js に移行した作業例については、[この記事のプルリクエスト](https://github.com/inngest/vite-to-nextjs/pull/1)を参照してください。
+
+### ステップ 9: クリーンアップ {#step-9-clean-up}
+
+Vite に関連するアーティファクトをコードベースからクリーンアップできます：
+
+- `main.tsx` を削除します
+- `index.html` を削除します
+- `vite-env.d.ts` を削除します
+- `tsconfig.node.json` を削除します
+- `vite.config.ts` を削除します
+- Vite の依存関係をアンインストールします
+
+## 次のステップ {#next-steps}
+
+すべてが計画通りに進んだ場合、シングルページアプリケーションとして動作する Next.js アプリケーションが設定されているはずです。しかし、Next.js の多くの利点をまだ活用していませんが、段階的な変更を行うことで次のすべての利点を享受できます。次に行うべきことは：
+
+- 次の利点を得るために React Router から [Next.js App Router](/docs/app/building-your-application/routing) に移行する：
+  - 自動コード分割
+  - [ストリーミングサーバーレンダリング](/docs/app/building-your-application/routing/loading-ui-and-streaming)
+  - [React サーバーコンポーネント](/docs/app/building-your-application/rendering/server-components)
+- [`<Image>` コンポーネントを使用して画像を最適化する](/docs/app/building-your-application/optimizing/images)
+- [`next/font` でフォントを最適化する](/docs/app/building-your-application/optimizing/fonts)
+- [`<Script>` コンポーネントでサードパーティのスクリプトを最適化する](/docs/app/building-your-application/optimizing/scripts)
+- [Next.js ルールをサポートするために ESLint 設定を更新する](/docs/app/api-reference/config/eslint)
