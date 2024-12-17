@@ -1,0 +1,674 @@
+---
+title: 'Progressive Web Applications (PWA)'
+description: 'Next.jsを使ってProgressive Web Application (PWA)を構築する方法を学びましょう。'
+related:
+  links:
+    - app/api-reference/file-conventions/metadata/manifest
+---
+
+Progressive Web Applications (PWA)は、Webアプリケーションの到達性とアクセシビリティに加え、ネイティブモバイルアプリの機能とユーザー体験を提供します。Next.jsを使用することで、複数のコードベースやアプリストアの承認を必要とせず、すべてのプラットフォームでシームレスでアプリのような体験を提供するPWAを作成できます。
+
+PWAを使用すると、次のことが可能になります：
+
+- アプリストアの承認を待たずに、アップデートを瞬時にデプロイできます
+- 単一のコードベースでクロスプラットフォームのアプリケーションを作成できます
+- ホームスクリーンへのインストールやプッシュ通知といったネイティブの機能を提供できます
+
+## Next.jsでのPWAの作成 {#creating-a-pwa-with-next-js}
+
+### 1. Webアプリマニフェストの作成 {#1-creating-the-web-app-manifest}
+
+Next.jsはApp Routerを使用して[webアプリマニフェスト](/docs/app/api-reference/file-conventions/metadata/manifest)を作成するための組み込みサポートを提供します。静的または動的なマニフェストファイルを作成することができます：
+
+例えば、`app/manifest.ts`または`app/manifest.json`ファイルを作成します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/manifest.ts" switcher
+import type { MetadataRoute } from 'next'
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Next.js PWA',
+    short_name: 'NextPWA',
+    description: 'A Progressive Web App built with Next.js',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#ffffff',
+    theme_color: '#000000',
+    icons: [
+      {
+        src: '/icon-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: '/icon-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+    ],
+  }
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/manifest.js" switcher
+export default function manifest() {
+  return {
+    name: 'Next.js PWA',
+    short_name: 'NextPWA',
+    description: 'A Progressive Web App built with Next.js',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#ffffff',
+    theme_color: '#000000',
+    icons: [
+      {
+        src: '/icon-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: '/icon-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+    ],
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+このファイルには、名前、アイコン、ユーザーのデバイス上でアイコンとしてどのように表示されるべきかに関する情報が含まれています。これにより、ユーザーはPWAをホームスクリーンにインストールでき、ネイティブアプリのような体験を提供できます。
+
+[faviconジェネレータ](https://realfavicongenerator.net/)のようなツールを使用して、異なるアイコンセットを作成し、生成されたファイルを`public/`フォルダーに配置することができます。
+
+### 2. Webプッシュ通知の実装 {#2-implementing-web-push-notifications}
+
+Webプッシュ通知は、次のモダンブラウザでサポートされています：
+
+- ホームスクリーンにインストールされたアプリ用のiOS 16.4+
+- macOS 13以降用のSafari 16
+- Chromiumベースのブラウザ
+- Firefox
+
+これにより、PWAはネイティブアプリの代替手段として現実的です。特にオフラインサポートを必要とせずにインストールプロンプトをトリガーできます。
+
+Webプッシュ通知により、ユーザーがアプリを積極的に使用していなくても再エンゲージできます。Next.jsアプリケーションでこれを実装する方法は以下のとおりです：
+
+まず、`app/page.tsx`にメインページコンポーネントを作成しましょう。理解しやすくするために小さな部分に分割します。まず、必要なインポートとユーティリティを追加します。参照されているServer Actionsはまだ存在しなくても構いません：
+
+```tsx switcher
+'use client'
+
+import { useState, useEffect } from 'react'
+import { subscribeUser, unsubscribeUser, sendNotification } from './actions'
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding)
+    .replace(/\\-/g, '+')
+    .replace(/_/g, '/')
+
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
+}
+```
+
+```jsx switcher
+'use client'
+
+import { useState, useEffect } from 'react'
+import { subscribeUser, unsubscribeUser, sendNotification } from './actions'
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding)
+    .replace(/\\-/g, '+')
+    .replace(/_/g, '/')
+
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
+}
+```
+
+次に、プッシュ通知の購読、購読解除、送信を管理するコンポーネントを追加しましょう。
+
+```tsx switcher
+function PushNotificationManager() {
+  const [isSupported, setIsSupported] = useState(false)
+  const [subscription, setSubscription] = useState<PushSubscription | null>(
+    null
+  )
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      setIsSupported(true)
+      registerServiceWorker()
+    }
+  }, [])
+
+  async function registerServiceWorker() {
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+      updateViaCache: 'none',
+    })
+    const sub = await registration.pushManager.getSubscription()
+    setSubscription(sub)
+  }
+
+  async function subscribeToPush() {
+    const registration = await navigator.serviceWorker.ready
+    const sub = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+      ),
+    })
+    setSubscription(sub)
+    await subscribeUser(sub)
+  }
+
+  async function unsubscribeFromPush() {
+    await subscription?.unsubscribe()
+    setSubscription(null)
+    await unsubscribeUser()
+  }
+
+  async function sendTestNotification() {
+    if (subscription) {
+      await sendNotification(message)
+      setMessage('')
+    }
+  }
+
+  if (!isSupported) {
+    return <p>このブラウザではプッシュ通知はサポートされていません。</p>
+  }
+
+  return (
+    <div>
+      <h3>プッシュ通知</h3>
+      {subscription ? (
+        <>
+          <p>プッシュ通知を購読しています。</p>
+          <button onClick={unsubscribeFromPush}>購読解除</button>
+          <input
+            type="text"
+            placeholder="通知メッセージを入力"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <button onClick={sendTestNotification}>テスト送信</button>
+        </>
+      ) : (
+        <>
+          <p>プッシュ通知を購読していません。</p>
+          <button onClick={subscribeToPush}>購読</button>
+        </>
+      )}
+    </div>
+  )
+}
+```
+
+```jsx switcher
+function PushNotificationManager() {
+  const [isSupported, setIsSupported] = useState(false);
+  const [subscription, setSubscription] = useState(null);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      setIsSupported(true);
+      registerServiceWorker();
+    }
+  }, []);
+
+  async function registerServiceWorker() {
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+      updateViaCache: 'none',
+    });
+    const sub = await registration.pushManager.getSubscription();
+    setSubscription(sub);
+  }
+
+  async function subscribeToPush() {
+    const registration = await navigator.serviceWorker.ready;
+    const sub = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+      ),
+    });
+    setSubscription(sub);
+    await subscribeUser(sub);
+  }
+
+  async function unsubscribeFromPush() {
+    await subscription?.unsubscribe();
+    setSubscription(null);
+    await unsubscribeUser();
+  }
+
+  async function sendTestNotification() {
+    if (subscription) {
+      await sendNotification(message);
+      setMessage('');
+    }
+  }
+
+  if (!isSupported) {
+    return <p>このブラウザではプッシュ通知はサポートされていません。</p>;
+  }
+
+  return (
+    <div>
+      <h3>プッシュ通知</h3>
+      {subscription ? (
+        <>
+          <p>プッシュ通知を購読しています。</p>
+          <button onClick={unsubscribeFromPush}>購読解除</button>
+          <input
+            type="text"
+            placeholder="通知メッセージを入力"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <button onClick={sendTestNotification}>テスト送信</button>
+        </>
+      ) : (
+        <>
+          <p>プッシュ通知を購読していません。</p>
+          <button onClick={subscribeToPush}>購読</button>
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+最後に、iOSデバイスにホームスクリーンへのインストールを指示するメッセージを表示するコンポーネントを作成し、アプリが既にインストールされている場合にはこれを表示しないようにします。
+
+```tsx switcher
+function InstallPrompt() {
+  const [isIOS, setIsIOS] = useState(false)
+  const [isStandalone, setIsStandalone] = useState(false)
+
+  useEffect(() => {
+    setIsIOS(
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+    )
+
+    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches)
+  }, [])
+
+  if (isStandalone) {
+    return null // 既にインストールされている場合、インストールボタンを表示しない
+  }
+
+  return (
+    <div>
+      <h3>アプリをインストール</h3>
+      <button>ホームスクリーンに追加</button>
+      {isIOS && (
+        <p>
+          このアプリをiOSデバイスにインストールするには、共有ボタンをタップして
+          <span role="img" aria-label="share icon">
+            {' '}
+            ⎋{' '}
+          </span>
+          "ホームスクリーンに追加"を選択してください
+          <span role="img" aria-label="plus icon">
+            {' '}
+            ➕{' '}
+          </span>。
+        </p>
+      )}
+    </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <div>
+      <PushNotificationManager />
+      <InstallPrompt />
+    </div>
+  )
+}
+```
+
+```jsx switcher
+function InstallPrompt() {
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    setIsIOS(
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+    );
+
+    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches);
+  }, []);
+
+  if (isStandalone) {
+    return null; // 既にインストールされている場合、インストールボタンを表示しない
+  }
+
+  return (
+    <div>
+      <h3>アプリをインストール</h3>
+      <button>ホームスクリーンに追加</button>
+      {isIOS && (
+        <p>
+          このアプリをiOSデバイスにインストールするには、共有ボタンをタップして
+          <span role="img" aria-label="share icon">
+            {' '}
+            ⎋{' '}
+          </span>
+          "ホームスクリーンに追加"を選択してください
+          <span role="img" aria-label="plus icon">
+            {' '}
+            ➕{' '}
+          </span>。
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <div>
+      <PushNotificationManager />
+      <InstallPrompt />
+    </div>
+  );
+}
+```
+
+次に、このファイルが呼び出すServer Actionsを作成します。
+
+### 3. Server Actionsの実装 {#3-implementing-server-actions}
+
+`app/actions.ts`にアクションを含む新しいファイルを作成します。このファイルは、サブスクリプションの作成、削除、および通知の送信を処理します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/actions.ts" switcher
+'use server'
+
+import webpush from 'web-push'
+
+webpush.setVapidDetails(
+  '<mailto:your-email@example.com>',
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!
+)
+
+let subscription: PushSubscription | null = null
+
+export async function subscribeUser(sub: PushSubscription) {
+  subscription = sub
+  // 本番環境では、サブスクリプションをデータベースに保存したいでしょう
+  // 例: await db.subscriptions.create({ data: sub })
+  return { success: true }
+}
+
+export async function unsubscribeUser() {
+  subscription = null
+  // 本番環境では、データベースからサブスクリプションを削除したいでしょう
+  // 例: await db.subscriptions.delete({ where: { ... } })
+  return { success: true }
+}
+
+export async function sendNotification(message: string) {
+  if (!subscription) {
+    throw new Error('利用可能なサブスクリプションがありません')
+  }
+
+  try {
+    await webpush.sendNotification(
+      subscription,
+      JSON.stringify({
+        title: 'テスト通知',
+        body: message,
+        icon: '/icon.png',
+      })
+    )
+    return { success: true }
+  } catch (error) {
+    console.error('プッシュ通知の送信中にエラーが発生しました:', error)
+    return { success: false, error: '通知の送信に失敗しました' }
+  }
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/actions.js" switcher
+'use server';
+
+import webpush from 'web-push';
+
+webpush.setVapidDetails(
+  '<mailto:your-email@example.com>',
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!
+);
+
+let subscription= null;
+
+export async function subscribeUser(sub) {
+  subscription = sub;
+  // 本番環境では、サブスクリプションをデータベースに保存したいでしょう
+  // 例: await db.subscriptions.create({ data: sub })
+  return { success: true };
+}
+
+export async function unsubscribeUser() {
+  subscription = null;
+  // 本番環境では、データベースからサブスクリプションを削除したいでしょう
+  // 例: await db.subscriptions.delete({ where: { ... } })
+  return { success: true };
+}
+
+export async function sendNotification(message) {
+  if (!subscription) {
+    throw new Error('利用可能なサブスクリプションがありません');
+  }
+
+  try {
+    await webpush.sendNotification(
+      subscription,
+      JSON.stringify({
+        title: 'テスト通知',
+        body: message,
+        icon: '/icon.png',
+      })
+    );
+    return { success: true };
+  } catch (error) {
+    console.error('プッシュ通知の送信中にエラーが発生しました:', error);
+    return { success: false, error: '通知の送信に失敗しました' };
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+通知の送信は、ステップ5で作成したサービスワーカーによって処理されます。
+
+本番環境では、サーバーの再起動後も持続するようにサブスクリプションをデータベースに保存し、複数のユーザーのサブスクリプションを管理する必要があります。
+
+### 4. VAPIDキーの生成 {#4-generating-vapid-keys}
+
+WebプッシュAPIを使用するには、[VAPID](https://vapidkeys.com/)キーを生成する必要があります。最も簡単な方法は、web-push CLIを直接使用することです：
+
+まず、web-pushをグローバルにインストールします：
+
+```bash title="Terminal"
+npm install -g web-push
+```
+
+次に、VAPIDキーを生成するために以下を実行します：
+
+```bash title="Terminal"
+web-push generate-vapid-keys
+```
+
+出力をコピーし、キーを`.env`ファイルに貼り付けます：
+
+```.env
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_public_key_here
+VAPID_PRIVATE_KEY=your_private_key_here
+```
+
+### 5. サービスワーカーの作成 {#5-creating-a-service-worker}
+
+`public/sw.js`ファイルを作成します：
+
+```js title="public/sw.js"
+self.addEventListener('push', function (event) {
+  if (event.data) {
+    const data = event.data.json()
+    const options = {
+      body: data.body,
+      icon: data.icon || '/icon.png',
+      badge: '/badge.png',
+      vibrate: [100, 50, 100],
+      data: {
+        dateOfArrival: Date.now(),
+        primaryKey: '2',
+      },
+    }
+    event.waitUntil(self.registration.showNotification(data.title, options))
+  }
+})
+
+self.addEventListener('notificationclick', function (event) {
+  console.log('通知のクリックを受け取りました。')
+  event.notification.close()
+  event.waitUntil(clients.openWindow('<https://your-website.com>'))
+})
+```
+
+このサービスワーカーは、カスタムイメージと通知をサポートしています。受信プレーンイベントと通知クリックを処理します。
+
+- 通知に`icon`および`badge`プロパティを使用してカスタムアイコンを設定できます
+- `vibrate`パターンを調整して、サポートされているデバイスでカスタムバイブレーションアラートを作成できます
+- `data`プロパティを使用して通知に追加データを添付できます
+
+サービスワーカーがさまざまなデバイスおよびブラウザで期待どおりに動作することを確認するために十分なテストを行いましょう。また、`notificationclick`イベントリスナー内の'`https://your-website.com'`リンクをアプリケーションに適したURLに更新してください。
+
+### 6. ホームスクリーンへの追加 {#6-adding-to-home-screen}
+
+ステップ2で定義された`InstallPrompt`コンポーネントは、iOSデバイスにホームスクリーンへのインストールを指示するメッセージを表示します。
+
+モバイルのホームスクリーンにアプリケーションをインストールできるようにするには、次の条件が必要です：
+
+1. 有効なwebアプリマニフェスト（ステップ1で作成）
+2. HTTPSで配信されるウェブサイト
+
+モダンブラウザは、これらの条件が満たされた場合、自動的にユーザーにインストールプロンプトを表示します。カスタムインストールボタンを[`beforeinstallprompt`](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeinstallprompt_event)で提供することはできますが、クロスブラウザやプラットフォームではないため（Safari iOSでは機能しない）、これをお勧めしません。
+
+### 7. ローカルでのテスト {#7-testing-locally}
+
+通知をローカルで表示できるようにするために、次のことを確認してください：
+
+- [ローカルでHTTPSで実行している](/docs/app/api-reference/cli/next#using-https-during-development)
+  - テスト用に`next dev --experimental-https`を使用
+- ブラウザ（Chrome、Safari、Firefox）が通知を有効にしている
+  - ローカルでプロンプトが表示されたとき、通知の使用権限を許可する
+  - ブラウザ全体で通知が無効になっていないことを確認
+  - 通知が表示されない場合、デバッグに別のブラウザを使用することも検討する
+
+### 8. アプリケーションのセキュリティ {#8-securing-your-application}
+
+セキュリティは、特にPWAにおいて重要なWebアプリケーションの側面です。Next.jsでは、`next.config.js`ファイルを使用してセキュリティヘッダーを設定できます。例えば：
+
+```js title="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; script-src 'self'",
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+これらのオプションについて説明します：
+
+1. グローバルヘッダー（すべてのルートに適用）：
+   1. `X-Content-Type-Options: nosniff`: MIMEタイプのスニッフィングを防ぎ、悪意のあるファイルアップロードのリスクを軽減
+   2. `X-Frame-Options: DENY`: サイトがiframeに埋め込まれるのを防ぎ、クリックジャッキング攻撃から保護
+   3. `Referrer-Policy: strict-origin-when-cross-origin`: リクエストと共に含まれるリファラー情報量を制御し、セキュリティと機能性をバランス
+2. サービスワーカー専用ヘッダー:
+   1. `Content-Type: application/javascript; charset=utf-8`: サービスワーカーがJavaScriptとして正しく解釈されることを保証
+   2. `Cache-Control: no-cache, no-store, must-revalidate`: サービスワーカーのキャッシュを防ぎ、常に最新バージョンをユーザーに提供
+   3. `Content-Security-Policy: default-src 'self'; script-src 'self'`: サービスワーカーに対して、同じオリジンからのみスクリプトを許可する厳格なコンテンツセキュリティポリシーを実装
+
+Next.jsと共に[Content Security Policy](/docs/app/building-your-application/configuring/content-security-policy)を定義する方法について学びます。
+
+## 次のステップ {#next-steps}
+
+1. **PWA機能の探求**：PWAは、さまざまなWeb APIを活用して高度な機能を提供できます。バックグラウンド同期、定期的なバックグラウンド同期、またはファイルシステムアクセスAPIなどの機能を探求して、アプリケーションを強化することを検討してください。最新のPWA機能とインスピレーションについては、[What PWA Can Do Today](https://whatpwacando.today/)などのリソースを参照できます。
+2. **静的エクスポート**：サーバーを実行せずに静的エクスポートを使用するアプリケーションが必要な場合、Next.jsの設定を更新してこの変更を可能にすることができます。[Next.js静的エクスポートのドキュメント](/docs/app/building-your-application/deploying/static-exports)で詳細を学ぶことができます。ただし、Server Actionsを外部APIの呼び出しに移行し、定義されたヘッダをプロキシに移動する必要があります。
+3. **オフラインサポート**：オフライン機能を提供するための1つの方法として、Next.jsと組み合わせる[Serwist](https://github.com/serwist/serwist)があります。Next.jsとSerwistを統合する方法の例は、[ドキュメント](https://github.com/serwist/serwist/tree/main/examples/next-basic)で見つけることができます。**注意**：このプラグインは現在、webpackの設定が必要です。
+4. **セキュリティの考慮**：サービスワーカーが適切に保護されていることを確認してください。これには、HTTPSの使用、プッシュメッセージの送信元の検証、および適切なエラーハンドリングの実装が含まれます。
+5. **ユーザーエクスペリエンス**：一部のPWA機能がユーザーのブラウザでサポートされていない場合でもアプリがうまく動作するように、プログレッシブエンハンスメント技術の実装を検討してください。

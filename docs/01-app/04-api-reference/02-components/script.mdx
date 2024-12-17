@@ -1,0 +1,522 @@
+---
+title: '<Script>'
+description: '組み込みの `next/script` コンポーネントを使用して、Next.js アプリケーションのサードパーティー スクリプトを最適化する。'
+---
+
+{/* このドキュメントの内容は、app router と pages router の間で共有されます。Pages Router に特有の内容を追加するには、`<PagesOnly>Content</PagesOnly>` コンポーネントを使用できます。共有されている内容は、コンポーネントでラップしてはいけません。 */}
+
+この API リファレンスは、Script コンポーネントで利用可能な [props](#props) の使い方を理解するのに役立ちます。機能や使用法については、[スクリプトの最適化](/docs/app/building-your-application/optimizing/scripts)ページをご覧ください。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/page.tsx" switcher
+import Script from 'next/script'
+
+export default function Dashboard() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/page.js" switcher
+import Script from 'next/script'
+
+export default function Dashboard() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Props {#props}
+
+Script コンポーネントで利用可能な props の概要を以下に示します:
+
+| Prop                    | Example                           | Type     | Required                              |
+| ----------------------- | --------------------------------- | -------- | ------------------------------------- |
+| [`src`](#src)           | `src="http://example.com/script"` | String   | Required unless inline script is used |
+| [`strategy`](#strategy) | `strategy="lazyOnload"`           | String   | -                                     |
+| [`onLoad`](#onload)     | `onLoad={onLoadFunc}`             | Function | -                                     |
+| [`onReady`](#onready)   | `onReady={onReadyFunc}`           | Function | -                                     |
+| [`onError`](#onerror)   | `onError={onErrorFunc}`           | Function | -                                     |
+
+## Required Props {#required-props}
+
+`<Script />` コンポーネントには、次のプロパティが必要です。
+
+### `src` {#src}
+
+外部スクリプトの URL を指定するパス文字列です。これは、絶対外部 URL または内部パスのいずれかを使用できます。`src` プロパティは、インライン スクリプトが使用されていない限り、必須です。
+
+## Optional Props {#optional-props}
+
+`<Script />` コンポーネントは、必須ではないその他のプロパティも受け付けます。
+
+### `strategy` {#strategy}
+
+スクリプトの読み込み戦略です。使用できる戦略は4つあります:
+
+- `beforeInteractive`: Next.js コードの前、およびページのハイドレートが発生する前に読み込む
+- `afterInteractive`: （**デフォルト**）一部のハイドレートがページで発生した後に早期に読み込む
+- `lazyOnload`: ブラウザのアイドル時間中に読み込む
+- `worker`: （実験的）Web ワーカーで読み込む
+
+### `beforeInteractive` {#beforeinteractive}
+
+`beforeInteractive` 戦略で読み込まれるスクリプトは、サーバーからの初期 HTML に注入され、どの Next.js モジュールよりも早くダウンロードされ、ページで*いかなる*ハイドレートが発生する前に配置された順序で実行されます。
+
+この戦略で指定されたスクリプトは、ファーストパーティコードの前にプリロードおよびフェッチされますが、その実行によってページのハイドレートが発生するのをブロックすることはありません。
+
+<AppOnly>
+
+`beforeInteractive` スクリプトは、root レイアウト（`app/layout.tsx`）内に配置され、サイト全体で必要とされるスクリプトを読み込むために設計されています（すなわち、アプリケーション内の任意のページがサーバーサイドで読み込まれたときにスクリプトが読み込まれます）。
+
+</AppOnly>
+
+<PagesOnly>
+
+`beforeInteractive` スクリプトは、`Document` コンポーネント（`pages/_document.js`）内に配置され、サイト全体で必要なスクリプトを読み込むために設計されています（すなわち、アプリケーション内の任意のページがサーバーサイドで読み込まれたときにスクリプトが読み込まれます）。
+
+</PagesOnly>
+
+**この戦略は、ページのいかなる部分がインタラクティブになる前にフェッチされる必要がある重要なスクリプトにのみ使用するべきです。**
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import Script from 'next/script'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Script
+          src="https://example.com/script.js"
+          strategy="beforeInteractive"
+        />
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+import Script from 'next/script'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Script
+          src="https://example.com/script.js"
+          strategy="beforeInteractive"
+        />
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx title="pages/_document.js"
+import { Html, Head, Main, NextScript } from 'next/document'
+import Script from 'next/script'
+
+export default function Document() {
+  return (
+    <Html>
+      <Head />
+      <body>
+        <Main />
+        <NextScript />
+        <Script
+          src="https://example.com/script.js"
+          strategy="beforeInteractive"
+        />
+      </body>
+    </Html>
+  )
+}
+```
+
+</PagesOnly>
+
+> **Good to know**: `beforeInteractive` を使用したスクリプトは、コンポーネント内で配置された場所に関係なく、常に HTML ドキュメントの `head` 内に注入されます。
+
+`beforeInteractive` を使って、できるだけ早く読み込むべきスクリプトの例には、以下のものがあります:
+
+- ボット検知ツール
+- Cookie 同意マネージャー
+
+### `afterInteractive` {#afterinteractive}
+
+`afterInteractive` 戦略が使用されているスクリプトは、HTML クライアント側に注入され、ページで一部（または全部）のハイドレートが発生した後に読み込まれます。これは Script コンポーネントの **デフォルトの戦略** であり、ファーストパーティーの Next.js コードの前である必要はなく、できるだけ早く読み込む必要があるスクリプトに使用するべきです。
+
+`afterInteractive` スクリプトは、任意のページまたはレイアウト内に配置でき、そのページ（またはページのグループ）がブラウザで開かれるときにのみ読み込みと実行が行われます。
+
+```jsx title="app/page.js"
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="afterInteractive" />
+    </>
+  )
+}
+```
+
+`afterInteractive` に適したスクリプトの例には、以下のものがあります:
+
+- タグマネージャー
+- 分析ツール
+
+### `lazyOnload` {#lazyonload}
+
+`lazyOnload` 戦略が使用されているスクリプトは、ブラウザのアイドル時間中に HTML クライアント側に注入され、ページ上のすべてのリソースがフェッチされた後に読み込みが行われます。この戦略は、早期に読み込む必要がなく、バックグラウンドまたは低優先度のスクリプトに使用するべきです。
+
+`lazyOnload` スクリプトは、任意のページまたはレイアウト内に配置でき、そのページ（またはページのグループ）がブラウザで開かれるときにのみ読み込みと実行が行われます。
+
+```jsx title="app/page.js"
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="lazyOnload" />
+    </>
+  )
+}
+```
+
+すぐに読み込む必要がなく、`lazyOnload` でフェッチできるスクリプトの例には、以下のものがあります:
+
+- チャットサポートプラグイン
+- ソーシャルメディアウィジェット
+
+### `worker` {#worker}
+
+> **Warning:** `worker` 戦略はまだ安定しておらず、App Router ではまだ動作しません。慎重に使用してください。
+
+`worker` 戦略が使用されるスクリプトは、Web ワーカーにオフロードされ、メインスレッドを解放し、重要なファーストパーティーリソースのみを処理するようにします。この戦略はあらゆるスクリプトに使用できますが、すべてのサードパーティースクリプトをサポートすることが保証されていない高度なユースケースです。
+
+`worker` を戦略として使用するには、以下のフラグを `next.config.js` で有効にする必要があります:
+
+```js title="next.config.js"
+module.exports = {
+  experimental: {
+    nextScriptWorkers: true,
+  },
+}
+```
+
+`worker` スクリプトは、**現在のところ `pages/` ディレクトリでのみ使用できます**:
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/home.tsx" switcher
+import Script from 'next/script'
+
+export default function Home() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="worker" />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/home.js" switcher
+import Script from 'next/script'
+
+export default function Home() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="worker" />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### `onLoad` {#onload}
+
+> **Warning:** `onLoad` はまだ Server Components で動作せず、Client Components でのみ使用できます。さらに、`beforeInteractive` では `onLoad` は使用できません。代わりに `onReady` を使用してください。
+
+一部のサードパーティースクリプトでは、スクリプトの読み込みが完了した後に JavaScriptコードを実行する必要があります。これにより、コンテンツをインスタンス化したり、関数を呼び出したりできます。読み込み戦略として `afterInteractive` または `lazyOnload` を使用してスクリプトを読み込む場合、`onLoad` プロパティを使用して、スクリプトが読み込まれた後にコードを実行できます。
+
+ライブラリの読み込みが完了した後に lodash メソッドを実行する例を以下に示します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+'use client'
+
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js"
+        onLoad={() => {
+          console.log(_.sample([1, 2, 3, 4]))
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+'use client'
+
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js"
+        onLoad={() => {
+          console.log(_.sample([1, 2, 3, 4]))
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### `onReady` {#onready}
+
+> **Warning:** `onReady` はまだ Server Components で動作せず、Client Components でのみ使用できます。
+
+いくつかのサードパーティスクリプトでは、スクリプトの読み込み後、およびコンポーネントがマウントされるたびに（たとえば、ルートナビゲーションの後）JavaScript コードを実行する必要があります。最初のロード時やその後のコンポーネントの再マウント時に、スクリプトのロードイベント後にコードを実行するには、`onReady` プロパティを使用できます。
+
+以下に示す例は、Google Maps JS の埋め込みを再マウント時に再度インスタンス化する方法です。
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+'use client'
+
+import { useRef } from 'react'
+import Script from 'next/script'
+
+export default function Page() {
+  const mapRef = useRef()
+
+  return (
+    <>
+      <div ref={mapRef}></div>
+      <Script
+        id="google-maps"
+        src="https://maps.googleapis.com/maps/api/js"
+        onReady={() => {
+          new google.maps.Map(mapRef.current, {
+            center: { lat: -34.397, lng: 150.644 },
+            zoom: 8,
+          })
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+'use client'
+
+import { useRef } from 'react'
+import Script from 'next/script'
+
+export default function Page() {
+  const mapRef = useRef()
+
+  return (
+    <>
+      <div ref={mapRef}></div>
+      <Script
+        id="google-maps"
+        src="https://maps.googleapis.com/maps/api/js"
+        onReady={() => {
+          new google.maps.Map(mapRef.current, {
+            center: { lat: -34.397, lng: 150.644 },
+            zoom: 8,
+          })
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx
+import { useRef } from 'react'
+import Script from 'next/script'
+
+export default function Page() {
+  const mapRef = useRef()
+
+  return (
+    <>
+      <div ref={mapRef}></div>
+      <Script
+        id="google-maps"
+        src="https://maps.googleapis.com/maps/api/js"
+        onReady={() => {
+          new google.maps.Map(mapRef.current, {
+            center: { lat: -34.397, lng: 150.644 },
+            zoom: 8,
+          })
+        }}
+      />
+    </>
+  )
+}
+```
+
+</PagesOnly>
+
+### `onError` {#onerror}
+
+> **Warning:** `onError` はまだ Server Components で動作せず、Client Components でのみ使用できます。`onError` は `beforeInteractive` の読み込み戦略では使用できません。
+
+スクリプトの読み込みが失敗するときにキャッチすることが役立つ場合があります。これらのエラーは `onError` プロパティで処理できます:
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+'use client'
+
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onError={(e: Error) => {
+          console.error('Script failed to load', e)
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+'use client'
+
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onError={(e) => {
+          console.error('Script failed to load', e)
+        }}
+      />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx
+import Script from 'next/script'
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onError={(e: Error) => {
+          console.error('Script failed to load', e)
+        }}
+      />
+    </>
+  )
+}
+```
+
+</PagesOnly>
+
+## バージョン履歴 {#version-history}
+
+| Version   | Changes                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------- |
+| `v13.0.0` | `beforeInteractive` および `afterInteractive` が `app` をサポートするように変更されました。 |
+| `v12.2.4` | `onReady` prop が追加されました。                                                           |
+| `v12.2.2` | `beforeInteractive` の `next/script` を `_document` に配置できるようになりました。          |
+| `v11.0.0` | `next/script` が導入されました。                                                            |

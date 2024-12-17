@@ -1,0 +1,1091 @@
+---
+title: '<Image>'
+description: 'Next.jsの組み込み`next/image`コンポーネントを使用して、アプリケーションの画像を最適化します。'
+---
+
+{/* このドキュメントの内容はapp routerとpages router間で共有されています。Pages Routerに特化した内容を追加する場合は、`<PagesOnly>Content</PagesOnly>`コンポーネントを使うことができます。共有する内容はコンポーネントで囲むべきではありません。 */}
+
+<details>
+  <summary>例</summary>
+
+- [Image Component](https://github.com/vercel/next.js/tree/canary/examples/image-component)
+
+</details>
+
+<PagesOnly>
+
+> **Good to know**: Next.js 13より前のバージョンを使用している場合は、[next/legacy/image](https://nextjs.org/docs/canary/pages/api-reference/components/image-legacy)ドキュメントを使用してください。コンポーネント名が変更されました。
+
+</PagesOnly>
+
+このAPIリファレンスは、Imageコンポーネントで利用可能な[props](#props)や[設定オプション](#configuration-options)を使う方法を理解するのに役立ちます。機能や使用法については、[Imageコンポーネント](/docs/app/building-your-application/optimizing/images)ページを参照してください。
+
+```jsx title="app/page.js"
+import Image from 'next/image'
+
+export default function Page() {
+  return <Image src="/profile.png" width={500} height={500} alt="著者の写真" />
+}
+```
+
+## Props {#props}
+
+Imageコンポーネントで使用できるpropsの概要は以下の通りです：
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+| Prop                                      | 例                                        | 型              | ステータス |
+| ----------------------------------------- | ---------------------------------------- | --------------- | ---------- |
+| [`src`](#src)                             | `src="/profile.png"`                     | 文字列          | 必須       |
+| [`width`](#width)                         | `width={500}`                            | 整数 (px)       | 必須       |
+| [`height`](#height)                       | `height={500}`                           | 整数 (px)       | 必須       |
+| [`alt`](#alt)                             | `alt="著者の写真"`                        | 文字列          | 必須       |
+| [`loader`](#loader)                       | `loader={imageLoader}`                   | 関数            | -          |
+| [`fill`](#fill)                           | `fill={true}`                            | ブール値        | -          |
+| [`sizes`](#sizes)                         | `sizes="(max-width: 768px) 100vw, 33vw"` | 文字列          | -          |
+| [`quality`](#quality)                     | `quality={80}`                           | 整数 (1-100)    | -          |
+| [`priority`](#priority)                   | `priority={true}`                        | ブール値        | -          |
+| [`placeholder`](#placeholder)             | `placeholder="blur"`                     | 文字列          | -          |
+| [`style`](#style)                         | `style={{objectFit: "contain"}}`         | オブジェクト    | -          |
+| [`onLoadingComplete`](#onloadingcomplete) | `onLoadingComplete={img => done())}`     | 関数            | Deprecated |
+| [`onLoad`](#onload)                       | `onLoad={event => done())}`              | 関数            | -          |
+| [`onError`](#onerror)                     | `onError(event => fail()}`               | 関数            | -          |
+| [`loading`](#loading)                     | `loading="lazy"`                         | 文字列          | -          |
+| [`blurDataURL`](#blurdataurl)             | `blurDataURL="data:image/jpeg..."`       | 文字列          | -          |
+| [`overrideSrc`](#overridesrc)             | `overrideSrc="/seo.png"`                 | 文字列          | -          |
+</div>
+
+## 必須のProps {#required-props}
+
+Imageコンポーネントには、`src`、`alt`、`width`、`height`（または`fill`）の各プロパティが必要です。
+
+```jsx title="app/page.js"
+import Image from 'next/image'
+
+export default function Page() {
+  return (
+    <div>
+      <Image src="/profile.png" width={500} height={500} alt="著者の写真" />
+    </div>
+  )
+}
+```
+
+### `src` {#src}
+
+以下のいずれかである必要があります：
+
+- [静的にインポートされた](/docs/app/building-your-application/optimizing/images#local-images)画像ファイル
+- パス文字列。絶対的な外部URL、または内部パスで、[loader](#loader)プロパティに依存します。
+
+デフォルトの[loader](#loader)を使用する場合、ソース画像について以下も考慮してください：
+
+- srcが外部URLの場合、[remotePatterns](#remotepatterns)を設定する必要があります
+- srcが[アニメーションされている](#animated-images)または知られていない形式（JPEG、PNG、WebP、AVIF、GIF、TIFF）の場合、画像はそのまま配信されます
+- srcがSVG形式の場合、[`unoptimized`](#unoptimized)または[`dangerouslyAllowSVG`](#dangerouslyallowsvg)が有効でない限りブロックされます
+
+### `width` {#width}
+
+`width`プロパティは、*インストリック*画像の幅をピクセル単位で表します。このプロパティは、画像の正しいアスペクト比を推測し、読み込み時のレイアウトシフトを回避するために使用されます。HTMLの`<img>`タグの`width`属性と同様に、画像のレンダリングサイズはCSSで制御され、このプロパティによって決定されるわけではありません。
+
+[静的にインポートされた画像](/docs/app/building-your-application/optimizing/images#local-images)や[`fill`プロパティ](#fill)を持つ画像以外では必須です。
+
+### `height` {#height}
+
+`height`プロパティは、*インストリック*画像の高さをピクセル単位で表します。このプロパティは、画像の正しいアスペクト比を推測し、読み込み時のレイアウトシフトを回避するために使用されます。HTMLの`<img>`タグの`height`属性と同様に、画像のレンダリングサイズはCSSで制御され、このプロパティによって決定されるわけではありません。
+
+[静的にインポートされた画像](/docs/app/building-your-application/optimizing/images#local-images)や[`fill`プロパティ](#fill)を持つ画像以外では必須です。
+
+> **Good to know:**
+>
+> - `width`と`height`プロパティの両方を組み合わせて、画像のアスペクト比を決定します。この比率は、画像がロードされる前にブラウザが画像のためのスペースを予約するために使用されます。
+> - インストリックサイズは、ブラウザに表示されるサイズとは一致しないことがあります。ブラウザに表示されるサイズは親コンテナによって決定されます。例えば、親コンテナがインストリックサイズよりも小さい場合、画像はコンテナに合わせて縮小されます。
+> - [`fill`](#fill)プロパティを使用して、幅と高さが不明な場合に対応できます。
+
+### `alt` {#alt}
+
+`alt`プロパティは、スクリーンリーダーや検索エンジンのために画像を説明するために使用されます。また、画像が無効にされているか、画像の読み込み中にエラーが発生した場合のフォールバックテキストとなります。
+
+画像を[ページの意味を変えずに置き換えることができる](https://html.spec.whatwg.org/multipage/images.html#general-guidelines)テキストを含むべきです。画像を補完するものではなく、画像の上や下に既に提供されている情報を繰り返すべきではありません。
+
+画像が[純粋に装飾的なもの](https://html.spec.whatwg.org/multipage/images.html#a-purely-decorative-image-that-doesn't-add-any-information)か[ユーザー向けでない場合](https://html.spec.whatwg.org/multipage/images.html#an-image-not-intended-for-the-user)には、`alt`プロパティには空の文字列（`alt=""`）を指定するべきです。
+
+[詳細はこちら](https://html.spec.whatwg.org/multipage/images.html#alt)
+
+## オプションのProps {#optional-props}
+
+`<Image />`コンポーネントは、必須のプロパティ以外の多くの追加プロパティを受け入れます。このセクションでは、Imageコンポーネントの一般的に使用されるプロパティについて説明します。あまり使用されないプロパティについては、[Advanced Props](#advanced-props)セクションで詳しく説明しています。
+
+### `loader` {#loader}
+
+画像URLを解決するために使用するカスタム関数。
+
+`loader`は、以下のパラメーターを使用して画像のURL文字列を返す関数です：
+
+- [`src`](#src)
+- [`width`](#width)
+- [`quality`](#quality)
+
+以下は、カスタムローダーを使用する例です：
+
+<AppOnly>
+
+```js
+'use client'
+
+import Image from 'next/image'
+
+const imageLoader = ({ src, width, quality }) => {
+  return `https://example.com/${src}?w=${width}&q=${quality || 75}`
+}
+
+export default function Page() {
+  return (
+    <Image
+      loader={imageLoader}
+      src="me.png"
+      alt="著者の写真"
+      width={500}
+      height={500}
+    />
+  )
+}
+```
+
+> **Good to know**: propsのような、関数を受け入れるものを使用する際は、提供された関数を直列化するための[Client Components](/docs/app/building-your-application/rendering/client-components)を使用する必要があります。
+
+</AppOnly>
+
+<PagesOnly>
+
+```js
+import Image from 'next/image'
+
+const imageLoader = ({ src, width, quality }) => {
+  return `https://example.com/${src}?w=${width}&q=${quality || 75}`
+}
+
+export default function Page() {
+  return (
+    <Image
+      loader={imageLoader}
+      src="me.png"
+      alt="著者の写真"
+      width={500}
+      height={500}
+    />
+  )
+}
+```
+
+</PagesOnly>
+
+あるいは、`next.config.js`内で[loaderFile](#loaderfile)設定を使用して、`next/image`のインスタンスをpropを渡さずに設定できます。
+
+### `fill` {#fill}
+
+```js
+fill={true} // {true} | {false}
+```
+
+このブール値により、画像が親要素に収まるように設定され、[`width`](#width)や[`height`](#height)が不明な場合に便利です。
+
+親要素は`position: "relative"`、`position: "fixed"`、または`position: "absolute"`スタイルを割り当てる「必要があります」。
+
+デフォルトでは、img要素には自動で`position: "absolute"`スタイルが設定されます。
+
+画像にスタイルが適用されない場合、画像はコンテナに合わせて伸縮します。コンテナに合わせて画像がレターボックスになるようにするため、`object-fit: "contain"`を設定することをお勧めします。
+
+あるいは、`object-fit: "cover"`を設定することで、画像はコンテナ全体にフィットし、アスペクト比を保ちながらトリミングされます。
+
+詳細については、次も参照してください：
+
+- [`position`](https://developer.mozilla.org/docs/Web/CSS/position)
+- [`object-fit`](https://developer.mozilla.org/docs/Web/CSS/object-fit)
+- [`object-position`](https://developer.mozilla.org/docs/Web/CSS/object-position)
+
+### `sizes` {#sizes}
+
+メディアクエリに似た文字列で、画像がさまざまなビューポイントでどれだけの幅になるかを示す情報を提供します。`sizes`の値は、[`fill`](#fill)を使用する画像や[レスポンシブサイズにスタイル設定された](#responsive-images)画像のパフォーマンスに大きく影響します。
+
+`sizes`プロパティには、画像のパフォーマンスに関連する2つの重要な役割があります：
+
+- まず、`sizes`の値は、`next/image`によって自動生成された`srcset`からどのサイズの画像をダウンロードするかをブラウザが決定するために使用します。ブラウザが選択する際、まだページ上の画像のサイズを知らないため、視界のサイズと同じかそれ以上のサイズの画像を選択します。`sizes`プロパティを使用して、画像が実際に全画面よりも小さいことをブラウザに伝えることができます。`fill`プロパティを持つ画像に`sizes`値を指定しない場合、デフォルト値の`100vw`（全画面幅）が使用されます。
+- 次に、`sizes`プロパティは自動生成された`srcset`値の動作を変更します。`sizes`値が存在しない場合、固定サイズの画像に適した小さな`srcset`（1x/2x/など）が生成されます。`sizes`が定義されている場合、レスポンシブ画像に適した大きな`srcset`（640w/750w/など）が生成されます。`sizes`プロパティに`50vw`のようなビューポイント幅の割合を表すサイズを含む場合、`srcset`は必要ないほど小さい値を含まないようにトリミングされます。
+
+例えば、画像がモバイルデバイスでは全幅で、タブレットでは2カラム、デスクトップディスプレイでは3カラムのレイアウトになることが想定される場合、次のような`sizes`プロパティを含めるべきです：
+
+```jsx
+import Image from 'next/image'
+
+export default function Page() {
+  return (
+    <div className="grid-element">
+      <Image
+        fill
+        src="/example.png"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      />
+    </div>
+  )
+}
+```
+
+この例の`sizes`は、パフォーマンスメトリクスに劇的な影響を与える可能性があります。`33vw`サイズがない場合、サーバーから選択される画像は必要以上に3倍の幅になります。ファイルサイズは幅の二乗に比例するため、`sizes`がない場合、ユーザーは必要以上に9倍大きな画像をダウンロードすることになります。
+
+`srcset`や`sizes`についての詳細：
+
+- [web.dev](https://web.dev/learn/design/responsive-images/#sizes)
+- [mdn](https://developer.mozilla.org/docs/Web/HTML/Element/img#sizes)
+
+### `quality` {#quality}
+
+```js
+quality={75} // {number 1-100}
+```
+
+最適化された画像の品質、`1`から`100`の間の整数で、`100`が最も高品質であると同時に最も大きなファイルサイズを持ちます。デフォルトは`75`です。
+
+### `priority` {#priority}
+
+```js
+priority={false} // {false} | {true}
+```
+
+trueの場合、この画像は高優先度と見なされ、
+[preload](https://web.dev/preload-responsive-images/)されます。`priority`を使用する画像は、自動的に遅延読み込みが無効になります。`priority`プロパティと一緒に[`loading`](#loading)プロパティが`lazy`に設定されている場合、`priority`プロパティを使用することはできません。[`loading`](#loading)プロパティは高度な使用ケースにのみ適しているため、`priority`が必要な場合は`loading`を取り除くべきです。
+
+`priority`プロパティは、[Largest Contentful Paint (LCP)](https://nextjs.org/learn/seo/web-performance/lcp)エレメントとして検出された画像で使用するべきです。異なるビューポイントサイズに対して異なる画像がLCPエレメントとなる場合、複数の優先度の画像を持つことが適切かもしれません。
+
+画面外の画像でのみ使用するべきではありません。デフォルトは`false`です。
+
+### `placeholder` {#placeholder}
+
+```js
+placeholder = 'empty' // "empty" | "blur" | "data:image/..."
+```
+
+画像の読み込み中に使用するプレースホルダー。可能な値は`blur`、`empty`、または`data:image/...`です。デフォルトは`empty`です。
+
+`blur`の場合、[`blurDataURL`](#blurdataurl)プロパティがプレースホルダーとして使用されます。`src`が[静的インポート](/docs/app/building-your-application/optimizing/images#local-images)からのオブジェクトであり、インポートされた画像が`.jpg`、`.png`、`.webp`、または`.avif`の場合、画像がアニメーションであると検出されない限り、`blurDataURL`は自動的に入力されます。
+
+動的な画像の場合、[`blurDataURL`](#blurdataurl)プロパティを提供する必要があります。[Plaiceholder](https://github.com/joe-bell/plaiceholder)などのソリューションは、`base64`生成に役立ちます。
+
+`data:image/...`のとき、画像の読み込み中にプレースホルダーとして[データURL](https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/Data_URIs)が使用されます。
+
+`empty`のとき、画像の読み込み中にプレースホルダーは空白だけになります。
+
+試してみてください：
+
+- [`blur`プレースホルダーのデモ](https://image-component.nextjs.gallery/placeholder)
+- データURL`placeholder`プロパティを使用したシマー効果のデモ](https://image-component.nextjs.gallery/shimmer)
+- [`blurDataURL`プロパティを使用したカラー効果のデモ](https://image-component.nextjs.gallery/color)
+
+## 高度なProps {#advanced-props}
+
+場合によっては、より高度な使用が必要な場合があります。`<Image />`コンポーネントは、次の高度なプロパティをオプションで受け入れます。
+
+### `style` {#style}
+
+基になる画像要素にCSSスタイルを渡すことができます。
+
+```jsx title="components/ProfileImage.js"
+const imageStyle = {
+  borderRadius: '50%',
+  border: '1px solid #fff',
+}
+
+export default function ProfileImage() {
+  return <Image src="..." style={imageStyle} />
+}
+```
+
+幅を変更するためにスタイルを適用した場合でも、必須の`width`および`height`プロパティはスタイリングと相互に作用する可能性があります。画像の幅を変更するためにスタイルを適用する場合、画像が歪まないように、その高さを`auto`に設定する必要があります。
+
+### `onLoadingComplete` {#onloadingcomplete}
+
+<AppOnly>
+
+```jsx
+'use client'
+
+<Image onLoadingComplete={(img) => console.log(img.naturalWidth)} />
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```jsx
+<Image onLoadingComplete={(img) => console.log(img.naturalWidth)} />
+```
+
+</PagesOnly>
+
+> **警告**: Next.js 14から[`onLoad`](#onload)に置き換えられ、非推奨となりました。
+
+画像が完全に読み込まれ、[プレースホルダー](#placeholder)が削除された後に呼び出されるコールバック関数。
+
+コールバック関数は、基になる`<img>`要素への参照を引数として呼び出されます。
+
+<AppOnly>
+
+> **Good to know**: `onLoadingComplete`のような関数を受け入れるpropsを使用する際には、提供された関数を直列化するために[Client Components](/docs/app/building-your-application/rendering/client-components)を使用する必要があります。
+
+</AppOnly>
+
+### `onLoad` {#onload}
+
+```jsx
+<Image onLoad={(e) => console.log(e.target.naturalWidth)} />
+```
+
+画像が完全に読み込まれ、[プレースホルダー](#placeholder)が削除された後に呼び出されるコールバック関数。
+
+コールバック関数は、基になる`<img>`要素を参照する`target`を持つEventを引数として呼び出されます。
+
+<AppOnly>
+
+> **Good to know**: `onLoad`のような関数を受け入れるpropsを使用する際には、提供された関数を直列化するために[Client Components](/docs/app/building-your-application/rendering/client-components)を使用する必要があります。
+
+</AppOnly>
+
+### `onError` {#onerror}
+
+```jsx
+<Image onError={(e) => console.error(e.target.id)} />
+```
+
+画像の読み込みに失敗した場合に呼び出されるコールバック関数。
+
+<AppOnly>
+
+> **Good to know**: `onError`のような関数を受け入れるpropsを使用する際には、提供された関数を直列化するために[Client Components](/docs/app/building-your-application/rendering/client-components)を使用する必要があります。
+
+</AppOnly>
+
+### `loading` {#loading}
+
+```js
+loading = 'lazy' // {lazy} | {eager}
+```
+
+画像の読み込み動作。デフォルトは`lazy`です。
+
+`lazy`の場合、ビューポイントから計算された距離に達するまで画像の読み込みを延期します。
+
+`eager`の場合、即座に画像を読み込みます。
+
+[`loading`属性について](https://developer.mozilla.org/docs/Web/HTML/Element/img#loading)の詳細を了解してください。
+
+### `blurDataURL` {#blurdataurl}
+
+`src`画像が正常に読み込まれる前にプレースホルダー画像として使用するための[データURL](https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/Data_URIs)。プレースホルダーと組み合わせて使用する場合にのみ効果を発揮します
+[`placeholder="blur"`](#placeholder).
+
+ベース64エンコードされた画像でなければなりません。拡大されてぼかされるため、非常に小さな画像（10px以下）を推奨します。プレースホルダーとして大きい画像を含めると、アプリケーションのパフォーマンスが低下する可能性があります。
+
+試してみてください：
+
+- [デフォルトの`blurDataURL`プロパティのデモ](https://image-component.nextjs.gallery/placeholder)
+- [`blurDataURL`プロパティを使用したカラー効果のデモ](https://image-component.nextjs.gallery/color)
+
+画像に一致する単色のデータURLを生成することもできます。
+
+### `unoptimized` {#unoptimized}
+
+```js
+unoptimized = {false} // {false} | {true}
+```
+
+`unoptimized`がtrueの場合、ソース画像は品質、サイズ、形式の変更をせずに`src`からそのまま提供されます。デフォルトは`false`です。
+
+1KB未満の小さな画像、SVGのようなベクター画像、またはGIFのようなアニメーション画像など、最適化のメリットがない画像に便利です。
+
+```js
+import Image from 'next/image'
+
+const UnoptimizedImage = (props) => {
+  return <Image {...props} unoptimized />
+}
+```
+
+Next.js 12.3.0以降、このプロパティは`next.config.js`を更新してすべての画像に割り当てることができます：
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    unoptimized: true,
+  },
+}
+```
+
+### `overrideSrc` {#overridesrc}
+
+`<Image>`コンポーネントに`src`プロパティを提供すると、結果的な`<img>`に対して`src`属性と`srcset`属性の両方が自動的に生成されます。
+
+```jsx title="input.js"
+<Image src="/me.jpg" />
+```
+
+```html title="output.html"
+<img
+  srcset="
+    /_next/image?url=%2Fme.jpg&w=640&q=75 1x,
+    /_next/image?url=%2Fme.jpg&w=828&q=75 2x
+  "
+  src="/_next/image?url=%2Fme.jpg&w=828&q=75"
+/>
+```
+
+場合によっては、`src`属性を生成せずに`overrideSrc`プロパティを使用してオーバーライドしたい場合があります。
+
+たとえば、既存のウェブサイトを`<img>`から`<Image>`にアップグレードする際、SEO目的で元の`src`属性を維持したい場合があります。
+
+```jsx title="input.js"
+<Image src="/me.jpg" overrideSrc="/override.jpg" />
+```
+
+```html title="output.html"
+<img
+  srcset="
+    /_next/image?url=%2Fme.jpg&w=640&q=75 1x,
+    /_next/image?url=%2Fme.jpg&w=828&q=75 2x
+  "
+  src="/override.jpg"
+/>
+```
+
+### decoding {#decoding}
+
+他のコンテンツの更新を表示する前に画像がデコードされるかを示すヒントをブラウザに与えます。デフォルトは`async`です。
+
+選択可能な値は次の通りです：
+
+- `async` - 非同期で画像をデコードし、完了する前に他のコンテンツをレンダリングします。
+- `sync` - 画像を同期的にデコードし、他のコンテンツと共にアトミックに表示します。
+- `auto` - デコーディングモードに対する好みはなく、ブラウザが最適な方法を決定します。
+
+[`decoding`属性について](https://developer.mozilla.org/docs/Web/HTML/Element/img#decoding)の詳細を知る。
+
+### その他のProps {#other-props}
+
+`<Image />`コンポーネントの他のプロパティは、基になる`img`要素に渡されますが、次のものを除きます：
+
+- `srcSet`。代わりに[Device Sizes](#devicesizes)を使用します。
+
+## 設定オプション {#configuration-options}
+
+propsに加えて、`next.config.js`ファイルでImageコンポーネントを設定できます。以下のオプションが利用可能です：
+
+### `localPatterns` {#localpatterns}
+
+特定のパスを許可して他のすべてのパスをブロックするために、`next.config.js`ファイルで任意で`localPatterns`を設定できます。
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    localPatterns: [
+      {
+        pathname: '/assets/images/**',
+        search: '',
+      },
+    ],
+  },
+}
+```
+
+> **Good to know**: 上記の例は、`next/image`の`src`プロパティが`/assets/images/`で始まらなければならず、クエリ文字列を持ってはいけないことを保証します。その他のパスを最適化しようとすると、400 Bad Requestが返されます。
+
+### `remotePatterns` {#remotepatterns}
+
+悪意のあるユーザーからアプリケーションを保護するため、外部画像を使用するためには設定が必要です。これにより、自分のアカウントからのみ外部画像がNext.js画像最適化APIから提供されることが保証されます。これらの外部画像は、次のように`next.config.js`ファイルの`remotePatterns`プロパティで設定できます：
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+        port: '',
+        pathname: '/account123/**',
+        search: '',
+      },
+    ],
+  },
+}
+```
+
+> **Good to know**: 上記の例は、`next/image`の`src`プロパティが`https://example.com/account123/`で始まらなければならず、クエリ文字列を持ってはいけないことを保証します。その他のプロトコル、ホスト名、ポート、またはマッチしないパスは400 Bad Requestが返されます。
+
+以下は、`ホスト名`にワイルドカードパターンを使用した`next.config.js`ファイルの`remotePatterns`プロパティの例です：
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.example.com',
+        port: '',
+        search: '',
+      },
+    ],
+  },
+}
+```
+
+> **Good to know**: 上記の例は、`next/image`の`src`プロパティが`https://img1.example.com`または`https://me.avatar.example.com`など、いくつかのサブドメインで始まらなければならず、ポートまたはクエリ文字列を持ってはいけないことを保証します。その他のプロトコル、またはパターンに一致しないホスト名は400 Bad Requestが返されます。
+
+ワイルドカードパターンは`pathname`と`hostname`の両方で使用でき、次の構文があります：
+
+- `*`**はパスセグメントまたはサブドメインを一つだけ一致**
+- `**`は最後にあるいくつかのパスセグメント、または初めにあるいくつかのサブドメイン一致
+
+`**`構文はパターンの中間で動作しません。
+
+> **Good to know**: `protocol`、`port`、`pathname`、または`search`を省略すると、ワイルドカード`**`が暗黙的に含まれます。これは意図しないURLの最適化を許可する可能性があるため、推奨されません。
+
+以下は、`search`を使用する`next.config.js`ファイルの`remotePatterns`プロパティの例です：
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'assets.example.com',
+        search: '?v=1727111025337',
+      },
+    ],
+  },
+}
+```
+
+> **Good to know**: 上記の例は、`next/image`の`src`プロパティが`https://assets.example.com`で始まり、正確なクエリ文字列`?v=1727111025337`を持たなければならないことを保証します。その他のプロトコル、またはクエリ文字列は400 Bad Requestが返されます。
+
+### `domains` {#domains}
+
+> **警告**: Next.js 14以降は厳密な[`remotePatterns`](#remotepatterns)に変更され、悪意のあるユーザーからアプリケーションを保護するために推奨されます。配信されるコンテンツをそのドメインが所有している場合にのみ`domains`を使用してください。
+
+[`remotePatterns`](#remotepatterns)と同様に、`domains`設定を使用して外部画像のために許可されたホスト名のリストを提供することができます。
+
+ただし、`domains`設定はワイルドカードパターンのマッチをサポートしておらず、プロトコル、ポート、またはパス名を制限することができません。
+
+以下は、`next.config.js`ファイルにおける`domains`プロパティの例です：
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    domains: ['assets.acme.com'],
+  },
+}
+```
+
+### `loaderFile` {#loaderfile}
+
+Next.js組み込みの画像最適化APIの代わりにクラウドプロバイダーを使用して画像を最適化したい場合、次のように`next.config.js`の`loaderFile`を設定できます：
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    loader: 'custom',
+    loaderFile: './my/image/loader.js',
+  },
+}
+```
+
+これは、Next.jsアプリケーションルートからの相対ファイルを指す必要があります。ファイルは文字列を返すデフォルト関数をエクスポートする必要があります。例えば：
+
+<AppOnly>
+
+```js title="my/image/loader.js"
+'use client'
+
+export default function myImageLoader({ src, width, quality }) {
+  return `https://example.com/${src}?w=${width}&q=${quality || 75}`
+}
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+```js title="my/image/loader.js"
+export default function myImageLoader({ src, width, quality }) {
+  return `https://example.com/${src}?w=${width}&q=${quality || 75}`
+}
+```
+
+</PagesOnly>
+
+あるいは、[`loader`プロパティ](#loader)を使用して`next/image`の各インスタンスを構成できます。
+
+例：
+
+- [カスタム画像ローダー設定](/docs/app/api-reference/config/next-config-js/images#example-loader-configuration)
+
+<AppOnly>
+
+> **Good to know**: 関数を受け入れる画像ローダーファイルをカスタマイズする場合、提供された関数を直列化するために[Client Components](/docs/app/building-your-application/rendering/client-components)が必要です。
+
+</AppOnly>
+
+## Advanced {#advanced}
+
+以下の設定は高度な使用ケースに向けたもので、通常は必要ありません。以下のプロパティを設定する場合、将来のアップデートでのNext.jsのデフォルトの変更をオーバーライドします。
+
+### `deviceSizes` {#devicesizes}
+
+ユーザーの予想されるデバイス画面幅を知っている場合、`next.config.js`で`deviceSizes`プロパティを使用してデバイス画面幅のブレークポイントのリストを指定できます。これらの幅は、ユーザーのデバイスに対して正しい画像を提供するために`next/image`コンポーネントが[`sizes`](#sizes)プロパティを使用する際に使用されます。
+
+設定が提供されていない場合、以下のデフォルトが使用されます。
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+  },
+}
+```
+
+### `imageSizes` {#imagesizes}
+
+`next.config.js`ファイル内で`images.imageSizes`プロパティを使用して画像の幅のリストを指定できます。これらの幅は、[デバイスサイズ](#devicesizes)の配列と連結され、画像[srcset](https://developer.mozilla.org/docs/Web/API/HTMLImageElement/srcset)sを生成するために使用されるサイズのフル配列を形成します。
+
+2つのリストが分かれている理由は、imageSizesは`src`サイズがデバイス画面幅全体よりも小さいことを示している[`sizes`](#sizes)プロパティを提供する画像にのみ使用されるためです。**従って、imageSizes内のサイズは、deviceSizes内の最小サイズよりも小さいべきです。**
+
+設定が提供されていない場合、以下のデフォルトが使用されます。
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+}
+```
+
+### `formats` {#formats}
+
+デフォルトの[画像最適化API](#loader)は、リクエストの`Accept`ヘッダーを介してブラウザがサポートする画像形式を自動的に検出し、最適な出力形式を決定します。
+
+`Accept`ヘッダーが設定されたフォーマットのいずれかと一致する場合、配列内の最初の一致が使用されます。従って、配列の順序が重要です。一致がない場合（またはソース画像が[アニメーションされている](#animated-images)場合）、画像最適化APIは元の画像の形式にフォールバックします。
+
+設定が提供されていない場合、以下のデフォルトが使用されます。
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    formats: ['image/webp'],
+  },
+}
+```
+
+以下の設定により、AVIFのサポートを有効にしてもWebPにフォールバックさせることができます。
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    formats: ['image/avif', 'image/webp'],
+  },
+}
+```
+
+> **Good to know**:
+>
+> - AVIFは通常、エンコードに50％長くかかりますが、WebPと比較して20％小さい圧縮です。これは画像が初めてリクエストされたとき通常は遅く、その後のキャッシュされたリクエストは速くなることを意味します。
+> - Next.jsの前面にProxy/CDNを自己ホストする場合、プロキシに`Accept`ヘッダーを転送するように構成する必要があります。
+
+## キャッシュ動作 {#caching-behavior}
+
+デフォルトの[loader](#loader)の画像キャッシュアルゴリズムは以下の通りです。他のローダーの場合は、クラウドプロバイダーのドキュメンテーションを参照してください。
+
+画像はリクエストに応じて動的に最適化され、`<distDir>/cache/images`ディレクトリ内に保存されます。最適化された画像ファイルは、新たなリクエスト中に再び提供されますが、期限が切れるまで提供されます。キャッシュが正規化された状態で期限切れのファイルと一致するリクエストがなされると、期限切れ画像はすぐに古いまま提供されます。そして、バックグラウンドで画像が再び最適化され（再検証と呼ばれる）、新しい期限を持つキャッシュに保存されます。
+
+画像のキャッシュ状態は、`x-nextjs-cache`レスポンスヘッダーの値を読むことで確認できます。可能な値は以下の通りです：
+
+- `MISS` - パスがキャッシュに含まれていない（初訪問時に最多で一度発生）
+- `STALE` - パスがキャッシュに含まれているが、リバリデート時間を超過しておりバックグラウンドで更新されます
+- `HIT` - パスがキャッシュに含まれており、リバリデート時間を超過していません
+
+有効期限（またはMax Age）は、[`minimumCacheTTL`](#minimumcachettl)設定または上流画像の`Cache-Control`ヘッダーのいずれかが大きいによって定義されます。具体的には、`Cache-Control`ヘッダーの`max-age`値が使用されます。`s-maxage`と`max-age`の両方が見つかった場合、`s-maxage`が優先されます。`max-age`は、他の下流クライアント（CDNおよびブラウザーを含む）にも通過します。
+
+- 上流画像に`Cache-Control`ヘッダーが含まれていない場合や値が非常に低い場合に、キャッシュ期間を延長するために[`minimumCacheTTL`](#minimumcachettl)を設定できます。
+- 生成可能な画像の総数を削減するために、[`deviceSizes`](#devicesizes)および[`imageSizes`](#imagesizes)を設定できます。
+- 複数の形式を無効にし、単一の画像形式に優先するために[formats](#formats)を設定できます。
+
+### `minimumCacheTTL` {#minimumcachettl}
+
+キャッシュされた最適化画像のTTL（生存時間）を秒単位で設定できます。多くの場合、画像の内容が自動的にハッシュされ、キャッシュが永続的に`Cache-Control`ヘッダー`immutable`が設定される[静的画像インポート](/docs/app/building-your-application/optimizing/images#local-images)を使用する方が適しています。
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    minimumCacheTTL: 60,
+  },
+}
+```
+
+最適化された画像の有効期限（またはMax Age）は、`minimumCacheTTL`または上流画像の`Cache-Control`ヘッダーのいずれかが大きいによって定義されます。
+
+画像ごとにキャッシュ動作を変更する必要がある場合には、[`headers`](/docs/app/api-reference/config/next-config-js/headers)を設定して上流画像の`Cache-Control`ヘッダーを設定できます（例：`/some-asset.jpg`、`/_next/image`自体ではありません）
+
+現在、キャッシュを無効にするメカニズムがないので、`minimumCacheTTL`を低く保つべきです。そうでなければ、手動で[`src`](#src)プロパティを変更するか、`<distDir>/cache/images`を削除する必要があるかもしれません。
+
+### `disableStaticImages` {#disablestaticimages}
+
+デフォルトの動作により、`import icon from './icon.png'`のように静的ファイルをインポートし、その`src`プロパティに渡すことができます。
+
+場合によっては、インポートが異なる動作をすることを期待する他のプラグインと競合する場合、この機能を無効にしたい場合があります。
+
+`next.config.js`内部で静的画像インポートを無効にすることができます：
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    disableStaticImages: true,
+  },
+}
+```
+
+### `dangerouslyAllowSVG` {#dangerouslyallowsvg}
+
+デフォルトの[loader](#loader)は、いくつかの理由でSVG画像を最適化しません。第一に、SVGはベクター形式であるため、無損失でリサイズすることができます。第二に、SVGにはHTML/CSSと同じ機能を持ち、適切な[コンテンツセキュリティポリシー（CSP）ヘッダー](/docs/app/api-reference/config/next-config-js/headers#content-security-policy)なしでは脆弱性が生じやすいことが挙げられます。
+
+従って、[`src`](#src)プロパティがSVGであることがわかっている場合は、`unoptimized`プロパティを使用することを推奨します。これは`src`が`".svg"`で終了する場合に自動的に行われます。
+
+ただし、Next.jsの組み込み画像最適化APIでSVG画像を提供する必要がある場合、`next.config.js`内で`dangerouslyAllowSVG`を設定できます：
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+}
+```
+
+さらに、ブラウザに画像をダウンロードさせ、画像内に埋め込まれたスクリプトが実行されるのを防ぐために、`contentDispositionType`を設定し、`contentSecurityPolicy`を強く推奨します。
+
+### `contentDispositionType` {#contentdispositiontype}
+
+デフォルトの[loader](#loader)は、任意のリモート画像を配信できるため、追加の保護として[`Content-Disposition`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition#as_a_response_header_for_the_main_body)ヘッダーを`attachment`に設定します。
+
+デフォルト値は`attachment`で、これはブラウザに直接訪問時に画像をダウンロードさせます。これは[`dangerouslyAllowSVG`](#dangerouslyallowsvg)がtrueの場合、特に重要です。
+
+オプションで`inline`を設定して、ブラウザが画像を直接訪問時にレンダリングし、ダウンロードしないようにすることができます。
+
+```js title="next.config.js"
+module.exports = {
+  images: {
+    contentDispositionType: 'inline',
+  },
+}
+```
+
+## アニメーション画像 {#animated-images}
+
+デフォルトの[loader](#loader)は、自動的にアニメーション画像の最適化をスキップし、画像をそのまま配信します。
+
+アニメーションされたファイルの自動検出は最善の努力を尽くし、GIF、APNG、およびWebPをサポートします。特定のアニメーション画像のために画像最適化を明示的にスキップしたい場合、[unoptimized](#unoptimized)プロパティを使用します。
+
+## レスポンシブ画像 {#responsive-images}
+
+デフォルトの生成済み`srcset`は、異なるデバイスポイント比をサポートするために`1x`および`2x`の画像を含みます。しかしビュー画面幅で画像が伸縮するレスポンシブ画像をレンダリングしたい場合もあります。その場合、`sizes`も設定する必要があります（またはスタイル`className`）。
+
+以下の方法のいずれかで、レスポンシブ画像をレンダリングできます。
+
+### 静的インポートを使用したレスポンシブ画像 {#responsive-image-using-a-static-import}
+
+ソース画像が動的ではない場合、レスポンシブ画像を作成するために静的インポートすることができます：
+
+```jsx title="components/author.js"
+import Image from 'next/image'
+import me from '../photos/me.jpg'
+
+export default function Author() {
+  return (
+    <Image
+      src={me}
+      alt="Picture of the author"
+      sizes="100vw"
+      style={{
+        width: '100%',
+        height: 'auto',
+      }}
+    />
+  )
+}
+```
+
+試してみてください：
+
+- [ビュー画面幅にレスポンシブな画像のデモ](https://image-component.nextjs.gallery/responsive)
+
+### アスペクト比を持つレスポンシブ画像 {#responsive-image-with-aspect-ratio}
+
+ソース画像が動的かリモートURLの場合、レスポンシブ画像の正しいアスペクト比を設定するために`width`および`height`を提供する必要があります：
+
+```jsx title="components/page.js"
+import Image from 'next/image'
+
+export default function Page({ photoUrl }) {
+  return (
+    <Image
+      src={photoUrl}
+      alt="Picture of the author"
+      sizes="100vw"
+      style={{
+        width: '100%',
+        height: 'auto',
+      }}
+      width={500}
+      height={300}
+    />
+  )
+}
+```
+
+試してみてください：
+
+- [ビュー画面幅にレスポンシブな画像のデモ](https://image-component.nextjs.gallery/responsive)
+
+### `fill`を使用したレスポンシブ画像 {#responsive-image-with-fill}
+
+アスペクト比が不明な場合、`fill`プロパティを設定し、親に`position: relative`を設定する必要があります。オプションで、希望するストレッチまたはクロップの挙動に応じて`object-fit`スタイルを設定できます：
+
+```jsx title="app/page.js"
+import Image from 'next/image'
+
+export default function Page({ photoUrl }) {
+  return (
+    <div style={{ position: 'relative', width: '300px', height: '500px' }}>
+      <Image
+        src={photoUrl}
+        alt="Picture of the author"
+        sizes="300px"
+        fill
+        style={{
+          objectFit: 'contain',
+        }}
+      />
+    </div>
+  )
+}
+```
+
+試してみてください：
+
+- [`fill`プロパティのデモ](https://image-component.nextjs.gallery/fill)
+
+## テーマ検出CSS {#theme-detection-css}
+
+ライトモードおよびダークモードに異なる画像を表示したい場合、2つの`<Image>`コンポーネントをラップし、CSSメディアクエリに基づいて正しい画像を表示する新しいコンポーネントを作成できます。
+
+```css title="components/theme-image.module.css"
+.imgDark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .imgLight {
+    display: none;
+  }
+  .imgDark {
+    display: unset;
+  }
+}
+```
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="components/theme-image.tsx" switcher
+import styles from './theme-image.module.css'
+import Image, { ImageProps } from 'next/image'
+
+type Props = Omit<ImageProps, 'src' | 'priority' | 'loading'> & {
+  srcLight: string
+  srcDark: string
+}
+
+const ThemeImage = (props: Props) => {
+  const { srcLight, srcDark, ...rest } = props
+
+  return (
+    <>
+      <Image {...rest} src={srcLight} className={styles.imgLight} />
+      <Image {...rest} src={srcDark} className={styles.imgDark} />
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="components/theme-image.js" switcher
+import styles from './theme-image.module.css'
+import Image from 'next/image'
+
+const ThemeImage = (props) => {
+  const { srcLight, srcDark, ...rest } = props
+
+  return (
+    <>
+      <Image {...rest} src={srcLight} className={styles.imgLight} />
+      <Image {...rest} src={srcDark} className={styles.imgDark} />
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: `loading="lazy"`のデフォルトの動作により、正しい画像のみが読み込まれます。`priority`や`loading="eager"`を使用することはできません。これにより、両方の画像が読み込まれるからです。代わりに、[`fetchPriority="high"`](https://developer.mozilla.org/docs/Web/API/HTMLImageElement/fetchPriority)を使用できます。
+
+試してみてください：
+
+- ライト/ダークモードテーマ検出のデモ](https://image-component.nextjs.gallery/theme)
+
+## getImageProps {#getimageprops}
+
+より高度な使用ケースには、`getImageProps()`を呼び出して基になる`<img>`要素に渡されるpropsを取得し、それを別のコンポーネント、スタイル、キャンバスなどに渡すことができます。
+
+これによりReactの`useState()`メソッドの呼び出しを避けられるため、パフォーマンスが向上しますが、[`placeholder`](#placeholder)プロパティを使用することはできません。プレースホルダーは削除されないからです。
+
+### テーマ検出画像 {#theme-detection-picture}
+
+ライトモードおよびダークモードに異なる画像を表示したい場合、ユーザーの好みのカラースキーム([preferred color scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme))に基づいて異なる画像を表示するための[`<picture>`](https://developer.mozilla.org/docs/Web/HTML/Element/picture)要素を使用できます。
+
+```jsx title="app/page.js"
+import { getImageProps } from 'next/image'
+
+export default function Page() {
+  const common = { alt: 'Theme Example', width: 800, height: 400 }
+  const {
+    props: { srcSet: dark },
+  } = getImageProps({ ...common, src: '/dark.png' })
+  const {
+    props: { srcSet: light, ...rest },
+  } = getImageProps({ ...common, src: '/light.png' })
+
+  return (
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcSet={dark} />
+      <source media="(prefers-color-scheme: light)" srcSet={light} />
+      <img {...rest} />
+    </picture>
+  )
+}
+```
+
+### アートディレクション {#art-direction}
+
+モバイルとデスクトップで異なる画像を表示する、いわゆるアートディレクション([Art Direction](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images#art_direction))を行いたい場合、`getImageProps()`に対して異なる`src`、`width`、`height`、および`quality`プロパティを提供することができます。
+
+```jsx title="app/page.js"
+import { getImageProps } from 'next/image'
+
+export default function Home() {
+  const common = { alt: 'Art Direction Example', sizes: '100vw' }
+  const {
+    props: { srcSet: desktop },
+  } = getImageProps({
+    ...common,
+    width: 1440,
+    height: 875,
+    quality: 80,
+    src: '/desktop.jpg',
+  })
+  const {
+    props: { srcSet: mobile, ...rest },
+  } = getImageProps({
+    ...common,
+    width: 750,
+    height: 1334,
+    quality: 70,
+    src: '/mobile.jpg',
+  })
+
+  return (
+    <picture>
+      <source media="(min-width: 1000px)" srcSet={desktop} />
+      <source media="(min-width: 500px)" srcSet={mobile} />
+      <img {...rest} style={{ width: '100%', height: 'auto' }} />
+    </picture>
+  )
+}
+```
+
+### 背景CSS {#background-css}
+
+`srcSet`文字列を[`image-set()`](https://developer.mozilla.org/en-US/docs/Web/CSS/image/image-set%60) CSS関数に変換して、背景画像を最適化することもできます。
+
+```jsx title="app/page.js"
+import { getImageProps } from 'next/image'
+
+function getBackgroundImage(srcSet = '') {
+  const imageSet = srcSet
+    .split(', ')
+    .map((str) => {
+      const [url, dpi] = str.split(' ')
+      return `url("${url}") ${dpi}`
+    })
+    .join(', ')
+  return `image-set(${imageSet})`
+}
+
+export default function Home() {
+  const {
+    props: { srcSet },
+  } = getImageProps({ alt: '', width: 128, height: 128, src: '/img.png' })
+  const backgroundImage = getBackgroundImage(srcSet)
+  const style = { height: '100vh', width: '100vw', backgroundImage }
+
+  return (
+    <main style={style}>
+      <h1>Hello World</h1>
+    </main>
+  )
+}
+```
+
+## 既知のブラウザのバグ {#known-browser-bugs}
+
+この`next/image`コンポーネントは、ネイティブの[遅延読み込み](https://caniuse.com/loading-lazy-attr)を使用し、Safari 15.4より古いブラウザでは積極的な読み込みにフォールバックする可能性があります。ぼかしのプレースホルダーを使用する場合、Safari 12より古いブラウザではプレースホルダーが空になります。また、スタイルで`auto`の`width`/`height`を使用すると、Safari 15より古いブラウザでは[レイアウトシフト](https://web.dev/cls/)が発生する可能性があります。これはアスペクト比を[保持しません](https://caniuse.com/mdn-html_elements_img_aspect_ratio_computed_from_attributes)。詳細については、[このMDNビデオ](https://www.youtube.com/watch?v=4-d_SoCHeWE)を参照してください。
+
+- [Safari 15 - 16.3](https://bugs.webkit.org/show_bug.cgi?id=243601)は読み込み中に灰色の枠線を表示します。Safari 16.4は[この問題を修正しました](https://webkit.org/blog/13966/webkit-features-in-safari-16-4/#:~:text=Now%20in%20Safari%2016.4%2C%20a%20gray%20line%20no%20longer%20appears%20to%20mark%20the%20space%20where%20a%20lazy%2Dloaded%20image%20will%20appear%20once%20it%E2%80%99s%20been%20loaded.)。解決策：
+  - CSSを使用：`@supports (font: -apple-system-body) and (-webkit-appearance: none) { img[loading="lazy"] { clip-path: inset(0.6px) } }`
+  - 画像が画面外の場合は[`priority`](#priority)を使用
+- [Firefox 67+](https://bugzilla.mozilla.org/show_bug.cgi?id=1556156)は読み込み中に白い背景を表示します。解決策：
+  - [AVIF `formats`](#formats)を有効にする
+  - [`placeholder`](#placeholder)を使用する
+
+## バージョン履歴 {#version-history}
+
+| バージョン | 変更点                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v15.0.0`  | `contentDispositionType`設定のデフォルトが`attachment`に変更されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `v14.2.15` | `decoding`プロパティと`localPatterns`設定が追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `v14.2.14` | `remotePatterns.search`プロパティが追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `v14.2.0`  | `overrideSrc`プロパティが追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `v14.1.0`  | `getImageProps()`が安定しました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `v14.0.0`  | `onLoadingComplete`プロパティとドメイン構成が非推奨になりました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `v13.4.14` | `placeholder`プロパティで`data:/image...`のサポート                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `v13.2.0`  | `contentDispositionType`設定が追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `v13.0.6`  | `ref`プロパティが追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `v13.0.0`  | `next/image`インポートは`next/legacy/image`に変更されました。`next/future/image`インポートは`next/image`に変更されました。[適切かつ自動的にインポート名を変更するための](/docs/app/building-your-application/upgrading/codemods#next-image-to-legacy-image)コードモードが利用可能です。`<span>`ラッパーは削除されました。`layout`、`objectFit`、`objectPosition`、`lazyBoundary`、`lazyRoot`プロパティは削除されました。`alt`は必須です。`onLoadingComplete`は`img`要素への参照を受け取ります。組み込みローダー設定は削除されました。 |
+| `v12.3.0`  | `remotePatterns`と`unoptimized`設定が安定しました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `v12.2.0`  | 実験的な`remotePatterns`と実験的な`unoptimized`設定が追加されました。`layout="raw"`は削除されました。                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `v12.1.1`  | `style`プロパティが追加されました。実験的に`layout="raw"`のサポートが追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `v12.1.0`  | `dangerouslyAllowSVG`および`contentSecurityPolicy`設定が追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `v12.0.9`  | `lazyRoot`プロパティが追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `v12.0.0`  | `formats`設定が追加されました。<br/>AVIFサポートが追加されました。<br/>ラッパー`<div>`が`<span>`に変更されました。                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `v11.1.0`  | `onLoadingComplete`および`lazyBoundary`プロパティが追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `v11.0.0`  | `src`プロパティの静的インポート対応。<br/>`placeholder`プロパティが追加されました。<br/>`blurDataURL`プロパティが追加されました。                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `v10.0.5`  | `loader`プロパティが追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `v10.0.1`  | `layout`プロパティが追加されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `v10.0.0`  | `next/image`が導入されました。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
