@@ -1,0 +1,374 @@
+---
+title: 'エラーの処理方法'
+nav_title: 'エラー処理'
+description: '予期されるエラーの表示方法とキャッチされない例外の処理方法を学びます。'
+related:
+  title: 'API リファレンス'
+  description: 'このページで言及されている機能について詳しくは、API リファレンスをお読みください。'
+  links:
+    - app/api-reference/functions/redirect
+    - app/api-reference/file-conventions/error
+    - app/api-reference/functions/not-found
+    - app/api-reference/file-conventions/not-found
+---
+
+エラーは、[予期されるエラー](#handling-expected-errors)と[キャッチされない例外](#handling-uncaught-exceptions)の2つのカテゴリに分けられます。このページでは、Next.jsアプリケーションでこれらのエラーをどのように処理するかを説明します。
+
+## 予期されるエラーの処理 {#handling-expected-errors}
+
+予期されるエラーは、アプリケーションの通常の操作中に発生する可能性のあるエラーで、[サーバーサイドのフォームバリデーション](/docs/app/building-your-application/data-fetching/server-actions-and-mutations#server-side-form-validation)や失敗したリクエストからのエラーなどがあります。これらのエラーは明示的に処理し、クライアントに返す必要があります。
+
+### Server Actions {#server-actions}
+
+[`useActionState`](https://react.dev/reference/react/useActionState)フックを使用して、[Server Functions](https://react.dev/reference/rsc/server-functions)の状態を管理し、予期されるエラーを処理できます。予期されるエラーには`try`/`catch`ブロックを使用しないでください。代わりに、予期されるエラーをスローされた例外ではなく、戻り値としてモデル化できます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+export async function createPost(prevState: any, formData: FormData) {
+  const title = formData.get('title')
+  const content = formData.get('content')
+
+  const res = await fetch('https://api.vercel.app/posts', {
+    method: 'POST',
+    body: { title, content },
+  })
+  const json = await res.json()
+
+  if (!res.ok) {
+    return { message: 'Failed to create post' }
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+export async function createPost(prevState, formData) {
+  const title = formData.get('title')
+  const content = formData.get('content')
+
+  const res = await fetch('https://api.vercel.app/posts', {
+    method: 'POST',
+    body: { title, content },
+  })
+  const json = await res.json()
+
+  if (!res.ok) {
+    return { message: 'Failed to create post' }
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+次に、アクションを`useActionState`フックに渡し、返された`state`を使用してエラーメッセージを表示できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/ui/form.tsx" highlight={11,19} switcher
+'use client'
+
+import { useActionState } from 'react'
+import { createPost } from '@/app/actions'
+
+const initialState = {
+  message: '',
+}
+
+export function Form() {
+  const [state, formAction, pending] = useActionState(createPost, initialState)
+
+  return (
+    <form action={formAction}>
+      <label htmlFor="title">Title</label>
+      <input type="text" id="title" name="title" required />
+      <label htmlFor="content">Content</label>
+      <textarea id="content" name="content" required />
+      {state?.message && <p aria-live="polite">{state.message}</p>}
+      <button disabled={pending}>Create Post</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/ui/form.js" highlight={11,19} switcher
+'use client'
+
+import { useActionState } from 'react'
+import { createPost } from '@/app/actions'
+
+const initialState = {
+  message: '',
+}
+
+export function Form() {
+  const [state, formAction, pending] = useActionState(createPost, initialState)
+
+  return (
+    <form action={formAction}>
+      <label htmlFor="title">Title</label>
+      <input type="text" id="title" name="title" required />
+      <label htmlFor="content">Content</label>
+      <textarea id="content" name="content" required />
+      {state?.message && <p aria-live="polite">{state.message}</p>}
+      <button disabled={pending}>Create Post</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Server Components {#server-components}
+
+Server Component内でデータを取得する際、レスポンスを使用してエラーメッセージを条件付きでレンダリングしたり、[`redirect`](/docs/app/api-reference/functions/redirect)を使用したりできます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+export default async function Page() {
+  const res = await fetch(`https://...`)
+  const data = await res.json()
+
+  if (!res.ok) {
+    return 'There was an error.'
+  }
+
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export default async function Page() {
+  const res = await fetch(`https://...`)
+  const data = await res.json()
+
+  if (!res.ok) {
+    return 'There was an error.'
+  }
+
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Not found {#not-found}
+
+ルートセグメント内で[`notFound`](/docs/app/api-reference/functions/not-found)関数を呼び出し、[`not-found.js`](/docs/app/api-reference/file-conventions/not-found)ファイルを使用して404 UIを表示できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+import { getPostBySlug } from '@/lib/posts'
+
+export default function Page({ params }: { params: { slug: string } }) {
+  const post = getPostBySlug(params.slug)
+
+  if (!post) {
+    notFound()
+  }
+
+  return <div>{post.title}</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+import { getPostBySlug } from '@/lib/posts'
+
+export default function Page({ params }) {
+  const post = getPostBySlug(params.slug)
+
+  if (!post) {
+    notFound()
+  }
+
+  return <div>{post.title}</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/not-found.tsx" switcher
+export default function NotFound() {
+  return <div>404 - Page Not Found</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/not-found.js" switcher
+export default function NotFound() {
+  return <div>404 - Page Not Found</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+## キャッチされない例外の処理 {#handling-uncaught-exceptions}
+
+キャッチされない例外は、アプリケーションの通常のフロー中に発生すべきではないバグや問題を示す予期しないエラーです。これらはエラーをスローすることで処理され、その後、error boundaryによってキャッチされます。
+
+### ネストされたerror boundary {#nested-error-boundaries}
+
+Next.jsはキャッチされない例外を処理するためにerror boundaryを使用します。error boundaryは子コンポーネント内のエラーをキャッチし、クラッシュしたコンポーネントツリーの代わりにフォールバックUIを表示します。
+
+ルートセグメント内に[`error.js`](/docs/app/api-reference/file-conventions/error)ファイルを追加し、Reactコンポーネントをエクスポートすることでerror boundaryを作成します：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/error.tsx" switcher
+'use client' // Error boundaries must be Client Components
+
+import { useEffect } from 'react'
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  useEffect(() => {
+    // エラーをエラーレポートサービスにログする
+    console.error(error)
+  }, [error])
+
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button
+        onClick={
+          // セグメントを再レンダリングして回復を試みる
+          () => reset()
+        }
+      >
+        Try again
+      </button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/error.js" switcher
+'use client' // Error boundaries must be Client Components
+
+import { useEffect } from 'react'
+
+export default function Error({ error, reset }) {
+  useEffect(() => {
+    // エラーをエラーレポートサービスにログする
+    console.error(error)
+  }, [error])
+
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button
+        onClick={
+          // セグメントを再レンダリングして回復を試みる
+          () => reset()
+        }
+      >
+        Try again
+      </button>
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+エラーは最も近い親のerror boundaryまでバブルアップします。これにより、[ルート階層](/docs/app/getting-started/project-structure#component-hierarchy)の異なるレベルに`error.tsx`ファイルを配置することで、細かいエラー処理が可能になります。
+
+<Image
+  alt="ネストされたエラーコンポーネント階層"
+  srcLight="/docs/light/nested-error-component-hierarchy.png"
+  srcDark="/docs/dark/nested-error-component-hierarchy.png"
+  width="1600"
+  height="687"
+/>
+
+### グローバルエラー {#global-errors}
+
+あまり一般的ではありませんが、[国際化](/docs/app/building-your-application/routing/internationalization)を活用している場合でも、root レイアウトで[`global-error.js`](/docs/app/api-reference/file-conventions/error#global-error)ファイルを使用してエラーを処理できます。グローバルエラーUIは、アクティブなときにroot レイアウトまたはテンプレートを置き換えるため、独自の`<html>`および`<body>`タグを定義する必要があります。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/global-error.tsx" switcher
+'use client' // Error boundaries must be Client Components
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  return (
+    // global-errorはhtmlとbodyタグを含める必要があります
+    <html>
+      <body>
+        <h2>Something went wrong!</h2>
+        <button onClick={() => reset()}>Try again</button>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/global-error.js" switcher
+'use client' // Error boundaries must be Client Components
+
+export default function GlobalError({ error, reset }) {
+  return (
+    // global-errorはhtmlとbodyタグを含める必要があります
+    <html>
+      <body>
+        <h2>Something went wrong!</h2>
+        <button onClick={() => reset()}>Try again</button>
+      </body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>

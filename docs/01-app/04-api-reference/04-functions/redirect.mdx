@@ -1,0 +1,197 @@
+---
+title: 'redirect'
+description: 'redirect 関数のAPIリファレンス。'
+related:
+  links:
+    - 'app/api-reference/functions/permanentRedirect'
+---
+
+`redirect` 関数は、ユーザーを別のURLにリダイレクトすることを可能にします。`redirect` は [Server Components](/docs/app/building-your-application/rendering/server-components)、[Route Handlers](/docs/app/building-your-application/routing/route-handlers)、および [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations) で使用できます。
+
+[ストリーミングコンテキスト](/docs/app/building-your-application/routing/loading-ui-and-streaming#what-is-streaming)で使用される場合、クライアント側でリダイレクトを発生させるためのメタタグを挿入します。サーバーアクションで使用される場合、呼び出し元に303 HTTPリダイレクトレスポンスを提供します。それ以外の場合、呼び出し元に307 HTTPリダイレクトレスポンスを提供します。
+
+リソースが存在しない場合は、代わりに [`notFound` 関数](/docs/app/api-reference/functions/not-found)を使用できます。
+
+> **Good to know**:
+>
+> - Server Actions と Route Handlers では、`redirect` は `try/catch` ブロックの後に呼び出す必要があります。
+> - 307（Temporary）ではなく308（Permanent）のHTTPリダイレクトを返したい場合は、代わりに [`permanentRedirect` 関数](/docs/app/api-reference/functions/permanentRedirect)を使用できます。
+
+## パラメータ {#parameters}
+
+`redirect` 関数は2つの引数を受け取ります：
+
+```js
+redirect(path, type)
+```
+
+| パラメータ | 型                                                                    | 説明                                                        |
+| ---------- | --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `path`     | `string`                                                              | リダイレクト先のURL。相対パスまたは絶対パスを指定できます。 |
+| `type`     | `'replace'` (デフォルト) または `'push'` (Server Actionsのデフォルト) | 実行するリダイレクトのタイプ。                              |
+
+デフォルトでは、`redirect` は [Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations) で `push`（ブラウザの履歴スタックに新しいエントリを追加）を使用し、それ以外の場所では `replace`（ブラウザの履歴スタックの現在のURLを置き換える）を使用します。この動作は、`type` パラメータを指定することで上書きできます。
+
+`type` パラメータは、Server Components で使用される場合には効果がありません。
+
+## 戻り値 {#returns}
+
+`redirect` は値を返しません。
+
+## 例 {#example}
+
+### Server Component {#server-component}
+
+`redirect()` 関数を呼び出すと、`NEXT_REDIRECT` エラーがスローされ、それがスローされたルートセグメントのレンダリングが終了します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/team/[id]/page.tsx" switcher
+import { redirect } from 'next/navigation'
+
+async function fetchTeam(id: string) {
+  const res = await fetch('https://...')
+  if (!res.ok) return undefined
+  return res.json()
+}
+
+export default async function Profile({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const team = await fetchTeam(id)
+
+  if (!team) {
+    redirect('/login')
+  }
+
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/team/[id]/page.js" switcher
+import { redirect } from 'next/navigation'
+
+async function fetchTeam(id) {
+  const res = await fetch('https://...')
+  if (!res.ok) return undefined
+  return res.json()
+}
+
+export default async function Profile({ params }) {
+  const { id } = await params
+  const team = await fetchTeam(id)
+
+  if (!team) {
+    redirect('/login')
+  }
+
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: `redirect` は `return redirect()` を使用する必要はありません。これは TypeScript の [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never) 型を使用しているためです。
+
+### Client Component {#client-component}
+
+`redirect` は Server Action を通じて Client Component で使用できます。イベントハンドラを使用してユーザーをリダイレクトする必要がある場合は、[`useRouter`](/docs/app/api-reference/functions/use-router) フックを使用できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/client-redirect.tsx" switcher
+'use client'
+
+import { navigate } from './actions'
+
+export function ClientRedirect() {
+  return (
+    <form action={navigate}>
+      <input type="text" name="id" />
+      <button>Submit</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/client-redirect.jsx" switcher
+'use client'
+
+import { navigate } from './actions'
+
+export function ClientRedirect() {
+  return (
+    <form action={navigate}>
+      <input type="text" name="id" />
+      <button>Submit</button>
+    </form>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/actions.ts" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+
+export async function navigate(data: FormData) {
+  redirect(`/posts/${data.get('id')}`)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/actions.js" switcher
+'use server'
+
+import { redirect } from 'next/navigation'
+
+export async function navigate(data) {
+  redirect(`/posts/${data.get('id')}`)
+}
+```
+
+</TabItem>
+</Tabs>
+
+## FAQ {#faq}
+
+### なぜ `redirect` は307と308を使用するのですか？ {#why-does-redirect-use-307-and-308}
+
+`redirect()` を使用すると、ステータスコードとして一時的なリダイレクトには `307`、恒久的なリダイレクトには `308` が使用されていることに気付くかもしれません。従来、一時的なリダイレクトには `302`、恒久的なリダイレクトには `301` が使用されていましたが、多くのブラウザは `302` を使用する際にリダイレクトのリクエストメソッドを `POST` から `GET` に変更しました。これは、元のリクエストメソッドに関係なく行われます。
+
+たとえば、`/users` から `/people` へのリダイレクトの例を考えてみましょう。新しいユーザーを作成するために `/users` に `POST` リクエストを行い、`302` 一時的なリダイレクトに従う場合、リクエストメソッドは `POST` から `GET` に変更されます。これは、新しいユーザーを作成するためには `/people` に `POST` リクエストを行うべきであり、`GET` リクエストを行うべきではないため、理にかなっていません。
+
+`307` ステータスコードの導入により、リクエストメソッドは `POST` のまま保持されます。
+
+- `302` - 一時的なリダイレクトで、リクエストメソッドを `POST` から `GET` に変更します
+- `307` - 一時的なリダイレクトで、リクエストメソッドを `POST` のまま保持します
+
+`redirect()` メソッドはデフォルトで `302` 一時的なリダイレクトの代わりに `307` を使用するため、リクエストは常に `POST` リクエストとして保持されます。
+
+HTTPリダイレクトについての詳細は[こちら](https://developer.mozilla.org/docs/Web/HTTP/Redirections)をご覧ください。
+
+## バージョン履歴 {#version-history}
+
+| バージョン | 変更点                        |
+| ---------- | ----------------------------- |
+| `v13.0.0`  | `redirect` が導入されました。 |
