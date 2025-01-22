@@ -1,0 +1,131 @@
+---
+title: 'Server Components'
+description: 'React Server Componentsを使用して、アプリケーションの一部をサーバーでレンダリングする方法を学びましょう。'
+related:
+  description: 'Next.jsがデータと静的レンダリングの結果をどのようにキャッシュするかを学びましょう。'
+  links:
+    - app/building-your-application/caching
+---
+
+React Server Componentsを使用すると、UIをサーバーでレンダリングし、オプションでキャッシュすることができます。Next.jsでは、レンダリング作業がルートセグメントごとにさらに分割され、ストリーミングと部分的なレンダリングが可能になります。サーバーレンダリングには3つの異なる戦略があります：
+
+- [Static Rendering](#static-rendering-default)
+- [Dynamic Rendering](#dynamic-rendering)
+- [Streaming](#streaming)
+
+このページでは、Server Componentsがどのように機能するか、いつ使用するか、そして異なるサーバーレンダリング戦略について説明します。
+
+## サーバーレンダリングの利点 {#benefits-of-server-rendering}
+
+サーバーでレンダリング作業を行うことには、いくつかの利点があります：
+
+- **データフェッチング**: Server Componentsを使用すると、データフェッチングをデータソースに近いサーバーに移動できます。これにより、レンダリングに必要なデータを取得する時間が短縮され、クライアントが行うリクエストの数が減少するため、パフォーマンスが向上します。
+- **セキュリティ**: Server Componentsを使用すると、トークンやAPIキーなどの機密データやロジックをクライアントに公開するリスクなしにサーバーに保持できます。
+- **キャッシング**: サーバーでレンダリングすることで、結果をキャッシュし、後続のリクエストやユーザー間で再利用できます。これにより、各リクエストで行われるレンダリングとデータフェッチングの量が減少し、パフォーマンスが向上し、コストが削減されます。
+- **パフォーマンス**: Server Componentsは、基本からパフォーマンスを最適化するための追加のツールを提供します。たとえば、完全にClient Componentsで構成されたアプリから始めて、UIの非インタラクティブな部分をServer Componentsに移動することで、必要なクライアントサイドのJavaScriptの量を減らすことができます。これは、インターネットが遅いユーザーや性能が低いデバイスを使用しているユーザーにとって有益です。ブラウザがダウンロード、解析、実行するクライアントサイドのJavaScriptが少なくなるためです。
+- **初期ページロードと[First Contentful Paint (FCP)](https://web.dev/fcp/)**: サーバー上でHTMLを生成することで、クライアントがページをレンダリングするために必要なJavaScriptをダウンロード、解析、実行するのを待たずに、ユーザーがページをすぐに表示できるようにします。
+- **検索エンジン最適化とソーシャルネットワークの共有性**: レンダリングされたHTMLは、検索エンジンのボットがページをインデックス化し、ソーシャルネットワークのボットがページのソーシャルカードプレビューを生成するために使用できます。
+- **ストリーミング**: Server Componentsを使用すると、レンダリング作業をチャンクに分割し、準備ができたらクライアントにストリーミングすることができます。これにより、ユーザーはページ全体がサーバーでレンダリングされるのを待たずに、ページの一部を早く見ることができます。
+
+## Next.jsでのServer Componentsの使用 {#using-server-components-in-next-js}
+
+デフォルトで、Next.jsはServer Componentsを使用します。これにより、追加の設定なしでサーバーレンダリングを自動的に実装でき、必要に応じてClient Componentsを使用することができます。詳細は[Client Components](/docs/app/building-your-application/rendering/client-components)を参照してください。
+
+## Server Componentsはどのようにレンダリングされるのか？ {#how-are-server-components-rendered}
+
+サーバー上で、Next.jsはReactのAPIを使用してレンダリングを調整します。レンダリング作業は、個々のルートセグメントと[Suspense Boundaries](https://react.dev/reference/react/Suspense)によってチャンクに分割されます。
+
+各チャンクは2つのステップでレンダリングされます：
+
+1. ReactはServer Componentsを**React Server Component Payload (RSC Payload)**と呼ばれる特別なデータ形式にレンダリングします。
+2. Next.jsはRSC PayloadとClient ComponentのJavaScript命令を使用して、サーバー上で**HTML**をレンダリングします。
+
+{/* Rendering Diagram */}
+
+次に、クライアント側で：
+
+1. HTMLは、ルートの高速な非インタラクティブなプレビューを即座に表示するために使用されます - これは初期ページロード時のみです。
+2. React Server Components Payloadは、ClientとServer Componentのtreeを調整し、DOMを更新するために使用されます。
+3. JavaScript命令は、Client Componentsを[hydrate](https://react.dev/reference/react-dom/client/hydrateRoot)し、アプリケーションをインタラクティブにします。
+
+> #### React Server Component Payload (RSC)とは？
+>
+> RSC Payloadは、レンダリングされたReact Server Components treeのコンパクトなバイナリ表現です。クライアント上のReactがブラウザのDOMを更新するために使用します。RSC Payloadには以下が含まれます：
+>
+> - Server Componentsのレンダリング結果
+> - Client Componentsがレンダリングされるべき場所のプレースホルダーとそのJavaScriptファイルへの参照
+> - Server ComponentからClient Componentに渡されるprops
+
+## サーバーレンダリング戦略 {#server-rendering-strategies}
+
+サーバーレンダリングには、Static、Dynamic、Streamingの3つのサブセットがあります。
+
+### Static Rendering (デフォルト) {#static-rendering-default}
+
+Static Renderingでは、ルートは**ビルド時**または[データ再検証](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)後のバックグラウンドでレンダリングされます。結果はキャッシュされ、[Content Delivery Network (CDN)](https://developer.mozilla.org/docs/Glossary/CDN)にプッシュすることができます。この最適化により、レンダリング作業の結果をユーザー間やサーバーリクエスト間で共有できます。
+
+Static renderingは、ユーザーに個別化されていないデータを持ち、ビルド時に既知であるルートに役立ちます。たとえば、静的なブログ投稿や製品ページです。
+
+### Dynamic Rendering {#dynamic-rendering}
+
+Dynamic Renderingでは、ルートは各ユーザーの**リクエスト時**にレンダリングされます。
+
+Dynamic renderingは、ユーザーに個別化されたデータや、リクエスト時にのみ既知の情報（cookieやURLの検索パラメータなど）を持つルートに役立ちます。
+
+> **キャッシュされたデータを持つ動的ルート**
+>
+> ほとんどのウェブサイトでは、ルートは完全に静的でも完全に動的でもありません - それはスペクトラムです。たとえば、一定間隔で再検証されるキャッシュされた製品データを使用するeコマースページがあり、キャッシュされていない個別化された顧客データも持つことができます。
+>
+> Next.jsでは、キャッシュされたデータとキャッシュされていないデータの両方を持つ動的にレンダリングされたルートを持つことができます。これは、RSC Payloadとデータが別々にキャッシュされるためです。これにより、リクエスト時にすべてのデータをフェッチするパフォーマンスへの影響を心配することなく、動的レンダリングを選択できます。
+>
+> [full-route cache](/docs/app/building-your-application/caching#full-route-cache)と[Data Cache](/docs/app/building-your-application/caching#data-cache)について詳しく学びましょう。
+
+#### Dynamic Renderingへの切り替え {#switching-to-dynamic-rendering}
+
+レンダリング中に、[Dynamic API](#dynamic-apis)または`{ cache: 'no-store' }`の[fetch](/docs/app/api-reference/functions/fetch)オプションが発見された場合、Next.jsはルート全体を動的にレンダリングするように切り替えます。この表は、Dynamic APIとデータキャッシングがルートが静的または動的にレンダリングされるかどうかにどのように影響するかをまとめたものです：
+
+| Dynamic APIs | Data       | Route                |
+| ------------ | ---------- | -------------------- |
+| No           | Cached     | Statically Rendered  |
+| Yes          | Cached     | Dynamically Rendered |
+| No           | Not Cached | Dynamically Rendered |
+| Yes          | Not Cached | Dynamically Rendered |
+
+上記の表では、ルートが完全に静的であるためには、すべてのデータがキャッシュされている必要があります。ただし、キャッシュされたデータフェッチとキャッシュされていないデータフェッチの両方を使用する動的にレンダリングされたルートを持つことができます。
+
+開発者としては、Next.jsが使用される機能とAPIに基づいて各ルートに最適なレンダリング戦略を自動的に選択するため、静的レンダリングと動的レンダリングのどちらかを選択する必要はありません。代わりに、[キャッシュ](/docs/app/building-your-application/data-fetching/fetching)するタイミングや特定のデータを[再検証](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)するタイミングを選択し、UIの一部を[ストリーミング](#streaming)することを選択できます。
+
+### Dynamic APIs {#dynamic-apis}
+
+Dynamic APIsは、リクエスト時にのみ既知の情報（事前レンダリング中には既知でない）に依存します。これらのAPIのいずれかを使用すると、開発者の意図が示され、リクエスト時にルート全体が動的レンダリングに切り替わります。これらのAPIには以下が含まれます：
+
+- [`cookies`](/docs/app/api-reference/functions/cookies)
+- [`headers`](/docs/app/api-reference/functions/headers)
+- [`connection`](/docs/app/api-reference/functions/connection)
+- [`draftMode`](/docs/app/api-reference/functions/draft-mode)
+- [`searchParams` prop](/docs/app/api-reference/file-conventions/page#searchparams-optional)
+- [`unstable_noStore`](/docs/app/api-reference/functions/unstable_noStore)
+
+### Streaming {#streaming}
+
+<Image
+  alt="ストリーミング中のルートセグメントの並列化を示す図。データフェッチ、レンダリング、および個々のチャンクのハイドレーションを示しています。"
+  srcLight="/docs/light/sequential-parallel-data-fetching.png"
+  srcDark="/docs/dark/sequential-parallel-data-fetching.png"
+  width="1600"
+  height="525"
+/>
+
+ストリーミングを使用すると、サーバーからUIを段階的にレンダリングできます。作業はチャンクに分割され、準備ができたらクライアントにストリーミングされます。これにより、ユーザーはコンテンツ全体がレンダリングを完了する前に、ページの一部を即座に見ることができます。
+
+<Image
+  alt="クライアント上で部分的にレンダリングされたページを示す図。ストリーミングされているチャンクのためのローディングUIが表示されています。"
+  srcLight="/docs/light/server-rendering-with-streaming.png"
+  srcDark="/docs/dark/server-rendering-with-streaming.png"
+  width="1600"
+  height="785"
+/>
+
+ストリーミングはデフォルトでNext.jsのApp Routerに組み込まれています。これにより、初期ページロードのパフォーマンスが向上し、ルート全体のレンダリングをブロックする遅いデータフェッチに依存するUIも改善されます。たとえば、製品ページのレビューなどです。
+
+`loading.js`とUIコンポーネントを使用してルートセグメントのストリーミングを開始できます。[React Suspense](/docs/app/building-your-application/routing/loading-ui-and-streaming)を参照してください。[Loading UI and Streaming](/docs/app/building-your-application/routing/loading-ui-and-streaming)セクションで詳細を確認できます。

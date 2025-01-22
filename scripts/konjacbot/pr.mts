@@ -27,6 +27,7 @@ const defaults = {
     github: 'https://github.com/vercel/next.js',
     web: 'https://nextjs.org/docs',
   },
+  model: 'gpt-4o',
 } as const
 
 $.verbose = true
@@ -94,7 +95,10 @@ async function buildPRSummary(): Promise<string> {
     new OpenAI({
       apiKey: defaults.apiKey,
       maxRetries: defaults.maxRetries,
-    })
+    }),
+    {
+      model: defaults.model,
+    }
   )
 
   try {
@@ -193,7 +197,8 @@ log('normal', `PR body:\n${body}`)
 log('normal', `PR label:${defaults.label}`)
 
 if (!dryRun) {
-  await $`gh pr create -B ${defaults.baseBranch} -t ${title} -b ${body} -l ${defaults.label}`
+  // see https://github.com/cli/cli/issues/6485
+  await $`gh pr create -B ${defaults.baseBranch} -t ${title} -b ${body} -l ${defaults.label} --head $(git branch --show-current)`
 }
 
 log('important', '✅ PR created successfully !')
