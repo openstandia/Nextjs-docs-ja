@@ -15,6 +15,78 @@
 
 今後、翻訳作業の効率化や用語の統一のため、ツールを導入することも検討しています。運用については決定次第本ページを更新しますので少々お待ちください。
 
+## 各種ルール
+
+### ブランチ戦略
+
+ブランチ戦略は[GitHub Flow](https://docs.github.com/ja/get-started/using-github/github-flow)に則り、`main`, `feature`ブランチを利用します。
+
+### ブランチネーミングルール
+
+ブランチのネーミングは、以下のとおりです。
+
+```text
+フォーマット
+
+<BranchType>/<IssueId>-<Subject>
+
+e.g.
+feature/#12345-add-docs
+
+該当する<IssueId>がない場合省略OKです。
+```
+
+| 属性       | 説明                                                       |
+| ---------- | ---------------------------------------------------------- |
+| BranchType | ブランチ戦略に基づいて、feature ブランチタイプを記載します |
+| IssueId    | そのテーマに紐づいた Issue ID を記載します                 |
+| Subject    | ブランチで対応するテーマについての補足を記載します         |
+
+<PageBreak />
+
+### コミットコメントルール
+
+[Semantic Commit Message](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716)をベースに英語表記を基本とします。
+
+```text
+フォーマット
+
+<Type>:  <Subject> <Issue ID>
+
+e.g.
+feat: add docs `#177481`
+```
+
+#### Type
+
+| Type     | 説明                                             |
+| -------- | ------------------------------------------------ |
+| feat     | ユーザー向けの機能の追加や変更                   |
+| fix      | ユーザー向けの不具合の修正                       |
+| docs     | ドキュメントの更新                               |
+| style    | フォーマットなどのスタイルに関する修正           |
+| refactor | リファクタリングを目的とした修正                 |
+| test     | テストコードの追加や修正                         |
+| chore    | タスクファイルなどプロダクションに影響のない修正 |
+
+### PRのラベル
+
+MR の内容を管理・検索しやすくするため、適切なラベルを付与します。
+
+複数のラベルを付与して OK です。
+
+| 属性          | 説明                                              |
+| ------------- | ------------------------------------------------- |
+| bug           | バグ・バグ修正                                    |
+| CI/CD         | CI/CD 定義、Dockerfile の修正                     |
+| chore         | typo の修正やライブラリアップデートなど軽微な修正 |
+| documentation | ドキュメントの作成・修正                          |
+| enhancement   | 機能追加                                          |
+| konjacbot     | konjacbot 関連の修正                              |
+| Operation     | 運用にまつわる修正                                |
+| SEO           | SEO 対策にまつわる修正                            |
+| Test          | ソース本体修正しない、テストコードの追加・修正    |
+
 ## 翻訳フロー
 
 1. どの範囲のドキュメントを翻訳するか明確にするための [Issue](https://github.com/openstandia/Nextjs-docs-ja/issues) を作成します。
@@ -40,12 +112,9 @@
 
 5. 2.で作成したブランチ名から `main` ブランチに向かって [Pull Request](https://github.com/openstandia/Nextjs-docs-ja/pulls) を作成します。
    - 内容に `Closes #<Issue番号>`を含めることで Pull Request と 1.で作成した Issue を適切に紐づけてください。
+   - 適切にラベルを付与してください。
 6. プロジェクト管理者によってレビューが行われるため、指摘を受けた場合は適切に対応します。問題なければ承認され、[ホスティングサイト](https://ja.next-community-docs.dev/docs/app-router)に自動で反映されます。
    - **Pull Request の承認はプロジェクト管理者が行うため、翻訳者が勝手に承認しないでください。**
-
-## 翻訳時の注意点
-
-TBD...
 
 ## お問い合わせ
 
