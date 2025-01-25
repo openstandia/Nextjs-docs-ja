@@ -72,7 +72,7 @@ const config = {
         },
         blog: false,
         sitemap: {
-          changefreq: 'weekly',
+          changefreq: 'daily',
           priority: 0.5,
           ignorePatterns: [],
           filename: 'sitemap.xml',
