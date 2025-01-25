@@ -176,7 +176,7 @@ const config = {
         {
           name: 'keywords',
           content:
-            'next, Next, nextjs, Nextjs, next.js, Next.js, react, React, App Router, 日本語, 和訳, 翻訳, ドキュメント',
+            'Next.js 日本語,Next.js 和訳,Next.js 入門ガイド,Next.js チュートリアル,Next.js 使い方,App Router 解説,React フレームワーク,ウェブ開発 入門',
         },
         { name: 'twitter:card', content: 'summary_large_image' },
         {
