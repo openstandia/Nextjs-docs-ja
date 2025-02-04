@@ -197,7 +197,8 @@ log('normal', `PR body:\n${body}`)
 log('normal', `PR label:${defaults.label}`)
 
 if (!dryRun) {
-  await $`gh pr create -B ${defaults.baseBranch} -t ${title} -b ${body} -l ${defaults.label}`
+  // see https://github.com/cli/cli/issues/6485
+  await $`gh pr create -B ${defaults.baseBranch} -t ${title} -b ${body} -l ${defaults.label} --head $(git branch --show-current)`
 }
 
 log('important', '✅ PR created successfully !')
