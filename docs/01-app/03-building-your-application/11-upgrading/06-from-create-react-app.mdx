@@ -4,54 +4,56 @@ nav_title: 'CRAからの移行'
 description: '既存のReactアプリケーションをCreate React AppからNext.jsに移行する方法を学びます。'
 ---
 
-このガイドは、既存のCreate React AppサイトをNext.jsに移行するのに役立ちます。
+このガイドは、既存のCreate React App (CRA)サイトをNext.jsに移行するのに役立ちます。
 
 ## なぜ切り替えるのか？ {#why-switch}
 
-Create React AppからNext.jsに切り替える理由はいくつかあります：
+Create React AppからNext.jsに切り替える理由はいくつかあります。
 
 ### 初期ページの読み込み時間が遅い {#slow-initial-page-loading-time}
 
-Create React Appは純粋にクライアントサイドのReactを使用しています。クライアントサイドのみのアプリケーション、つまりシングルページアプリケーション（SPA）は、初期ページの読み込み時間が遅くなることがよくあります。これはいくつかの理由によります：
+Create React Appは純粋にクライアントサイドのReactを使用しています。クライアントサイドのみのアプリケーション、別名[シングルページアプリケーション（SPA）](/docs/app/building-your-application/upgrading/single-page-applications)は、初期ページの読み込み時間が遅くなることがよくあります。これはいくつかの理由によります。
 
-1. ブラウザは、Reactコードとアプリケーション全体のバンドルがダウンロードされて実行されるのを待たなければならず、その後にコードがデータをロードするためのリクエストを送信できるようになります。
+1. ブラウザは、Reactコードとアプリケーション全体のバンドルがダウンロードされて実行されるのを待つ必要があり、その後でコードがデータをロードするためのリクエストを送信できるようになります。
 2. 新しい機能や依存関係を追加するたびに、アプリケーションコードが増加します。
 
 ### 自動コード分割がない {#no-automatic-code-splitting}
 
-前述の読み込み時間の遅さの問題は、コード分割である程度管理できます。しかし、手動でコード分割を試みると、パフォーマンスが悪化することがよくあります。手動でコード分割を行うと、ネットワークウォーターフォールを意図せずに導入してしまうことが容易です。Next.jsは、ルーターに組み込まれた自動コード分割を提供します。
+前述の読み込み時間の遅さの問題は、コード分割である程度緩和できます。しかし、手動でコード分割を試みると、ネットワークウォーターフォールを誤って導入する可能性があります。Next.jsは、自動コード分割とtree-shakingをルーターとビルドパイプラインに組み込んでいます。
 
 ### ネットワークウォーターフォール {#network-waterfalls}
 
-パフォーマンスが悪化する一般的な原因は、アプリケーションがデータを取得するためにクライアントとサーバー間で順次リクエストを行うことです。SPAでのデータ取得の一般的なパターンは、最初にプレースホルダーをレンダリングし、コンポーネントがマウントされた後にデータを取得することです。残念ながら、これはデータを取得する子コンポーネントが、親コンポーネントが自身のデータを読み込むのを完了するまでデータを取得し始めることができないことを意味します。
+パフォーマンスが悪化する一般的な原因は、アプリケーションがデータを取得するためにクライアントとサーバー間で順次リクエストを行うことです。[SPA](/docs/app/building-your-application/upgrading/single-page-applications)でのデータ取得のパターンの1つは、プレースホルダーをレンダリングし、コンポーネントがマウントされた後にデータを取得することです。残念ながら、子コンポーネントは親が自身のデータを読み込むのを完了した後でしかデータを取得し始めることができず、リクエストの「ウォーターフォール」が発生します。
 
-Next.jsではクライアントでのデータ取得がサポートされていますが、データ取得をサーバーに移行するオプションも提供しており、クライアントとサーバー間のウォーターフォールを排除できます。
+Next.jsではクライアントサイドのデータ取得がサポートされていますが、Next.jsではデータ取得をサーバーに移動することもできます。これにより、クライアントとサーバー間のウォーターフォールが完全に排除されることがよくあります。
 
 ### 高速で意図的な読み込み状態 {#fast-and-intentional-loading-states}
 
-[React Suspenseを通じたストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense)の組み込みサポートにより、ネットワークウォーターフォールを導入せずに、UIのどの部分を最初にどの順序で読み込むかをより意図的に決定できます。
+[React Suspenseを通じたストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense)の組み込みサポートにより、ネットワークウォーターフォールを作成せずに、UIのどの部分を最初にどの順序で読み込むかを定義できます。
 
-これにより、読み込みが速く、[レイアウトシフト](https://vercel.com/blog/how-core-web-vitals-affect-seo)を排除したページを構築できます。
+これにより、読み込みが速く、[レイアウトシフト](https://vercel.com/blog/how-core-web-vitals-affect-seo)を排除するページを構築できます。
 
 ### データ取得戦略の選択 {#choose-the-data-fetching-strategy}
 
-ニーズに応じて、Next.jsではページやコンポーネントごとにデータ取得戦略を選択できます。ビルド時、サーバーでのリクエスト時、またはクライアントでの取得を選択できます。たとえば、CMSからデータを取得し、ブログ投稿をビルド時にレンダリングすることで、CDNで効率的にキャッシュできます。
+ニーズに応じて、Next.jsではページまたはコンポーネントレベルでデータ取得戦略を選択できます。たとえば、CMSからデータを取得し、ブログ投稿をビルド時（SSG）にレンダリングして高速な読み込み速度を実現したり、必要に応じてリクエスト時（SSR）にデータを取得したりできます。
 
 ### ミドルウェア {#middleware}
 
-[Next.js Middleware](/docs/app/building-your-application/routing/middleware)を使用すると、リクエストが完了する前にサーバーでコードを実行できます。これは、認証されたページにユーザーがアクセスしたときに未認証のコンテンツが一瞬表示されるのを避けるために、ユーザーをログインページにリダイレクトするのに特に役立ちます。ミドルウェアは、実験や[国際化](/docs/app/building-your-application/routing/internationalization)にも役立ちます。
+[Next.js Middleware](/docs/app/building-your-application/routing/middleware)を使用すると、リクエストが完了する前にサーバー上でコードを実行できます。たとえば、認証が必要なページのミドルウェアでユーザーをログインページにリダイレクトすることで、認証されていないコンテンツのフラッシュを回避できます。また、A/Bテスト、実験、[国際化](/docs/app/building-your-application/routing/internationalization)などの機能にも使用できます。
 
 ### 組み込みの最適化 {#built-in-optimizations}
 
-[画像](/docs/app/building-your-application/optimizing/images)、[フォント](/docs/app/building-your-application/optimizing/fonts)、および[サードパーティのスクリプト](/docs/app/building-your-application/optimizing/scripts)は、アプリケーションのパフォーマンスに大きな影響を与えることがよくあります。Next.jsには、それらを自動的に最適化する組み込みコンポーネントが付属しています。
+[画像](/docs/app/building-your-application/optimizing/images)、[フォント](/docs/app/building-your-application/optimizing/fonts)、および[サードパーティのスクリプト](/docs/app/building-your-application/optimizing/scripts)は、アプリケーションのパフォーマンスに大きな影響を与えることがよくあります。Next.jsには、それらを自動的に最適化するための専門のコンポーネントとAPIが含まれています。
 
 ## 移行手順 {#migration-steps}
 
-この移行の目標は、できるだけ早く動作するNext.jsアプリケーションを取得し、その後、Next.jsの機能を段階的に採用できるようにすることです。まず、既存のルーターを移行せずに、純粋なクライアントサイドアプリケーション（SPA）として保持します。これにより、移行プロセス中に問題が発生する可能性を最小限に抑え、マージの競合を減らすことができます。
+私たちの目標は、できるだけ早く動作するNext.jsアプリケーションを作成し、その後でNext.jsの機能を段階的に採用できるようにすることです。まず、アプリケーションを純粋なクライアントサイドアプリケーション（[SPA](/docs/app/building-your-application/upgrading/single-page-applications)）として扱い、既存のルーターをすぐに置き換えないようにします。これにより、複雑さとマージの競合が減少します。
+
+> **注意**: `package.json`のカスタム`homepage`フィールド、カスタムサービスワーカー、特定のBabel/webpackの調整など、CRAの高度な設定を使用している場合は、Next.jsでこれらの機能を複製または適応するためのヒントについて、このガイドの最後にある**追加の考慮事項**セクションを参照してください。
 
 ### ステップ1: Next.jsの依存関係をインストールする {#step-1-install-the-next-js-dependency}
 
-最初に行うべきことは、`next`を依存関係としてインストールすることです：
+既存のプロジェクトにNext.jsをインストールします。
 
 ```bash title="Terminal"
 npm install next@latest
@@ -59,28 +61,29 @@ npm install next@latest
 
 ### ステップ2: Next.jsの設定ファイルを作成する {#step-2-create-the-next-js-configuration-file}
 
-プロジェクトのrootに`next.config.mjs`を作成します。このファイルには、[Next.jsの設定オプション](/docs/app/api-reference/config/next-config-js)が含まれます。
+プロジェクトのroot（`package.json`と同じレベル）に`next.config.ts`を作成します。このファイルには、[Next.jsの設定オプション](/docs/app/api-reference/config/next-config-js)が含まれます。
 
-```js title="next.config.mjs"
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: 'export', // シングルページアプリケーション（SPA）を出力します。
-  distDir: './build', // ビルド出力ディレクトリを`./build`に変更します。
+```js title="next.config.ts"
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  output: 'export', // シングルページアプリケーション（SPA）を出力します
+  distDir: 'build', // ビルド出力ディレクトリを`build`に変更します
 }
 
 export default nextConfig
 ```
 
+> **注意**: `output: 'export'`を使用すると、静的エクスポートを行っていることを意味します。サーバーサイドの機能（SSRやAPIなど）にはアクセスできません。この行を削除して、Next.jsのサーバー機能を活用できます。
+
 ### ステップ3: Root レイアウトを作成する {#step-3-create-the-root-layout}
 
-Next.js [App Router](/docs/app)アプリケーションには、アプリケーション内のすべてのページをラップする[React Server Component](/docs/app/building-your-application/rendering/server-components)である[Root レイアウト](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required)ファイルが含まれている必要があります。このファイルは、`app`ディレクトリの最上位レベルで定義されます。
+Next.js [App Router](/docs/app)アプリケーションには、すべてのページをラップする[React Server Component](/docs/app/building-your-application/rendering/server-components)である[Root レイアウト](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required)ファイルが含まれている必要があります。
 
-CRAアプリケーションでのRoot レイアウトファイルに最も近いものは、`<html>`、`<head>`、および`<body>`タグを含む`index.html`ファイルです。
+CRAアプリケーションでのRoot レイアウトファイルに最も近いものは、`<html>`、`<head>`、および`<body>`タグを含む`public/index.html`です。
 
-このステップでは、`index.html`ファイルをRoot レイアウトファイルに変換します：
-
-1. `src`ディレクトリに新しい`app`ディレクトリを作成します。
-2. その`app`ディレクトリ内に新しい`layout.tsx`ファイルを作成します：
+1. `src`ディレクトリ内に新しい`app`ディレクトリを作成します（または、`app`をrootに配置する場合はプロジェクトのrootに作成します）。
+2. `app`ディレクトリ内に`layout.tsx`（または`layout.js`）ファイルを作成します。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -107,9 +110,7 @@ export default function RootLayout({ children }) {
 </TabItem>
 </Tabs>
 
-> **Good to know**: レイアウトファイルには`.js`、`.jsx`、または`.tsx`拡張子を使用できます。
-
-`index.html`ファイルの内容を、`<RootLayout>`コンポーネントにコピーし、`body.div#root`および`body.noscript`タグを`<div id="root">{children}</div>`に置き換えます：
+次に、古い`index.html`の内容をこの`<RootLayout>`コンポーネントにコピーします。`body div#root`（および`body noscript`）を`<div id="root">{children}</div>`に置き換えます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -162,11 +163,11 @@ export default function RootLayout({ children }) {
 </TabItem>
 </Tabs>
 
-> **Good to know**: Next.jsはCRAの`public/manifest.json`ファイル、追加のアイコン（[`favicon`、`icon`、および`apple-icon`](/docs/app/api-reference/file-conventions/metadata/app-icons)を除く）、および[テスト設定](/docs/app/building-your-application/testing)を無視しますが、これらが必要な場合、Next.jsもこれらのオプションをサポートしています。詳細については、[メタデータAPI](/docs/app/building-your-application/optimizing/metadata)および[テスト](/docs/app/building-your-application/testing)ドキュメントを参照してください。
+> **Good to know**: Next.jsはデフォルトでCRAの`public/manifest.json`、追加のアイコン、および[テスト設定](/docs/app/building-your-application/testing)を無視します。これらが必要な場合、Next.jsは[Metadata API](/docs/app/building-your-application/optimizing/metadata)と[Testing](/docs/app/building-your-application/testing)のセットアップをサポートしています。
 
 ### ステップ4: メタデータ {#step-4-metadata}
 
-Next.jsはデフォルトで[meta charset](https://developer.mozilla.org/docs/Web/HTML/Element/meta#charset)および[meta viewport](https://developer.mozilla.org/docs/Web/HTML/Viewport_meta_tag)タグを含んでいるため、これらを`<head>`から安全に削除できます：
+Next.jsは`<meta charset="UTF-8" />`と`<meta name="viewport" content="width=device-width, initial-scale=1" />`タグを自動的に含めるため、`<head>`から削除できます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -215,7 +216,7 @@ export default function RootLayout({ children }) {
 </TabItem>
 </Tabs>
 
-`favicon.ico`、`icon.png`、`robots.txt`などの[メタデータファイル](/docs/app/building-your-application/optimizing/metadata#file-based-metadata)は、`app`ディレクトリの最上位に配置されている限り、自動的にアプリケーションの`<head>`タグに追加されます。すべての[サポートされているファイル](/docs/app/building-your-application/optimizing/metadata#file-based-metadata)を`app`ディレクトリに移動した後、それらの`<link>`タグを安全に削除できます：
+`favicon.ico`、`icon.png`、`robots.txt`などの[メタデータファイル](/docs/app/building-your-application/optimizing/metadata#file-based-metadata)は、`app`ディレクトリのトップレベルに配置されている限り、アプリケーションの`<head>`タグに自動的に追加されます。すべての[サポートされているファイル](/docs/app/building-your-application/optimizing/metadata#file-based-metadata)を`app`ディレクトリに移動した後、それらの`<link>`タグを安全に削除できます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -262,7 +263,7 @@ export default function RootLayout({ children }) {
 </TabItem>
 </Tabs>
 
-最後に、Next.jsは[メタデータAPI](/docs/app/building-your-application/optimizing/metadata)を使用して最後の`<head>`タグを管理できます。最終的なメタデータ情報をエクスポートされた[`metadata`オブジェクト](/docs/app/api-reference/functions/generate-metadata#metadata-object)に移動します：
+最後に、Next.jsは[Metadata API](/docs/app/building-your-application/optimizing/metadata)を使用して最後の`<head>`タグを管理できます。最終的なメタデータ情報をエクスポートされた[`metadata`オブジェクト](/docs/app/api-reference/functions/generate-metadata#metadata-object)に移動します。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -313,13 +314,13 @@ export default function RootLayout({ children }) {
 </TabItem>
 </Tabs>
 
-上記の変更により、`index.html`にすべてを宣言する方法から、フレームワークに組み込まれたNext.jsの規約ベースのアプローチを使用する方法に移行しました（[メタデータAPI](/docs/app/building-your-application/optimizing/metadata)）。このアプローチにより、SEOとページのウェブ共有性をより簡単に向上させることができます。
+上記の変更により、`index.html`にすべてを宣言することから、フレームワークに組み込まれたNext.jsの規約ベースのアプローチ（[Metadata API](/docs/app/building-your-application/optimizing/metadata)）を使用するように移行しました。このアプローチにより、SEOとページのWeb共有性をより簡単に向上させることができます。
 
 ### ステップ5: スタイル {#step-5-styles}
 
-Create React Appと同様に、Next.jsには[CSSモジュール](/docs/app/building-your-application/styling/css#css-modules)の組み込みサポートがあります。
+CRAと同様に、Next.jsは[CSSモジュール](/docs/app/building-your-application/styling/css#css-modules)を標準でサポートしています。また、[グローバルCSSインポート](/docs/app/building-your-application/styling/css#global-styles)もサポートしています。
 
-グローバルCSSファイルを使用している場合は、`app/layout.tsx`ファイルにインポートします：
+グローバルCSSファイルがある場合は、`app/layout.tsx`にインポートします。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -327,40 +328,47 @@ Create React Appと同様に、Next.jsには[CSSモジュール](/docs/app/build
 ```tsx title="app/layout.tsx" switcher
 import '../index.css'
 
-// ...
+export const metadata = {
+  title: 'React App',
+  description: 'Web site created with Next.js.',
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  )
+}
 ```
 
 </TabItem>
 </Tabs>
 
-Tailwindを使用している場合は、`postcss`と`autoprefixer`をインストールする必要があります：
-
-```bash title="Terminal"
-npm install postcss autoprefixer
-```
-
-次に、プロジェクトのrootに`postcss.config.js`ファイルを作成します：
-
-```js title="postcss.config.js"
-module.exports = {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
-}
-```
+Tailwind CSSを使用している場合は、[インストールドキュメント](/docs/app/building-your-application/styling/tailwind-css)を参照してください。
 
 ### ステップ6: エントリーポイントページを作成する {#step-6-create-the-entrypoint-page}
 
-Next.jsでは、`page.tsx`ファイルを作成することでアプリケーションのエントリーポイントを宣言します。このファイルのCRAでの最も近いものは`src/index.tsx`ファイルです。このステップでは、アプリケーションのエントリーポイントを設定します。
+Create React Appは`src/index.tsx`（または`index.js`）をエントリーポイントとして使用します。Next.js（App Router）では、`app`ディレクトリ内の各フォルダーがルートに対応し、各フォルダーには`page.tsx`が必要です。
 
-**`app`ディレクトリに`[[...slug]]`ディレクトリを作成します。**
+現在のところアプリをSPAとして保持し、**すべて**のルートをインターセプトしたいので、[オプションのcatch-allルート](/docs/app/building-your-application/routing/dynamic-routes#optional-catch-all-segments)を使用します。
 
-このガイドは、まずNext.jsをSPA（シングルページアプリケーション）として設定することを目指しているため、アプリケーションのすべてのルートをキャッチするページエントリーポイントが必要です。そのために、`app`ディレクトリに新しい`[[...slug]]`ディレクトリを作成します。
+1. **`app`内に`[[...slug]]`ディレクトリを作成します。**
 
-このディレクトリは、[オプションのキャッチオールルートセグメント](/docs/app/building-your-application/routing/dynamic-routes#optional-catch-all-segments)と呼ばれます。Next.jsはファイルシステムベースのルーターを使用しており、フォルダーはルートを定義するために使用されます。この特別なディレクトリは、アプリケーションのすべてのルートがその中に含まれる`page.tsx`ファイルに向けられることを保証します。
+```bash
+app
+ ┣ [[...slug]]
+ ┃ ┗ page.tsx
+ ┣ layout.tsx
+```
 
-**`app/[[...slug]]`ディレクトリ内に新しい`page.tsx`ファイルを作成し、次の内容を追加します：**
+2. **`page.tsx`に次の内容を追加します。**
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -391,11 +399,13 @@ export default function Page() {
 </TabItem>
 </Tabs>
 
-このファイルは[Server Component](/docs/app/building-your-application/rendering/server-components)です。`next build`を実行すると、このファイルは静的アセットにプリレンダリングされます。動的なコードは必要ありません。
+これはNext.jsに、空のスラッグ（`/`）のための単一のルートを生成するよう指示し、**すべて**のルートを同じページにマッピングします。このページは[Server Component](/docs/app/building-your-application/rendering/server-components)であり、静的HTMLにプリレンダリングされます。
 
-このファイルはグローバルCSSをインポートし、[`generateStaticParams`](/docs/app/api-reference/functions/generate-static-params)に、生成するルートが1つだけであること、つまり`/`のインデックスルートであることを伝えます。
+### ステップ7: クライアント専用のエントリーポイントを追加する {#step-7-add-a-client-only-entrypoint}
 
-次に、クライアントのみで動作するCRAアプリケーションの残りを移動します。
+次に、CRAのroot Appコンポーネントを[Client Component](/docs/app/building-your-application/rendering/client-components)内に埋め込み、すべてのロジックをクライアントサイドに保持します。Next.jsを初めて使用する場合、クライアントコンポーネント（デフォルトでは）はまだサーバーでプリレンダリングされていることを知っておく価値があります。クライアントサイドのJavaScriptを実行する追加の機能を持っていると考えることができます。
+
+`app/[[...slug]]/`に`client.tsx`（または`client.js`）を作成します。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -430,15 +440,10 @@ export function ClientOnly() {
 </TabItem>
 </Tabs>
 
-このファイルは[Client Component](/docs/app/building-your-application/rendering/client-components)であり、`'use client'`ディレクティブによって定義されています。クライアントコンポーネントは、クライアントに送信される前にサーバーで[HTMLにプリレンダリング](/docs/app/building-your-application/rendering/client-components#how-are-client-components-rendered)されます。
+- `'use client'`ディレクティブは、このファイルを**Client Component**にします。
+- `dynamic`インポートと`ssr: false`は、`<App />`コンポーネントのサーバーサイドレンダリングを無効にし、純粋にクライアント専用（SPA）にします。
 
-クライアントのみのアプリケーションを開始したいので、`App`コンポーネントから下のプリレンダリングを無効にするようにNext.jsを設定できます。
-
-```tsx
-const App = dynamic(() => import('../../App'), { ssr: false })
-```
-
-次に、エントリーポイントページを更新して新しいコンポーネントを使用します：
+次に、`page.tsx`（または`page.js`）を更新して新しいコンポーネントを使用します。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -473,11 +478,11 @@ export default function Page() {
 </TabItem>
 </Tabs>
 
-### ステップ7: 静的画像インポートの更新 {#step-7-update-static-image-imports}
+### ステップ8: 静的画像インポートを更新する {#step-8-update-static-image-imports}
 
-Next.jsは、CRAとは少し異なる方法で静的画像インポートを処理します。CRAでは、画像ファイルをインポートすると、その公開URLが文字列として返されます：
+CRAでは、画像ファイルをインポートすると、その公開URLが文字列として返されます。
 
-```tsx title="App.tsx"
+```tsx
 import image from './img.png'
 
 export default function App() {
@@ -485,50 +490,50 @@ export default function App() {
 }
 ```
 
-Next.jsでは、静的画像インポートはオブジェクトを返します。このオブジェクトは、Next.jsの[`<Image>`コンポーネント](/docs/app/api-reference/components/image)で直接使用することができるか、既存の`<img>`タグでオブジェクトの`src`プロパティを使用することができます。
+Next.jsでは、静的画像インポートはオブジェクトを返します。このオブジェクトはNext.jsの[`<Image>`コンポーネント](/docs/app/api-reference/components/image)で直接使用することができ、または既存の`<img>`タグでオブジェクトの`src`プロパティを使用することができます。
 
-`<Image>`コンポーネントには[自動画像最適化](/docs/app/building-your-application/optimizing/images)の追加の利点があります。`<Image>`コンポーネントは、画像の寸法に基づいて、結果の`<img>`の`width`および`height`属性を自動的に設定します。これにより、画像が読み込まれるときのレイアウトシフトを防ぎます。ただし、アプリケーションに寸法の一方のみがスタイル設定され、他方が`auto`にスタイル設定されていない画像が含まれている場合、問題が発生する可能性があります。`auto`にスタイル設定されていない場合、寸法は`<img>`の寸法属性の値にデフォルト設定されるため、画像が歪んで表示される可能性があります。
+`<Image>`コンポーネントには[自動画像最適化](/docs/app/building-your-application/optimizing/images)の追加の利点があります。`<Image>`コンポーネントは、画像の寸法に基づいて結果の`<img>`の`width`と`height`属性を自動的に設定します。これにより、画像が読み込まれるときのレイアウトシフトが防止されます。ただし、アプリに寸法の一方のみがスタイル設定され、他方が`auto`にスタイル設定されていない画像が含まれている場合、問題が発生する可能性があります。`auto`にスタイル設定されていない場合、寸法は`<img>`の寸法属性の値にデフォルト設定され、画像が歪んで表示される可能性があります。
 
-`<img>`タグを保持することで、アプリケーションの変更量を減らし、上記の問題を防ぐことができます。その後、画像を最適化するために[`ローダーを設定することによって`](/docs/app/building-your-application/optimizing/images#loaders)または自動画像最適化を備えたデフォルトのNext.jsサーバーに移行することで、オプションで`<Image>`コンポーネントに移行できます。
+`<img>`タグを保持することで、アプリケーションの変更量を減らし、上記の問題を防ぐことができます。その後、画像を最適化するために[ローダーを設定](/docs/app/building-your-application/optimizing/images#loaders)するか、または自動画像最適化を備えたデフォルトのNext.jsサーバーに移行することで、オプションで`<Image>`コンポーネントに移行できます。
 
-**`/public`からインポートされた画像の絶対インポートパスを相対インポートに変換します：**
+**`/public`からインポートされた画像の絶対インポートパスを相対インポートに変換します。**
 
 ```tsx
-// 以前
+// 変更前
 import logo from '/logo.png'
 
-// 以後
+// 変更後
 import logo from '../public/logo.png'
 ```
 
-**画像オブジェクト全体ではなく、画像の`src`プロパティを`<img>`タグに渡します：**
+**画像オブジェクト全体ではなく、画像の`src`プロパティを`<img>`タグに渡します。**
 
 ```tsx
-// 以前
+// 変更前
 <img src={logo} />
 
-// 以後
+// 変更後
 <img src={logo.src} />
 ```
 
 または、ファイル名に基づいて画像アセットの公開URLを参照することもできます。たとえば、`public/logo.png`はアプリケーションの`/logo.png`で画像を提供し、これが`src`値になります。
 
-> **警告：** TypeScriptを使用している場合、`src`プロパティにアクセスするときに型エラーが発生する可能性があります。それを修正するには、`tsconfig.json`ファイルの[`include`配列](https://www.typescriptlang.org/tsconfig#include)に`next-env.d.ts`を追加する必要があります。Next.jsは、ステップ9でアプリケーションを実行するときにこのファイルを自動的に生成します。
+> **警告:** TypeScriptを使用している場合、`src`プロパティにアクセスするときに型エラーが発生する可能性があります。これを修正するには、`tsconfig.json`ファイルの[`include`配列](https://www.typescriptlang.org/tsconfig#include)に`next-env.d.ts`を追加する必要があります。Next.jsは、ステップ9でアプリケーションを実行するときにこのファイルを自動的に生成します。
 
-### ステップ8: 環境変数の移行 {#step-8-migrate-the-environment-variables}
+### ステップ9: 環境変数を移行する {#step-9-migrate-environment-variables}
 
-Next.jsは、CRAと同様に`.env`[環境変数](/docs/app/building-your-application/configuring/environment-variables)をサポートしています。
+Next.jsはCRAと同様に[環境変数](/docs/app/building-your-application/configuring/environment-variables)をサポートしていますが、ブラウザで公開したい変数には`NEXT_PUBLIC_`プレフィックスが**必要**です。
 
 主な違いは、クライアントサイドで環境変数を公開するために使用されるプレフィックスです。`REACT_APP_`プレフィックスを持つすべての環境変数を`NEXT_PUBLIC_`に変更します。
 
-### ステップ9: `package.json`のスクリプトを更新する {#step-9-update-scripts-in-package-json}
+### ステップ10: `package.json`のスクリプトを更新する {#step-10-update-scripts-in-package-json}
 
-アプリケーションを実行して、Next.jsへの移行が成功したかどうかをテストできるはずです。しかし、その前に、`package.json`の`scripts`をNext.js関連のコマンドで更新し、`.next`と`next-env.d.ts`を`.gitignore`ファイルに追加する必要があります：
+`package.json`のスクリプトをNext.jsのコマンドに更新します。また、`.next`と`next-env.d.ts`を`.gitignore`に追加します。
 
 ```json title="package.json"
 {
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "npx serve@latest ./build"
   }
@@ -541,37 +546,114 @@ Next.jsは、CRAと同様に`.env`[環境変数](/docs/app/building-your-applica
 next-env.d.ts
 ```
 
-次に`npm run dev`を実行し、[`http://localhost:3000`](http://localhost:3000)を開きます。Next.jsでアプリケーションが実行されているのが確認できるはずです。
+次に、以下を実行できます。
 
-### ステップ10: クリーンアップ {#step-10-clean-up}
+```bash
+npm run dev
+```
 
-Create React App関連のアーティファクトからコードベースをクリーンアップできます：
+[http://localhost:3000](http://localhost:3000)を開きます。Next.js（SPAモード）でアプリケーションが実行されているのが確認できるはずです。
 
-- `public/index.html`を削除
-- `src/index.tsx`を削除
-- `src/react-app-env.d.ts`を削除
-- `reportWebVitals`のセットアップを削除
-- CRAの依存関係（`react-scripts`）をアンインストール
+### ステップ11: クリーンアップ {#step-11-clean-up}
+
+Create React Appに特有のアーティファクトを削除できます。
+
+- `public/index.html`
+- `src/index.tsx`
+- `src/react-app-env.d.ts`
+- `reportWebVitals`のセットアップ
+- `react-scripts`の依存関係（`package.json`からアンインストールします）
+
+## 追加の考慮事項 {#additional-considerations}
+
+### CRAでカスタム`homepage`を使用する {#using-a-custom-homepage-in-cra}
+
+CRAの`package.json`で`homepage`フィールドを使用してアプリを特定のサブパスで提供していた場合、Next.jsの`next.config.ts`で[`basePath`設定](/docs/app/api-reference/config/next-config-js/basePath)を使用してそれを再現できます。
+
+```ts title="next.config.ts"
+import { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  basePath: '/my-subpath',
+  // ...
+}
+
+export default nextConfig
+```
+
+### カスタム`Service Worker`の処理 {#handling-a-custom-service-worker}
+
+CRAのサービスワーカー（例：`create-react-app`の`serviceWorker.js`）を使用していた場合、Next.jsで[プログレッシブウェブアプリケーション（PWA）](/docs/app/building-your-application/configuring/progressive-web-apps)を作成する方法を学ぶことができます。
+
+### APIリクエストのプロキシ {#proxying-api-requests}
+
+CRAアプリで`package.json`の`proxy`フィールドを使用してバックエンドサーバーへのリクエストを転送していた場合、`next.config.ts`で[Next.jsのリライト](/docs/app/api-reference/config/next-config-js/rewrites)を使用してこれを再現できます。
+
+```ts title="next.config.ts"
+import { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://your-backend.com/:path*',
+      },
+    ]
+  },
+}
+```
+
+### カスタムWebpack / Babel設定 {#custom-webpack-babel-config}
+
+CRAでカスタムのwebpackまたはBabel設定を持っていた場合、`next.config.ts`でNext.jsの設定を拡張できます。
+
+```ts title="next.config.ts"
+import { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  webpack: (config, { isServer }) => {
+    // ここでwebpack設定を変更します
+    return config
+  },
+}
+
+export default nextConfig
+```
+
+> **注意**: これには、`dev`スクリプトから`--turbopack`を削除してTurbopackを無効にする必要があります。
+
+### TypeScriptのセットアップ {#typescript-setup}
+
+Next.jsは`tsconfig.json`がある場合、自動的にTypeScriptをセットアップします。`tsconfig.json`の`include`配列に`next-env.d.ts`がリストされていることを確認してください。
+
+```json
+{
+  "include": ["next-env.d.ts", "app/**/*", "src/**/*"]
+}
+```
 
 ## バンドラーの互換性 {#bundler-compatibility}
 
-Create React AppとNext.jsはどちらもデフォルトでバンドリングにwebpackを使用します。
+Create React AppとNext.jsの両方がデフォルトでwebpackをバンドリングに使用します。Next.jsはまた、ローカル開発を高速化するために[Turbopack](/docs/app/api-reference/config/next-config-js/turbo)を提供しています。
 
-CRAアプリケーションをNext.jsに移行する際に、移行を検討しているカスタムwebpack設定があるかもしれません。Next.jsは[カスタムwebpack設定](/docs/app/api-reference/config/next-config-js/webpack)の提供をサポートしています。
+```bash
+next dev --turbopack
+```
 
-さらに、Next.jsは`next dev --turbopack`を通じて[Turbopack](/docs/app/api-reference/config/next-config-js/turbo)をサポートしており、ローカル開発のパフォーマンスを向上させます。Turbopackは、互換性と段階的な採用のために一部の[webpackローダー](/docs/app/api-reference/config/next-config-js/turbo)もサポートしています。
+CRAから高度なwebpack設定を移行する必要がある場合は、[カスタムwebpack設定](/docs/app/api-reference/config/next-config-js/webpack)を提供することもできます。
 
 ## 次のステップ {#next-steps}
 
-すべてが計画通りに進んだ場合、現在、シングルページアプリケーションとして動作するNext.jsアプリケーションがあります。ただし、まだNext.jsの利点の多くを活用していませんが、段階的に変更を加えてすべての利点を享受することができます。次に行うことを検討すること：
+すべてがうまくいった場合、現在、シングルページアプリケーションとして動作するNext.jsアプリケーションがあります。まだNext.jsのサーバーサイドレンダリングやファイルベースのルーティングなどの機能を活用していませんが、段階的にそれを行うことができます。
 
-- React Routerから[Next.js App Router](/docs/app/building-your-application/routing)に移行して、以下を取得：
+- **React Routerから移行**して、以下のために[Next.js App Router](/docs/app/building-your-application/routing)を使用します。
   - 自動コード分割
   - [ストリーミングサーバーレンダリング](/docs/app/building-your-application/routing/loading-ui-and-streaming)
   - [React Server Components](/docs/app/building-your-application/rendering/server-components)
-- [`<Image>`コンポーネントで画像を最適化する](/docs/app/building-your-application/optimizing/images)
-- [`next/font`でフォントを最適化する](/docs/app/building-your-application/optimizing/fonts)
-- [`<Script>`コンポーネントでサードパーティのスクリプトを最適化する](/docs/app/building-your-application/optimizing/scripts)
-- [Next.jsルールをサポートするようにESLint設定を更新する](/docs/app/api-reference/config/eslint)
+- [`<Image>`コンポーネント](/docs/app/building-your-application/optimizing/images)で**画像を最適化**します。
+- [`next/font`](/docs/app/building-your-application/optimizing/fonts)で**フォントを最適化**します。
+- [`<Script>`コンポーネント](/docs/app/building-your-application/optimizing/scripts)で**サードパーティのスクリプトを最適化**します。
+- `npx next lint`を実行してNext.js推奨ルールを有効にし、プロジェクトのニーズに合わせて設定します。
 
-> **Good to know:** 静的エクスポートを使用する場合、`useParams`フックの使用は[現在サポートされていません](https://github.com/vercel/next.js/issues/54393)。
+> **注意**: 静的エクスポート（`output: 'export'`）を使用すると、`useParams`フックや他のサーバー機能が[現在サポートされていません](https://github.com/vercel/next.js/issues/54393)。Next.jsのすべての機能を使用するには、`next.config.ts`から`output: 'export'`を削除してください。

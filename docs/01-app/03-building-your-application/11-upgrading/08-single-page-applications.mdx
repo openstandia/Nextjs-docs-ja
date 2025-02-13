@@ -1,5 +1,5 @@
 ---
-title: 'Next.jsによるシングルページアプリケーション'
+title: 'Next.jsでのシングルページアプリケーション'
 nav_title: 'シングルページアプリ'
 description: 'Next.jsはシングルページアプリケーション（SPA）の構築を完全にサポートしています。'
 ---
@@ -23,13 +23,13 @@ SPAの定義はさまざまです。ここでは「厳密なSPA」を次のよ�
 
 Next.jsはJavaScriptバンドルを自動的にコード分割し、異なるルートに複数のHTMLエントリーポイントを生成できます。これにより、クライアントサイドで不要なJavaScriptコードをロードすることを避け、バンドルサイズを削減し、ページの読み込みを高速化します。
 
-[`next/link`](/docs/app/api-reference/components/link)コンポーネントはルートを自動的に[プリフェッチ](/docs/app/api-reference/components/link#prefetch)し、厳密なSPAの高速なページ遷移を提供しますが、URLにアプリケーションのルーティング状態を保持してリンクや共有が可能です。
+[`next/link`](/docs/app/api-reference/components/link)コンポーネントはルートを自動的に[プリフェッチ](/docs/app/api-reference/components/link#prefetch)し、厳密なSPAの高速なページ遷移を提供しますが、リンクや共有のためにアプリケーションのルーティング状態をURLに保持する利点があります。
 
-Next.jsは静的サイトやすべてがクライアントサイドでレンダリングされる厳密なSPAとして開始できます。プロジェクトが成長するにつれて、Next.jsは必要に応じてより多くのサーバー機能（例：[React Server Components](/docs/app/building-your-application/rendering/server-components)、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)など）を段階的に追加することができます。
+Next.jsは静的サイトやすべてがクライアントサイドでレンダリングされる厳密なSPAとして開始できます。プロジェクトが成長するにつれて、Next.jsは必要に応じてより多くのサーバー機能（例：[React Server Components](/docs/app/building-your-application/rendering/server-components)、[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)など）を段階的に追加することを可能にします。
 
 ## 例 {#examples}
 
-SPAを構築するために使用される一般的なパターンと、それをNext.jsがどのように解決するかを見てみましょう。
+SPAを構築するために使用される一般的なパターンと、それをNext.jsがどのように解決するかを探ってみましょう。
 
 ### コンテキストプロバイダー内でのReactの`use`の使用 {#using-react-s-use-within-a-context-provider}
 
@@ -37,7 +37,7 @@ SPAを構築するために使用される一般的なパターンと、それ�
 
 Next.jsはサーバーで早期にデータ取得を開始できます。この例では、アプリケーションのエントリーポイントであるroot レイアウトです。サーバーはクライアントに対してすぐにレスポンスをストリーミングし始めることができます。
 
-データ取得をroot レイアウトに「持ち上げる」ことで、Next.jsはアプリケーション内の他のコンポーネントよりも早くサーバーで指定されたリクエストを開始します。これによりクライアントのウォーターフォールが排除され、クライアントとサーバー間の複数の往復を防ぎます。また、サーバーがデータベースの近く（理想的には同じ場所）にあるため、パフォーマンスが大幅に向上する可能性があります。
+データ取得をroot レイアウトに「持ち上げる」ことで、Next.jsはアプリケーション内の他のコンポーネントよりも早くサーバーで指定されたリクエストを開始します。これにより、クライアントのウォーターフォールが排除され、クライアントとサーバー間の複数の往復が防止されます。また、サーバーがデータベースの近く（理想的には同じ場所）にあるため、パフォーマンスが大幅に向上する可能性があります。
 
 例えば、root レイアウトを更新してPromiseを呼び出しますが、awaitしないでください。
 
@@ -98,37 +98,35 @@ PromiseをReactのコンテキストプロバイダーに転送できます：
 ```ts title="app/user-provider.ts" switcher
 'use client';
 
-import { use, createContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 
 type User = any;
 type UserContextType = {
-  user: User;
+  userPromise: Promise<User | null>;
 };
 
 const UserContext = createContext<UserContextType | null>(null);
 
-export function UserProvider({
-  children,
-  userPromise,
-}: {
-  children: ReactNode;
-  userPromise: Promise<User | null>;
-}) {
-  let initialUser = use(userPromise);
-
-  return (
-    <UserContext.Provider value={{ user: initialUser }}>
-      {children}
-    </UserContext.Provider>
-  );
-}
-
 export function useUser(): UserContextType {
-  let context = use(UserContext);
+  let context = useContext(UserContext);
   if (context === null) {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
+}
+
+export function UserProvider({
+  children,
+  userPromise
+}: {
+  children: ReactNode;
+  userPromise: Promise<User | null>;
+}) {
+  return (
+    <UserContext.Provider value={{ userPromise }}>
+      {children}
+    </UserContext.Provider>
+  );
 }
 ```
 
@@ -138,33 +136,31 @@ export function useUser(): UserContextType {
 ```js title="app/user-provider.js" switcher
 'use client'
 
-import { use, createContext } from 'react'
+import { createContext, useContext, ReactNode } from 'react'
 
 const UserContext = createContext(null)
 
-export function UserProvider({ children, userPromise }) {
-  let initialUser = use(userPromise)
-
-  return (
-    <UserContext.Provider value={{ user: initialUser }}>
-      {children}
-    </UserContext.Provider>
-  )
-}
-
 export function useUser() {
-  let context = use(UserContext)
+  let context = useContext(UserContext)
   if (context === null) {
     throw new Error('useUser must be used within a UserProvider')
   }
   return context
+}
+
+export function UserProvider({ children, userPromise }) {
+  return (
+    <UserContext.Provider value={{ userPromise }}>
+      {children}
+    </UserContext.Provider>
+  )
 }
 ```
 
 </TabItem>
 </Tabs>
 
-最後に、任意のクライアントコンポーネントで`useUser()`カスタムフックを呼び出すことができます：
+最後に、任意のクライアントコンポーネントで`useUser()`カスタムフックを呼び出し、Promiseを展開できます：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -172,10 +168,12 @@ export function useUser() {
 ```tsx title="app/profile.tsx" switcher
 'use client'
 
+import { use } from 'react'
 import { useUser } from './user-provider'
 
 export function Profile() {
-  const { user } = useUser()
+  const { userPromise } = useUser()
+  const user = use(userPromise)
 
   return '...'
 }
@@ -187,10 +185,12 @@ export function Profile() {
 ```jsx title="app/profile.js" switcher
 'use client'
 
+import { use } from 'react'
 import { useUser } from './user-provider'
 
 export function Profile() {
-  const { user } = useUser()
+  const { userPromise } = useUser()
+  const user = use(userPromise)
 
   return '...'
 }
@@ -199,13 +199,13 @@ export function Profile() {
 </TabItem>
 </Tabs>
 
-Promiseを消費するコンポーネント（上記の`Profile`など）はサスペンドされます。これにより部分的なハイドレーションが可能になります。JavaScriptの読み込みが完了する前にストリーミングされたプリレンダリングされたHTMLを確認できます。
+Promiseを消費するコンポーネント（上記の`Profile`など）はサスペンドされます。これにより、部分的なハイドレーションが可能になります。JavaScriptの読み込みが完了する前に、ストリーミングされたプリレンダリングされたHTMLを確認できます。
 
 ### SWRを使用したSPA {#spas-with-swr}
 
 [SWR](https://swr.vercel.app)はデータ取得のための人気のあるReactライブラリです。
 
-SWR 2.3.0（およびReact 19+）を使用すると、既存のSWRベースのクライアントデータ取得コードと並行してサーバー機能を段階的に採用できます。これは上記の`use()`パターンの抽象化です。これにより、データ取得をクライアントとサーバーサイドの間で移動したり、両方を使用したりできます：
+SWR 2.3.0（およびReact 19+）では、既存のSWRベースのクライアントデータ取得コードと並行してサーバー機能を段階的に採用できます。これは上記の`use()`パターンの抽象化です。これにより、データ取得をクライアントとサーバーサイド間で移動したり、両方を使用したりできます：
 
 - **クライアントのみ**: `useSWR(key, fetcher)`
 - **サーバーのみ**: `useSWR(key)` + RSC提供のデータ
@@ -320,7 +320,7 @@ export function Profile() {
 
 ### React Queryを使用したSPA {#spas-with-react-query}
 
-Next.jsとともにReact Queryをクライアントとサーバーの両方で使用できます。これにより、厳密なSPAを構築するだけでなく、React Queryと組み合わせたNext.jsのサーバー機能を活用することができます。
+Next.jsでは、クライアントとサーバーの両方でReact Queryを使用できます。これにより、厳密なSPAを構築することができ、React Queryと組み合わせたNext.jsのサーバー機能を活用することもできます。
 
 詳細は[React Queryのドキュメント](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr)で学べます。
 
@@ -336,13 +336,13 @@ const ClientOnlyComponent = dynamic(() => import('./component'), {
 })
 ```
 
-これは、`window`や`document`のようなブラウザAPIに依存するサードパーティライブラリに役立ちます。また、これらのAPIの存在を確認する`useEffect`を追加し、それらが存在しない場合は`null`またはプリレンダリングされるローディング状態を返すこともできます。
+これは、`window`や`document`のようなブラウザAPIに依存するサードパーティライブラリに役立ちます。また、これらのAPIが存在するかどうかを確認する`useEffect`を追加し、存在しない場合は`null`またはプリレンダリングされるローディング状態を返すこともできます。
 
 ### クライアントでのシャロールーティング {#shallow-routing-on-the-client}
 
-[Create React App](/docs/app/building-your-application/upgrading/from-create-react-app)や[Vite](/docs/app/building-your-application/upgrading/from-vite)のような厳密なSPAから移行する場合、URL状態を更新するためにシャロールートを持つ既存のコードがあるかもしれません。これは、Next.jsのファイルシステムルーティングを使用せずにアプリケーション内のビュー間で手動で遷移するのに役立ちます。
+[Create React App](/docs/app/building-your-application/upgrading/from-create-react-app)や[Vite](/docs/app/building-your-application/upgrading/from-vite)のような厳密なSPAから移行する場合、URL状態を更新するためにシャロールートを持つ既存のコードがあるかもしれません。これは、Next.jsのデフォルトのファイルシステムルーティングを使用せずに、アプリケーション内のビュー間の手動遷移に役立ちます。
 
-Next.jsでは、ページをリロードせずにブラウザの履歴スタックを更新するために、ネイティブの[`window.history.pushState`](https://developer.mozilla.org/en-US/docs/Web/API/History/pushState)と[`window.history.replaceState`](https://developer.mozilla.org/en-US/docs/Web/API/History/replaceState)メソッドを使用できます。
+Next.jsでは、ネイティブの[`window.history.pushState`](https://developer.mozilla.org/en-US/docs/Web/API/History/pushState)と[`window.history.replaceState`](https://developer.mozilla.org/en-US/docs/Web/API/History/replaceState)メソッドを使用して、ページをリロードせずにブラウザの履歴スタックを更新できます。
 
 `pushState`と`replaceState`の呼び出しはNext.js Routerに統合され、[`usePathname`](/docs/app/api-reference/functions/use-pathname)や[`useSearchParams`](/docs/app/api-reference/functions/use-search-params)と同期できます。
 
@@ -401,7 +401,7 @@ export default function SortProducts() {
 </TabItem>
 </Tabs>
 
-Next.jsでの[ルーティングとナビゲーション](/docs/app/building-your-application/routing/linking-and-navigating#how-routing-and-navigation-works)の動作について詳しく学びましょう。
+Next.jsでの[ルーティングとナビゲーション](/docs/app/building-your-application/routing/linking-and-navigating#how-routing-and-navigation-works)の仕組みについて詳しく学びましょう。
 
 ### クライアントコンポーネントでのServer Actionsの使用 {#using-server-actions-in-client-components}
 
@@ -430,7 +430,7 @@ export async function create() {}
 </TabItem>
 </Tabs>
 
-クライアントからServer ActionをJavaScript関数を呼び出すようにインポートして使用できます。APIエンドポイントを手動で作成する必要はありません：
+クライアントからServer Actionをインポートして使用できます。JavaScript関数を呼び出すのと同様です。APIエンドポイントを手動で作成する必要はありません：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -468,7 +468,7 @@ export function Button() {
 Next.jsは完全な[静的サイト](/docs/app/building-your-application/deploying/static-exports)の生成もサポートしています。これは厳密なSPAに対していくつかの利点があります：
 
 - **自動コード分割**: 単一の`index.html`を配信する代わりに、Next.jsはルートごとにHTMLファイルを生成するため、訪問者はクライアントJavaScriptバンドルを待たずにコンテンツをより早く取得できます
-- **改善されたユーザー体験**: すべてのルートに対して最小限のスケルトンを提供する代わりに、各ルートに対して完全にレンダリングされたページを取得できます。ユーザーがクライアントサイドでナビゲートすると、遷移は瞬時でSPAのように感じられます
+- **ユーザーエクスペリエンスの向上**: すべてのルートに対して最小限のスケルトンを提供する代わりに、各ルートに対して完全にレンダリングされたページを取得できます。ユーザーがクライアントサイドでナビゲートすると、遷移は即座に行われ、SPAのようになります
 
 静的エクスポートを有効にするには、設定を更新します：
 
@@ -484,7 +484,7 @@ export default nextConfig
 
 `next build`を実行した後、Next.jsはアプリケーションのHTML/CSS/JSアセットを含む`out`フォルダを作成します。
 
-> **注意:** Next.jsのサーバー機能は静的エクスポートではサポートされていません。[詳細はこちら](/docs/app/building-your-application/deploying/static-exports#unsupported-features)。
+> **注意:** 静的エクスポートではNext.jsのサーバー機能はサポートされていません。[詳細はこちら](/docs/app/building-your-application/deploying/static-exports#unsupported-features)。
 
 ## 既存プロジェクトのNext.jsへの移行 {#migrating-existing-projects-to-next-js}
 
