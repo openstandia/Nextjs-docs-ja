@@ -183,14 +183,7 @@ const config = {
           name: 'twitter:image',
           content: 'https://ja.next-community-docs.dev/img/logo.png',
         },
-        {
-          name: 'twitter:title',
-          content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
-        },
-        {
-          name: 'twitter:description',
-          content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
-        },
+        { property: 'og:type', content: 'website' },
         {
           property: 'og:site_name',
           content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
@@ -209,7 +202,7 @@ const config = {
       ja: {
         label: '日本語',
         direction: 'ltr',
-        htmlLang: 'ja',
+        htmlLang: 'ja_JP',
       },
     },
   },
