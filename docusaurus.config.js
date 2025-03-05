@@ -192,6 +192,10 @@ const config = {
           property: 'og:image',
           content: 'https://ja.next-community-docs.dev/img/logo.png',
         },
+        {
+          property: 'og:locale',
+          content: 'ja_JP',
+        },
       ],
     }),
 
