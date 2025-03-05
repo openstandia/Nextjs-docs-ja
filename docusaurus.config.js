@@ -178,6 +178,14 @@ const config = {
           content:
             'Next.js 日本語,Next.js 和訳,Next.js 入門ガイド,Next.js チュートリアル,Next.js 使い方,App Router 解説,React フレームワーク,ウェブ開発 入門',
         },
+        {
+          name: 'author',
+          content: 'Next.js 公式ドキュメント 日本語翻訳コミュニティ',
+        },
+        {
+          name: 'creator',
+          content: 'Next.js 公式ドキュメント 日本語翻訳コミュニティ',
+        },
         { name: 'twitter:card', content: 'summary_large_image' },
         {
           name: 'twitter:image',
