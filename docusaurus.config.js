@@ -178,19 +178,20 @@ const config = {
           content:
             'Next.js 日本語,Next.js 和訳,Next.js 入門ガイド,Next.js チュートリアル,Next.js 使い方,App Router 解説,React フレームワーク,ウェブ開発 入門',
         },
+        {
+          name: 'author',
+          content: 'Next.js 公式ドキュメント 日本語翻訳コミュニティ',
+        },
+        {
+          name: 'creator',
+          content: 'Next.js 公式ドキュメント 日本語翻訳コミュニティ',
+        },
         { name: 'twitter:card', content: 'summary_large_image' },
         {
           name: 'twitter:image',
           content: 'https://ja.next-community-docs.dev/img/logo.png',
         },
-        {
-          name: 'twitter:title',
-          content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
-        },
-        {
-          name: 'twitter:description',
-          content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
-        },
+        { property: 'og:type', content: 'website' },
         {
           property: 'og:site_name',
           content: 'Next.js 公式ドキュメント 日本語翻訳プロジェクト',
@@ -198,6 +199,10 @@ const config = {
         {
           property: 'og:image',
           content: 'https://ja.next-community-docs.dev/img/logo.png',
+        },
+        {
+          property: 'og:locale',
+          content: 'ja_JP',
         },
       ],
     }),
@@ -209,7 +214,7 @@ const config = {
       ja: {
         label: '日本語',
         direction: 'ltr',
-        htmlLang: 'ja',
+        htmlLang: 'ja_JP',
       },
     },
   },
