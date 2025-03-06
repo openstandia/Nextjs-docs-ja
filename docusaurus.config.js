@@ -95,6 +95,31 @@ const config = {
         },
         items: [
           {
+            href: 'https://nextjs.org/showcase',
+            label: 'Showcase',
+            position: 'left',
+          },
+          {
+            href: '/docs',
+            label: 'Docs',
+            position: 'left',
+          },
+          {
+            href: 'https://nextjs.org/blog',
+            label: 'Blog',
+            position: 'left',
+          },
+          {
+            href: 'https://vercel.com/templates/next.js?utm_source=next-site&utm_medium=navbar&utm_campaign=next_site_nav_templates',
+            label: 'Template',
+            position: 'left',
+          },
+          {
+            href: 'https://vercel.com/enterprise',
+            label: 'Enterprise',
+            position: 'left',
+          },
+          {
             href: 'https://nextjs.org/docs',
             label: 'English',
             position: 'right',
