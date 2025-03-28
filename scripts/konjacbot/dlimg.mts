@@ -65,9 +65,13 @@ async function downloadImage(
   index: number,
   imagePathList: string[]
 ): Promise<void> {
+  //例：https://nextjs.org/_next/image?url=https%3A%2F%2Fh8DxKfmAPhn8O0p3.public.blob.vercel-storage.com%2Fdocs%2Fdark%2Ftypescript-command-palette.png&w=1920&q=75
   const searchPrams = new URLSearchParams()
-  searchPrams.append('url', imagePath)
-  searchPrams.append('w', '3840')
+  searchPrams.append(
+    'url',
+    `https://h8DxKfmAPhn8O0p3.public.blob.vercel-storage.com${imagePath}`
+  )
+  searchPrams.append('w', '1920')
   searchPrams.append('q', '75')
   const url = new URL(
     `${defaults.downloadEndpoint}?${searchPrams.toString()}`
