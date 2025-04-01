@@ -1,30 +1,28 @@
 ---
 title: 'devIndicators'
-description: '最適化されたページには、静的に最適化されているかどうかを知らせるインジケーターが含まれています。ここでオプトアウトできます。'
+description: '開発中に現在表示しているルートに関するコンテキストを提供するオンスクリーンインジケーターの設定オプション。'
 ---
 
-{/* このドキュメントの内容は、app router と pages router の間で共有されています。Pages Router に特有のコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>` コンポーネントを使用できます。共有コンテンツはコンポーネントでラップしないでください。 */}
-
-<AppOnly>
-
-`devIndicators` を使用すると、開発中に表示している現在のルートに関するコンテキストを提供するオンスクリーンインジケーターを設定できます。
+`devIndicators`を使用すると、開発中に現在表示しているルートに関するコンテキストを提供するオンスクリーンインジケーターを設定できます。
 
 ```ts title="Types"
-  devIndicators: {
-    buildActivityPosition?: 'bottom-right'
+  devIndicators: false | {
+    position?: 'bottom-right'
     | 'bottom-left'
     | 'top-right'
-    | 'top-left', // デフォルトは 'bottom-right'
+    | 'top-left', // デフォルトは 'bottom-left' です
   },
 ```
 
+`devIndicators`を`false`に設定するとインジケーターは非表示になりますが、Next.jsは引き続き発生したビルドまたはランタイムエラーを表示します。
+
 ## トラブルシューティング {#troubleshooting}
 
-### 静的ルートにインジケーターが表示されない {#static-route-not-showing-the-indicator}
+### インジケーターがルートを静的としてマークしない {#indicator-not-marking-a-route-as-static}
 
-ルートが静的であり、インジケーターが有効になっているのに表示されない場合、そのルートは静的レンダリングをオプトアウトしている可能性があります。
+ルートが静的であることを期待しているのに、インジケーターがそれを動的としてマークしている場合、そのルートは静的レンダリングをオプトアウトしている可能性があります。
 
-`next build --debug` を使用してアプリケーションをビルドし、ターミナルの出力を確認することで、ルートが[静的](/docs/app/building-your-application/rendering/server-components#static-rendering-default)か[動的](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)かを確認できます。静的（またはプリレンダリングされた）ルートは `○` シンボルを表示し、動的ルートは `ƒ` シンボルを表示します。例：
+ルートが[静的](/docs/app/building-your-application/rendering/server-components#static-rendering-default)か[動的](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)かを確認するには、`next build --debug`を使用してアプリケーションをビルドし、ターミナルの出力を確認します。静的（またはプリレンダリングされた）ルートは`○`シンボルを表示し、動的ルートは`ƒ`シンボルを表示します。例：
 
 ```bash title="Build Output"
 Route (app)                              Size     First Load JS
@@ -35,31 +33,26 @@ Route (app)                              Size     First Load JS
 ƒ  (Dynamic)  server-rendered on demand
 ```
 
+<AppOnly>
+
 ルートが静的レンダリングをオプトアウトする理由は2つあります：
 
-- 実行時情報に依存する[Dynamic APIs](/docs/app/building-your-application/rendering/server-components#dynamic-apis)の存在
-- ORMやデータベースドライバへの呼び出しのような[キャッシュされていないデータリクエスト](/docs/app/building-your-application/data-fetching/fetching)
+- ランタイム情報に依存する[Dynamic APIs](/docs/app/building-your-application/rendering/server-components#dynamic-apis)の存在
+- ORMやデータベースドライバーへの呼び出しのような[キャッシュされていないデータリクエスト](/docs/app/building-your-application/data-fetching/fetching)
 
-これらの条件がルートに存在するか確認し、静的にレンダリングできない場合は、[`loading.js`](/docs/app/api-reference/file-conventions/loading) または [`<Suspense />`](https://react.dev/reference/react/Suspense) を使用して[ストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#what-is-streaming)を活用することを検討してください。
+これらの条件がルートに存在するか確認し、静的にレンダリングできない場合は、[`loading.js`](/docs/app/api-reference/file-conventions/loading)や[`<Suspense />`](https://react.dev/reference/react/Suspense)を使用して[ストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming#what-is-streaming)を活用することを検討してください。
 
 </AppOnly>
 
 <PagesOnly>
 
-> **Good to know**: このインジケーターは Next.js バージョン 10.0.1 で削除されました。Next.js の最新バージョンへのアップグレードをお勧めします。
-
-ページが[自動静的最適化](https://nextjs.org/docs/canary/pages/building-your-application/rendering/automatic-static-optimization)の条件を満たすと、インジケーターを表示してお知らせします。
-
-これは、自動静的最適化が非常に有益であり、開発中にページが条件を満たしているかどうかをすぐに知ることができるため、役立ちます。
-
-電子アプリケーションの作業時など、このインジケーターが役に立たない場合もあります。これを削除するには、`next.config.js` を開き、`devIndicators` の `autoPrerender` 設定を無効にします：
-
-```js title="next.config.js"
-module.exports = {
-  devIndicators: {
-    autoPrerender: false,
-  },
-}
-```
+ページから[`getServerSideProps`](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/get-server-side-props)または[`getInitialProps`](https://nextjs.org/docs/canary/pages/api-reference/functions/get-initial-props)をエクスポートすると、それは動的としてマークされます。
 
 </PagesOnly>
+
+## バージョン履歴 {#version-history}
+
+| Version   | Changes                                                                                                                                                          |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v15.2.0` | 新しい`position`オプションを備えたオンスクリーンインジケーターの改善。`appIsrStatus`、`buildActivity`、および`buildActivityPosition`オプションは廃止されました。 |
+| `v15.0.0` | `appIsrStatus`オプションを備えた静的オンスクリーンインジケーターが追加されました。                                                                               |
