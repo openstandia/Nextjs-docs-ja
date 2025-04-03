@@ -1,0 +1,351 @@
+---
+title: 'メタデータを追加し、OG画像を作成する方法'
+nav_title: 'メタデータとOG画像'
+description: 'ページにメタデータを追加し、動的なOG画像を作成する方法を学びます。'
+related:
+  title: 'APIリファレンス'
+  description: 'このページで言及されているメタデータAPIについて詳しく学びます。'
+  links:
+    - 'app/api-reference/functions/generate-metadata'
+    - 'app/api-reference/file-conventions/metadata'
+    - 'app/api-reference/file-conventions/metadata/app-icons'
+    - 'app/api-reference/file-conventions/metadata/opengraph-image'
+    - 'app/api-reference/functions/image-response'
+---
+
+メタデータAPIを使用すると、SEOの向上やWebの共有性を高めるためにアプリケーションのメタデータを定義できます。以下を含みます：
+
+1. [静的な `metadata` オブジェクト](#static-metadata)
+2. [動的な `generateMetadata` 関数](#generated-metadata)
+3. 静的または動的に生成された[favicon](#favicons)や[OG画像](#static-open-graph-images)を追加するための特別な[ファイル規約](/docs/app/api-reference/file-conventions/metadata)
+
+上記のすべてのオプションを使用すると、Next.jsはページに関連する`<head>`タグを自動的に生成し、ブラウザの開発者ツールで確認できます。
+
+## デフォルトフィールド {#default-fields}
+
+ルートがメタデータを定義していない場合でも、常に追加されるデフォルトの`meta`タグが2つあります：
+
+- [meta charsetタグ](https://developer.mozilla.org/docs/Web/HTML/Element/meta#attr-charset)は、Webサイトの文字エンコーディングを設定します
+- [meta viewportタグ](https://developer.mozilla.org/docs/Web/HTML/Viewport_meta_tag)は、異なるデバイスに合わせてWebサイトのビューポート幅とスケールを設定します
+
+```html
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+```
+
+他のメタデータフィールドは、`Metadata`オブジェクト（[静的メタデータ](#static-metadata)用）または`generateMetadata`関数（[生成されたメタデータ](#generated-metadata)用）で定義できます。
+
+## 静的メタデータ {#static-metadata}
+
+静的メタデータを定義するには、静的な[`layout.js`](/docs/app/api-reference/file-conventions/layout)または[`page.js`](/docs/app/api-reference/file-conventions/page)ファイルから[`Metadata`オブジェクト](/docs/app/api-reference/functions/generate-metadata#metadata-object)をエクスポートします。たとえば、ブログルートにタイトルと説明を追加するには：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/layout.tsx" switcher
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'My Blog',
+  description: '...',
+}
+
+export default function Page() {}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/layout.tsx" switcher
+export const metadata = {
+  title: 'My Blog',
+  description: '...',
+}
+
+export default function Page() {}
+```
+
+</TabItem>
+</Tabs>
+
+利用可能なオプションの完全なリストは、[メタデータ生成ドキュメント](/docs/app/api-reference/functions/generate-metadata#metadata-fields)で確認できます。
+
+## 生成されたメタデータ {#generated-metadata}
+
+[`generateMetadata`](/docs/app/api-reference/functions/generate-metadata)関数を使用して、データに依存するメタデータを`fetch`できます。たとえば、特定のブログ投稿のタイトルと説明を取得するには：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+import type { Metadata, ResolvingMetadata } from 'next'
+
+type Props = {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const slug = (await params).slug
+
+  // 投稿情報を取得
+  const post = await fetch(`https://api.vercel.app/blog/${slug}`).then((res) =>
+    res.json()
+  )
+
+  return {
+    title: post.title,
+    description: post.description,
+  }
+}
+
+export default function Page({ params, searchParams }: Props) {}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+export async function generateMetadata({ params, searchParams }, parent) {
+  const slug = (await params).slug
+
+  // 投稿情報を取得
+  const post = await fetch(`https://api.vercel.app/blog/${slug}`).then((res) =>
+    res.json()
+  )
+
+  return {
+    title: post.title,
+    description: post.description,
+  }
+}
+
+export default function Page({ params, searchParams }) {}
+```
+
+</TabItem>
+</Tabs>
+
+Next.jsは、メタデータをUIとは別にストリームし、解決され次第HTMLにメタデータを注入します。
+
+### データリクエストのメモ化 {#memoizing-data-requests}
+
+メタデータとページ自体の両方に**同じ**データを取得する必要がある場合があります。重複したリクエストを避けるために、Reactの[`cache`関数](https://react.dev/reference/react/cache)を使用して戻り値をメモ化し、データを一度だけ取得します。たとえば、メタデータとページの両方にブログ投稿情報を取得するには：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/lib/data.ts" highlight={4} switcher
+import { cache } from 'react'
+import { db } from '@/app/lib/db'
+
+// getPostは2回使用されますが、1回だけ実行されます
+export const getPost = cache(async (slug: string) => {
+  const res = await db.query.posts.findFirst({ where: eq(posts.slug, slug) })
+  return res
+})
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/lib/data.js" highlight={4} switcher
+import { cache } from 'react'
+import { db } from '@/app/lib/db'
+
+// getPostは2回使用されますが、1回だけ実行されます
+export const getPost = cache(async (slug) => {
+  const res = await db.query.posts.findFirst({ where: eq(posts.slug, slug) })
+  return res
+})
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+import { getPost } from '@/app/lib/data'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string }
+}) {
+  const post = await getPost(params.slug)
+  return {
+    title: post.title,
+    description: post.description,
+  }
+}
+
+export default async function Page({ params }: { params: { slug: string } }) {
+  const post = await getPost(params.slug)
+  return <div>{post.title}</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+import { getPost } from '@/app/lib/data'
+
+export async function generateMetadata({ params }) {
+  const post = await getPost(params.slug)
+  return {
+    title: post.title,
+    description: post.description,
+  }
+}
+
+export default async function Page({ params }) {
+  const post = await getPost(params.slug)
+  return <div>{post.title}</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+## Favicons {#favicons}
+
+Faviconsは、ブックマークや検索結果でサイトを表す小さなアイコンです。アプリケーションにfaviconを追加するには、`favicon.ico`を作成し、アプリフォルダのrootに追加します。
+
+<Image
+  alt="Appフォルダ内の特別なファイルとしてのFavicon、レイアウトファイルとページファイルの隣に配置"
+  srcLight="/docs/light/favicon-ico.png"
+  srcDark="/docs/dark/favicon-ico.png"
+  width="1600"
+  height="444"
+/>
+
+> コードを使用してfaviconをプログラム的に生成することもできます。詳細は[faviconドキュメント](/docs/app/api-reference/file-conventions/metadata/app-icons)を参照してください。
+
+## 静的Open Graph画像 {#static-open-graph-images}
+
+Open Graph（OG）画像は、ソーシャルメディアでサイトを表す画像です。アプリケーションに静的なOG画像を追加するには、`opengraph-image.png`ファイルをアプリフォルダのrootに作成します。
+
+<Image
+  alt="Appフォルダ内の特別なファイルとしてのOG画像、レイアウトファイルとページファイルの隣に配置"
+  srcLight="/docs/light/opengraph-image.png"
+  srcDark="/docs/dark/opengraph-image.png"
+  width="1600"
+  height="444"
+/>
+
+特定のルートにOG画像を追加するには、フォルダ構造のさらに下に`opengraph-image.png`を作成します。たとえば、`/blog`ルートに特定のOG画像を作成するには、`blog`フォルダ内に`opengraph-image.jpg`ファイルを追加します。
+
+<Image
+  alt="blogフォルダ内の特別なファイルとしてのOG画像"
+  srcLight="/docs/light/opengraph-image-blog.png"
+  srcDark="/docs/dark/opengraph-image-blog.png"
+  width="1600"
+  height="525"
+/>
+
+より特定の画像は、フォルダ構造内の上位のOG画像よりも優先されます。
+
+> 他の画像形式（`jpeg`、`png`、`webp`など）もサポートされています。詳細は[Open Graph Imageドキュメント](/docs/app/api-reference/file-conventions/metadata/opengraph-image)を参照してください。
+
+## 生成されたOpen Graph画像 {#generated-open-graph-images}
+
+[`ImageResponse`コンストラクタ](/docs/app/api-reference/functions/image-response)を使用すると、JSXとCSSを使用して動的な画像を生成できます。これは、データに依存するOG画像に便利です。
+
+たとえば、各ブログ投稿にユニークなOG画像を生成するには、`blog`フォルダ内に`opengraph-image.ts`ファイルを追加し、`next/og`から`ImageResponse`コンストラクタをインポートします：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/opengraph-image.ts" switcher
+import { ImageResponse } from 'next/og'
+import { getPost } from '@/app/lib/data'
+
+// 画像メタデータ
+export const size = {
+  width: 1200,
+  height: 630,
+}
+
+export const contentType = 'image/png'
+
+// 画像生成
+export default async function Image({ params }: { params: { slug: string } }) {
+  const post = await getPost(params.slug)
+
+  return new ImageResponse(
+    (
+      // ImageResponse JSX要素
+      <div
+        style={{
+          fontSize: 128,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {post.title}
+      </div>
+    )
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/opengraph-image.js" switcher
+import { ImageResponse } from 'next/og'
+import { getPost } from '@/app/lib/data'
+
+// 画像メタデータ
+export const size = {
+  width: 1200,
+  height: 630,
+}
+
+export const contentType = 'image/png'
+
+// 画像生成
+export default async function Image({ params }) {
+  const post = await getPost(params.slug)
+
+  return new ImageResponse(
+    (
+      // ImageResponse JSX要素
+      <div
+        style={{
+          fontSize: 128,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {post.title}
+      </div>
+    )
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+`ImageResponse`は、flexboxや絶対位置指定、カスタムフォント、テキストの折り返し、中央揃え、ネストされた画像など、一般的なCSSプロパティをサポートしています。[サポートされているCSSプロパティの完全なリストを参照してください](/docs/app/api-reference/functions/image-response)。
+
+> **Good to know**:
+>
+> - [Vercel OG Playground](https://og-playground.vercel.app/)で例を確認できます。
+> - `ImageResponse`は、[@vercel/og](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)、[Satori](https://github.com/vercel/satori)、およびResvgを使用してHTMLとCSSをPNGに変換します。
+> - flexboxとCSSプロパティのサブセットのみがサポートされています。高度なレイアウト（例：`display: grid`）は機能しません。
