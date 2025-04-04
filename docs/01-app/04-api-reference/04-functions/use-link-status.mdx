@@ -1,0 +1,250 @@
+---
+title: 'useLinkStatus'
+description: 'useLinkStatus フックのAPIリファレンス。'
+---
+
+`useLinkStatus`は、ナビゲーション中に`Link`コンポーネントの読み込み状態を追跡するための**Client Component**フックです。特に[prefetching](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching)が無効になっている場合や、リンクされたルートに読み込み状態がない場合に、ページ遷移中の読み込みインジケーターを表示するために使用できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/loading-indicator.tsx" switcher
+'use client'
+
+import { useLinkStatus } from 'next/navigation'
+
+export default function LoadingIndicator() {
+  const { pending } = useLinkStatus()
+  return pending ? <span>⌛</span> : null
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/loading-indicator.js" switcher
+'use client'
+
+import { useLinkStatus } from 'next/navigation'
+
+export default function LoadingIndicator() {
+  const { pending } = useLinkStatus()
+  return pending ? <span>⌛</span> : null
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/header.tsx" switcher
+import Link from 'next/link'
+import LoadingIndicator from './loading-indicator'
+
+export default function Header() {
+  return (
+    <header>
+      <Link href="/dashboard" prefetch={false}>
+        Dashboard <LoadingIndicator />
+      </Link>
+    </header>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/header.js" switcher
+import Link from 'next/link'
+import LoadingIndicator from './loading-indicator'
+
+export default function Header() {
+  return (
+    <header>
+      <Link href="/dashboard" prefetch={false}>
+        Dashboard <LoadingIndicator />
+      </Link>
+    </header>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - `useLinkStatus`は、`Link`コンポーネントの子孫コンポーネント内で使用する必要があります
+> - このフックは、`Link`コンポーネントで`prefetch={false}`が設定されている場合に最も有用です
+> - リンクされたルートが事前にフェッチされている場合、pending状態はスキップされます
+> - 短時間で複数のリンクをクリックした場合、最後のリンクのpending状態のみが表示されます
+> - このフックはPages Routerではサポートされておらず、常に`{ pending: false }`を返します
+
+## パラメータ {#parameters}
+
+```tsx
+const { pending } = useLinkStatus()
+```
+
+`useLinkStatus`はパラメータを受け取りません。
+
+## 戻り値 {#returns}
+
+`useLinkStatus`は、1つのプロパティを持つオブジェクトを返します：
+
+| プロパティ | 型      | 説明                                        |
+| ---------- | ------- | ------------------------------------------- |
+| pending    | boolean | 履歴が更新される前は`true`、更新後は`false` |
+
+## 例 {#examples}
+
+### 新しいクエリパラメータでのナビゲーション時のユーザーエクスペリエンスの向上 {#improving-the-user-experience-when-navigating-with-new-query-parameters}
+
+この例では、カテゴリ間のナビゲーションがクエリ文字列（例：?category=books）を更新します。しかし、ページが応答しないように見えることがあります。これは、`<PageSkeleton />`フォールバックが既存のコンテンツを置き換えないためです（[不要な読み込みインジケーターの防止](https://react.dev/reference/react/useTransition#preventing-unwanted-loading-indicators)を参照）。
+
+`useLinkStatus`フックを使用して、アクティブなリンクの横に軽量な読み込みインジケーターをレンダリングし、データがフェッチされている間にユーザーに即時のフィードバックを提供できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/components/loading-indicator.tsx" switcher
+'use client'
+
+import { useLinkStatus } from 'next/navigation'
+
+export default function LoadingIndicator() {
+  const { pending } = useLinkStatus()
+  return pending ? <span>⌛</span> : null
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/components/loading-indicator.js" switcher
+'use client'
+
+import { useLinkStatus } from 'next/navigation'
+
+export default function LoadingIndicator() {
+  const { pending } = useLinkStatus()
+  return pending ? <span>⌛</span> : null
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { Suspense } from 'react'
+import LoadingIndicator from './loading-indicator'
+
+function MenuBar() {
+  return (
+    <div>
+      <Link href="?category=electronics">
+        Electronics <LoadingIndicator />
+      </Link>
+      <Link href="?category=clothing">
+        Clothing <LoadingIndicator />
+      </Link>
+      <Link href="?category=books">
+        Books <LoadingIndicator />
+      </Link>
+    </div>
+  )
+}
+
+async function ProductList({ category }: { category: string }) {
+  const products = await fetchProducts(category)
+
+  return (
+    <ul>
+      {products.map((product) => (
+        <li key={product}>{product}</li>
+      ))}
+    </ul>
+  )
+}
+
+export default async function ProductCategories({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    category: string
+  }>
+}) {
+  const { category } = await searchParams
+
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <MenuBar />
+      <ProductList category={category} />
+    </Suspense>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { Suspense } from 'react'
+import LoadingIndicator from './loading-indicator'
+
+function MenuBar() {
+  return (
+    <div>
+      <Link href="?category=electronics">
+        Electronics <LoadingIndicator />
+      </Link>
+      <Link href="?category=clothing">
+        Clothing <LoadingIndicator />
+      </Link>
+      <Link href="?category=books">
+        Books <LoadingIndicator />
+      </Link>
+    </div>
+  )
+}
+
+async function ProductList({ category }) {
+  const products = await fetchProducts(category)
+
+  return (
+    <ul>
+      {products.map((product) => (
+        <li key={product}>{product}</li>
+      ))}
+    </ul>
+  )
+}
+
+export default async function ProductCategories({ searchParams }) {
+  const { category } = await searchParams
+
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <MenuBar />
+      <ProductList category={category} />
+    </Suspense>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+| バージョン | 変更内容                          |
+| ---------- | --------------------------------- |
+| `v15.3.0`  | `useLinkStatus`が導入されました。 |
