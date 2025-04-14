@@ -1,5 +1,5 @@
 ---
-title: 'データの取得とストリーミングの方法'
+title: 'データの取得とストリーミング方法'
 nav_title: 'データの取得'
 description: 'アプリケーションでデータを取得し、コンテンツをストリーミングする方法を始めましょう。'
 related:
@@ -64,7 +64,7 @@ export default async function Page() {
 
 #### ORM またはデータベースを使用する {#with-an-orm-or-database}
 
-ORM またはデータベースを使用してデータを取得するには、コンポーネントを非同期関数に変換し、呼び出しを待機します：
+Server component はサーバー上でレンダリングされるため、ORM やデータベースクライアントを使用して安全にデータベースクエリを実行できます。コンポーネントを非同期関数に変換し、呼び出しを待機します：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -210,7 +210,7 @@ export default function Posts({ posts }) {
 
 #### コミュニティライブラリ {#community-libraries}
 
-[SWR](https://swr.vercel.app/)や[React Query](https://tanstack.com/query/latest)のようなコミュニティライブラリを使用して、client component でデータを取得できます。これらのライブラリは、キャッシング、ストリーミング、その他の機能に独自のセマンティクスを持っています。例えば、SWR を使用する場合：
+[SWR](https://swr.vercel.app/)や[React Query](https://tanstack.com/query/latest)のようなコミュニティライブラリを使用して、client component でデータを取得できます。これらのライブラリは、キャッシュ、ストリーミング、その他の機能に独自のセマンティクスを持っています。例えば、SWR を使用する場合：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -275,7 +275,7 @@ export default function BlogPage() {
 
 > **警告：** 以下の内容は、アプリケーションで[`dynamicIO` config option](/docs/app/api-reference/config/next-config-js/dynamicIO)が有効になっていることを前提としています。このフラグは Next.js 15 canary で導入されました。
 
-Server component で `async/await` を使用すると、Next.js は**動的レンダリング**を選択します。これは、データがユーザーのリクエストごとにサーバーで取得され、レンダリングされることを意味します。遅いデータリクエストがある場合、ルート全体がレンダリングをブロックされます。
+Server component で `async/await` を使用すると、Next.js は**動的レンダリング**を選択します。これは、データがユーザーのリクエストごとにサーバーで取得され、レンダリングされることを意味します。データリクエストが遅い場合、ルート全体がレンダリングをブロックされます。
 
 初期ロード時間とユーザーエクスペリエンスを向上させるために、ページの HTML を小さなチャンクに分割し、それらのチャンクをサーバーからクライアントに段階的に送信するストリーミングを使用できます。
 
@@ -289,7 +289,7 @@ Server component で `async/await` を使用すると、Next.js は**動的レ�
 
 アプリケーションでストリーミングを実装する方法は2つあります：
 
-1. [`loading.js` ファイル](#with-loading-js)を使用する
+1. [`loading.js` ファイル](#with-loadingjs)を使用する
 2. React の[`<Suspense>` コンポーネント](#with-suspense)を使用する
 
 ### `loading.js` を使用する {#with-loading-js}
@@ -309,7 +309,7 @@ Server component で `async/await` を使用すると、Next.js は**動的レ�
 
 ```tsx title="app/blog/loading.tsx" switcher
 export default function Loading() {
-  // ここで読み込み中の UI を定義します
+  // ここでローディング UI を定義します
   return <div>Loading...</div>
 }
 ```
@@ -319,7 +319,7 @@ export default function Loading() {
 
 ```jsx title="app/blog/loading.js" switcher
 export default function Loading() {
-  // ここで読み込み中の UI を定義します
+  // ここでローディング UI を定義します
   return <div>Loading...</div>
 }
 ```
@@ -327,17 +327,17 @@ export default function Loading() {
 </TabItem>
 </Tabs>
 
-ナビゲーション時に、ユーザーはページがレンダリングされている間にレイアウトと[読み込み状態](#creating-meaningful-loading-states)をすぐに見ることができます。レンダリングが完了すると、新しいコンテンツが自動的に入れ替わります。
+ナビゲーション時に、ユーザーはページがレンダリングされている間にレイアウトと[ローディング状態](#creating-meaningful-loading-states)をすぐに見ることができます。レンダリングが完了すると、新しいコンテンツが自動的に入れ替わります。
 
 <Image
-  alt="読み込み中の UI"
+  alt="ローディング UI"
   srcLight="/docs/light/loading-ui.png"
   srcDark="/docs/dark/loading-ui.png"
   width="1600"
   height="691"
 />
 
-舞台裏では、`loading.js` は `layout.js` 内にネストされ、`page.js` ファイルとその下のすべての子を自動的に `<Suspense>` boundary でラップします。
+裏側では、`loading.js` は `layout.js` 内にネストされ、`page.js` ファイルとその下のすべての子を自動的に `<Suspense>` boundary でラップします。
 
 <Image
   alt="loading.js の概要"
@@ -410,8 +410,8 @@ export default function BlogPage() {
 </TabItem>
 </Tabs>
 
-### 意味のある読み込み状態の作成 {#creating-meaningful-loading-states}
+### 意味のあるローディング状態を作成する {#creating-meaningful-loading-states}
 
-インスタント読み込み状態は、ナビゲーション後にユーザーにすぐに表示されるフォールバック UI です。最良のユーザーエクスペリエンスを提供するために、意味のある読み込み状態を設計し、アプリが応答していることをユーザーに理解させることをお勧めします。例えば、スケルトンやスピナー、またはカバーフォトやタイトルなどの将来の画面の小さくても意味のある部分を使用できます。
+インスタントローディング状態は、ナビゲーション後にユーザーにすぐに表示されるフォールバック UI です。最良のユーザーエクスペリエンスを提供するために、意味のあるローディング状態を設計し、アプリが応答していることをユーザーに理解させることをお勧めします。例えば、スケルトンやスピナー、またはカバーフォトやタイトルなどの将来の画面の小さくても意味のある部分を使用できます。
 
-開発中は、[React Devtools](https://react.dev/learn/react-developer-tools)を使用してコンポーネントの読み込み状態をプレビューおよび検査できます。
+開発中は、[React Devtools](https://react.dev/learn/react-developer-tools)を使用してコンポーネントのローディング状態をプレビューおよび検査できます。
