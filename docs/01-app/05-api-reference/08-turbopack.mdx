@@ -3,48 +3,48 @@ title: 'Turbopack'
 description: 'Turbopackは、JavaScriptとTypeScriptに最適化されたインクリメンタルバンドラーで、Rustで書かれ、Next.jsに組み込まれています。'
 ---
 
-{/* このドキュメントの内容は、app routerとpages routerの間で共有されています。Pages Routerに特化したコンテンツを追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有コンテンツはコンポーネントでラップしないでください。 */}
+{/* このドキュメントの内容は、app routerとpages routerの両方で共有されています。Pages Routerに特化した内容を追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有される内容はコンポーネントでラップしないでください。 */}
 
 Turbopackは、JavaScriptとTypeScriptに最適化された**インクリメンタルバンドラー**で、Rustで書かれ、**Next.js**に組み込まれています。Turbopackを使用することで、Pages RouterとApp Routerの両方で**非常に高速な**ローカル開発体験を得ることができます。
 
 ## なぜTurbopackなのか？ {#why-turbopack}
 
-私たちは、Next.jsのパフォーマンスを向上させるためにTurbopackを開発しました。以下の点を含みます：
+私たちは、Next.jsのパフォーマンスを向上させるためにTurbopackを開発しました。以下の点が含まれます：
 
-- **統一されたグラフ:** Next.jsは複数の出力環境（例：クライアントとサーバー）をサポートしています。複数のコンパイラを管理し、バンドルをつなぎ合わせるのは面倒です。Turbopackは、すべての環境に対して**単一の統一されたグラフ**を使用します。
-- **バンドリング vs ネイティブESM:** 一部のツールは開発時にバンドリングをスキップし、ブラウザのネイティブESMに依存します。これは小規模なアプリには適していますが、ネットワークリクエストが多すぎるため、大規模なアプリでは遅くなる可能性があります。Turbopackは開発時に**バンドル**しますが、大規模なアプリを高速に保つために最適化されています。
-- **インクリメンタル計算:** Turbopackは作業をコア間で並列化し、結果を関数レベルまで**キャッシュ**します。一度作業が完了すると、Turbopackはそれを繰り返しません。
-- **遅延バンドリング:** Turbopackは、開発サーバーによって実際に要求されたものだけをバンドルします。この遅延アプローチにより、初期のコンパイル時間とメモリ使用量を削減できます。
+- **統一されたグラフ：** Next.jsは複数の出力環境（例：クライアントとサーバー）をサポートしています。複数のコンパイラを管理し、バンドルをつなぎ合わせるのは面倒です。Turbopackは、すべての環境に対して**単一の統一されたグラフ**を使用します。
+- **バンドリング vs ネイティブESM：** 一部のツールは開発時にバンドリングをスキップし、ブラウザのネイティブESMに依存します。これは小規模なアプリには適していますが、大規模なアプリでは過剰なネットワークリクエストのために遅くなることがあります。Turbopackは開発時に**バンドル**しますが、大規模なアプリを高速に保つために最適化されています。
+- **インクリメンタル計算：** Turbopackは作業をコア間で並列化し、結果を関数レベルまで**キャッシュ**します。一度作業が完了すると、Turbopackはそれを繰り返しません。
+- **遅延バンドリング：** Turbopackは、開発サーバーによって実際に要求されたものだけをバンドルします。この遅延アプローチにより、初期のコンパイル時間とメモリ使用量を削減できます。
 
 ## はじめに {#getting-started}
 
-Next.jsプロジェクトでTurbopackを有効にするには、開発サーバーを実行する際に`--turbopack`フラグを使用します：
+Next.jsプロジェクトでTurbopackを有効にするには、`package.json`ファイルの`dev`、`build`、`start`スクリプトに`--turbopack`フラグを追加します：
 
 ```json title="package.json" highlight={3}
 {
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start"
+    "build": "next build --turbopack",
+    "start": "next start --turbopack"
   }
 }
 ```
 
-現在、Turbopackは`next dev`のみをサポートしています。ビルド（`next build`）は**まだ**サポートされていません。Turbopackが安定性に近づくにつれて、プロダクションサポートに向けて積極的に取り組んでいます。
+現在、`dev`用のTurbopackは安定していますが、`build`はアルファ版です。Turbopackが安定に近づくにつれて、プロダクションサポートに向けて積極的に取り組んでいます。
 
 ## サポートされている機能 {#supported-features}
 
-Next.jsのTurbopackは、一般的なユースケースに対して**ゼロコンフィグレーション**です。以下は、標準でサポートされている機能の概要と、必要に応じてTurbopackをさらに構成する方法に関するいくつかの参考情報です。
+Next.jsのTurbopackは、一般的なユースケースに対して**ゼロコンフィグレーション**です。以下は、標準でサポートされている機能の概要と、必要に応じてTurbopackをさらに設定する方法のいくつかの参考情報です。
 
 ### 言語機能 {#language-features}
 
-| 機能                        | ステータス         | 備考                                                                                                                                                                                                         |
-| --------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **JavaScript & TypeScript** | **サポート済み**   | SWCを内部で使用しています。型チェックはTurbopackでは行われません（`tsc --watch`を実行するか、IDEに型チェックを依存してください）。                                                                           |
-| **ECMAScript (ESNext)**     | **サポート済み**   | Turbopackは最新のECMAScript機能をサポートしており、SWCのカバレッジに一致しています。                                                                                                                         |
-| **CommonJS**                | **サポート済み**   | `require()`構文は標準で処理されます。                                                                                                                                                                        |
-| **ESM**                     | **サポート済み**   | 静的および動的な`import`が完全にサポートされています。                                                                                                                                                       |
-| **Babel**                   | 部分的にサポート外 | TurbopackにはデフォルトでBabelは含まれていません。ただし、[Turbopackの設定を通じて`babel-loader`を構成することができます](/docs/app/api-reference/config/next-config-js/turbo#configuring-webpack-loaders)。 |
+| 機能                        | ステータス         | 備考                                                                                                                                                                                                             |
+| --------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **JavaScript & TypeScript** | **サポート済み**   | 内部でSWCを使用しています。型チェックはTurbopackでは行われません（`tsc --watch`を実行するか、IDEに型チェックを依存してください）。                                                                               |
+| **ECMAScript (ESNext)**     | **サポート済み**   | Turbopackは最新のECMAScript機能をサポートしており、SWCのカバレッジに一致しています。                                                                                                                             |
+| **CommonJS**                | **サポート済み**   | `require()`構文は標準で処理されます。                                                                                                                                                                            |
+| **ESM**                     | **サポート済み**   | 静的および動的な`import`が完全にサポートされています。                                                                                                                                                           |
+| **Babel**                   | 部分的にサポート外 | TurbopackにはデフォルトでBabelが含まれていません。ただし、[Turbopackの設定を通じて`babel-loader`を設定することができます](/docs/app/api-reference/config/next-config-js/turbopack#configuring-webpack-loaders)。 |
 
 ### フレームワークとReactの機能 {#framework-and-react-features}
 
@@ -52,7 +52,7 @@ Next.jsのTurbopackは、一般的なユースケースに対して**ゼロコ�
 | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
 | **JSX / TSX**                     | **サポート済み** | SWCがJSX/TSXのコンパイルを処理します。                                                                 |
 | **Fast Refresh**                  | **サポート済み** | 設定は不要です。                                                                                       |
-| **React Server Components (RSC)** | **サポート済み** | Next.jsのApp Router用です。Turbopackは正しいサーバー/クライアントのバンドリングを保証します。          |
+| **React Server Components (RSC)** | **サポート済み** | Next.js App Router用です。Turbopackは正しいサーバー/クライアントのバンドリングを保証します。           |
 | **root レイアウトの作成**         | サポート外       | App Routerでのroot レイアウトの自動作成はサポートされていません。Turbopackは手動での作成を指示します。 |
 
 ### CSSとスタイリング {#css-and-styling}
@@ -77,12 +77,12 @@ Next.jsのTurbopackは、一般的なユースケースに対して**ゼロコ�
 
 ### モジュール解決 {#module-resolution}
 
-| 機能               | ステータス           | 備考                                                                                                                                                     |
-| ------------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **パスエイリアス** | **サポート済み**     | `tsconfig.json`の`paths`と`baseUrl`を読み取り、Next.jsの動作に一致します。                                                                               |
-| **手動エイリアス** | **サポート済み**     | [`next.config.js`で`resolveAlias`を構成します](/docs/app/api-reference/config/next-config-js/turbo#resolving-aliases)（`webpack.resolve.alias`に類似）。 |
-| **カスタム拡張子** | **サポート済み**     | [`next.config.js`で`resolveExtensions`を構成します](/docs/app/api-reference/config/next-config-js/turbo#resolving-custom-extensions)。                   |
-| **AMD**            | 部分的にサポート済み | 基本的な変換は動作しますが、高度なAMDの使用は制限されています。                                                                                          |
+| 機能               | ステータス           | 備考                                                                                                                                                         |
+| ------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **パスエイリアス** | **サポート済み**     | `tsconfig.json`の`paths`と`baseUrl`を読み取り、Next.jsの動作に一致します。                                                                                   |
+| **手動エイリアス** | **サポート済み**     | [`next.config.js`で`resolveAlias`を設定します](/docs/app/api-reference/config/next-config-js/turbopack#resolving-aliases)（`webpack.resolve.alias`に類似）。 |
+| **カスタム拡張子** | **サポート済み**     | [`next.config.js`で`resolveExtensions`を設定します](/docs/app/api-reference/config/next-config-js/turbopack#resolving-custom-extensions)。                   |
+| **AMD**            | 部分的にサポート済み | 基本的な変換は動作しますが、高度なAMDの使用は制限されています。                                                                                              |
 
 ### パフォーマンスとFast Refresh {#performance-and-fast-refresh}
 
@@ -95,14 +95,12 @@ Next.jsのTurbopackは、一般的なユースケースに対して**ゼロコ�
 
 一部の機能はまだ実装されていないか、計画されていません：
 
-- **プロダクションビルド** (`next build`)
-  Turbopackは現在`next dev`のみをサポートしています。プロダクションビルドのサポートは積極的に開発中です。
 - **レガシーCSSモジュール機能**
   - スタンドアロンの`:local`および`:global`擬似クラス（関数バリアントの`:global(...)`のみがサポートされています）。
-  - `@value`ルール（CSS変数に置き換えられました）。
+  - `@value`ルール（CSS変数によって置き換えられました）。
   - `:import`および`:export`のICSSルール。
 - **`next.config.js`での`webpack()`設定**
-  Turbopackはwebpackを置き換えるため、`webpack()`設定は認識されません。代わりに[`experimental.turbo`設定](/docs/app/api-reference/config/next-config-js/turbo)を使用してください。
+  Turbopackはwebpackを置き換えるため、`webpack()`設定は認識されません。代わりに[`experimental.turbo`設定](/docs/app/api-reference/config/next-config-js/turbopack)を使用してください。
 - **AMP**
   Next.jsでのTurbopackサポートは計画されていません。
 - **Yarn PnP**
@@ -118,19 +116,19 @@ Next.jsのTurbopackは、一般的なユースケースに対して**ゼロコ�
   - `experimental.fallbackNodePolyfills`
     これらは将来的に実装する予定です。
 
-各機能フラグとそのステータスの詳細な内訳については、[Turbopack APIリファレンス](/docs/app/api-reference/config/next-config-js/turbo)を参照してください。
+各機能フラグとそのステータスの詳細な内訳については、[Turbopack APIリファレンス](/docs/app/api-reference/config/next-config-js/turbopack)を参照してください。
 
 ## 設定 {#configuration}
 
-Turbopackは、`next.config.js`（または`next.config.ts`）の`experimental.turbo`キーの下で構成できます。設定オプションには以下が含まれます：
+Turbopackは、`next.config.js`（または`next.config.ts`）の`turbopack`キーの下で設定できます。設定オプションには以下が含まれます：
 
 - **`rules`**
-  ファイル変換のための追加の[webpackローダー](/docs/app/api-reference/config/next-config-js/turbo#configuring-webpack-loaders)を定義します。
+  ファイル変換のための追加の[webpackローダー](/docs/app/api-reference/config/next-config-js/turbopack#configuring-webpack-loaders)を定義します。
 - **`resolveAlias`**
   手動エイリアスを作成します（webpackの`resolve.alias`に類似）。
 - **`resolveExtensions`**
   モジュール解決のためのファイル拡張子を変更または拡張します。
-- **`moduleIdStrategy`**
+- **`moduleIds`**
   モジュールIDの生成方法を設定します（`'named'` vs `'deterministic'`）。
 - **`treeShaking`**
   開発および将来のプロダクションビルドでのツリーシェイキングを有効または無効にします。
@@ -139,19 +137,17 @@ Turbopackは、`next.config.js`（または`next.config.ts`）の`experimental.t
 
 ```js title="next.config.js"
 module.exports = {
-  experimental: {
-    turbo: {
-      // 例：エイリアスとカスタムファイル拡張子の追加
-      resolveAlias: {
-        underscore: 'lodash',
-      },
-      resolveExtensions: ['.mdx', '.tsx', '.ts', '.jsx', '.js', '.json'],
+  turbopack: {
+    // 例：エイリアスとカスタムファイル拡張子の追加
+    resolveAlias: {
+      underscore: 'lodash',
     },
+    resolveExtensions: ['.mdx', '.tsx', '.ts', '.jsx', '.js', '.json'],
   },
 }
 ```
 
-より詳細な設定例については、[Turbopack設定ドキュメント](/docs/app/api-reference/config/next-config-js/turbo)を参照してください。
+より詳細な設定例については、[Turbopack設定ドキュメント](/docs/app/api-reference/config/next-config-js/turbopack)を参照してください。
 
 ## パフォーマンスデバッグのためのトレースファイルの生成 {#generating-trace-files-for-performance-debugging}
 
@@ -161,10 +157,17 @@ module.exports = {
 NEXT_TURBOPACK_TRACING=1 next dev --turbopack
 ```
 
-これにより、`.next/trace-turbopack`ファイルが生成されます。そのファイルを[Next.jsリポジトリ](https://github.com/vercel/next.js)でGitHubの問題を作成する際に含めてください。調査の手助けになります。
+これにより、`.next/trace-turbopack`ファイルが生成されます。そのファイルを[Next.jsリポジトリ](https://github.com/vercel/next.js)でGitHubの問題を作成する際に含めてください。調査の手助けとなります。
 
 ## まとめ {#summary}
 
-Turbopackは、特に大規模なアプリケーションにおいて、ローカル開発とビルドを高速化するために設計された**Rustベース**の**インクリメンタル**バンドラーです。Next.jsに統合されており、ゼロコンフィグのCSS、React、TypeScriptサポートを提供します。
+Turbopackは、**Rustベース**の**インクリメンタル**バンドラーで、特に大規模なアプリケーションのローカル開発とビルドを高速化するために設計されています。Next.jsに統合されており、ゼロコンフィグのCSS、React、TypeScriptサポートを提供します。
 
-Turbopackの改善とプロダクションビルドサポートの追加に向けて、今後の更新をお楽しみに。それまでの間、`next dev --turbopack`を試して、フィードバックをお寄せください。
+Turbopackの改善とプロダクションビルドサポートの追加を続けていく中で、さらなる更新をお待ちください。その間、`next dev --turbopack`を試してみて、フィードバックをお寄せください。
+
+## バージョン履歴 {#version-changes}
+
+| バージョン | 変更内容                 |
+| ---------- | ------------------------ |
+| `v15.3.0`  | `build`の実験的サポート  |
+| `v15.0.0`  | `dev`用のTurbopackが安定 |
