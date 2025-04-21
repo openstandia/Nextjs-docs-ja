@@ -1,0 +1,1032 @@
+---
+title: 'Pages から App Router への移行方法'
+nav_title: 'App Router'
+description: '既存の Next.js アプリケーションを Pages Router から App Router にアップグレードする方法を学びます。'
+---
+
+このガイドでは、以下のことをサポートします：
+
+- [Next.js アプリケーションをバージョン 12 からバージョン 13 に更新する](#nextjs-version)
+- [`pages` ディレクトリと `app` ディレクトリの両方で動作する機能をアップグレードする](#upgrading-new-features)
+- [既存のアプリケーションを `pages` から `app` に段階的に移行する](#migrating-from-pages-to-app)
+
+## アップグレード {#upgrading}
+
+### Node.js バージョン {#node-js-version}
+
+最低限必要な Node.js のバージョンは **v18.17** です。詳細は [Node.js のドキュメント](https://nodejs.org/docs/latest-v18.x/api/)を参照してください。
+
+### Next.js バージョン {#next-js-version}
+
+Next.js バージョン 13 に更新するには、お好みのパッケージマネージャーを使用して次のコマンドを実行してください：
+
+```bash title="Terminal"
+npm install next@latest react@latest react-dom@latest
+```
+
+### ESLint バージョン {#eslint-version}
+
+ESLint を使用している場合、ESLint のバージョンをアップグレードする必要があります：
+
+```bash title="Terminal"
+npm install -D eslint-config-next@latest
+```
+
+> **Good to know**: ESLint の変更を反映させるために、VS Code で ESLint サーバーを再起動する必要があるかもしれません。コマンドパレット（Mac では `cmd+shift+p`、Windows では `ctrl+shift+p`）を開き、`ESLint: Restart ESLint Server` を検索してください。
+
+## 次のステップ {#next-steps}
+
+更新が完了したら、次のセクションを参照して次のステップを確認してください：
+
+- [新機能のアップグレード](#upgrading-new-features)：改良された Image コンポーネントや Link コンポーネントなどの新機能にアップグレードするためのガイド。
+- [`pages` から `app` ディレクトリへの移行](#migrating-from-pages-to-app)：`pages` から `app` ディレクトリに段階的に移行するためのステップバイステップガイド。
+
+## 新機能のアップグレード {#upgrading-new-features}
+
+Next.js 13 では、新しい機能と規約を備えた新しい [App Router](/docs/app/building-your-application/routing) が導入されました。新しい Router は `app` ディレクトリで利用可能で、`pages` ディレクトリと共存します。
+
+Next.js 13 へのアップグレードは、App Router の使用を必須としません。`pages` を引き続き使用し、両方のディレクトリで動作する新機能を利用できます。例えば、更新された [Image コンポーネント](#image-component)、[Link コンポーネント](#link-component)、[Script コンポーネント](#script-component)、および [Font 最適化](#font-optimization) などです。
+
+### `<Image/>` コンポーネント {#image-component}
+
+Next.js 12 では、`next/future/image` という一時的なインポートを使用して Image コンポーネントに新しい改善が導入されました。これらの改善には、クライアントサイドの JavaScript の削減、画像の拡張やスタイルの簡素化、アクセシビリティの向上、ネイティブブラウザの遅延読み込みが含まれます。
+
+バージョン 13 では、この新しい動作が `next/image` のデフォルトになりました。
+
+新しい Image コンポーネントへの移行を支援するために、2 つの codemod が用意されています：
+
+- [**`next-image-to-legacy-image` codemod**](/docs/app/guides/upgrading/codemods#next-image-to-legacy-image)：`next/image` のインポートを `next/legacy/image` に安全かつ自動的にリネームします。既存のコンポーネントは同じ動作を維持します。
+- [**`next-image-experimental` codemod**](/docs/app/guides/upgrading/codemods#next-image-experimental)：インラインスタイルを危険に追加し、未使用の props を削除します。これにより、既存のコンポーネントの動作が新しいデフォルトに一致するように変更されます。この codemod を使用するには、最初に `next-image-to-legacy-image` codemod を実行する必要があります。
+
+### `<Link>` コンポーネント {#link-component}
+
+[`<Link>` コンポーネント](/docs/app/building-your-application/routing/linking-and-navigating#link-component) は、子として `<a>` タグを手動で追加する必要がなくなりました。この動作は [バージョン 12.2](https://nextjs.org/blog/next-12-2) で実験的なオプションとして追加され、現在はデフォルトです。Next.js 13 では、`<Link>` は常に `<a>` をレンダリングし、props を基礎となるタグに転送できるようになりました。
+
+例：
+
+```jsx
+import Link from 'next/link'
+
+// Next.js 12: `<a>` はネストされていないと除外されます
+<Link href="/about">
+  <a>About</a>
+</Link>
+
+// Next.js 13: `<Link>` は常に内部で `<a>` をレンダリングします
+<Link href="/about">
+  About
+</Link>
+```
+
+Next.js 13 にリンクをアップグレードするには、[`new-link` codemod](/docs/app/guides/upgrading/codemods#new-link) を使用できます。
+
+### `<Script>` コンポーネント {#script-component}
+
+[`next/script`](/docs/app/api-reference/components/script) の動作は、`pages` と `app` の両方をサポートするように更新されましたが、スムーズな移行を確保するためにいくつかの変更が必要です：
+
+- 以前 `_document.js` に含めていた `beforeInteractive` スクリプトを root レイアウトファイル（`app/layout.tsx`）に移動します。
+- 実験的な `worker` 戦略は `app` ではまだ動作しないため、この戦略で指定されたスクリプトは削除するか、別の戦略（例：`lazyOnload`）を使用するように変更する必要があります。
+- `onLoad`、`onReady`、`onError` ハンドラは Server Components では動作しないため、[Client Component](/docs/app/building-your-application/rendering/server-components) に移動するか、完全に削除してください。
+
+### Font 最適化 {#font-optimization}
+
+以前は、Next.js はフォント CSS をインライン化することでフォントを最適化していました。バージョン 13 では、新しい [`next/font`](/docs/app/building-your-application/optimizing/fonts) モジュールが導入され、フォントの読み込み体験をカスタマイズしながら、優れたパフォーマンスとプライバシーを確保できます。`next/font` は `pages` と `app` の両方のディレクトリでサポートされています。
+
+`pages` では CSS のインライン化がまだ機能しますが、`app` では機能しません。代わりに [`next/font`](/docs/app/building-your-application/optimizing/fonts) を使用する必要があります。
+
+`next/font` の使用方法については、[Font 最適化](/docs/app/building-your-application/optimizing/fonts) ページを参照してください。
+
+## `pages` から `app` への移行 {#migrating-from-pages-to-app}
+
+> **🎥 視聴:** App Router を段階的に採用する方法を学ぶ → [YouTube (16 分)](https://www.youtube.com/watch?v=YQMSietiFm0)。
+
+App Router への移行は、Next.js が基盤として構築している React の機能（Server Components、Suspense など）を初めて使用することになるかもしれません。新しい Next.js の機能（[特別なファイル](/docs/app/api-reference/file-conventions) や [レイアウト](/docs/app/api-reference/file-conventions/layout) など）と組み合わせることで、移行は新しい概念、メンタルモデル、学ぶべき動作の変化を意味します。
+
+これらの更新の複雑さを軽減するために、移行を小さなステップに分解することをお勧めします。`app` ディレクトリは、`pages` ディレクトリと同時に動作するように意図的に設計されており、ページごとに段階的に移行できます。
+
+- `app` ディレクトリはネストされたルートとレイアウトをサポートしています。[詳細はこちら](/docs/app/building-your-application/routing)。
+- ネストされたフォルダを使用してルートを定義し、特別な `page.js` ファイルを使用してルートセグメントを公開します。[詳細はこちら](#step-4-migrating-pages)。
+- [特別なファイルの規約](/docs/app/api-reference/file-conventions) は、各ルートセグメントの UI を作成するために使用されます。最も一般的な特別なファイルは `page.js` と `layout.js` です。
+  - `page.js` を使用して、ルートに固有の UI を定義します。
+  - `layout.js` を使用して、複数のルートで共有される UI を定義します。
+  - 特別なファイルには `.js`、`.jsx`、または `.tsx` の拡張子を使用できます。
+- `app` ディレクトリ内にコンポーネント、スタイル、テストなどの他のファイルを配置できます。[詳細はこちら](/docs/app/building-your-application/routing)。
+- `getServerSideProps` や `getStaticProps` などのデータフェッチ関数は、`app` 内の [新しい API](/docs/app/building-your-application/data-fetching) に置き換えられました。`getStaticPaths` は [`generateStaticParams`](/docs/app/api-reference/functions/generate-static-params) に置き換えられました。
+- `pages/_app.js` と `pages/_document.js` は、単一の `app/layout.js` root レイアウトに置き換えられました。[詳細はこちら](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required)。
+- `pages/_error.js` は、より細かい `error.js` 特別なファイルに置き換えられました。[詳細はこちら](/docs/app/building-your-application/routing/error-handling)。
+- `pages/404.js` は [`not-found.js`](/docs/app/api-reference/file-conventions/not-found) ファイルに置き換えられました。
+- `pages/api/*` API Routes は、[`route.js`](/docs/app/api-reference/file-conventions/route)（Route Handler）特別なファイルに置き換えられました。
+
+### ステップ 1: `app` ディレクトリの作成 {#step-1-creating-the-app-directory}
+
+最新の Next.js バージョンに更新します（13.4 以上が必要です）：
+
+```bash
+npm install next@latest
+```
+
+次に、プロジェクトの root（または `src/` ディレクトリ）に新しい `app` ディレクトリを作成します。
+
+### ステップ 2: Root レイアウトの作成 {#step-2-creating-a-root-layout}
+
+`app` ディレクトリ内に新しい `app/layout.tsx` ファイルを作成します。これは、`app` 内のすべてのルートに適用される [root レイアウト](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required) です。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+export default function RootLayout({
+  // レイアウトは children prop を受け入れる必要があります。
+  // これはネストされたレイアウトやページで埋められます
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export default function RootLayout({
+  // レイアウトは children prop を受け入れる必要があります。
+  // これはネストされたレイアウトやページで埋められます
+  children,
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+- `app` ディレクトリには **必ず** root レイアウトが含まれている必要があります。
+- root レイアウトは `<html>` と `<body>` タグを定義する必要があります。Next.js は自動的にこれらを作成しません。
+- root レイアウトは `pages/_app.tsx` と `pages/_document.tsx` ファイルを置き換えます。
+- レイアウトファイルには `.js`、`.jsx`、または `.tsx` の拡張子を使用できます。
+
+`<head>` HTML 要素を管理するには、[組み込みの SEO サポート](/docs/app/building-your-application/optimizing/metadata) を使用できます：
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/layout.tsx" switcher
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Home',
+  description: 'Welcome to Next.js',
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/layout.js" switcher
+export const metadata = {
+  title: 'Home',
+  description: 'Welcome to Next.js',
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### `_document.js` と `_app.js` の移行 {#migrating-document-js-and-app-js}
+
+既存の `_app` または `_document` ファイルがある場合、その内容（例：グローバルスタイル）を root レイアウト（`app/layout.tsx`）にコピーできます。`app/layout.tsx` のスタイルは `pages/*` には適用されません。移行中に `pages/*` ルートが壊れないように `_app`/`_document` を保持する必要があります。完全に移行が完了したら、それらを安全に削除できます。
+
+React Context プロバイダーを使用している場合、それらは [Client Component](/docs/app/building-your-application/rendering/client-components) に移動する必要があります。
+
+#### `getLayout()` パターンをレイアウトに移行する（オプション） {#migrating-the-getlayout-pattern-to-layouts-optional}
+
+Next.js は、`pages` ディレクトリでページごとのレイアウトを実現するために [ページコンポーネントにプロパティを追加することを推奨していました](https://nextjs.org/docs/canary/pages/building-your-application/routing/pages-and-layouts#layout-pattern#per-page-layouts)。このパターンは、`app` ディレクトリでの [ネストされたレイアウト](/docs/app/building-your-application/routing/layouts-and-templates#layouts) のネイティブサポートに置き換えることができます。
+
+<details>
+  <summary>前後の例を参照</summary>
+
+**前**
+
+```jsx title="components/DashboardLayout.js"
+export default function DashboardLayout({ children }) {
+  return (
+    <div>
+      <h2>My Dashboard</h2>
+      {children}
+    </div>
+  )
+}
+```
+
+```jsx title="pages/dashboard/index.js"
+import DashboardLayout from '../components/DashboardLayout'
+
+export default function Page() {
+  return <p>My Page</p>
+}
+
+Page.getLayout = function getLayout(page) {
+  return <DashboardLayout>{page}</DashboardLayout>
+}
+```
+
+**後**
+
+- `pages/dashboard/index.js` から `Page.getLayout` プロパティを削除し、`app` ディレクトリへの [ページ移行の手順](#step-4-migrating-pages) に従います。
+
+  ```jsx title="app/dashboard/page.js"
+  export default function Page() {
+    return <p>My Page</p>
+  }
+  ```
+
+- `DashboardLayout` の内容を新しい [Client Component](/docs/app/building-your-application/rendering/client-components) に移動して、`pages` ディレクトリの動作を保持します。
+
+  ```jsx title="app/dashboard/DashboardLayout.js"
+  'use client' // このディレクティブはファイルの先頭、インポートの前に配置する必要があります。
+
+  // これは Client Component です
+  export default function DashboardLayout({ children }) {
+    return (
+      <div>
+        <h2>My Dashboard</h2>
+        {children}
+      </div>
+    )
+  }
+  ```
+
+- `DashboardLayout` を `app` ディレクトリ内の新しい `layout.js` ファイルにインポートします。
+
+  ```jsx title="app/dashboard/layout.js"
+  import DashboardLayout from './DashboardLayout'
+
+  // これは Server Component です
+  export default function Layout({ children }) {
+    return <DashboardLayout>{children}</DashboardLayout>
+  }
+  ```
+
+- `DashboardLayout.js`（Client Component）の非インタラクティブな部分を `layout.js`（Server Component）に段階的に移動して、クライアントに送信するコンポーネント JavaScript の量を減らすことができます。
+
+</details>
+
+### ステップ 3: `next/head` の移行 {#step-3-migrating-next-head}
+
+`pages` ディレクトリでは、`next/head` React コンポーネントを使用して `title` や `meta` などの `<head>` HTML 要素を管理します。`app` ディレクトリでは、`next/head` は新しい [組み込みの SEO サポート](/docs/app/building-your-application/optimizing/metadata) に置き換えられます。
+
+**前：**
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/index.tsx" switcher
+import Head from 'next/head'
+
+export default function Page() {
+  return (
+    <>
+      <Head>
+        <title>My page title</title>
+      </Head>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/index.js" switcher
+import Head from 'next/head'
+
+export default function Page() {
+  return (
+    <>
+      <Head>
+        <title>My page title</title>
+      </Head>
+    </>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+**後：**
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'My Page Title',
+}
+
+export default function Page() {
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export const metadata = {
+  title: 'My Page Title',
+}
+
+export default function Page() {
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+[すべてのメタデータオプションを参照](/docs/app/api-reference/functions/generate-metadata)。
+
+### ステップ 4: ページの移行 {#step-4-migrating-pages}
+
+- [`app` ディレクトリ](/docs/app/building-your-application/routing) のページはデフォルトで [Server Components](/docs/app/building-your-application/rendering/server-components) です。これは、`pages` ディレクトリのページが [Client Components](/docs/app/building-your-application/rendering/client-components) であるのとは異なります。
+- `app` での [データフェッチ](/docs/app/building-your-application/data-fetching) は変更されました。`getServerSideProps`、`getStaticProps`、`getInitialProps` はよりシンプルな API に置き換えられました。
+- `app` ディレクトリはネストされたフォルダを使用してルートを定義し、特別な `page.js` ファイルを使用してルートセグメントを公開します。
+- | `pages` ディレクトリ | `app` ディレクトリ    | ルート         |
+  | -------------------- | --------------------- | -------------- |
+  | `index.js`           | `page.js`             | `/`            |
+  | `about.js`           | `about/page.js`       | `/about`       |
+  | `blog/[slug].js`     | `blog/[slug]/page.js` | `/blog/post-1` |
+
+ページの移行を 2 つの主要なステップに分解することをお勧めします：
+
+- ステップ 1: デフォルトでエクスポートされたページコンポーネントを新しい Client Component に移動します。
+- ステップ 2: 新しい Client Component を `app` ディレクトリ内の新しい `page.js` ファイルにインポートします。
+
+> **Good to know**: これは `pages` ディレクトリと最も比較可能な動作を持つため、最も簡単な移行パスです。
+
+**ステップ 1: 新しい Client Component を作成する**
+
+- `app` ディレクトリ内に新しいファイル（例：`app/home-page.tsx` など）を作成し、Client Component をエクスポートします。Client Components を定義するには、ファイルの先頭（インポートの前）に `'use client'` ディレクティブを追加します。
+  - Pages Router と同様に、初回ページ読み込み時に Client Components を静的 HTML にプリレンダリングする [最適化ステップ](/docs/app/building-your-application/rendering/client-components#full-page-load) があります。
+- `pages/index.js` からデフォルトでエクスポートされたページコンポーネントを `app/home-page.tsx` に移動します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/home-page.tsx" switcher
+'use client'
+
+// これは Client Component です（`pages` ディレクトリのコンポーネントと同じ）
+// データを props として受け取り、状態とエフェクトにアクセスでき、
+// 初回ページ読み込み時にサーバーでプリレンダリングされます。
+export default function HomePage({ recentPosts }) {
+  return (
+    <div>
+      {recentPosts.map((post) => (
+        <div key={post.id}>{post.title}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/home-page.js" switcher
+'use client'
+
+// これは Client Component です。データを props として受け取り、
+// 状態とエフェクトにアクセスでき、`pages` ディレクトリのページコンポーネントと同様です。
+export default function HomePage({ recentPosts }) {
+  return (
+    <div>
+      {recentPosts.map((post) => (
+        <div key={post.id}>{post.title}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+**ステップ 2: 新しいページを作成する**
+
+- `app` ディレクトリ内に新しい `app/page.tsx` ファイルを作成します。これはデフォルトで Server Component です。
+- `home-page.tsx` Client Component をページにインポートします。
+- `pages/index.js` でデータをフェッチしていた場合、新しい [データフェッチ API](/docs/app/building-your-application/data-fetching/fetching) を使用してデータフェッチロジックを直接 Server Component に移動します。詳細については、[データフェッチのアップグレードガイド](#step-6-migrating-data-fetching-methods)を参照してください。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+// Client Component をインポートします
+import HomePage from './home-page'
+
+async function getPosts() {
+  const res = await fetch('https://...')
+  const posts = await res.json()
+  return posts
+}
+
+export default async function Page() {
+  // Server Component で直接データをフェッチします
+  const recentPosts = await getPosts()
+  // フェッチしたデータを Client Component に転送します
+  return <HomePage recentPosts={recentPosts} />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+// Client Component をインポートします
+import HomePage from './home-page'
+
+async function getPosts() {
+  const res = await fetch('https://...')
+  const posts = await res.json()
+  return posts
+}
+
+export default async function Page() {
+  // Server Component で直接データをフェッチします
+  const recentPosts = await getPosts()
+  // フェッチしたデータを Client Component に転送します
+  return <HomePage recentPosts={recentPosts} />
+}
+```
+
+</TabItem>
+</Tabs>
+
+- 以前のページで `useRouter` を使用していた場合、新しいルーティングフックに更新する必要があります。[詳細はこちら](/docs/app/api-reference/functions/use-router)。
+- 開発サーバーを起動し、[`http://localhost:3000`](http://localhost:3000) にアクセスします。`app` ディレクトリを通じて提供される既存のインデックスルートが表示されるはずです。
+
+### ステップ 5: ルーティングフックの移行 {#step-5-migrating-routing-hooks}
+
+新しいルーターが追加され、`app` ディレクトリでの新しい動作をサポートしています。
+
+`app` では、`next/navigation` からインポートされる 3 つの新しいフック：[`useRouter()`](/docs/app/api-reference/functions/use-router)、[`usePathname()`](/docs/app/api-reference/functions/use-pathname)、および [`useSearchParams()`](/docs/app/api-reference/functions/use-search-params) を使用する必要があります。
+
+- 新しい `useRouter` フックは `next/navigation` からインポートされ、`pages` の `useRouter` フックとは異なる動作をします。`pages` の `useRouter` フックは `next/router` からインポートされます。
+  - [`next/router` からインポートされる `useRouter` フック](https://nextjs.org/docs/canary/pages/api-reference/functions/use-router) は `app` ディレクトリではサポートされていませんが、`pages` ディレクトリでは引き続き使用できます。
+- 新しい `useRouter` は `pathname` 文字列を返しません。代わりに、別の `usePathname` フックを使用してください。
+- 新しい `useRouter` は `query` オブジェクトを返しません。検索パラメータと動的ルートパラメータは別々になりました。代わりに `useSearchParams` と `useParams` フックを使用してください。
+- `useSearchParams` と `usePathname` を一緒に使用してページの変更を監視できます。詳細は [Router Events](/docs/app/api-reference/functions/use-router#router-events) セクションを参照してください。
+- これらの新しいフックは Client Components でのみサポートされています。Server Components では使用できません。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/example-client-component.tsx" switcher
+'use client'
+
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+
+export default function ExampleClientComponent() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/example-client-component.js" switcher
+'use client'
+
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+
+export default function ExampleClientComponent() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+さらに、新しい `useRouter` フックには以下の変更があります：
+
+- `isFallback` は削除されました。`fallback` は [置き換えられました](#replacing-fallback)。
+- `locale`、`locales`、`defaultLocales`、`domainLocales` の値は削除されました。組み込みの i18n Next.js 機能は `app` ディレクトリでは不要です。[i18n について詳しくはこちら](/docs/app/building-your-application/routing/internationalization)。
+- `basePath` は削除されました。代替案は `useRouter` の一部ではありません。まだ実装されていません。
+- `asPath` は削除されました。新しいルーターから `as` の概念が削除されたためです。
+- `isReady` は削除されました。もはや必要ありません。[静的レンダリング](/docs/app/building-your-application/rendering/server-components#static-rendering-default) 中に、[`useSearchParams()`](/docs/app/api-reference/functions/use-search-params) フックを使用するコンポーネントはプリレンダリングステップをスキップし、代わりにクライアントで実行時にレンダリングされます。
+- `route` は削除されました。`usePathname` または `useSelectedLayoutSegments()` が代替手段を提供します。
+
+[`useRouter()` API リファレンスを表示](/docs/app/api-reference/functions/use-router)。
+
+#### `pages` と `app` 間でのコンポーネントの共有 {#sharing-components-between-pages-and-app}
+
+コンポーネントを `pages` と `app` ルーター間で互換性を保つために、[`next/compat/router` からの `useRouter` フック](https://nextjs.org/docs/canary/pages/api-reference/functions/use-router#the-nextcompatrouter-export) を参照してください。
+これは `pages` ディレクトリからの `useRouter` フックですが、ルーター間でコンポーネントを共有する際に使用することを意図しています。`app` ルーターでのみ使用する準備ができたら、新しい [`next/navigation` からの `useRouter`](/docs/app/api-reference/functions/use-router) に更新してください。
+
+### ステップ 6: データフェッチメソッドの移行 {#step-6-migrating-data-fetching-methods}
+
+`pages` ディレクトリでは、`getServerSideProps` と `getStaticProps` を使用してページのデータをフェッチします。`app` ディレクトリ内では、これらの以前のデータフェッチ関数は、`fetch()` と `async` React Server Components を基にした [よりシンプルな API](/docs/app/building-your-application/data-fetching) に置き換えられました。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+export default async function Page() {
+  // このリクエストは手動で無効化されるまでキャッシュされるべきです。
+  // `getStaticProps` に似ています。
+  // `force-cache` はデフォルトであり、省略可能です。
+  const staticData = await fetch(`https://...`, { cache: 'force-cache' })
+
+  // このリクエストは毎回リフェッチされるべきです。
+  // `getServerSideProps` に似ています。
+  const dynamicData = await fetch(`https://...`, { cache: 'no-store' })
+
+  // このリクエストは 10 秒の寿命でキャッシュされるべきです。
+  // `revalidate` オプションを持つ `getStaticProps` に似ています。
+  const revalidatedData = await fetch(`https://...`, {
+    next: { revalidate: 10 },
+  })
+
+  return <div>...</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+export default async function Page() {
+  // このリクエストは手動で無効化されるまでキャッシュされるべきです。
+  // `getStaticProps` に似ています。
+  // `force-cache` はデフォルトであり、省略可能です。
+  const staticData = await fetch(`https://...`, { cache: 'force-cache' })
+
+  // このリクエストは毎回リフェッチされるべきです。
+  // `getServerSideProps` に似ています。
+  const dynamicData = await fetch(`https://...`, { cache: 'no-store' })
+
+  // このリクエストは 10 秒の寿命でキャッシュされるべきです。
+  // `revalidate` オプションを持つ `getStaticProps` に似ています。
+  const revalidatedData = await fetch(`https://...`, {
+    next: { revalidate: 10 },
+  })
+
+  return <div>...</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### サーバーサイドレンダリング (`getServerSideProps`) {#server-side-rendering-getserversideprops}
+
+`pages` ディレクトリでは、`getServerSideProps` を使用してサーバー上でデータをフェッチし、ファイル内のデフォルトでエクスポートされた React コンポーネントに props を転送します。ページの初期 HTML はサーバーからプリレンダリングされ、その後ブラウザでページを「ハイドレート」（インタラクティブにする）します。
+
+```jsx title="pages/dashboard.js"
+// `pages` ディレクトリ
+
+export async function getServerSideProps() {
+  const res = await fetch(`https://...`)
+  const projects = await res.json()
+
+  return { props: { projects } }
+}
+
+export default function Dashboard({ projects }) {
+  return (
+    <ul>
+      {projects.map((project) => (
+        <li key={project.id}>{project.name}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+App Router では、[Server Components](/docs/app/building-your-application/rendering/server-components) を使用して React コンポーネント内にデータフェッチを配置できます。これにより、クライアントに送信する JavaScript の量を減らしながら、サーバーからレンダリングされた HTML を維持できます。
+
+`cache` オプションを `no-store` に設定することで、フェッチされたデータが [決してキャッシュされない](/docs/app/building-your-application/data-fetching/fetching) ことを示すことができます。これは `pages` ディレクトリの `getServerSideProps` に似ています。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/dashboard/page.tsx" switcher
+// `app` ディレクトリ
+
+// この関数は任意の名前を付けることができます
+async function getProjects() {
+  const res = await fetch(`https://...`, { cache: 'no-store' })
+  const projects = await res.json()
+
+  return projects
+}
+
+export default async function Dashboard() {
+  const projects = await getProjects()
+
+  return (
+    <ul>
+      {projects.map((project) => (
+        <li key={project.id}>{project.name}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/dashboard/page.js" switcher
+// `app` ディレクトリ
+
+// この関数は任意の名前を付けることができます
+async function getProjects() {
+  const res = await fetch(`https://...`, { cache: 'no-store' })
+  const projects = await res.json()
+
+  return projects
+}
+
+export default async function Dashboard() {
+  const projects = await getProjects()
+
+  return (
+    <ul>
+      {projects.map((project) => (
+        <li key={project.id}>{project.name}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### リクエストオブジェクトへのアクセス {#accessing-request-object}
+
+`pages` ディレクトリでは、Node.js HTTP API に基づいてリクエストベースのデータを取得できます。
+
+たとえば、`getServerSideProps` から `req` オブジェクトを取得し、リクエストの cookie やヘッダーを取得することができます。
+
+```jsx title="pages/index.js"
+// `pages` ディレクトリ
+
+export async function getServerSideProps({ req, query }) {
+  const authHeader = req.getHeaders()['authorization'];
+  const theme = req.cookies['theme'];
+
+  return { props: { ... }}
+}
+
+export default function Page(props) {
+  return ...
+}
+```
+
+`app` ディレクトリでは、リクエストデータを取得するための新しい読み取り専用関数が公開されています：
+
+- [`headers`](/docs/app/api-reference/functions/headers)：Web Headers API に基づいており、[Server Components](/docs/app/building-your-application/rendering/server-components) 内でリクエストヘッダーを取得するために使用できます。
+- [`cookies`](/docs/app/api-reference/functions/cookies)：Web Cookies API に基づいており、[Server Components](/docs/app/building-your-application/rendering/server-components) 内で cookie を取得するために使用できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+// `app` ディレクトリ
+import { cookies, headers } from 'next/headers'
+
+async function getData() {
+  const authHeader = (await headers()).get('authorization')
+
+  return '...'
+}
+
+export default async function Page() {
+  // `cookies` または `headers` を Server Components 内で
+  // 直接またはデータフェッチ関数内で使用できます
+  const theme = (await cookies()).get('theme')
+  const data = await getData()
+  return '...'
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+// `app` ディレクトリ
+import { cookies, headers } from 'next/headers'
+
+async function getData() {
+  const authHeader = (await headers()).get('authorization')
+
+  return '...'
+}
+
+export default async function Page() {
+  // `cookies` または `headers` を Server Components 内で
+  // 直接またはデータフェッチ関数内で使用できます
+  const theme = (await cookies()).get('theme')
+  const data = await getData()
+  return '...'
+}
+```
+
+</TabItem>
+</Tabs>
+
+#### 静的サイト生成 (`getStaticProps`) {#static-site-generation-getstaticprops}
+
+`pages` ディレクトリでは、`getStaticProps` 関数を使用してビルド時にページをプリレンダリングします。この関数は、外部 API からデータをフェッチしたり、データベースから直接データを取得したりして、ビルド中に生成されるページ全体にデータを渡すために使用できます。
+
+```jsx title="pages/index.js"
+// `pages` ディレクトリ
+
+export async function getStaticProps() {
+  const res = await fetch(`https://...`)
+  const projects = await res.json()
+
+  return { props: { projects } }
+}
+
+export default function Index({ projects }) {
+  return projects.map((project) => <div>{project.name}</div>)
+}
+```
+
+`app` ディレクトリでは、[`fetch()`](/docs/app/api-reference/functions/fetch) を使用したデータフェッチはデフォルトで `cache: 'force-cache'` となり、リクエストデータが手動で無効化されるまでキャッシュされます。これは `pages` ディレクトリの `getStaticProps` に似ています。
+
+```jsx title="app/page.js"
+// `app` ディレクトリ
+
+// この関数は任意の名前を付けることができます
+async function getProjects() {
+  const res = await fetch(`https://...`)
+  const projects = await res.json()
+
+  return projects
+}
+
+export default async function Index() {
+  const projects = await getProjects()
+
+  return projects.map((project) => <div>{project.name}</div>)
+}
+```
+
+#### 動的パス (`getStaticPaths`) {#dynamic-paths-getstaticpaths}
+
+`pages` ディレクトリでは、`getStaticPaths` 関数を使用してビルド時にプリレンダリングされる動的パスを定義します。
+
+```jsx title="pages/posts/[id].js"
+// `pages` ディレクトリ
+import PostLayout from '@/components/post-layout'
+
+export async function getStaticPaths() {
+  return {
+    paths: [{ params: { id: '1' } }, { params: { id: '2' } }],
+  }
+}
+
+export async function getStaticProps({ params }) {
+  const res = await fetch(`https://.../posts/${params.id}`)
+  const post = await res.json()
+
+  return { props: { post } }
+}
+
+export default function Post({ post }) {
+  return <PostLayout post={post} />
+}
+```
+
+`app` ディレクトリでは、`getStaticPaths` は [`generateStaticParams`](/docs/app/api-reference/functions/generate-static-params) に置き換えられました。
+
+[`generateStaticParams`](/docs/app/api-reference/functions/generate-static-params) は `getStaticPaths` と同様に動作しますが、ルートパラメータを返すための簡素化された API を持ち、[レイアウト](/docs/app/building-your-application/routing/layouts-and-templates) 内で使用できます。`generateStaticParams` の戻り値の形状は、ネストされた `param` オブジェクトの配列ではなく、解決されたパスの文字列の配列です。
+
+```jsx title="app/posts/[id]/page.js"
+// `app` ディレクトリ
+import PostLayout from '@/components/post-layout'
+
+export async function generateStaticParams() {
+  return [{ id: '1' }, { id: '2' }]
+}
+
+async function getPost(params) {
+  const res = await fetch(`https://.../posts/${(await params).id}`)
+  const post = await res.json()
+
+  return post
+}
+
+export default async function Post({ params }) {
+  const post = await getPost(params)
+
+  return <PostLayout post={post} />
+}
+```
+
+`app` ディレクトリの新しいモデルには `generateStaticParams` という名前が `getStaticPaths` よりも適しています。`get` プレフィックスは、`getStaticProps` や `getServerSideProps` がもはや必要ないため、より説明的な `generate` に置き換えられました。`Paths` サフィックスは、複数の動的セグメントを持つネストされたルーティングにより適した `Params` に置き換えられました。
+
+---
+
+#### `fallback` の置き換え {#replacing-fallback}
+
+`pages` ディレクトリでは、`getStaticPaths` から返される `fallback` プロパティを使用して、ビルド時にプリレンダリングされていないページの動作を定義します。このプロパティは、ページが生成されている間にフォールバックページを表示するために `true` に設定したり、404 ページを表示するために `false` に設定したり、リクエスト時にページを生成するために `blocking` に設定したりできます。
+
+```jsx title="pages/posts/[id].js"
+// `pages` ディレクトリ
+
+export async function getStaticPaths() {
+  return {
+    paths: [],
+    fallback: 'blocking'
+  };
+}
+
+export async function getStaticProps({ params }) {
+  ...
+}
+
+export default function Post({ post }) {
+  return ...
+}
+```
+
+`app` ディレクトリでは、[`config.dynamicParams` プロパティ](/docs/app/api-reference/file-conventions/route-segment-config#dynamicparams) が [`generateStaticParams`](/docs/app/api-reference/functions/generate-static-params) の外部でのパラメータの処理方法を制御します：
+
+- **`true`**: （デフォルト）`generateStaticParams` に含まれていない動的セグメントはオンデマンドで生成されます。
+- **`false`**: `generateStaticParams` に含まれていない動的セグメントは 404 を返します。
+
+これは、`pages` ディレクトリの `getStaticPaths` の `fallback: true | false | 'blocking'` オプションを置き換えます。`dynamicParams` には `fallback: 'blocking'` オプションは含まれていません。ストリーミングでは `'blocking'` と `true` の違いはわずかです。
+
+```jsx title="app/posts/[id]/page.js"
+// `app` ディレクトリ
+
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  return [...]
+}
+
+async function getPost(params) {
+  ...
+}
+
+export default async function Post({ params }) {
+  const post = await getPost(params);
+
+  return ...
+}
+```
+
+[`dynamicParams`](/docs/app/api-reference/file-conventions/route-segment-config#dynamicparams) が `true`（デフォルト）に設定されている場合、生成されていないルートセグメントがリクエストされると、サーバーレンダリングされてキャッシュされます。
+
+#### インクリメンタル静的再生成 (`getStaticProps` with `revalidate`) {#incremental-static-regeneration-getstaticprops-with-revalidate}
+
+`pages` ディレクトリでは、`getStaticProps` 関数を使用して、一定時間後にページを自動的に再生成するための `revalidate` フィールドを追加できます。
+
+```jsx title="pages/index.js"
+// `pages` ディレクトリ
+
+export async function getStaticProps() {
+  const res = await fetch(`https://.../posts`)
+  const posts = await res.json()
+
+  return {
+    props: { posts },
+    revalidate: 60,
+  }
+}
+
+export default function Index({ posts }) {
+  return (
+    <Layout>
+      <PostList posts={posts} />
+    </Layout>
+  )
+}
+```
+
+`app` ディレクトリでは、[`fetch()`](/docs/app/api-reference/functions/fetch) を使用したデータフェッチで `revalidate` を使用でき、指定された秒数の間リクエストをキャッシュします。
+
+```jsx title="app/page.js"
+// `app` ディレクトリ
+
+async function getPosts() {
+  const res = await fetch(`https://.../posts`, { next: { revalidate: 60 } })
+  const data = await res.json()
+
+  return data.posts
+}
+
+export default async function PostList() {
+  const posts = await getPosts()
+
+  return posts.map((post) => <div>{post.name}</div>)
+}
+```
+
+#### API ルート {#api-routes}
+
+API ルートは、`pages/api` ディレクトリで変更なしに動作し続けます。ただし、`app` ディレクトリでは [Route Handlers](/docs/app/building-your-application/routing/route-handlers) に置き換えられました。
+
+Route Handlers を使用すると、Web [Request](https://developer.mozilla.org/docs/Web/API/Request) および [Response](https://developer.mozilla.org/docs/Web/API/Response) API を使用して、特定のルートのカスタムリクエストハンドラを作成できます。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/route.ts" switcher
+export async function GET(request: Request) {}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/route.js" switcher
+export async function GET(request) {}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: 以前にクライアントから外部 API を呼び出すために API ルートを使用していた場合、代わりに [Server Components](/docs/app/building-your-application/rendering/server-components) を使用してデータを安全にフェッチできます。[データフェッチ](/docs/app/building-your-application/data-fetching/fetching) について詳しく学びましょう。
+
+#### シングルページアプリケーション {#single-page-applications}
+
+同時にシングルページアプリケーション（SPA）から Next.js に移行する場合は、[ドキュメント](/docs/app/guides/single-page-applications) を参照して詳細を学びましょう。
+
+### ステップ 7: スタイリング {#step-7-styling}
+
+`pages` ディレクトリでは、グローバルスタイルシートは `pages/_app.js` のみに制限されています。`app` ディレクトリでは、この制限が解除されました。グローバルスタイルは任意のレイアウト、ページ、またはコンポーネントに追加できます。
+
+- [CSS Modules](/docs/app/building-your-application/styling/css#css-modules)
+- [Tailwind CSS](/docs/app/building-your-application/styling/tailwind-css)
+- [グローバルスタイル](/docs/app/building-your-application/styling/css#global-styles)
+- [CSS-in-JS](/docs/app/building-your-application/styling/css-in-js)
+- [外部スタイルシート](/docs/app/building-your-application/styling/css#external-stylesheets)
+- [Sass](/docs/app/building-your-application/styling/sass)
+
+#### Tailwind CSS {#tailwind-css}
+
+Tailwind CSS を使用している場合、`tailwind.config.js` ファイルに `app` ディレクトリを追加する必要があります：
+
+```js title="tailwind.config.js"
+module.exports = {
+  content: [
+    './app/**/*.{js,ts,jsx,tsx,mdx}', // <-- この行を追加
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+}
+```
+
+また、グローバルスタイルを `app/layout.js` ファイルにインポートする必要があります：
+
+```jsx title="app/layout.js"
+import '../styles/globals.css'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+[Tailwind CSS を使用したスタイリング](/docs/app/building-your-application/styling/tailwind-css) について詳しく学びましょう。
+
+## App Router と Pages Router の併用 {#using-app-router-together-with-pages-router}
+
+異なる Next.js ルーターによって提供されるルート間をナビゲートする際には、ハードナビゲーションが発生します。`next/link` を使用した自動リンクプリフェッチは、ルーター間でプリフェッチを行いません。
+
+代わりに、App Router と Pages Router 間のナビゲーションを最適化して、プリフェッチされた高速なページ遷移を維持できます。[詳細はこちら](https://vercel.com/guides/optimizing-hard-navigations)。
+
+## Codemods {#codemods}
+
+Next.js は、機能が非推奨になったときにコードベースをアップグレードするのに役立つ Codemod 変換を提供します。詳細は [Codemods](/docs/app/guides/upgrading/codemods) を参照してください。

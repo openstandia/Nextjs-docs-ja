@@ -1,0 +1,166 @@
+---
+title: 'Next.js アプリケーションを本番環境向けに最適化する方法'
+nav_title: 'Production'
+description: 'Next.js アプリケーションを本番環境に移行する前に、最高のパフォーマンスとユーザーエクスペリエンスを確保するための推奨事項。'
+---
+
+Next.js アプリケーションを本番環境に移行する前に、最適なユーザーエクスペリエンス、パフォーマンス、セキュリティを実現するために考慮すべき最適化とパターンがあります。
+
+このページでは、[アプリケーションを構築する際](#during-development)、[本番環境に移行する前](#before-going-to-production)、および[デプロイ後](#after-deployment)に使用できるベストプラクティスと、知っておくべき[Next.js の自動最適化](#automatic-optimizations)について説明します。
+
+## 自動最適化 {#automatic-optimizations}
+
+これらの Next.js の最適化はデフォルトで有効になっており、設定は不要です：
+
+<AppOnly>
+
+- **[Server Components](/docs/app/building-your-application/rendering/server-components):** Next.js はデフォルトで Server Components を使用します。Server Components はサーバー上で実行され、クライアントでのレンダリングに JavaScript を必要としません。そのため、クライアント側の JavaScript バンドルのサイズに影響を与えません。必要に応じて、インタラクティブ性のために [Client Components](/docs/app/building-your-application/rendering/client-components) を使用できます。
+- **[コード分割](/docs/app/building-your-application/routing/linking-and-navigating#how-routing-and-navigation-works):** Server Components はルートセグメントごとに自動的にコード分割を行います。適切な場合には、Client Components やサードパーティライブラリの[遅延読み込み](/docs/app/building-your-application/optimizing/lazy-loading)も検討してください。
+- **[プリフェッチ](/docs/app/building-your-application/routing/linking-and-navigating#2-prefetching):** 新しいルートへのリンクがユーザーのビューポートに入ると、Next.js はバックグラウンドでそのルートをプリフェッチします。これにより、新しいルートへのナビゲーションがほぼ瞬時に行われます。適切な場合には、プリフェッチをオプトアウトすることもできます。
+- **[静的レンダリング](/docs/app/building-your-application/rendering/server-components#static-rendering-default):** Next.js はビルド時にサーバー上で Server と Client Components を静的にレンダリングし、レンダリング結果をキャッシュしてアプリケーションのパフォーマンスを向上させます。特定のルートに対しては、適切な場合に[動的レンダリング](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)を選択できます。{/* TODO: PPR が安定したら更新 */}
+- **[キャッシング](/docs/app/building-your-application/caching):** Next.js はデータリクエスト、Server と Client Components のレンダリング結果、静的アセットなどをキャッシュし、サーバー、データベース、バックエンドサービスへのネットワークリクエストの数を減らします。適切な場合には、キャッシングをオプトアウトすることもできます。
+
+</AppOnly>
+
+<PagesOnly>
+
+- **[コード分割](https://nextjs.org/docs/canary/pages/building-your-application/routing/pages-and-layouts):** Next.js は自動的にアプリケーションコードをページごとにコード分割します。これにより、ナビゲーション時に現在のページに必要なコードのみが読み込まれます。適切な場合には、サードパーティライブラリの[遅延読み込み](https://nextjs.org/docs/canary/pages/building-your-application/optimizing/lazy-loading)も検討してください。
+- **[プリフェッチ](https://nextjs.org/docs/canary/pages/api-reference/components/link#prefetch):** 新しいルートへのリンクがユーザーのビューポートに入ると、Next.js はバックグラウンドでそのルートをプリフェッチします。これにより、新しいルートへのナビゲーションがほぼ瞬時に行われます。適切な場合には、プリフェッチをオプトアウトすることもできます。
+- **[自動静的最適化](https://nextjs.org/docs/canary/pages/building-your-application/rendering/automatic-static-optimization):** Next.js は、ページにブロッキングデータ要件がない場合、そのページが静的（事前レンダリング可能）であると自動的に判断します。最適化されたページはキャッシュされ、複数の CDN ロケーションからエンドユーザーに提供されます。適切な場合には、[サーバーサイドレンダリング](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/get-server-side-props)を選択できます。
+
+</PagesOnly>
+
+これらのデフォルト設定は、アプリケーションのパフォーマンスを向上させ、各ネットワークリクエストで転送されるデータのコストと量を削減することを目的としています。
+
+## 開発中 {#during-development}
+
+アプリケーションを構築する際には、最高のパフォーマンスとユーザーエクスペリエンスを確保するために、次の機能を使用することをお勧めします：
+
+### ルーティングとレンダリング {#routing-and-rendering}
+
+<AppOnly>
+
+- **[レイアウト](/docs/app/building-your-application/routing/layouts-and-templates#layouts):** レイアウトを使用してページ間で UI を共有し、ナビゲーション時に[部分レンダリング](/docs/app/building-your-application/routing/linking-and-navigating#4-partial-rendering)を有効にします。
+- **[`<Link>` コンポーネント](/docs/app/building-your-application/routing/linking-and-navigating#link-component):** `<Link>` コンポーネントを使用して、[クライアントサイドのナビゲーションとプリフェッチ](/docs/app/building-your-application/routing/linking-and-navigating#how-routing-and-navigation-works)を行います。
+- **[エラーハンドリング](/docs/app/building-your-application/routing/error-handling):** カスタムエラーページを作成して、[キャッチオールエラー](/docs/app/building-your-application/routing/error-handling)や[404 エラー](/docs/app/api-reference/file-conventions/not-found)を本番環境で優雅に処理します。
+- **[コンポジションパターン](/docs/app/building-your-application/rendering/composition-patterns):** Server と Client Components の推奨されるコンポジションパターンに従い、クライアントサイドの JavaScript バンドルを不必要に増やさないように、[`"use client"` 境界](/docs/app/building-your-application/rendering/composition-patterns#moving-client-components-down-the-tree)の配置を確認します。
+- **[動的 API](/docs/app/building-your-application/rendering/server-components#dynamic-apis):** [`cookies`](/docs/app/api-reference/functions/cookies) や [`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional) prop などの動的 API は、ルート全体を[動的レンダリング](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)にオプトインさせることに注意してください（[Root Layout](/docs/app/building-your-application/routing/layouts-and-templates#root-layout-required)で使用される場合はアプリケーション全体）。動的 API の使用が意図的であることを確認し、適切な場合には `<Suspense>` 境界でラップします。
+
+> **Good to know**: [部分的事前レンダリング（実験的）](https://nextjs.org/blog/next-14#partial-prerendering-preview)により、ルートの一部を動的にしながら、ルート全体を動的レンダリングにオプトインさせないことが可能になります。
+
+</AppOnly>
+
+<PagesOnly>
+
+- **[`<Link>` コンポーネント](https://nextjs.org/docs/canary/pages/building-your-application/routing/linking-and-navigating):** クライアントサイドのナビゲーションとプリフェッチのために `<Link>` コンポーネントを使用します。
+- **[カスタムエラー](https://nextjs.org/docs/canary/pages/building-your-application/routing/custom-error):** [500](https://nextjs.org/docs/canary/pages/building-your-application/routing/custom-error#500-page) や [404 エラー](https://nextjs.org/docs/canary/pages/building-your-application/routing/custom-error#404-page)を本番環境で優雅に処理します。
+
+</PagesOnly>
+
+### データ取得とキャッシング {#data-fetching-and-caching}
+
+<AppOnly>
+
+- **[Server Components](/docs/app/building-your-application/data-fetching/fetching):** Server Components を使用してサーバー上でデータを取得する利点を活用します。
+- **[ルートハンドラー](/docs/app/building-your-application/routing/route-handlers):** ルートハンドラーを使用して、Client Components からバックエンドリソースにアクセスします。ただし、Server Components からルートハンドラーを呼び出して追加のサーバーリクエストを避けることはしないでください。
+- **[ストリーミング](/docs/app/building-your-application/routing/loading-ui-and-streaming):** Loading UI と React Suspense を使用して、サーバーからクライアントに UI を段階的に送信し、データが取得されている間にルート全体がブロックされるのを防ぎます。
+- **[並列データ取得](/docs/app/building-your-application/data-fetching/fetching#parallel-and-sequential-data-fetching):** 適切な場合には、データを並列に取得してネットワークウォーターフォールを減らします。また、適切な場合には[データのプリロード](/docs/app/building-your-application/data-fetching/fetching#preloading-data)も検討してください。
+- **[データキャッシング](/docs/app/building-your-application/caching#data-cache):** データリクエストがキャッシュされているかどうかを確認し、適切な場合にはキャッシングを選択します。`fetch` を使用しないリクエストが[キャッシュ](/docs/app/api-reference/functions/unstable_cache)されていることを確認します。
+- **[静的画像](/docs/app/building-your-application/optimizing/static-assets):** `public` ディレクトリを使用して、アプリケーションの静的アセット（例：画像）を自動的にキャッシュします。
+
+</AppOnly>
+
+<PagesOnly>
+
+- **[API ルート](https://nextjs.org/docs/canary/pages/building-your-application/routing/api-routes):** ルートハンドラーを使用してバックエンドリソースにアクセスし、クライアントに機密情報が漏れないようにします。
+- **[データキャッシング](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/get-static-props):** データリクエストがキャッシュされているかどうかを確認し、適切な場合にはキャッシングを選択します。`getStaticProps` を使用しないリクエストが適切にキャッシュされていることを確認します。
+- **[インクリメンタル静的再生成](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/incremental-static-regeneration):** インクリメンタル静的再生成を使用して、サイト全体を再構築することなく、ビルド後に静的ページを更新します。
+- **[静的画像](https://nextjs.org/docs/canary/pages/building-your-application/optimizing/static-assets):** `public` ディレクトリを使用して、アプリケーションの静的アセット（例：画像）を自動的にキャッシュします。
+
+</PagesOnly>
+
+### UI とアクセシビリティ {#ui-and-accessibility}
+
+<AppOnly>
+
+- **[フォームとバリデーション](/docs/app/building-your-application/data-fetching/server-actions-and-mutations#forms):** Server Actions を使用してフォームの送信、サーバーサイドのバリデーション、エラーハンドリングを行います。
+
+</AppOnly>
+
+- **[フォントモジュール](/docs/app/building-your-application/optimizing/fonts):** フォントモジュールを使用してフォントを最適化し、フォントファイルを他の静的アセットと共に自動的にホストし、外部ネットワークリクエストを削減し、[レイアウトシフト](https://web.dev/articles/cls)を減少させます。
+- **[`<Image>` コンポーネント](/docs/app/building-your-application/optimizing/images):** Image コンポーネントを使用して画像を最適化し、レイアウトシフトを防ぎ、WebP などの最新フォーマットで提供します。
+- **[`<Script>` コンポーネント](/docs/app/building-your-application/optimizing/scripts):** Script コンポーネントを使用してサードパーティスクリプトを最適化し、スクリプトを自動的に遅延させ、メインスレッドをブロックしないようにします。
+- **[ESLint](/docs/architecture/accessibility#linting):** 組み込みの `eslint-plugin-jsx-a11y` プラグインを使用して、アクセシビリティの問題を早期にキャッチします。
+
+### セキュリティ {#security}
+
+<AppOnly>
+
+- **[汚染](/docs/app/building-your-application/data-fetching/fetching#preventing-sensitive-data-from-being-exposed-to-the-client):** データオブジェクトや特定の値を汚染することで、クライアントに機密データが漏れないようにします。
+- **[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations#authentication-and-authorization):** ユーザーが Server Actions を呼び出す権限を持っていることを確認します。推奨される[セキュリティプラクティス](https://nextjs.org/blog/security-nextjs-server-components-actions)を確認してください。
+
+</AppOnly>
+
+- **[環境変数](/docs/app/building-your-application/configuring/environment-variables):** `.env.*` ファイルが `.gitignore` に追加されていることを確認し、公開変数のみが `NEXT_PUBLIC_` でプレフィックスされていることを確認します。
+- **[コンテンツセキュリティポリシー](/docs/app/building-your-application/configuring/content-security-policy):** クロスサイトスクリプティング、クリックジャッキング、その他のコードインジェクション攻撃など、さまざまなセキュリティ脅威からアプリケーションを保護するために、コンテンツセキュリティポリシーを追加することを検討してください。
+
+### メタデータと SEO {#metadata-and-seo}
+
+<AppOnly>
+
+- **[メタデータ API](/docs/app/building-your-application/optimizing/metadata):** メタデータ API を使用して、ページタイトル、説明などを追加し、アプリケーションの検索エンジン最適化（SEO）を向上させます。
+- **[Open Graph (OG) 画像](/docs/app/api-reference/file-conventions/metadata/opengraph-image):** アプリケーションをソーシャルシェアリングに備えるために OG 画像を作成します。
+- **[サイトマップ](/docs/app/api-reference/functions/generate-sitemaps) と [ロボット](/docs/app/api-reference/file-conventions/metadata/robots):** サイトマップとロボットファイルを生成して、検索エンジンがページをクロールしインデックスするのを助けます。
+
+</AppOnly>
+
+<PagesOnly>
+
+- **[`<Head>` コンポーネント](https://nextjs.org/docs/canary/pages/api-reference/components/head):** `next/head` コンポーネントを使用して、ページタイトル、説明などを追加します。
+
+</PagesOnly>
+
+### 型安全性 {#type-safety}
+
+- **TypeScript と [TS プラグイン](/docs/app/api-reference/config/typescript):** 型安全性を向上させ、エラーを早期にキャッチするために TypeScript と TypeScript プラグインを使用します。
+
+## 本番環境に移行する前 {#before-going-to-production}
+
+本番環境に移行する前に、`next build` を実行してローカルでアプリケーションをビルドし、ビルドエラーをキャッチし、その後 `next start` を実行して本番環境に近い環境でアプリケーションのパフォーマンスを測定します。
+
+### Core Web Vitals {#core-web-vitals}
+
+- **[Lighthouse](https://developers.google.com/web/tools/lighthouse):** インコグニートモードで Lighthouse を実行して、ユーザーがサイトをどのように体験するかをよりよく理解し、改善の余地を特定します。これはシミュレートされたテストであり、Core Web Vitals などのフィールドデータを確認することと組み合わせて使用するべきです。
+
+<AppOnly>
+
+- **[`useReportWebVitals` フック](/docs/app/api-reference/functions/use-report-web-vitals):** このフックを使用して、[Core Web Vitals](https://web.dev/articles/vitals) データを分析ツールに送信します。
+
+</AppOnly>
+
+### バンドルの分析 {#analyzing-bundles}
+
+[`@next/bundle-analyzer` プラグイン](/docs/app/building-your-application/optimizing/package-bundling#analyzing-javascript-bundles)を使用して、JavaScript バンドルのサイズを分析し、アプリケーションのパフォーマンスに影響を与える可能性のある大きなモジュールや依存関係を特定します。
+
+さらに、次のツールを使用して、アプリケーションに新しい依存関係を追加する影響を理解することができます：
+
+- [Import Cost](https://marketplace.visualstudio.com/items?itemName=wix.vscode-import-cost)
+- [Package Phobia](https://packagephobia.com/)
+- [Bundle Phobia](https://bundlephobia.com/)
+- [bundlejs](https://bundlejs.com/)
+
+## デプロイ後 {#after-deployment}
+
+アプリケーションをデプロイする場所によっては、アプリケーションのパフォーマンスを監視し改善するための追加のツールや統合機能を利用できる場合があります。
+
+Vercel へのデプロイの場合、次のことをお勧めします：
+
+- **[Analytics](https://vercel.com/analytics?utm_source=next-site&utm_campaign=nextjs-docs&utm_medium=docs):** アプリケーションのトラフィックを理解するための組み込みの分析ダッシュボードで、ユニークビジター数、ページビュー数などを含みます。
+- **[Speed Insights](https://vercel.com/docs/speed-insights?utm_source=next-site&utm_campaign=nextjs-docs&utm_medium=docs):** 訪問者データに基づく実際のパフォーマンスインサイトで、フィールドでのウェブサイトのパフォーマンスを実用的に把握します。
+- **[ログ]((https://vercel.com/docs/observability/runtime-logs?utm_source=next-site&utm_campaign=nextjs-docs&utm_medium=docs):** ランタイムとアクティビティログを使用して、問題をデバッグし、本番環境でアプリケーションを監視します。代わりに、サードパーティツールやサービスのリストについては[統合ページ](https://vercel.com/integrations?utm_source=next-site&utm_campaign=nextjs-docs&utm_medium=docs)を参照してください。
+
+> **Good to know:**
+>
+> Vercel での本番環境デプロイメントのベストプラクティスを包括的に理解するために、ウェブサイトのパフォーマンスを向上させるための詳細な戦略を含む [Vercel Production Checklist](https://vercel.com/docs/production-checklist?utm_source=next-site&utm_campaign=nextjs-docs&utm_medium=docs) を参照してください。
+
+これらの推奨事項に従うことで、ユーザーにとってより高速で信頼性が高く、安全なアプリケーションを構築することができます。
