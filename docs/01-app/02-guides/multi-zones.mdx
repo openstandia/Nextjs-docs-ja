@@ -1,0 +1,140 @@
+---
+title: 'Next.jsを使用したマルチゾーンによるマイクロフロントエンドの構築方法'
+nav_title: 'マルチゾーン'
+description: 'Next.jsのマルチゾーンを使用して、複数のNext.jsアプリを単一のドメインでデプロイする方法を学びます。'
+---
+
+{/* このドキュメントの内容はapp routerとpages routerの間で共有されています。Pages Routerに特化した内容を追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有されるコンテンツはコンポーネントでラップしないでください。 */}
+
+<details open>
+  <summary>例</summary>
+
+- [With Zones](https://github.com/vercel/next.js/tree/canary/examples/with-zones)
+
+</details>
+
+マルチゾーンは、ドメイン上の大規模なアプリケーションを、各々が一連のパスを提供する小さなNext.jsアプリケーションに分割するマイクロフロントエンドのアプローチです。これは、アプリケーション内の他のページと無関係なページのコレクションがある場合に便利です。これらのページを別のゾーン（つまり、別のアプリケーション）に移動することで、各アプリケーションのサイズを縮小し、ビルド時間を短縮し、特定のゾーンにのみ必要なコードを削除できます。アプリケーションが分離されているため、マルチゾーンはドメイン上の他のアプリケーションが独自のフレームワークを使用することも可能にします。
+
+例えば、次のようなページセットを分割したいとします：
+
+- `/blog/*` すべてのブログ投稿
+- `/dashboard/*` ユーザーがダッシュボードにログインしているときのすべてのページ
+- `/*` 他のゾーンでカバーされていないウェブサイトの残りの部分
+
+マルチゾーンのサポートにより、同じドメインで提供され、ユーザーには同じように見える3つのアプリケーションを作成できますが、各アプリケーションを独立して開発およびデプロイできます。
+
+<Image
+  alt="3つのゾーン：A、B、C。異なるゾーンからのルート間のハードナビゲーションと、同じゾーン内のルート間のソフトナビゲーションを示しています。"
+  srcLight="/docs/light/multi-zones.png"
+  srcDark="/docs/dark/multi-zones.png"
+  width="1600"
+  height="750"
+/>
+
+同じゾーン内のページ間をナビゲートする場合、ページのリロードを必要としないソフトナビゲーションが行われます。例えば、この図では、`/`から`/products`へのナビゲーションはソフトナビゲーションになります。
+
+あるゾーンのページから別のゾーンのページにナビゲートする場合、例えば`/`から`/dashboard`へのナビゲーションは、現在のページのリソースをアンロードし、新しいページのリソースをロードするハードナビゲーションが行われます。頻繁に一緒に訪問されるページは、ハードナビゲーションを避けるために同じゾーンに配置するべきです。
+
+## ゾーンの定義方法 {#how-to-define-a-zone}
+
+ゾーンは通常のNext.jsアプリケーションであり、他のゾーンのページや静的ファイルとの競合を避けるために[assetPrefix](/docs/app/api-reference/config/next-config-js/assetPrefix)を設定します。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  assetPrefix: '/blog-static',
+}
+```
+
+Next.jsのアセット（JavaScriptやCSSなど）は、他のゾーンのアセットと競合しないように`assetPrefix`でプレフィックスされます。これらのアセットは、各ゾーンの`/assetPrefix/_next/...`の下で提供されます。
+
+他のより具体的なゾーンにルーティングされていないすべてのパスを処理するデフォルトのアプリケーションには、`assetPrefix`は必要ありません。
+
+Next.js 15より古いバージョンでは、静的アセットを処理するために追加のリライトが必要な場合があります。これはNext.js 15では不要になりました。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  assetPrefix: '/blog-static',
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/blog-static/_next/:path+',
+          destination: '/_next/:path+',
+        },
+      ],
+    }
+  },
+}
+```
+
+## リクエストを正しいゾーンにルーティングする方法 {#how-to-route-requests-to-the-right-zone}
+
+マルチゾーンのセットアップでは、異なるアプリケーションによって提供されるため、パスを正しいゾーンにルーティングする必要があります。これを行うには、任意のHTTPプロキシを使用できますが、Next.jsアプリケーションの1つを使用してドメイン全体のリクエストをルーティングすることもできます。
+
+Next.jsアプリケーションを使用して正しいゾーンにルーティングするには、[`rewrites`](/docs/app/api-reference/config/next-config-js/rewrites)を使用できます。異なるゾーンによって提供される各パスに対して、そのパスを他のゾーンのドメインに送信するリライトルールを追加します。例えば：
+
+```js title="next.config.js"
+async rewrites() {
+    return [
+        {
+            source: '/blog',
+            destination: `${process.env.BLOG_DOMAIN}/blog`,
+        },
+        {
+            source: '/blog/:path+',
+            destination: `${process.env.BLOG_DOMAIN}/blog/:path+`,
+        }
+    ];
+}
+```
+
+`destination`は、スキームとドメインを含むゾーンによって提供されるURLである必要があります。これはゾーンの本番ドメインを指すべきですが、ローカル開発では`localhost`にリクエストをルーティングするためにも使用できます。
+
+> **Good to know**: URLパスはゾーンに固有であるべきです。例えば、2つのゾーンが`/blog`を提供しようとすると、ルーティングの競合が発生します。
+
+### ミドルウェアを使用したリクエストのルーティング {#routing-requests-using-middleware}
+
+リクエストの遅延オーバーヘッドを最小限に抑えるために、[`rewrites`](/docs/app/api-reference/config/next-config-js/rewrites)を通じてリクエストをルーティングすることが推奨されますが、ルーティング時に動的な決定が必要な場合にはミドルウェアを使用することもできます。例えば、移行中にパスをどこにルーティングするかを決定するために機能フラグを使用している場合、ミドルウェアを使用できます。
+
+```js title="middleware.js"
+export async function middleware(request) {
+  const { pathname, search } = req.nextUrl
+  if (pathname === '/your-path' && myFeatureFlag.isEnabled()) {
+    return NextResponse.rewrite(`${rewriteDomain}${pathname}${search}`)
+  }
+}
+```
+
+## ゾーン間のリンク {#linking-between-zones}
+
+異なるゾーンのパスへのリンクは、Next.jsの[`<Link>`](https://nextjs.org/docs/canary/pages/api-reference/components/link)コンポーネントではなく、`a`タグを使用するべきです。これは、Next.jsが`<Link>`コンポーネント内の相対パスをプリフェッチし、ソフトナビゲーションしようとするためであり、これはゾーンをまたいで機能しません。
+
+## コードの共有 {#sharing-code}
+
+異なるゾーンを構成するNext.jsアプリケーションは、任意のリポジトリに配置できます。しかし、これらのゾーンを[モノレポ](https://en.wikipedia.org/wiki/Monorepo)に配置してコードをより簡単に共有することが便利な場合が多いです。異なるリポジトリに存在するゾーンの場合、コードは公開またはプライベートのNPMパッケージを使用して共有することもできます。
+
+異なるゾーンでページが異なるタイミングでリリースされる可能性があるため、機能フラグは異なるゾーン間で機能を一斉に有効または無効にするのに役立ちます。
+
+[Next.js on Vercel](https://vercel.com?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)アプリケーションでは、[モノレポ](https://vercel.com/blog/monorepos-are-changing-how-teams-build-software?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)を使用して、影響を受けるすべてのゾーンを単一の`git push`でデプロイできます。
+
+<AppOnly>
+
+## Server Actions {#server-actions}
+
+マルチゾーンで[Server Actions](/docs/app/building-your-application/data-fetching/server-actions-and-mutations)を使用する場合、ユーザー向けのドメインが複数のアプリケーションを提供する可能性があるため、ユーザー向けのオリジンを明示的に許可する必要があります。`next.config.js`ファイルに次の行を追加します：
+
+```js title="next.config.js"
+const nextConfig = {
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['your-production-domain.com'],
+    },
+  },
+}
+```
+
+詳細は[`serverActions.allowedOrigins`](/docs/app/api-reference/config/next-config-js/serverActions#allowedorigins)を参照してください。
+
+</AppOnly>
