@@ -1,0 +1,123 @@
+---
+title: 'インストゥルメンテーションの設定方法'
+nav_title: 'Instrumentation'
+description: 'Next.jsアプリでサーバー起動時にコードを実行するためのインストゥルメンテーションの使い方を学びます'
+related:
+  title: 'インストゥルメンテーションについてもっと学ぶ'
+  links:
+    - app/api-reference/file-conventions/instrumentation
+---
+
+{/* このドキュメントの内容はapp routerとpages routerの両方で共有されています。Pages Routerに特化した内容を追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有される内容はコンポーネントでラップしないでください。 */}
+
+インストゥルメンテーションは、アプリケーションにモニタリングやロギングツールを統合するためにコードを使用するプロセスです。これにより、アプリケーションのパフォーマンスや動作を追跡し、本番環境での問題をデバッグすることができます。
+
+## 規約 {#convention}
+
+インストゥルメンテーションを設定するには、プロジェクトの**ルートディレクトリ**（または[`src`](/docs/app/api-reference/file-conventions/src-folder)フォルダを使用している場合はその中）に`instrumentation.ts|js`ファイルを作成します。
+
+次に、このファイルで`register`関数をエクスポートします。この関数は、新しいNext.jsサーバーインスタンスが開始されるときに**一度だけ**呼び出されます。
+
+例えば、Next.jsを[OpenTelemetry](https://opentelemetry.io/)と[@vercel/otel](https://vercel.com/docs/observability/otel-overview)と共に使用するには、以下のようにします：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="instrumentation.ts" switcher
+import { registerOTel } from '@vercel/otel'
+
+export function register() {
+  registerOTel('next-app')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="instrumentation.js" switcher
+import { registerOTel } from '@vercel/otel'
+
+export function register() {
+  registerOTel('next-app')
+}
+```
+
+</TabItem>
+</Tabs>
+
+完全な実装については、[Next.js with OpenTelemetryの例](https://github.com/vercel/next.js/tree/canary/examples/with-opentelemetry)を参照してください。
+
+> **Good to know**:
+>
+> - `instrumentation`ファイルはプロジェクトのルートに置くべきで、`app`や`pages`ディレクトリの中に置いてはいけません。`src`フォルダを使用している場合は、`pages`や`app`と並んで`src`の中にファイルを置いてください。
+> - [`pageExtensions`設定オプション](/docs/app/api-reference/config/next-config-js/pageExtensions)を使用してサフィックスを追加する場合、`instrumentation`ファイル名もそれに合わせて更新する必要があります。
+
+## 例 {#examples}
+
+### 副作用を持つファイルのインポート {#importing-files-with-side-effects}
+
+時には、コード内で副作用を引き起こすためにファイルをインポートすることが有用です。例えば、一連のグローバル変数を定義するファイルをインポートするが、コード内でそのインポートされたファイルを明示的に使用しない場合があります。それでも、パッケージが宣言したグローバル変数にアクセスできます。
+
+`register`関数内でJavaScriptの`import`構文を使用してファイルをインポートすることをお勧めします。以下の例は、`register`関数内での`import`の基本的な使用法を示しています：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="instrumentation.ts" switcher
+export async function register() {
+  await import('package-with-side-effect')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="instrumentation.js" switcher
+export async function register() {
+  await import('package-with-side-effect')
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know:**
+>
+> ファイルの先頭ではなく、`register`関数内からファイルをインポートすることをお勧めします。これにより、コード内のすべての副作用を一箇所にまとめ、ファイルの先頭でグローバルにインポートすることによる意図しない結果を避けることができます。
+
+### ランタイム固有のコードのインポート {#importing-runtime-specific-code}
+
+Next.jsはすべての環境で`register`を呼び出すため、特定のランタイム（例：[EdgeやNode.js](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)）をサポートしないコードを条件付きでインポートすることが重要です。現在の環境を取得するには、`NEXT_RUNTIME`環境変数を使用できます：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="instrumentation.ts" switcher
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./instrumentation-node')
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./instrumentation-edge')
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="instrumentation.js" switcher
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./instrumentation-node')
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./instrumentation-edge')
+  }
+}
+```
+
+</TabItem>
+</Tabs>
