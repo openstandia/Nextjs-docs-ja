@@ -1,63 +1,76 @@
 ---
-title: 'カスタム Next.js キャッシュハンドラー'
-nav_title: 'cacheHandler'
-description: 'データの保存と再検証に使用する Next.js のキャッシュを、Redis、Memcached、その他の外部サービスに設定できます。'
+title: カスタムNext.jsキャッシュハンドラー
+nav_title: cacheHandler
+description: Redis、Memcachedなどの外部サービスを使用してデータを保存および再検証するためのNext.jsキャッシュを設定します。
 ---
 
-ページのキャッシュと再検証（Incremental Static Regenerationを使用）では、同じ共有キャッシュを使用します。 [Vercel にデプロイすると](https://vercel.com/docs/incremental-static-regeneration?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)、ISR キャッシュは自動的に耐久性のあるストレージに永続化されます。
-
-自己ホスティングの場合、ISR キャッシュは Next.js サーバー上のファイルシステム（ディスク）に保存されます。これは、PagesとApp Routerの両方を使用して自己ホスティングする場合、自動的に動作します。
-
-キャッシュされたページとデータを耐久性のあるストレージに永続化したり、Next.js アプリケーションの複数のコンテナやインスタンス間でキャッシュを共有したりしたい場合は、Next.js のキャッシュの場所を設定できます。
+Next.jsアプリケーションの複数のコンテナやインスタンス間でキャッシュを共有したり、キャッシュされたページやデータを永続的なストレージに保存したい場合、Next.jsのキャッシュの場所を設定することができます。
 
 ```js title="next.config.js"
 module.exports = {
   cacheHandler: require.resolve('./cache-handler.js'),
-  cacheMaxMemorySize: 0, // デフォルトのメモリ内キャッシュを無効にします
+  cacheMaxMemorySize: 0, // デフォルトのメモリ内キャッシュを無効化
 }
 ```
 
-[カスタムキャッシュハンドラー](/docs/app/building-your-application/deploying#configuring-caching)の例を確認し、実装について詳しく学んでください。
+[カスタムキャッシュハンドラー](/docs/app/guides/self-hosting#configuring-caching)の例を参照し、実装について詳しく学んでください。
 
 ## APIリファレンス {#api-reference}
 
-キャッシュハンドラーは以下のメソッドを実装できます：`get`、`set`、`revalidateTag`
+キャッシュハンドラーは、次のメソッドを実装できます：`get`、`set`、`revalidateTag`、および `resetRequestCache`。
 
 ### `get()` {#get}
 
-| パラメーター | 型       | 説明                             |
-| ------------ | -------- | -------------------------------- |
-| `key`        | `string` | キャッシュされている値のキーです |
+| パラメーター | 型       | 説明                       |
+| ------------ | -------- | -------------------------- |
+| `key`        | `string` | キャッシュされた値のキー。 |
 
-キャッシュされた値を返します。見つからなければ `null` を返します。
+キャッシュされた値を返すか、見つからない場合は`null`を返します。
 
 ### `set()` {#set}
 
-| パラメーター | 型                 | 説明                         |
-| ------------ | ------------------ | ---------------------------- |
-| `key`        | `string`           | データを保存するキーです     |
-| `data`       | Data または `null` | キャッシュするデータです     |
-| `ctx`        | `{ tags: [] }`     | 提供されるキャッシュタグです |
+| パラメーター | 型               | 説明                         |
+| ------------ | ---------------- | ---------------------------- |
+| `key`        | `string`         | データを保存するためのキー。 |
+| `data`       | Dataまたは`null` | キャッシュするデータ。       |
+| `ctx`        | `{ tags: [] }`   | 提供されたキャッシュタグ。   |
 
-`Promise<void>` を返します。
+`Promise<void>`を返します。
 
 ### `revalidateTag()` {#revalidatetag}
 
-| パラメーター | 型                     | 説明                         |
-| ------------ | ---------------------- | ---------------------------- |
-| `tag`        | `string` or `string[]` | 再検証するキャッシュタグです |
+| パラメーター | 型                       | 説明                       |
+| ------------ | ------------------------ | -------------------------- |
+| `tag`        | `string`または`string[]` | 再検証するキャッシュタグ。 |
 
-`Promise<void>` を返します。データの[再検証について詳しく](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)知るか、[`revalidateTag()`](/docs/app/api-reference/functions/revalidateTag) 関数について理解を深めてください。
+`Promise<void>`を返します。[データの再検証](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)や[`revalidateTag()`](/docs/app/api-reference/functions/revalidateTag)関数について詳しく学んでください。
+
+### `resetRequestCache()` {#resetrequestcache}
+
+このメソッドは、次のリクエストの前に単一のリクエストの一時的なメモリ内キャッシュをリセットします。
+
+`void`を返します。
 
 **Good to know:**
 
-- `revalidatePath` はキャッシュタグの上位にある便利なレイヤーです。`revalidatePath` を呼び出すと、`revalidateTag` 関数が呼び出され、そこからパスに基づいてキャッシュキーにタグを付けるかどうか選択できます。
+- `revalidatePath`はキャッシュタグの上にある便利なレイヤーです。`revalidatePath`を呼び出すと、`revalidateTag`関数が呼び出され、その後、パスに基づいてキャッシュキーにタグを付けるかどうかを選択できます。
+
+## プラットフォームサポート {#platform-support}
+
+| デプロイオプション                                                    | サポート状況         |
+| --------------------------------------------------------------------- | -------------------- |
+| [Node.jsサーバー](/docs/app/getting-started/deploying#nodejs-server)  | はい                 |
+| [Dockerコンテナ](/docs/app/getting-started/deploying#docker)          | はい                 |
+| [静的エクスポート](/docs/app/getting-started/deploying#static-export) | いいえ               |
+| [アダプター](/docs/app/getting-started/deploying#adapters)            | プラットフォーム固有 |
+
+Next.jsをセルフホスティングする際の[ISRの設定](/docs/app/guides/self-hosting#caching-and-isr)方法を学んでください。
 
 ## バージョン履歴 {#version-history}
 
-| バージョン | 変更点                                                                    |
-| ---------- | ------------------------------------------------------------------------- |
-| `v14.1.0`  | `cacheHandler` に改名され、安定化しました。                               |
-| `v13.4.0`  | `revalidateTag` 用の `incrementalCacheHandlerPath` をサポートしました。   |
-| `v13.4.0`  | スタンドアロン出力用の `incrementalCacheHandlerPath` をサポートしました。 |
-| `v12.2.0`  | 実験的な `incrementalCacheHandlerPath` が追加されました。                 |
+| バージョン | 変更内容                                                          |
+| ---------- | ----------------------------------------------------------------- |
+| `v14.1.0`  | `cacheHandler`に名前が変更され、安定版になりました。              |
+| `v13.4.0`  | `revalidateTag`のための`incrementalCacheHandlerPath`サポート。    |
+| `v13.4.0`  | スタンドアロン出力のための`incrementalCacheHandlerPath`サポート。 |
+| `v12.2.0`  | 実験的な`incrementalCacheHandlerPath`が追加されました。           |
