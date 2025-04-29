@@ -1,29 +1,29 @@
 ---
-title: 'output'
-description: 'Next.js は自動的にページごとの必要なファイルをトレースし、アプリケーションの簡単なデプロイを可能にします。ここでは、その仕組みを学びましょう。'
+title: '出力'
+description: 'Next.jsは各ページに必要なファイルを自動的にトレースし、アプリケーションのデプロイを容易にします。その仕組みをここで学びましょう。'
 ---
 
-{/* このドキュメントの内容は、app と pages router の両方に共通しています。pages router に特有な内容を追加するには、 `<PagesOnly>Content</PagesOnly>` コンポーネントを使用できます。共通の内容はコンポーネントでラップしないでください。 */}
+{/* このドキュメントの内容はapp routerとpages routerの間で共有されています。Pages Routerに特化した内容を追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有される内容はコンポーネントでラップしないでください。 */}
 
-ビルド時に、Next.js は各ページとその依存関係を自動的にトレースし、アプリケーションのプロダクションバージョンをデプロイするのに必要なすべてのファイルを決定します。
+ビルド中、Next.jsは各ページとその依存関係を自動的にトレースし、アプリケーションの本番バージョンをデプロイするために必要なすべてのファイルを特定します。
 
-この機能はデプロイメントのサイズを大幅に削減するのに役立ちます。以前は Docker を使ってデプロイする際、`next start` を実行するにはパッケージの `dependencies` からすべてのファイルをインストールする必要がありました。Next.js 12 からは、`.next/` ディレクトリ内の Output File Tracing を活用して必要なファイルのみを含むことができます。
+この機能はデプロイのサイズを大幅に削減するのに役立ちます。以前はDockerでデプロイする際、`next start`を実行するためにパッケージの`dependencies`からすべてのファイルをインストールする必要がありました。Next.js 12以降では、`.next/`ディレクトリ内のOutput File Tracingを活用して必要なファイルのみを含めることができます。
 
-さらに、これにより、さまざまな問題を引き起こす可能性があり、不要な重複を作成する非推奨の `serverless` ターゲットが不要になります。
+さらに、さまざまな問題を引き起こし、不要な重複を生む可能性のある非推奨の`serverless`ターゲットを使用する必要がなくなります。
 
 ## 仕組み {#how-it-works}
 
-`next build` 時に、Next.js は [`@vercel/nft`](https://github.com/vercel/nft) を使用して `import`、`require`、および `fs` の使用を静的に分析し、ページが読み込む可能性のあるすべてのファイルを決定します。
+`next build`中、Next.jsは[`@vercel/nft`](https://github.com/vercel/nft)を使用して、`import`、`require`、および`fs`の使用を静的に解析し、ページが読み込む可能性のあるすべてのファイルを特定します。
 
-Next.js のプロダクションサーバーもその必要なファイルのためにトレースされ、`.next/next-server.js.nft.json` に出力され、プロダクションで活用できます。
+Next.jsの本番サーバーも必要なファイルのトレースが行われ、`.next/next-server.js.nft.json`に出力されます。これを本番環境で活用できます。
 
-`.next` 出力ディレクトリに出力された `.nft.json` ファイルを活用するには、それぞれのトレース内のファイルリストを `.nft.json` ファイルに対して相対的に読み取り、デプロイメント先にそれをコピーできます。
+`.next`出力ディレクトリに出力された`.nft.json`ファイルを活用するには、各トレース内のファイルリストを読み取り、`.nft.json`ファイルに対して相対的なファイルをデプロイ先にコピーします。
 
-## トレースされたファイルを自動でコピーする {#automatically-copying-traced-files}
+## トレースされたファイルの自動コピー {#automatically-copying-traced-files}
 
-Next.js は、`node_modules` 内の選択されたファイルを含むプロダクションデプロイメントに必要なファイルのみをコピーした `standalone` フォルダを自動的に作成できます。
+Next.jsは、`node_modules`内の選択されたファイルを含む、本番デプロイメントに必要なファイルのみをコピーする`standalone`フォルダを自動的に作成できます。
 
-この自動コピーを活用するためには、`next.config.js` で有効にできます。
+この自動コピーを活用するには、`next.config.js`で有効にします：
 
 ```js title="next.config.js"
 module.exports = {
@@ -31,19 +31,19 @@ module.exports = {
 }
 ```
 
-これにより、`node_modules` をインストールせずにデプロイできる `.next/standalone` フォルダが作成されます。
+これにより、`.next/standalone`フォルダが作成され、`node_modules`をインストールせずに単独でデプロイできます。
 
-加えて、`next start` の代わりに使用できる最小限の `server.js` ファイルも出力されます。この最小限のサーバーは、デフォルトでは `public` または `.next/static` フォルダをコピーしません。これらは理想的には CDN によって処理されるべきですが、手動で `standalone/public` と `standalone/.next/static` フォルダにコピーした後、`server.js` ファイルがそれらを自動的に提供します。
+さらに、`server.js`という最小限のファイルも出力され、`next start`の代わりに使用できます。この最小限のサーバーは、デフォルトで`public`や`.next/static`フォルダをコピーしません。これらは理想的にはCDNによって処理されるべきですが、手動で`standalone/public`および`standalone/.next/static`フォルダにコピーした後、`server.js`ファイルが自動的にこれらを提供します。
 
-これらを手動でコピーするには、`next build` 後に `cp` コマンドラインツールを使用できます。
+これらを手動でコピーするには、`next build`後に`cp`コマンドラインツールを使用します：
 
-```bash title="ターミナル"
+```bash title="Terminal"
 cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
 ```
 
-ローカルで最小限の `server.js` ファイルを起動するには、次のコマンドを実行します。
+ローカルで最小限の`server.js`ファイルを開始するには、次のコマンドを実行します：
 
-```bash title="ターミナル"
+```bash title="Terminal"
 node .next/standalone/server.js
 ```
 
@@ -51,7 +51,7 @@ node .next/standalone/server.js
 
 > **Good to know**:
 >
-> - プロジェクトが特定のポートまたはホスト名をリスニングする必要がある場合、`server.js` を実行する前に `PORT` または `HOSTNAME` 環境変数を設定できます。たとえば、`PORT=8080 HOSTNAME=0.0.0.0 node server.js` を実行して、`http://0.0.0.0:8080` でサーバーを起動します。
+> - プロジェクトが特定のポートまたはホスト名をリッスンする必要がある場合、`server.js`を実行する前に`PORT`または`HOSTNAME`環境変数を定義できます。たとえば、`PORT=8080 HOSTNAME=0.0.0.0 node server.js`を実行して、`http://0.0.0.0:8080`でサーバーを開始します。
 
 </AppOnly>
 
@@ -59,23 +59,23 @@ node .next/standalone/server.js
 
 > **Good to know**:
 >
-> - `next.config.js` は `next build` 中に読み取られ、`server.js` 出力ファイルにシリアライズされます。レガシーな [`serverRuntimeConfig` または `publicRuntimeConfig` オプション](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/runtime-configuration) が使用されている場合、値はビルド時の値に特有です。
-> - プロジェクトが特定のポートまたはホスト名をリスニングする必要がある場合、`server.js` を実行する前に `PORT` または `HOSTNAME` 環境変数を設定できます。たとえば、`PORT=8080 HOSTNAME=0.0.0.0 node server.js` を実行して、`http://0.0.0.0:8080` でサーバーを起動します。
+> - `next.config.js`は`next build`中に読み込まれ、`server.js`出力ファイルにシリアライズされます。レガシーな[`serverRuntimeConfig`または`publicRuntimeConfig`オプション](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/runtime-configuration)が使用されている場合、値はビルド時の値に特化されます。
+> - プロジェクトが特定のポートまたはホスト名をリッスンする必要がある場合、`server.js`を実行する前に`PORT`または`HOSTNAME`環境変数を定義できます。たとえば、`PORT=8080 HOSTNAME=0.0.0.0 node server.js`を実行して、`http://0.0.0.0:8080`でサーバーを開始します。
 
 </PagesOnly>
 
 ## 注意点 {#caveats}
 
-- モノレポのセットアップでトレースする場合、デフォルトではプロジェクトディレクトリがトレースに使用されます。たとえば、`next build packages/web-app` の場合、`packages/web-app` がトレース root になり、そのフォルダ外のファイルは含まれません。このフォルダの外のファイルを含めるには、`next.config.js` で `outputFileTracingRoot` を設定できます。
+- モノレポセットアップでのトレース中、プロジェクトディレクトリがデフォルトでトレースに使用されます。`next build packages/web-app`の場合、`packages/web-app`がトレースのrootとなり、そのフォルダ外のファイルは含まれません。このフォルダ外のファイルを含めるには、`next.config.js`で`outputFileTracingRoot`を設定できます。
 
 ```js title="packages/web-app/next.config.js"
 module.exports = {
-  // モノレポのベースから2つ上のディレクトリのファイルを含めます
+  // モノレポベースから2つ上のディレクトリのファイルを含めます
   outputFileTracingRoot: path.join(__dirname, '../../'),
 }
 ```
 
-- Next.js が必要なファイルを含められない、または使用されていないファイルを誤って含める場合があります。その場合、`outputFileTracingExcludes` および `outputFileTracingIncludes` を `next.config.js` でそれぞれ活用できます。それぞれの設定は、特定のページと一致するキーとして [minimatch globs](https://www.npmjs.com/package/minimatch) を受け入れ、プロジェクトの root に対する globs の配列を値としてトレースに含めるまたは除外するか選択できます。
+- Next.jsが必要なファイルを含めるのに失敗したり、未使用のファイルを誤って含める場合があります。その場合、`next.config.js`でそれぞれ`outputFileTracingExcludes`と`outputFileTracingIncludes`を活用できます。各設定は、特定のページに一致するキーとして[minimatch globs](https://www.npmjs.com/package/minimatch)を受け入れ、プロジェクトのrootに対して相対的なグロブの配列を値として受け入れ、トレースに含めるか除外します。
 
 ```js title="next.config.js"
 module.exports = {
@@ -91,21 +91,19 @@ module.exports = {
 }
 ```
 
-**注意:** `outputFileTracingIncludes`/`outputFileTracingExcludes` のキーは [glob](https://www.npmjs.com/package/picomatch#basic-globbing) であるため、特殊文字はエスケープする必要があります。
+**注意:** `outputFileTracingIncludes`/`outputFileTracingExcludes`のキーは[glob](https://www.npmjs.com/package/picomatch#basic-globbing)であるため、特殊文字はエスケープする必要があります。
 
-- 現在のところ、Next.js は出力された `.nft.json` ファイルに対して何も行いません。ファイルは、たとえば [Vercel](https://vercel.com) などのデプロイメントプラットフォームによって読み取られ、最小限のデプロイメントを作成する必要があります。将来のリリースでは、これらの `.nft.json` ファイルを利用する新しいコマンドが予定されています。
+## 実験的な`turbotrace` {#experimental-turbotrace}
 
-## 実験的な `turbotrace` {#experimental-turbotrace}
+依存関係のトレースは非常に複雑な計算と分析を必要とするため、遅くなることがあります。Rustで`JavaScript`実装のより高速でスマートな代替手段として`turbotrace`を作成しました。
 
-依存関係をトレースすることは、非常に複雑な計算と分析を必要とするため、遅くなることがあります。私たちは、JavaScript の実装に代わるより高速で賢い代替手段として Rust で `turbotrace` を作成しました。
-
-有効にするには、`next.config.js` に次の設定を追加できます。
+これを有効にするには、次の設定を`next.config.js`に追加します：
 
 ```js title="next.config.js"
 module.exports = {
   experimental: {
     turbotrace: {
-      // turbotraceのログレベルを制御します。デフォルトは `error` です
+      // turbotraceのログレベルを制御します。デフォルトは`error`です
       logLevel?:
       | 'bug'
       | 'fatal'
@@ -115,20 +113,20 @@ module.exports = {
       | 'note'
       | 'suggestions'
       | 'info',
-      // turbotraceのログに分析の詳細を含めるかどうかを制御します。デフォルトは `false` です
+      // turbotraceのログに分析の詳細を含めるかどうかを制御します。デフォルトは`false`です
       logDetail?: boolean
-      // 制限なしでログメッセージをすべて表示します
+      // 制限なしで全てのログメッセージを表示します
       // turbotraceはデフォルトで各カテゴリに対して1つのログメッセージのみを表示します
       logAll?: boolean
       // turbotraceのコンテキストディレクトリを制御します
-      // コンテキストディレクトリの外側のファイルはトレースされません
-      // `outputFileTracingRoot`を設定することで同じ効果が得られます
+      // コンテキストディレクトリ外のファイルはトレースされません
+      // `outputFileTracingRoot`を設定することと同じ効果があります
       // `outputFileTracingRoot`とこのオプションの両方が設定されている場合、`experimental.turbotrace.contextDirectory`が使用されます
       contextDirectory?: string
-      // コード内に `process.cwd()` 式がある場合、このオプションを設定することで、トレース中に `turbotrace` に `process.cwd()` の値を知らせることができます。
-      // たとえば、require(process.cwd() + '/package.json')はrequire('/path/to/cwd/package.json')としてトレースされます
+      // コード内に`process.cwd()`式がある場合、トレース中に`turbotrace`に`process.cwd()`の値を伝えるためにこのオプションを設定できます。
+      // 例えば、require(process.cwd() + '/package.json')はrequire('/path/to/cwd/package.json')としてトレースされます
       processCwd?: string
-      // `turbotrace`の最大メモリ使用量を`MB`単位で制御します。デフォルトは `6000` です
+      // `turbotrace`の最大メモリ使用量を`MB`単位で制御します。デフォルトは`6000`です。
       memoryLimit?: number
     },
   },

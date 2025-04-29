@@ -1,0 +1,169 @@
+---
+title: 'Continuous Integration (CI) ビルドキャッシュの設定方法'
+nav_title: 'CI ビルドキャッシュ'
+description: 'Next.js ビルドをキャッシュするための CI の設定方法を学びます'
+---
+
+ビルドパフォーマンスを向上させるために、Next.js はビルド間で共有されるキャッシュを `.next/cache` に保存します。
+
+このキャッシュを Continuous Integration (CI) 環境で活用するには、CI ワークフローを適切に設定してビルド間でキャッシュを永続化する必要があります。
+
+> CI がビルド間で `.next/cache` を永続化するように設定されていない場合、[No Cache Detected](https://nextjs.org/docs/messages/no-cache) エラーが表示されることがあります。
+
+以下は一般的な CI プロバイダー向けのキャッシュ設定例です：
+
+## Vercel {#vercel}
+
+Next.js のキャッシングは自動的に設定されます。特に操作は必要ありません。Vercel で Turborepo を使用している場合は、[こちらをご覧ください](https://vercel.com/docs/monorepos/turborepo)。
+
+## CircleCI {#circleci}
+
+`.circleci/config.yml` の `save_cache` ステップを編集して `.next/cache` を含めます：
+
+```yaml
+steps:
+  - save_cache:
+      key: dependency-cache-{{ checksum "yarn.lock" }}
+      paths:
+        - ./node_modules
+        - ./.next/cache
+```
+
+`save_cache` キーがない場合は、CircleCI の[ビルドキャッシュ設定に関するドキュメント](https://circleci.com/docs/2.0/caching/)を参照してください。
+
+## Travis CI {#travis-ci}
+
+以下を `.travis.yml` に追加またはマージします：
+
+```yaml
+cache:
+  directories:
+    - $HOME/.cache/yarn
+    - node_modules
+    - .next/cache
+```
+
+## GitLab CI {#gitlab-ci}
+
+以下を `.gitlab-ci.yml` に追加またはマージします：
+
+```yaml
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - .next/cache/
+```
+
+## Netlify CI {#netlify-ci}
+
+[`@netlify/plugin-nextjs`](https://www.npmjs.com/package/@netlify/plugin-nextjs) を使用して [Netlify Plugins](https://www.netlify.com/products/build/plugins/) を利用します。
+
+## AWS CodeBuild {#aws-codebuild}
+
+以下を `buildspec.yml` に追加（またはマージ）します：
+
+```yaml
+cache:
+  paths:
+    - 'node_modules/**/*' # `node_modules` をキャッシュして `yarn` または `npm i` を高速化
+    - '.next/cache/**/*' # Next.js をキャッシュしてアプリケーションの再ビルドを高速化
+```
+
+## GitHub Actions {#github-actions}
+
+GitHub の [actions/cache](https://github.com/actions/cache) を使用して、ワークフローファイルに以下のステップを追加します：
+
+```yaml
+uses: actions/cache@v4
+with:
+  # `yarn`、`bun` または他のパッケージマネージャーでのキャッシュについては https://github.com/actions/cache/blob/main/examples.md を参照するか、actions/setup-node でのキャッシュを活用できます https://github.com/actions/setup-node
+  path: |
+    ~/.npm
+    ${{ github.workspace }}/.next/cache
+  # パッケージまたはソースファイルが変更されるたびに新しいキャッシュを生成します。
+  key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+  # ソースファイルが変更されてもパッケージが変更されていない場合、以前のキャッシュから再ビルドします。
+  restore-keys: |
+    ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+```
+
+## Bitbucket Pipelines {#bitbucket-pipelines}
+
+`bitbucket-pipelines.yml` のトップレベル（`pipelines` と同じレベル）に以下を追加またはマージします：
+
+```yaml
+definitions:
+  caches:
+    nextcache: .next/cache
+```
+
+その後、パイプラインの `step` の `caches` セクションで参照します：
+
+```yaml
+- step:
+    name: your_step_name
+    caches:
+      - node
+      - nextcache
+```
+
+## Heroku {#heroku}
+
+Heroku の[カスタムキャッシュ](https://devcenter.heroku.com/articles/nodejs-support#custom-caching)を使用して、トップレベルの package.json に `cacheDirectories` 配列を追加します：
+
+```javascript
+"cacheDirectories": [".next/cache"]
+```
+
+## Azure Pipelines {#azure-pipelines}
+
+Azure Pipelines の [Cache task](https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/cache) を使用して、`next build` を実行するタスクの前に以下のタスクをパイプライン yaml ファイルに追加します：
+
+```yaml
+- task: Cache@2
+  displayName: 'Cache .next/cache'
+  inputs:
+    key: next | $(Agent.OS) | yarn.lock
+    path: '$(System.DefaultWorkingDirectory)/.next/cache'
+```
+
+## Jenkins (Pipeline) {#jenkins-pipeline}
+
+Jenkins の [Job Cacher](https://www.jenkins.io/doc/pipeline/steps/jobcacher/) プラグインを使用して、通常 `next build` または `npm install` を実行する `Jenkinsfile` に以下のビルドステップを追加します：
+
+```yaml
+stage("Restore npm packages") {
+    steps {
+        // GIT_COMMIT ハッシュに基づいてキャッシュにロックファイルを書き込みます
+        writeFile file: "next-lock.cache", text: "$GIT_COMMIT"
+
+        cache(caches: [
+            arbitraryFileCache(
+                path: "node_modules",
+                includes: "**/*",
+                cacheValidityDecidingFile: "package-lock.json"
+            )
+        ]) {
+            sh "npm install"
+        }
+    }
+}
+stage("Build") {
+    steps {
+        // GIT_COMMIT ハッシュに基づいてキャッシュにロックファイルを書き込みます
+        writeFile file: "next-lock.cache", text: "$GIT_COMMIT"
+
+        cache(caches: [
+            arbitraryFileCache(
+                path: ".next/cache",
+                includes: "**/*",
+                cacheValidityDecidingFile: "next-lock.cache"
+            )
+        ]) {
+            // つまり `next build`
+            sh "npm run build"
+        }
+    }
+}
+```
