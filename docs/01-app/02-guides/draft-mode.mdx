@@ -1,0 +1,251 @@
+---
+title: 'Next.jsでDraft Modeを使用してコンテンツをプレビューする方法'
+nav_title: 'Draft Mode'
+description: 'Next.jsには、静的ページと動的ページを切り替えるためのdraft modeがあります。App Routerを使用してその仕組みを学ぶことができます。'
+related:
+  title: '次のステップ'
+  description: 'Draft Modeの使用方法についての詳細はAPIリファレンスをご覧ください。'
+  links:
+    - app/api-reference/functions/draft-mode
+---
+
+**Draft Mode**を使用すると、Next.jsアプリケーションでヘッドレスCMSからドラフトコンテンツをプレビューできます。これは、ビルド時に生成される静的ページにとって便利で、[動的レンダリング](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)に切り替えて、サイト全体を再ビルドすることなくドラフトの変更を確認できます。
+
+このページでは、Draft Modeを有効にして使用する方法を説明します。
+
+## ステップ1: Route Handlerを作成する {#step-1-create-a-route-handler}
+
+[Route Handler](/docs/app/building-your-application/routing/route-handlers)を作成します。名前は任意で、例えば`app/api/draft/route.ts`とします。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/draft/route.ts" switcher
+export async function GET(request: Request) {
+  return new Response('')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/draft/route.js" switcher
+export async function GET() {
+  return new Response('')
+}
+```
+
+</TabItem>
+</Tabs>
+
+次に、[`draftMode`](/docs/app/api-reference/functions/draft-mode)関数をインポートし、`enable()`メソッドを呼び出します。
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/draft/route.ts" switcher
+import { draftMode } from 'next/headers'
+
+export async function GET(request: Request) {
+  const draft = await draftMode()
+  draft.enable()
+  return new Response('Draft mode is enabled')
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/draft/route.js" switcher
+import { draftMode } from 'next/headers'
+
+export async function GET(request) {
+  const draft = await draftMode()
+  draft.enable()
+  return new Response('Draft mode is enabled')
+}
+```
+
+</TabItem>
+</Tabs>
+
+これにより、**cookie**が設定され、draft modeが有効になります。このcookieを含む後続のリクエストはdraft modeをトリガーし、静的に生成されたページの動作を変更します。
+
+`/api/draft`にアクセスし、ブラウザの開発者ツールを確認することで、手動でテストできます。`__prerender_bypass`という名前のcookieを持つ`Set-Cookie`レスポンスヘッダーに注目してください。
+
+## ステップ2: ヘッドレスCMSからRoute Handlerにアクセスする {#step-2-access-the-route-handler-from-your-headless-cms}
+
+> 使用しているヘッドレスCMSが**カスタムドラフトURL**の設定をサポートしていることを前提としています。サポートしていない場合でも、この方法を使用してドラフトURLを保護できますが、ドラフトURLを手動で構築してアクセスする必要があります。具体的な手順は使用しているヘッドレスCMSによって異なります。
+
+ヘッドレスCMSからRoute Handlerに安全にアクセスするには：
+
+1. 任意のトークンジェネレーターを使用して**シークレットトークン文字列**を作成します。このシークレットは、Next.jsアプリとヘッドレスCMSのみが知っているものとします。
+2. ヘッドレスCMSがカスタムドラフトURLの設定をサポートしている場合、ドラフトURLを指定します（Route Handlerが`app/api/draft/route.ts`にあると仮定します）。例えば：
+
+```bash title="Terminal"
+https://<your-site>/api/draft?secret=<token>&slug=<path>
+```
+
+> - `<your-site>`はデプロイメントドメインに置き換えてください。
+> - `<token>`は生成したシークレットトークンに置き換えてください。
+> - `<path>`は表示したいページのパスに置き換えてください。`/posts/one`を表示したい場合は、`&slug=/posts/one`を使用します。
+>
+> ヘッドレスCMSによっては、ドラフトURLに変数を含めることができ、CMSのデータに基づいて`<path>`を動的に設定できるかもしれません：`&slug=/posts/{entry.fields.slug}`
+
+3. Route Handler内で、シークレットが一致し、`slug`パラメータが存在することを確認します（存在しない場合、リクエストは失敗するべきです）。`draftMode.enable()`を呼び出してcookieを設定し、`slug`で指定されたパスにブラウザをリダイレクトします：
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+
+```ts title="app/api/draft/route.ts" switcher
+import { draftMode } from 'next/headers'
+import { redirect } from 'next/navigation'
+
+export async function GET(request: Request) {
+  // クエリ文字列パラメータを解析
+  const { searchParams } = new URL(request.url)
+  const secret = searchParams.get('secret')
+  const slug = searchParams.get('slug')
+
+  // シークレットと次のパラメータを確認
+  // このシークレットはこのRoute HandlerとCMSのみが知っているべきです
+  if (secret !== 'MY_SECRET_TOKEN' || !slug) {
+    return new Response('Invalid token', { status: 401 })
+  }
+
+  // 提供された`slug`が存在するかヘッドレスCMSをチェック
+  // getPostBySlugはヘッドレスCMSへの必要なフェッチロジックを実装します
+  const post = await getPostBySlug(slug)
+
+  // slugが存在しない場合、draft modeの有効化を防ぐ
+  if (!post) {
+    return new Response('Invalid slug', { status: 401 })
+  }
+
+  // cookieを設定してDraft Modeを有効化
+  const draft = await draftMode()
+  draft.enable()
+
+  // フェッチした投稿からのパスにリダイレクト
+  // searchParams.slugにリダイレクトしないのは、オープンリダイレクトの脆弱性を避けるためです
+  redirect(post.slug)
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="app/api/draft/route.js" switcher
+import { draftMode } from 'next/headers'
+import { redirect } from 'next/navigation'
+
+export async function GET(request) {
+  // クエリ文字列パラメータを解析
+  const { searchParams } = new URL(request.url)
+  const secret = searchParams.get('secret')
+  const slug = searchParams.get('slug')
+
+  // シークレットと次のパラメータを確認
+  // このシークレットはこのRoute HandlerとCMSのみが知っているべきです
+  if (secret !== 'MY_SECRET_TOKEN' || !slug) {
+    return new Response('Invalid token', { status: 401 })
+  }
+
+  // 提供された`slug`が存在するかヘッドレスCMSをチェック
+  // getPostBySlugはヘッドレスCMSへの必要なフェッチロジックを実装します
+  const post = await getPostBySlug(slug)
+
+  // slugが存在しない場合、draft modeの有効化を防ぐ
+  if (!post) {
+    return new Response('Invalid slug', { status: 401 })
+  }
+
+  // cookieを設定してDraft Modeを有効化
+  const draft = await draftMode()
+  draft.enable()
+
+  // フェッチした投稿からのパスにリダイレクト
+  // searchParams.slugにリダイレクトしないのは、オープンリダイレクトの脆弱性を避けるためです
+  redirect(post.slug)
+}
+```
+
+</TabItem>
+</Tabs>
+
+成功すると、ブラウザはドラフトモードのcookieを持って表示したいパスにリダイレクトされます。
+
+## ステップ3: ドラフトコンテンツをプレビューする {#step-3-preview-the-draft-content}
+
+次のステップは、ページを更新して`draftMode().isEnabled`の値を確認することです。
+
+cookieが設定されたページをリクエストすると、データは**リクエスト時**にフェッチされます（ビルド時ではなく）。
+
+さらに、`isEnabled`の値は`true`になります。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.tsx" switcher
+// データをフェッチするページ
+import { draftMode } from 'next/headers'
+
+async function getData() {
+  const { isEnabled } = await draftMode()
+
+  const url = isEnabled
+    ? 'https://draft.example.com'
+    : 'https://production.example.com'
+
+  const res = await fetch(url)
+
+  return res.json()
+}
+
+export default async function Page() {
+  const { title, desc } = await getData()
+
+  return (
+    <main>
+      <h1>{title}</h1>
+      <p>{desc}</p>
+    </main>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+// データをフェッチするページ
+import { draftMode } from 'next/headers'
+
+async function getData() {
+  const { isEnabled } = await draftMode()
+
+  const url = isEnabled
+    ? 'https://draft.example.com'
+    : 'https://production.example.com'
+
+  const res = await fetch(url)
+
+  return res.json()
+}
+
+export default async function Page() {
+  const { title, desc } = await getData()
+
+  return (
+    <main>
+      <h1>{title}</h1>
+      <p>{desc}</p>
+    </main>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+ヘッドレスCMSから（`secret`と`slug`を使用して）またはURLを手動で使用してドラフトRoute Handlerにアクセスすると、ドラフトコンテンツを確認できるはずです。また、ドラフトを公開せずに更新した場合でも、ドラフトを表示できるはずです。

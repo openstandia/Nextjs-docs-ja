@@ -16,7 +16,7 @@ Next.jsには、アプリケーションのメタデータ（例：HTMLの`head`
 - **Config-based Metadata**: `layout.js`または`page.js`ファイルで[静的な`metadata`オブジェクト](/docs/app/api-reference/functions/generate-metadata#metadata-object)または動的な[`generateMetadata`関数](/docs/app/api-reference/functions/generate-metadata#generatemetadata-function)をエクスポートします
 - **File-based Metadata**: 静的または動的に生成された特別なファイルをルートセグメントに追加します
 
-これらのオプションの両方で、Next.jsはページに関連する`<head>`要素を自動的に生成します。また、[`ImageResponse`](/docs/app/api-reference/functions/image-response)コンストラクタを使用して動的なOG画像を作成することもできます。
+これらのオプションのいずれを使用しても、Next.jsはページに関連する`<head>`要素を自動的に生成します。また、[`ImageResponse`](/docs/app/api-reference/functions/image-response)コンストラクタを使用して動的なOG画像を作成することもできます。
 
 ## Static Metadata {#static-metadata}
 
@@ -125,8 +125,8 @@ export default function Page({ params, searchParams }) {}
 > **Good to know**:
 >
 > - `generateMetadata`を通じた静的および動的メタデータは、**Server Componentsでのみサポートされています**。
-> - `fetch`リクエストは、`generateMetadata`、`generateStaticParams`、Layouts、Pages、Server Components全体で同じデータに対して自動的に[メモ化](/docs/app/building-your-application/caching#request-memoization)されます。`fetch`が利用できない場合は、Reactの[`cache`を使用することができます](/docs/app/building-your-application/caching#react-cache-function)。
-> - Next.jsは、`generateMetadata`内でのデータ取得が完了するまで、UIをクライアントにストリーミングするのを待ちます。これにより、[ストリーミングされたレスポンス](/docs/app/building-your-application/routing/loading-ui-and-streaming)の最初の部分に`<head>`タグが含まれることが保証されます。
+> - `fetch`リクエストは、`generateMetadata`、`generateStaticParams`、Layouts、Pages、Server Components全体で同じデータに対して自動的に[メモ化](/docs/app/deep-dive/caching#request-memoization)されます。`fetch`が利用できない場合は、Reactの[`cache`を使用することができます](/docs/app/deep-dive/caching#react-cache-function)。
+> - Next.jsは、`generateMetadata`内でのデータ取得が完了するまで待機し、その後UIをクライアントにストリーミングします。これにより、[ストリーミングされたレスポンス](/docs/app/building-your-application/routing/loading-ui-and-streaming)の最初の部分に`<head>`タグが含まれることが保証されます。
 
 ## File-based metadata {#file-based-metadata}
 
@@ -150,7 +150,7 @@ File-based metadataは優先度が高く、config-based metadataを上書きし�
 ルートがメタデータを定義していない場合でも、常に追加される2つのデフォルトの`meta`タグがあります：
 
 - [meta charset tag](https://developer.mozilla.org/docs/Web/HTML/Element/meta#attr-charset)は、Webサイトの文字エンコーディングを設定します
-- [meta viewport tag](https://developer.mozilla.org/docs/Web/HTML/Viewport_meta_tag)は、異なるデバイスに合わせてWebサイトのビューポート幅とスケールを設定します
+- [meta viewport tag](https://developer.mozilla.org/docs/Web/HTML/Viewport_meta_tag)は、異なるデバイスに対応するためにWebサイトのビューポート幅とスケールを設定します
 
 ```html
 <meta charset="utf-8" />
@@ -161,7 +161,7 @@ File-based metadataは優先度が高く、config-based metadataを上書きし�
 
 ### Ordering {#ordering}
 
-メタデータは、rootセグメントから最終的な`page.js`セグメントに最も近いセグメントまで順に評価されます。例：
+メタデータは、rootセグメントから最終的な`page.js`セグメントに最も近いセグメントまで順番に評価されます。例：
 
 1. `app/layout.tsx` (Root Layout)
 2. `app/blog/layout.tsx` (Nested Blog Layout)
@@ -169,9 +169,9 @@ File-based metadataは優先度が高く、config-based metadataを上書きし�
 
 ### Merging {#merging}
 
-[評価順序](#ordering)に従って、同じルート内の複数のセグメントからエクスポートされたメタデータオブジェクトは**浅く**マージされ、ルートの最終的なメタデータ出力を形成します。重複するキーは、その順序に基づいて**置き換えられます**。
+[評価順序](#ordering)に従って、同じルート内の複数のセグメントからエクスポートされたMetadataオブジェクトは**浅く**マージされ、ルートの最終的なメタデータ出力を形成します。重複するキーは、その順序に基づいて**置き換えられます**。
 
-つまり、[`openGraph`](/docs/app/api-reference/functions/generate-metadata#opengraph)や[`robots`](/docs/app/api-reference/functions/generate-metadata#robots)のようなネストされたフィールドを持つメタデータは、以前のセグメントで定義されている場合、最後のセグメントによって**上書きされます**。
+これは、[`openGraph`](/docs/app/api-reference/functions/generate-metadata#opengraph)や[`robots`](/docs/app/api-reference/functions/generate-metadata#robots)などのネストされたフィールドを持つメタデータが、以前のセグメントで定義されている場合、最後のセグメントによって**上書きされる**ことを意味します。
 
 #### Overwriting fields {#overwriting-fields}
 
@@ -203,7 +203,7 @@ export const metadata = {
 - `app/layout.js`の`title`は`app/blog/page.js`の`title`によって**置き換えられます**。
 - `app/layout.js`のすべての`openGraph`フィールドは、`app/blog/page.js`で`openGraph`メタデータが設定されているため、`app/blog/page.js`で**置き換えられます**。`openGraph.description`がないことに注意してください。
 
-セグメント間で一部のネストされたフィールドを共有し、他のフィールドを上書きしたい場合は、それらを別の変数に取り出すことができます：
+セグメント間で一部のネストされたフィールドを共有し、他のフィールドを上書きしたい場合は、それらを別の変数に分けることができます：
 
 ```jsx title="app/shared-metadata.js"
 export const openGraphImage = { images: ['http://...'] }
@@ -231,7 +231,7 @@ export const metadata = {
 }
 ```
 
-上記の例では、OG画像は`app/layout.js`と`app/about/page.js`の間で共有されており、タイトルは異なります。
+上記の例では、OG画像は`app/layout.js`と`app/about/page.js`の間で共有されますが、タイトルは異なります。
 
 #### Inheriting fields {#inheriting-fields}
 
@@ -302,10 +302,10 @@ export default function OG() {
 
 > **Good to know**:
 >
-> - [Vercel OG Playground](https://og-playground.vercel.app/)で例を確認できます。
-> - `ImageResponse`は、HTMLとCSSをPNGに変換するために[@vercel/og](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)、[Satori](https://github.com/vercel/satori)、Resvgを使用します。
+> - 例は[Vercel OG Playground](https://og-playground.vercel.app/)で利用可能です。
+> - `ImageResponse`は、HTMLとCSSをPNGに変換するために、[@vercel/og](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)、[Satori](https://github.com/vercel/satori)、Resvgを使用します。
 > - flexboxとCSSプロパティのサブセットのみがサポートされています。高度なレイアウト（例：`display: grid`）は機能しません。
-> - 最大バンドルサイズは`500KB`です。バンドルサイズには、JSX、CSS、フォント、画像、その他のアセットが含まれます。制限を超えた場合は、アセットのサイズを減らすか、実行時に取得することを検討してください。
+> - 最大バンドルサイズは`500KB`です。バンドルサイズには、JSX、CSS、フォント、画像、およびその他のアセットが含まれます。制限を超えた場合は、アセットのサイズを縮小するか、実行時に取得することを検討してください。
 > - `ttf`、`otf`、`woff`フォント形式のみがサポートされています。フォントの解析速度を最大化するために、`ttf`または`otf`が`woff`よりも優先されます。
 
 ## JSON-LD {#json-ld}

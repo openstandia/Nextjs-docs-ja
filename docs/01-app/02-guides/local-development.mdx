@@ -1,0 +1,178 @@
+---
+title: 'ローカル開発環境を最適化する方法'
+nav_title: '開発環境'
+description: 'Next.jsでローカル開発環境を最適化する方法を学びましょう。'
+---
+
+Next.jsは、優れた開発者体験を提供するように設計されています。アプリケーションが成長するにつれて、ローカル開発中のコンパイル時間が遅くなることがあります。このガイドでは、一般的なコンパイル時のパフォーマンス問題を特定し、修正する方法を説明します。
+
+## ローカル開発と本番環境の違い {#local-dev-vs-production}
+
+`next dev`を使用した開発プロセスは、`next build`や`next start`とは異なります。
+
+`next dev`は、アプリケーション内のルートを開いたり、ナビゲートしたりする際にコンパイルします。これにより、アプリケーション内のすべてのルートがコンパイルされるのを待たずに開発サーバーを開始でき、より高速でメモリ使用量も少なくなります。本番ビルドを実行すると、ファイルの最小化やコンテンツハッシュの作成など、ローカル開発には不要な最適化が適用されます。
+
+## ローカル開発のパフォーマンス向上 {#improving-local-dev-performance}
+
+### 1. コンピュータのウイルス対策ソフトを確認する {#1-check-your-computer-s-antivirus}
+
+ウイルス対策ソフトウェアはファイルアクセスを遅くすることがあります。
+
+プロジェクトフォルダをウイルス対策の除外リストに追加してみてください。これはWindowsマシンで一般的ですが、ウイルス対策ツールがインストールされているシステムには推奨されます。
+
+### 2. Next.jsを更新し、Turbopackを有効にする {#2-update-next-js-and-enable-turbopack}
+
+Next.jsの最新バージョンを使用していることを確認してください。新しいバージョンには、しばしばパフォーマンスの改善が含まれています。
+
+Turbopackは、Next.jsに統合された新しいバンドラーで、ローカルパフォーマンスを向上させることができます。
+
+```bash
+npm install next@latest
+npm run dev --turbopack
+```
+
+[Turbopackについて詳しくはこちら](https://nextjs.org/blog/turbopack-for-development-stable)。詳細については、[アップグレードガイド](/docs/app/guides/upgrading)とコードモッドをご覧ください。
+
+### 3. インポートを確認する {#3-check-your-imports}
+
+コードのインポート方法は、コンパイルとバンドルの時間に大きく影響します。[パッケージバンドルの最適化](/docs/app/guides/package-bundling)について詳しく学び、[Dependency Cruiser](https://github.com/sverweij/dependency-cruiser)や[Madge](https://github.com/pahen/madge)のようなツールを探ってみてください。
+
+### アイコンライブラリ {#icon-libraries}
+
+`@material-ui/icons`や`react-icons`のようなライブラリは、数千のアイコンをインポートすることがありますが、実際には数個しか使用しないことがあります。必要なアイコンだけをインポートするようにしてください：
+
+```jsx
+// これではなく:
+import { Icon1, Icon2 } from 'react-icons/md'
+
+// こうしてください:
+import Icon1 from 'react-icons/md/Icon1'
+import Icon2 from 'react-icons/md/Icon2'
+```
+
+`react-icons`のようなライブラリには、多くの異なるアイコンセットが含まれています。1つのセットを選び、そのセットを使用し続けてください。
+
+たとえば、アプリケーションが`react-icons`を使用し、以下のすべてをインポートしている場合：
+
+- `pi` (Phosphor Icons)
+- `md` (Material Design Icons)
+- `tb` (tabler-icons)
+- `cg` (cssgg)
+
+これらを組み合わせると、コンパイラが処理しなければならないモジュールが数万に達し、各インポートから1つしか使用しない場合でも同様です。
+
+### バレルファイル {#barrel-files}
+
+"バレルファイル"は、他のファイルから多くのアイテムをエクスポートするファイルです。これらは、モジュールスコープで副作用があるかどうかをインポートを使用してコンパイラが解析する必要があるため、ビルドを遅くすることがあります。
+
+可能であれば、特定のファイルから直接インポートするようにしてください。[バレルファイルについて詳しくはこちら](https://vercel.com/blog/how-we-optimized-package-imports-in-next-js)とNext.jsの組み込み最適化について学びましょう。
+
+### パッケージインポートの最適化 {#optimize-package-imports}
+
+Next.jsは特定のパッケージのインポートを自動的に最適化できます。バレルファイルを利用するパッケージを使用している場合は、それらを`next.config.js`に追加してください：
+
+```jsx
+module.exports = {
+  experimental: {
+    optimizePackageImports: ['package-name'],
+  },
+}
+```
+
+Turbopackはインポートを自動的に解析し、最適化します。この設定は不要です。
+
+### 4. Tailwind CSSの設定を確認する {#4-check-your-tailwind-css-setup}
+
+Tailwind CSSを使用している場合は、正しく設定されていることを確認してください。
+
+一般的な間違いは、`content`配列を`node_modules`やスキャンすべきでない大きなディレクトリを含むように設定することです。
+
+Tailwind CSSバージョン3.4.8以降では、ビルドを遅くする可能性のある設定について警告します。
+
+1. `tailwind.config.js`で、スキャンするファイルを具体的に指定します：
+
+   ```jsx
+   module.exports = {
+     content: [
+       './src/**/*.{js,ts,jsx,tsx}', // 良い例
+       // これは広すぎるかもしれません
+       // `packages/**/node_modules`も一致します
+       // '../../packages/**/*.{js,ts,jsx,tsx}',
+     ],
+   }
+   ```
+
+2. 不要なファイルのスキャンを避けます：
+
+   ```jsx
+   module.exports = {
+     content: [
+       // より良い例 - 'src'フォルダのみをスキャン
+       '../../packages/ui/src/**/*.{js,ts,jsx,tsx}',
+     ],
+   }
+   ```
+
+### 5. カスタムwebpack設定を確認する {#5-check-custom-webpack-settings}
+
+カスタムwebpack設定を追加した場合、それがコンパイルを遅くしている可能性があります。
+
+ローカル開発に本当に必要かどうかを考慮してください。特定のツールを本番ビルドのみに含めるか、Turbopackに移行して[loaders](/docs/app/api-reference/config/next-config-js/turbopack#supported-loaders)を使用することを検討してください。
+
+### 6. メモリ使用量の最適化 {#6-optimize-memory-usage}
+
+アプリが非常に大きい場合、より多くのメモリが必要になることがあります。
+
+[メモリ使用量の最適化について詳しくはこちら](/docs/app/guides/memory-usage)。
+
+### 7. Server Componentsとデータフェッチ {#7-server-components-and-data-fetching}
+
+Server Componentsへの変更は、ページ全体を再レンダリングし、新しいデータをコンポーネントに表示するためにローカルで再レンダリングを引き起こします。
+
+実験的な`serverComponentsHmrCache`オプションを使用すると、ローカル開発でのホットモジュールリプレースメント（HMR）リフレッシュ間でServer Components内の`fetch`レスポンスをキャッシュできます。これにより、レスポンスが高速化され、APIコールのコストが削減されます。
+
+[実験的オプションについて詳しくはこちら](/docs/app/api-reference/config/next-config-js/serverComponentsHmrCache)。
+
+## 問題を見つけるためのツール {#tools-for-finding-problems}
+
+### 詳細なfetchログ {#detailed-fetch-logging}
+
+開発中に何が起こっているかをより詳細に確認するには、このコマンドを使用してください：
+
+```bash
+next dev --verbose
+```
+
+## Turbopackトレース {#turbopack-tracing}
+
+Turbopackトレースは、ローカル開発中のアプリケーションのパフォーマンスを理解するのに役立つツールです。
+各モジュールのコンパイルにかかる時間とそれらの関連性について詳細な情報を提供します。
+
+1. 最新のNext.jsバージョンがインストールされていることを確認します。
+1. Turbopackトレースファイルを生成します：
+
+   ```bash
+   NEXT_TURBOPACK_TRACING=1 npm run dev
+   ```
+
+1. アプリケーションをナビゲートしたり、ファイルを編集して問題を再現します。
+1. Next.js開発サーバーを停止します。
+1. `.next`フォルダに`trace-turbopack`というファイルが生成されます。
+1. `next internal trace [path-to-file]`を使用してファイルを解釈できます：
+
+   ```bash
+   next internal trace .next/trace-turbopack
+   ```
+
+   `trace`が利用できないバージョンでは、コマンドは`turbo-trace-server`と呼ばれていました：
+
+   ```bash
+   next internal turbo-trace-server .next/trace-turbopack
+   ```
+
+1. トレースサーバーが実行されると、https://trace.nextjs.org/でトレースを表示できます。
+1. デフォルトでは、トレースビューアはタイミングを集計します。各個別の時間を確認するには、ビューアの右上で「Aggregated in order」から「Spans in order」に切り替えることができます。
+
+## まだ問題がありますか？ {#still-having-problems}
+
+[Turbopackトレース](#turbopack-tracing)セクションで生成されたトレースファイルを共有し、[GitHub Discussions](https://github.com/vercel/next.js/discussions)または[Discord](https://nextjs.org/discord)で共有してください。
