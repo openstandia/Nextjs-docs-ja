@@ -1,20 +1,20 @@
 ---
 title: 'use server'
-description: 'use serverディレクティブを使用してサーバーでコードを実行する方法を学ぶ。'
+description: 'use server ディレクティブを使用してサーバーでコードを実行する方法を学びます。'
 ---
 
-`use server`ディレクティブは、**サーバーサイド**で実行する関数またはファイルを指定します。ファイルの先頭に配置することで、ファイル内のすべての関数がサーバーサイドであることを示したり、関数の先頭にインラインで配置してその関数を[Server Function](https://19.react.dev/reference/rsc/server-functions)としてマークしたりすることができます。これはReactの機能です。
+`use server` ディレクティブは、関数またはファイルを**サーバーサイド**で実行することを指定します。ファイルの先頭に使用することで、そのファイル内のすべての関数がサーバーサイドであることを示すことができ、関数の先頭にインラインで使用することで、その関数を[Server Function](https://19.react.dev/reference/rsc/server-functions)としてマークします。これはReactの機能です。
 
-## ファイルの先頭での `use server` の使用 {#using-use-server-at-the-top-of-a-file}
+## ファイルの先頭で `use server` を使用する {#using-use-server-at-the-top-of-a-file}
 
-以下の例は、ファイルの先頭に`use server`ディレクティブを持つファイルを示しています。このファイル内のすべての関数はサーバーで実行されます。
+次の例は、ファイルの先頭に `use server` ディレクティブがあるファイルを示しています。このファイル内のすべての関数はサーバーで実行されます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
 
 ```tsx title="app/actions.ts" highlight={1} switcher
 'use server'
-import { db } from '@/lib/db' // あなたのデータベースクライアント
+import { db } from '@/lib/db' // データベースクライアント
 
 export async function createUser(data: { name: string; email: string }) {
   const user = await db.user.create({ data })
@@ -27,7 +27,7 @@ export async function createUser(data: { name: string; email: string }) {
 
 ```jsx title="app/actions.js" highlight={1} switcher
 'use server'
-import { db } from '@/lib/db' // あなたのデータベースクライアント
+import { db } from '@/lib/db' // データベースクライアント
 
 export async function createUser(data) {
   const user = await db.user.create({ data })
@@ -38,18 +38,18 @@ export async function createUser(data) {
 </TabItem>
 </Tabs>
 
-### クライアントコンポーネントでのサーバー関数の使用 {#using-server-functions-in-a-client-component}
+### Client ComponentでServer Functionsを使用する {#using-server-functions-in-a-client-component}
 
-サーバー関数をクライアントコンポーネントで使用するには、ファイルの先頭に`use server`ディレクティブを使用して専用のファイルでサーバー関数を作成する必要があります。これらのサーバー関数はクライアントとサーバーコンポーネントにインポートして実行できます。
+Client ComponentでServer Functionsを使用するには、`use server` ディレクティブをファイルの先頭に置いて、専用のファイルにServer Functionsを作成する必要があります。これらのServer Functionsは、Client ComponentおよびServer Componentにインポートして実行できます。
 
-`actions.ts`に`fetchUsers`というサーバー関数があると仮定します：
+`actions.ts`に`fetchUsers`というServer Functionがあると仮定します：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
 
 ```tsx title="app/actions.ts" highlight={1} switcher
 'use server'
-import { db } from '@/lib/db' // あなたのデータベースクライアント
+import { db } from '@/lib/db' // データベースクライアント
 
 export async function fetchUsers() {
   const users = await db.user.findMany()
@@ -62,7 +62,7 @@ export async function fetchUsers() {
 
 ```jsx title="app/actions.js" highlight={1} switcher
 'use server'
-import { db } from '@/lib/db' // あなたのデータベースクライアント
+import { db } from '@/lib/db' // データベースクライアント
 
 export async function fetchUsers() {
   const users = await db.user.findMany()
@@ -73,7 +73,7 @@ export async function fetchUsers() {
 </TabItem>
 </Tabs>
 
-その後、クライアントコンポーネントで`fetchUsers`サーバー関数をインポートし、クライアントサイドで実行できます。
+その後、`fetchUsers` Server FunctionをClient Componentにインポートし、クライアントサイドで実行できます。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -102,41 +102,49 @@ export default function MyButton() {
 </TabItem>
 </Tabs>
 
-## インラインでの `use server` の使用 {#using-use-server-inline}
+## インラインで `use server` を使用する {#using-use-server-inline}
 
-次の例では、`use server`が関数の先頭でインラインで使用され、[Server Function](https://19.react.dev/reference/rsc/server-functions)としてマークされています：
+次の例では、`use server` が関数の先頭にインラインで使用され、[Server Function](https://19.react.dev/reference/rsc/server-functions)としてマークされています：
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
 
-```tsx title="app/page.tsx" highlight={5} switcher
-import { db } from '@/lib/db' // あなたのデータベースクライアント
+```tsx title="app/posts/[id]/page.tsx" switcher
+highlight={8}
+import { EditPost } from './edit-post'
+import { revalidatePath } from 'next/cache'
 
-export default function UserList() {
-  async function fetchUsers() {
+export default async function PostPage({ params }: { params: { id: string } }) {
+  const post = await getPost(params.id)
+
+  async function updatePost(formData: FormData) {
     'use server'
-    const users = await db.user.findMany()
-    return users
+    await savePost(params.id, formData)
+    revalidatePath(`/posts/${params.id}`)
   }
 
-  return <button onClick={() => fetchUsers()}>Fetch Users</button>
+  return <EditPost updatePostAction={updatePost} post={post} />
 }
 ```
 
 </TabItem>
 <TabItem value="jsx" label="JavaScript">
 
-```jsx title="app/page.js" highlight={5} switcher
-import { db } from '@/lib/db' // あなたのデータベースクライアント
+```jsx title="app/posts/[id]/page.js" switcher
+highlight={8}
+import { EditPost } from './edit-post'
+import { revalidatePath } from 'next/cache'
 
-export default function UserList() {
-  async function fetchUsers() {
+export default async function PostPage({ params }) {
+  const post = await getPost(params.id)
+
+  async function updatePost(formData) {
     'use server'
-    const users = await db.user.findMany()
-    return users
+    await savePost(params.id, formData)
+    revalidatePath(`/posts/${params.id}`)
   }
 
-  return <button onClick={() => fetchUsers()}>Fetch Users</button>
+  return <EditPost updatePostAction={updatePost} post={post} />
 }
 ```
 
@@ -145,11 +153,11 @@ export default function UserList() {
 
 ## セキュリティに関する考慮事項 {#security-considerations}
 
-`use server`ディレクティブを使用する際には、すべてのサーバー側ロジックが安全であり、機密データが保護されていることを確認することが重要です。
+`use server` ディレクティブを使用する際は、すべてのサーバーサイドロジックが安全であり、機密データが保護されていることを確認することが重要です。
 
 ### 認証と認可 {#authentication-and-authorization}
 
-機密性の高いサーバーサイドの操作を行う前に、必ずユーザーを認証および認可してください。
+機密性の高いサーバーサイドの操作を行う前に、常にユーザーを認証し、認可してください。
 
 <Tabs>
 <TabItem value="tsx" label="TypeScript">
@@ -157,8 +165,8 @@ export default function UserList() {
 ```tsx title="app/actions.ts" highlight={1,7,8,9,10} switcher
 'use server'
 
-import { db } from '@/lib/db' // あなたのデータベースクライアント
-import { authenticate } from '@/lib/auth' // あなたの認証ライブラリ
+import { db } from '@/lib/db' // データベースクライアント
+import { authenticate } from '@/lib/auth' // 認証ライブラリ
 
 export async function createUser(
   data: { name: string; email: string },
@@ -179,8 +187,8 @@ export async function createUser(
 ```jsx title="app/actions.js" highlight={1,7,8,9,10} switcher
 'use server'
 
-import { db } from '@/lib/db' // あなたのデータベースクライアント
-import { authenticate } from '@/lib/auth' // あなたの認証ライブラリ
+import { db } from '@/lib/db' // データベースクライアント
+import { authenticate } from '@/lib/auth' // 認証ライブラリ
 
 export async function createUser(data, token) {
   const user = authenticate(token)
@@ -195,6 +203,6 @@ export async function createUser(data, token) {
 </TabItem>
 </Tabs>
 
-## 参照 {#reference}
+## 参考文献 {#reference}
 
-`use server`に関する詳細は[React ドキュメント](https://react.dev/reference/rsc/use-server)を参照してください。
+`use server` に関する詳細は、[Reactのドキュメント](https://react.dev/reference/rsc/use-server)を参照してください。

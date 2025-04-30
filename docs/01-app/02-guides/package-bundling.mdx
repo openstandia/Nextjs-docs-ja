@@ -1,0 +1,138 @@
+---
+title: 'パッケージバンドルの最適化方法'
+nav_title: 'パッケージバンドル'
+description: 'アプリケーションのサーバーおよびクライアントバンドルを最適化する方法を学びます。'
+related:
+  description: '本番環境向けにアプリケーションを最適化する方法を学びます。'
+  links:
+    - app/guides/production-checklist
+---
+
+外部パッケージのバンドルは、アプリケーションのパフォーマンスを大幅に向上させることができます。<AppOnly>デフォルトでは、Server ComponentsやRoute Handlers内でインポートされたパッケージは、Next.jsによって自動的にバンドルされます。このページでは、パッケージバンドルの分析とさらなる最適化方法について説明します。</AppOnly> <PagesOnly>デフォルトでは、アプリケーションにインポートされたパッケージはバンドルされません。これは、外部パッケージが事前にバンドルされていない場合、たとえばモノレポや`node_modules`からインポートされた場合、パフォーマンスに影響を与えたり、動作しない可能性があります。このページでは、パッケージバンドルの分析と設定方法について説明します。</PagesOnly>
+
+## JavaScriptバンドルの分析 {#analyzing-javascript-bundles}
+
+[`@next/bundle-analyzer`](https://www.npmjs.com/package/@next/bundle-analyzer)は、Next.js用のプラグインで、アプリケーションバンドルのサイズを管理するのに役立ちます。各パッケージとその依存関係のサイズを視覚的に報告します。この情報を使用して、大きな依存関係を削除したり、コードを分割したり、[遅延読み込み](/docs/app/guides/lazy-loading)したりできます。
+
+### インストール {#installation}
+
+次のコマンドを実行してプラグインをインストールします：
+
+```bash
+npm i @next/bundle-analyzer
+# または {#or}
+yarn add @next/bundle-analyzer
+# または {#or}
+pnpm add @next/bundle-analyzer
+```
+
+次に、`next.config.js`にバンドルアナライザーの設定を追加します。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {}
+
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
+module.exports = withBundleAnalyzer(nextConfig)
+```
+
+### レポートの生成 {#generating-a-report}
+
+次のコマンドを実行してバンドルを分析します：
+
+```bash
+ANALYZE=true npm run build
+# または {#or}
+ANALYZE=true yarn build
+# または {#or}
+ANALYZE=true pnpm build
+```
+
+レポートはブラウザで3つの新しいタブを開き、確認できます。定期的にアプリケーションのバンドルを評価することで、時間をかけてアプリケーションのパフォーマンスを維持することができます。
+
+## パッケージインポートの最適化 {#optimizing-package-imports}
+
+アイコンライブラリのような一部のパッケージは、数百ものモジュールをエクスポートすることがあり、開発や本番環境でのパフォーマンス問題を引き起こす可能性があります。
+
+これらのパッケージのインポート方法を最適化するには、`next.config.js`に[`optimizePackageImports`](/docs/app/api-reference/config/next-config-js/optimizePackageImports)オプションを追加します。このオプションは、実際に使用するモジュールのみを読み込み、多くの名前付きエクスポートを持つインポート文を書く利便性を提供します。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    optimizePackageImports: ['icon-library'],
+  },
+}
+
+module.exports = nextConfig
+```
+
+Next.jsは一部のライブラリを自動的に最適化するため、optimizePackageImportsリストに含める必要はありません。[完全なリスト](https://nextjs.org/docs/app/api-reference/config/next-config-js/optimizePackageImports)を参照してください。
+
+<PagesOnly>
+
+## 特定のパッケージのバンドル {#bundling-specific-packages}
+
+特定のパッケージをバンドルするには、`next.config.js`で[`transpilePackages`](/docs/app/api-reference/config/next-config-js/transpilePackages)オプションを使用します。このオプションは、モノレポや`node_modules`からインポートされた事前にバンドルされていない外部パッケージをバンドルするのに役立ちます。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  transpilePackages: ['package-name'],
+}
+
+module.exports = nextConfig
+```
+
+## すべてのパッケージのバンドル {#bundling-all-packages}
+
+すべてのパッケージを自動的にバンドルするには（App Routerのデフォルト動作）、`next.config.js`で[`bundlePagesRouterDependencies`](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/bundlePagesRouterDependencies)オプションを使用します。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  bundlePagesRouterDependencies: true,
+}
+
+module.exports = nextConfig
+```
+
+## 特定のパッケージをバンドルから除外する {#opting-specific-packages-out-of-bundling}
+
+[`bundlePagesRouterDependencies`](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/bundlePagesRouterDependencies)オプションが有効になっている場合、`next.config.js`で[`serverExternalPackages`](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/serverExternalPackages)オプションを使用して、特定のパッケージを自動バンドルから除外できます：
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Pages Routerで外部パッケージを自動的にバンドル：
+  bundlePagesRouterDependencies: true,
+  // AppとPages Routerの両方で特定のパッケージをバンドルから除外：
+  serverExternalPackages: ['package-name'],
+}
+
+module.exports = nextConfig
+```
+
+</PagesOnly>
+
+<AppOnly>
+
+## 特定のパッケージをバンドルから除外する {#opting-specific-packages-out-of-bundling}
+
+Server ComponentsやRoute Handlers内でインポートされたパッケージはNext.jsによって自動的にバンドルされるため、`next.config.js`で[`serverExternalPackages`](/docs/app/api-reference/config/next-config-js/serverExternalPackages)オプションを使用して、特定のパッケージをバンドルから除外できます。
+
+```js title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  serverExternalPackages: ['package-name'],
+}
+
+module.exports = nextConfig
+```
+
+Next.jsには、現在互換性の作業中で自動的に除外されている人気のあるパッケージのリストが含まれています。[完全なリスト](/docs/app/api-reference/config/next-config-js/serverExternalPackages)を参照してください。
+
+</AppOnly>

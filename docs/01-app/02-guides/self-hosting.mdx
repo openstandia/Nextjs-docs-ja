@@ -1,0 +1,278 @@
+---
+title: 'Next.jsアプリケーションをセルフホストする方法'
+nav_title: 'セルフホスティング'
+description: 'Node.jsサーバー、Dockerイメージ、または静的HTMLファイル（静的エクスポート）でNext.jsアプリケーションをセルフホストする方法を学びます。'
+---
+
+{/* このドキュメントの内容はapp routerとpages routerの間で共有されています。Pages Routerに特化した内容を追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有される内容はコンポーネントでラップしないでください。 */}
+
+Next.jsアプリを[デプロイする](docs/app/getting-started/deploying)際に、インフラストラクチャに基づいて異なる機能の処理方法を設定したい場合があります。
+
+> **🎥 視聴:** Next.jsのセルフホスティングについて詳しく学ぶ → [YouTube (45分)](https://www.youtube.com/watch?v=sIVL4JMqRfc)。
+
+## 画像最適化 {#image-optimization}
+
+`next/image`を使用した[画像最適化](/docs/app/building-your-application/optimizing/images)は、`next start`を使用してデプロイする際に、設定なしでセルフホストで動作します。画像を最適化するための別のサービスを使用したい場合は、[画像ローダーを設定](/docs/app/building-your-application/optimizing/images#loaders)できます。
+
+画像最適化は、`next.config.js`でカスタム画像ローダーを定義することで[静的エクスポート](/docs/app/guides/static-exports#image-optimization)と共に使用できます。画像はビルド時ではなく、実行時に最適化されることに注意してください。
+
+> **Good to know:**
+>
+> - glibcベースのLinuxシステムでは、過剰なメモリ使用を防ぐために[追加の設定](https://sharp.pixelplumbing.com/install#linux-memory-allocator)が必要な場合があります。
+> - 最適化された画像の[キャッシュ動作](/docs/app/api-reference/components/image#caching-behavior)とTTLの設定方法について詳しく学びましょう。
+> - 画像を別途最適化している場合でも、`next/image`を使用する他の利点を保持しつつ、[画像最適化を無効化](/docs/app/api-reference/components/image#unoptimized)することもできます。
+
+## ミドルウェア {#middleware}
+
+[ミドルウェア](/docs/app/building-your-application/routing/middleware)は、`next start`を使用してデプロイする際に、設定なしでセルフホストで動作します。受信リクエストへのアクセスが必要なため、[静的エクスポート](/docs/app/guides/static-exports)を使用する場合はサポートされていません。
+
+ミドルウェアは、アプリケーション内のすべてのルートまたはアセットの前で実行される可能性があるため、低遅延を保証するために利用可能なNode.js APIのサブセットである[ランタイム](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)を使用します。これを望まない場合は、ミドルウェアを実行するために[完全なNode.jsランタイム](https://nextjs.org/blog/next-15-2#nodejs-middleware-experimental)を使用できます。
+
+すべてのNode.js APIを必要とするロジックを追加したい場合（または外部パッケージを使用したい場合）、このロジックを[Server Component](/docs/app/building-your-application/rendering/server-components)として[レイアウト](/docs/app/building-your-application/routing/layouts-and-templates#layouts)に移動できるかもしれません。たとえば、[ヘッダー](/docs/app/api-reference/functions/headers)の確認や[リダイレクト](/docs/app/api-reference/functions/redirect)などです。また、`next.config.js`を通じて、ヘッダー、クッキー、またはクエリパラメータを使用して[リダイレクト](/docs/app/api-reference/config/next-config-js/redirects#header-cookie-and-query-matching)や[書き換え](/docs/app/api-reference/config/next-config-js/rewrites#header-cookie-and-query-matching)を行うこともできます。それがうまくいかない場合は、[カスタムサーバー](https://nextjs.org/docs/canary/pages/guides/custom-server)を使用することもできます。
+
+## 環境変数 {#environment-variables}
+
+Next.jsは、ビルド時と実行時の両方の環境変数をサポートできます。
+
+**デフォルトでは、環境変数はサーバーでのみ利用可能です**。環境変数をブラウザに公開するには、`NEXT_PUBLIC_`でプレフィックスを付ける必要があります。ただし、これらの公開環境変数は`next build`中にJavaScriptバンドルにインライン化されます。
+
+<PagesOnly>
+
+実行時の環境変数を読み取るには、`getServerSideProps`または[App Routerの段階的採用](/docs/app/guides/migrating/app-router-migration)を使用することをお勧めします。
+
+</PagesOnly>
+
+<AppOnly>
+
+動的レンダリング中にサーバーで環境変数を安全に読み取ることができます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/page.ts" switcher
+import { connection } from 'next/server'
+
+export default async function Component() {
+  await connection()
+  // cookies, headers, and other Dynamic APIs
+  // will also opt into dynamic rendering, meaning
+  // this env variable is evaluated at runtime
+  const value = process.env.MY_VALUE
+  // ...
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/page.js" switcher
+import { connection } from 'next/server'
+
+export default async function Component() {
+  await connection()
+  // cookies, headers, and other Dynamic APIs
+  // will also opt into dynamic rendering, meaning
+  // this env variable is evaluated at runtime
+  const value = process.env.MY_VALUE
+  // ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+これにより、異なる値を持つ複数の環境を通じて昇格できる単一のDockerイメージを使用できます。
+
+> **Good to know:**
+>
+> - [`register`関数](/docs/app/guides/instrumentation)を使用して、サーバーの起動時にコードを実行できます。
+> - [runtimeConfig](https://nextjs.org/docs/canary/pages/api-reference/config/next-config-js/runtime-configuration)オプションの使用は推奨しません。これはスタンドアロン出力モードでは機能しないためです。代わりに、App Routerの[段階的採用](/docs/app/guides/migrating/app-router-migration)をお勧めします。
+
+## キャッシングとISR {#caching-and-isr}
+
+Next.jsは、レスポンス、生成された静的ページ、ビルド出力、および画像、フォント、スクリプトなどの他の静的アセットをキャッシュできます。
+
+ページのキャッシングと再検証（[Incremental Static Regeneration](/docs/app/building-your-application/data-fetching/incremental-static-regeneration)を使用）は、**同じ共有キャッシュ**を使用します。デフォルトでは、このキャッシュはNext.jsサーバー上のファイルシステム（ディスク上）に保存されます。**これは、Pages RouterとApp Routerの両方を使用してセルフホスティングする際に自動的に機能します**。
+
+キャッシュされたページとデータを永続的なストレージに保存したり、Next.jsアプリケーションの複数のコンテナやインスタンス間でキャッシュを共有したりする場合は、Next.jsキャッシュの場所を設定できます。
+
+### 自動キャッシング {#automatic-caching}
+
+- Next.jsは、`public, max-age=31536000, immutable`の`Cache-Control`ヘッダーを真に不変のアセットに設定します。これは上書きできません。これらの不変ファイルにはファイル名にSHAハッシュが含まれているため、安全に無期限にキャッシュできます。たとえば、[静的画像インポート](/docs/app/building-your-application/optimizing/images#local-images)です。画像のTTLを[設定](/docs/app/api-reference/components/image#caching-behavior)できます。
+- Incremental Static Regeneration (ISR)は、`s-maxage: <revalidate in getStaticProps>, stale-while-revalidate`の`Cache-Control`ヘッダーを設定します。この再検証時間は、[`getStaticProps`関数](https://nextjs.org/docs/canary/pages/building-your-application/data-fetching/get-static-props)で秒単位で定義されます。`revalidate: false`を設定すると、デフォルトで1年間のキャッシュ期間になります。
+- 動的にレンダリングされたページは、ユーザー固有のデータがキャッシュされないようにするために、`private, no-cache, no-store, max-age=0, must-revalidate`の`Cache-Control`ヘッダーを設定します。これは、App RouterとPages Routerの両方に適用されます。これには[ドラフトモード](/docs/app/guides/draft-mode)も含まれます。
+
+### 静的アセット {#static-assets}
+
+静的アセットを別のドメインまたはCDNにホストしたい場合は、`next.config.js`で`assetPrefix`[設定](/docs/app/api-reference/config/next-config-js/assetPrefix)を使用できます。Next.jsは、JavaScriptまたはCSSファイルを取得する際にこのアセットプレフィックスを使用します。アセットを別のドメインに分離することには、DNSおよびTLS解決に余分な時間がかかるというデメリットがあります。
+
+[`assetPrefix`について詳しく学ぶ](/docs/app/api-reference/config/next-config-js/assetPrefix)。
+
+### キャッシングの設定 {#configuring-caching}
+
+デフォルトでは、生成されたキャッシュアセットはメモリ（デフォルトで50MB）とディスクに保存されます。Kubernetesのようなコンテナオーケストレーションプラットフォームを使用してNext.jsをホストしている場合、各ポッドにはキャッシュのコピーがあります。デフォルトではポッド間でキャッシュが共有されないため、古いデータが表示されるのを防ぐために、Next.jsキャッシュを設定してキャッシュハンドラーを提供し、メモリ内キャッシュを無効にすることができます。
+
+セルフホスティング時にISR/データキャッシュの場所を設定するには、`next.config.js`ファイルでカスタムハンドラーを設定できます：
+
+```jsx title="next.config.js"
+module.exports = {
+  cacheHandler: require.resolve('./cache-handler.js'),
+  cacheMaxMemorySize: 0, // デフォルトのメモリ内キャッシュを無効化
+}
+```
+
+次に、プロジェクトのルートに`cache-handler.js`を作成します。たとえば：
+
+```jsx title="cache-handler.js"
+const cache = new Map()
+
+module.exports = class CacheHandler {
+  constructor(options) {
+    this.options = options
+  }
+
+  async get(key) {
+    // これは耐久性のあるストレージなど、どこにでも保存できます
+    return cache.get(key)
+  }
+
+  async set(key, data, ctx) {
+    // これは耐久性のあるストレージなど、どこにでも保存できます
+    cache.set(key, {
+      value: data,
+      lastModified: Date.now(),
+      tags: ctx.tags,
+    })
+  }
+
+  async revalidateTag(tags) {
+    // tagsは文字列または文字列の配列です
+    tags = [tags].flat()
+    // キャッシュ内のすべてのエントリを反復処理します
+    for (let [key, value] of cache) {
+      // 値のタグが指定されたタグを含む場合、このエントリを削除します
+      if (value.tags.some((tag) => tags.includes(tag))) {
+        cache.delete(key)
+      }
+    }
+  }
+
+  // 次のリクエストの前にリセットされる単一のリクエストのための一時的なメモリ内キャッシュを持ちたい場合は、
+  // このメソッドを活用できます
+  resetRequestCache() {}
+}
+```
+
+カスタムキャッシュハンドラーを使用することで、Next.jsアプリケーションをホストしているすべてのポッド間で一貫性を確保できます。たとえば、キャッシュされた値を[Redis](https://github.com/vercel/next.js/tree/canary/examples/cache-handler-redis)やAWS S3など、どこにでも保存できます。
+
+> **Good to know:**
+>
+> - `revalidatePath`はキャッシュタグの上にある便利なレイヤーです。`revalidatePath`を呼び出すと、指定されたページの特別なデフォルトタグで`revalidateTag`関数が呼び出されます。
+
+## ビルドキャッシュ {#build-cache}
+
+Next.jsは、`next build`中にアプリケーションのどのバージョンが提供されているかを識別するためのIDを生成します。同じビルドを使用して複数のコンテナを起動する必要があります。
+
+環境の各ステージごとに再ビルドしている場合は、コンテナ間で使用する一貫したビルドIDを生成する必要があります。`next.config.js`で`generateBuildId`コマンドを使用します：
+
+```jsx title="next.config.js"
+module.exports = {
+  generateBuildId: async () => {
+    // これは何でもかまいません。最新のgitハッシュを使用します
+    return process.env.GIT_HASH
+  },
+}
+```
+
+## バージョンスキュー {#version-skew}
+
+Next.jsは、[バージョンスキュー](https://www.industrialempathy.com/posts/version-skew/)のほとんどのインスタンスを自動的に軽減し、検出された場合に新しいアセットを取得するためにアプリケーションを自動的にリロードします。たとえば、`deploymentId`に不一致がある場合、ページ間の遷移はプリフェッチされた値を使用するのではなく、ハードナビゲーションを実行します。
+
+アプリケーションがリロードされると、ページナビゲーション間で永続化するように設計されていない場合、アプリケーションの状態が失われる可能性があります。たとえば、URL状態やローカルストレージを使用すると、ページのリフレッシュ後も状態が永続化されます。ただし、`useState`のようなコンポーネント状態は、そのようなナビゲーションで失われます。
+
+<AppOnly>
+
+## ストリーミングとサスペンス {#streaming-and-suspense}
+
+Next.js App Routerは、セルフホスティング時に[ストリーミングレスポンス](/docs/app/building-your-application/routing/loading-ui-and-streaming)をサポートします。Nginxや同様のプロキシを使用している場合は、ストリーミングを有効にするためにバッファリングを無効にするように設定する必要があります。
+
+たとえば、Nginxで`X-Accel-Buffering`を`no`に設定してバッファリングを無効にできます：
+
+```js title="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/:path*{/}?',
+        headers: [
+          {
+            key: 'X-Accel-Buffering',
+            value: 'no',
+          },
+        ],
+      },
+    ]
+  },
+}
+```
+
+## 部分的なプリレンダリング {#partial-prerendering}
+
+[部分的なプリレンダリング（実験的）](/docs/app/building-your-application/rendering/partial-prerendering)は、Next.jsでデフォルトで動作し、CDN専用の機能ではありません。これには、Node.jsサーバー（`next start`を通じて）としてのデプロイや、Dockerコンテナと共に使用する場合が含まれます。
+
+## CDNとの使用 {#usage-with-cdns}
+
+Next.jsアプリケーションの前にCDNを使用する場合、動的APIがアクセスされると、ページには`Cache-Control: private`レスポンスヘッダーが含まれます。これにより、生成されたHTMLページがキャッシュ不可としてマークされます。ページが完全に静的にプリレンダリングされている場合は、`Cache-Control: public`が含まれ、ページがCDNでキャッシュされることを許可します。
+
+静的コンポーネントと動的コンポーネントの両方を混在させる必要がない場合は、ルート全体を静的にして、出力HTMLをCDNでキャッシュできます。動的APIが使用されていない場合、`next build`を実行するときのデフォルトの動作は自動静的最適化です。
+
+部分的なプリレンダリングが安定版に移行する際には、デプロイメントアダプターAPIを通じてサポートを提供します。
+
+</AppOnly>
+
+<AppOnly>
+
+## `after` {#after}
+
+[`after`](/docs/app/api-reference/functions/after)は、`next start`でセルフホスティングする際に完全にサポートされています。
+
+サーバーを停止する際には、`SIGINT`または`SIGTERM`シグナルを送信して待機することで、優雅なシャットダウンを確保してください。これにより、Next.jsサーバーは`after`内で使用される保留中のコールバック関数やプロミスが完了するまで待機します。
+
+</AppOnly>
+
+<PagesOnly>
+
+## 手動の優雅なシャットダウン {#manual-graceful-shutdowns}
+
+セルフホスティング時に、`SIGTERM`または`SIGINT`シグナルでサーバーがシャットダウンする際にコードを実行したい場合があります。
+
+環境変数`NEXT_MANUAL_SIG_HANDLE`を`true`に設定し、そのシグナルのハンドラーを`_document.js`ファイル内で登録できます。環境変数は`.env`ファイルではなく、`package.json`スクリプト内で直接登録する必要があります。
+
+> **Good to know**: 手動シグナル処理は`next dev`では利用できません。
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "NEXT_MANUAL_SIG_HANDLE=true next start"
+  }
+}
+```
+
+```js title="pages/_document.js"
+if (process.env.NEXT_MANUAL_SIG_HANDLE) {
+  process.on('SIGTERM', () => {
+    console.log('Received SIGTERM: cleaning up')
+    process.exit(0)
+  })
+  process.on('SIGINT', () => {
+    console.log('Received SIGINT: cleaning up')
+    process.exit(0)
+  })
+}
+```
+
+</PagesOnly>
