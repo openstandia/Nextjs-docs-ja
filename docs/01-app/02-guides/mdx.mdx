@@ -1,0 +1,1037 @@
+---
+title: 'Next.jsでのMarkdownとMDXの使用方法'
+nav_title: 'MDX'
+description: 'MDXを設定し、Next.jsアプリで使用する方法を学びます。'
+---
+
+{/* このドキュメントの内容は、app routerとpages routerの間で共有されています。Pages Routerに特化した内容を追加するには、`<PagesOnly>Content</PagesOnly>`コンポーネントを使用できます。共有される内容はコンポーネントでラップしないでください。 */}
+
+[Markdown](https://daringfireball.net/projects/markdown/syntax)は、テキストをフォーマットするために使用される軽量のマークアップ言語です。プレーンテキストの構文を使用して書き、それを構造的に有効なHTMLに変換することができます。ウェブサイトやブログのコンテンツを書く際によく使用されます。
+
+次のように書くと...
+
+```md
+I **love** using [Next.js](https://nextjs.org/)
+```
+
+出力:
+
+```html
+<p>I <strong>love</strong> using <a href="https://nextjs.org/">Next.js</a></p>
+```
+
+[MDX](https://mdxjs.com/)は、Markdownのスーパーセットであり、Markdownファイル内で直接[JSX](https://react.dev/learn/writing-markup-with-jsx)を書くことができます。これは、動的なインタラクティビティを追加し、Reactコンポーネントをコンテンツ内に埋め込む強力な方法です。
+
+Next.jsは、アプリケーション内のローカルMDXコンテンツと、サーバー上で動的にフェッチされるリモートMDXファイルの両方をサポートできます。Next.jsプラグインは、MarkdownとReactコンポーネントをHTMLに変換する処理を行い、Server Components（App Routerでのデフォルト）での使用もサポートしています。
+
+> **Good to know**: 完全な動作例については、[Portfolio Starter Kit](https://vercel.com/templates/next.js/portfolio-starter-kit)テンプレートを参照してください。
+
+## 依存関係のインストール {#install-dependencies}
+
+`@next/mdx`パッケージと関連パッケージは、Next.jsを設定してMarkdownとMDXを処理できるようにするために使用されます。**これはローカルファイルからデータを取得し**、`/pages`または`/app`ディレクトリ内に直接`.md`または`.mdx`拡張子のページを作成できるようにします。
+
+Next.jsでMDXをレンダリングするためにこれらのパッケージをインストールします:
+
+```bash title="Terminal"
+npm install @next/mdx @mdx-js/loader @mdx-js/react @types/mdx
+```
+
+## `next.config.mjs`の設定 {#configure-next-config-mjs}
+
+プロジェクトのrootにある`next.config.mjs`ファイルを更新して、MDXを使用するように設定します:
+
+```js title="next.config.mjs"
+import createMDX from '@next/mdx'
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // `pageExtensions`を設定してMarkdownとMDXファイルを含める
+  pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+  // 必要に応じて、他のNext.jsの設定を以下に追加
+}
+
+const withMDX = createMDX({
+  // 必要に応じてMarkdownプラグインをここに追加
+})
+
+// MDX設定とNext.js設定をマージ
+export default withMDX(nextConfig)
+```
+
+これにより、`.mdx`ファイルをアプリケーション内のページ、ルート、またはインポートとして機能させることができます。
+
+### `.md`ファイルの処理 {#handling-md-files}
+
+デフォルトでは、`next/mdx`は`.mdx`拡張子のファイルのみをコンパイルします。webpackで`.md`ファイルを処理するには、`extension`オプションを更新します:
+
+```js title="next.config.mjs"
+const withMDX = createMDX({
+  extension: /\.(md|mdx)$/,
+})
+```
+
+> **Good to know**: [Turbopack](/docs/app/api-reference/turbopack)は現在、`extension`オプションをサポートしていないため、`.md`ファイルをサポートしていません。
+
+## `mdx-components.tsx`ファイルの追加 {#add-an-mdx-components-tsx-file}
+
+グローバルなMDXコンポーネントを定義するために、プロジェクトのrootに`mdx-components.tsx`（または`.js`）ファイルを作成します。例えば、`pages`や`app`と同じレベル、または該当する場合は`src`内に作成します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="mdx-components.tsx" switcher
+import type { MDXComponents } from 'mdx/types'
+
+export function useMDXComponents(components: MDXComponents): MDXComponents {
+  return {
+    ...components,
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="mdx-components.js" switcher
+export function useMDXComponents(components) {
+  return {
+    ...components,
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**:
+>
+> - `mdx-components.tsx`は、App Routerで`@next/mdx`を使用するために**必須**であり、これがないと動作しません。
+> - [`mdx-components.tsx`ファイルの規約](/docs/app/api-reference/file-conventions/mdx-components)について詳しく学びましょう。
+> - [カスタムスタイルとコンポーネントの使用方法](#using-custom-styles-and-components)を学びましょう。
+
+## MDXのレンダリング {#rendering-mdx}
+
+Next.jsのファイルベースのルーティングを使用するか、他のページにMDXファイルをインポートすることで、MDXをレンダリングできます。
+
+### ファイルベースのルーティングを使用する {#using-file-based-routing}
+
+ファイルベースのルーティングを使用する場合、他のページと同様にMDXページを使用できます。
+
+<AppOnly>
+
+App Routerアプリでは、[メタデータ](/docs/app/building-your-application/optimizing/metadata)を使用することも含まれます。
+
+`/app`ディレクトリ内に新しいMDXページを作成します:
+
+```txt
+  my-project
+  ├── app
+  │   └── mdx-page
+  │       └── page.(mdx/md)
+  |── mdx-components.(tsx/js)
+  └── package.json
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+`/pages`ディレクトリ内に新しいMDXページを作成します:
+
+```txt
+  my-project
+  |── mdx-components.(tsx/js)
+  ├── pages
+  │   └── mdx-page.(mdx/md)
+  └── package.json
+```
+
+</PagesOnly>
+
+これらのファイル内でMDXを使用し、MDXページ内でReactコンポーネントを直接インポートすることもできます:
+
+```mdx
+import { MyComponent } from 'my-component'
+
+# Welcome to my MDX page! {#welcome-to-my-mdx-page}
+
+This is some **bold** and _italics_ text.
+
+This is a list in markdown:
+
+- One
+- Two
+- Three
+
+Checkout my React component:
+
+<MyComponent />
+```
+
+`/mdx-page`ルートに移動すると、レンダリングされたMDXページが表示されるはずです。
+
+### インポートを使用する {#using-imports}
+
+<AppOnly>
+
+`/app`ディレクトリ内に新しいページを作成し、任意の場所にMDXファイルを作成します:
+
+```txt
+  .
+  ├── app/
+  │   └── mdx-page/
+  │       └── page.(tsx/js)
+  ├── markdown/
+  │   └── welcome.(mdx/md)
+  ├── mdx-components.(tsx/js)
+  └── package.json
+```
+
+</AppOnly>
+
+<PagesOnly>
+
+`/pages`ディレクトリ内に新しいページを作成し、任意の場所にMDXファイルを作成します:
+
+```txt
+  .
+  ├── markdown/
+  │   └── welcome.(mdx/md)
+  ├── pages/
+  │   └── mdx-page.(tsx/js)
+  ├── mdx-components.(tsx/js)
+  └── package.json
+```
+
+</PagesOnly>
+
+これらのファイル内でMDXを使用し、MDXページ内でReactコンポーネントを直接インポートすることもできます:
+
+<Tabs>
+<TabItem value="mdx" label="mdx">
+
+```mdx title="markdown/welcome.mdx" switcher
+import { MyComponent } from 'my-component'
+
+# Welcome to my MDX page! {#welcome-to-my-mdx-page}
+
+This is some **bold** and _italics_ text.
+
+This is a list in markdown:
+
+- One
+- Two
+- Three
+
+Checkout my React component:
+
+<MyComponent />
+```
+
+</TabItem>
+</Tabs>
+
+ページ内でMDXファイルをインポートしてコンテンツを表示します:
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/mdx-page/page.tsx" switcher
+import Welcome from '@/markdown/welcome.mdx'
+
+export default function Page() {
+  return <Welcome />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/mdx-page/page.js" switcher
+import Welcome from '@/markdown/welcome.mdx'
+
+export default function Page() {
+  return <Welcome />
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/mdx-page.tsx" switcher
+import Welcome from '@/markdown/welcome.mdx'
+
+export default function Page() {
+  return <Welcome />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/mdx-page.js" switcher
+import Welcome from '@/markdown/welcome.mdx'
+
+export default function Page() {
+  return <Welcome />
+}
+```
+
+</TabItem>
+</Tabs>
+
+</PagesOnly>
+
+`/mdx-page`ルートに移動すると、レンダリングされたMDXページが表示されるはずです。
+
+<AppOnly>
+
+### 動的インポートを使用する {#using-dynamic-imports}
+
+ファイルシステムルーティングを使用せずに、動的なMDXコンポーネントをインポートできます。
+
+例えば、別のディレクトリからMDXコンポーネントをロードする動的ルートセグメントを持つことができます:
+
+<Image
+  alt="動的MDXコンポーネントのルートセグメント"
+  srcLight="/docs/light/mdx-files.png"
+  srcDark="/docs/dark/mdx-files.png"
+  width="1600"
+  height="849"
+/>
+
+[`generateStaticParams`](/docs/app/api-reference/functions/generate-static-params)を使用して、提供されたルートを事前レンダリングできます。`dynamicParams`を`false`に設定すると、`generateStaticParams`で定義されていないルートにアクセスすると404になります。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/[slug]/page.tsx" switcher
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const { default: Post } = await import(`@/content/${slug}.mdx`)
+
+  return <Post />
+}
+
+export function generateStaticParams() {
+  return [{ slug: 'welcome' }, { slug: 'about' }]
+}
+
+export const dynamicParams = false
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/[slug]/page.js" switcher
+export default async function Page({ params }) {
+  const { slug } = await params
+  const { default: Post } = await import(`@/content/${slug}.mdx`)
+
+  return <Post />
+}
+
+export function generateStaticParams() {
+  return [{ slug: 'welcome' }, { slug: 'about' }]
+}
+
+export const dynamicParams = false
+```
+
+</TabItem>
+</Tabs>
+
+> **Good to know**: インポート時に`.mdx`ファイル拡張子を指定してください。[モジュールパスエイリアス](/docs/app/getting-started/installation#set-up-absolute-imports-and-module-path-aliases)（例: `@/content`）を使用する必要はありませんが、インポートパスを簡素化します。
+
+</AppOnly>
+
+## カスタムスタイルとコンポーネントの使用 {#using-custom-styles-and-components}
+
+MarkdownはレンダリングされるとネイティブのHTML要素にマッピングされます。例えば、次のMarkdownを書くと:
+
+```md
+## This is a heading {#this-is-a-heading}
+
+This is a list in markdown:
+
+- One
+- Two
+- Three
+```
+
+次のHTMLが生成されます:
+
+```html
+<h2>This is a heading</h2>
+
+<p>This is a list in markdown:</p>
+
+<ul>
+  <li>One</li>
+  <li>Two</li>
+  <li>Three</li>
+</ul>
+```
+
+Markdownをスタイルするには、生成されたHTML要素にマッピングされるカスタムコンポーネントを提供できます。スタイルとコンポーネントは、グローバル、ローカル、および共有レイアウトで実装できます。
+
+### グローバルスタイルとコンポーネント {#global-styles-and-components}
+
+`mdx-components.tsx`にスタイルとコンポーネントを追加すると、アプリケーション内の*すべての* MDXファイルに影響します。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="mdx-components.tsx" switcher
+import type { MDXComponents } from 'mdx/types'
+import Image, { ImageProps } from 'next/image'
+
+// このファイルでは、MDXファイルで使用するカスタムReactコンポーネントを提供できます。
+// インラインスタイル、他のライブラリからのコンポーネントなど、任意のReactコンポーネントをインポートして使用できます。
+
+export function useMDXComponents(components: MDXComponents): MDXComponents {
+  return {
+    // 組み込みコンポーネントをカスタマイズして、スタイリングを追加できます。
+    h1: ({ children }) => (
+      <h1 style={{ color: 'red', fontSize: '48px' }}>{children}</h1>
+    ),
+    img: (props) => (
+      <Image
+        sizes="100vw"
+        style={{ width: '100%', height: 'auto' }}
+        {...(props as ImageProps)}
+      />
+    ),
+    ...components,
+  }
+}
+```
+
+</TabItem>
+<TabItem value="js" label="JavaScript">
+
+```js title="mdx-components.js" switcher
+import Image from 'next/image'
+
+// このファイルでは、MDXファイルで使用するカスタムReactコンポーネントを提供できます。
+// インラインスタイル、他のライブラリからのコンポーネントなど、任意のReactコンポーネントをインポートして使用できます。
+
+export function useMDXComponents(components) {
+  return {
+    // 組み込みコンポーネントをカスタマイズして、スタイリングを追加できます。
+    h1: ({ children }) => (
+      <h1 style={{ color: 'red', fontSize: '48px' }}>{children}</h1>
+    ),
+    img: (props) => (
+      <Image
+        sizes="100vw"
+        style={{ width: '100%', height: 'auto' }}
+        {...props}
+      />
+    ),
+    ...components,
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### ローカルスタイルとコンポーネント {#local-styles-and-components}
+
+インポートしたMDXコンポーネントにスタイルとコンポーネントを渡すことで、特定のページにローカルスタイルとコンポーネントを適用できます。これらは[グローバルスタイルとコンポーネント](#global-styles-and-components)とマージされ、上書きされます。
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/mdx-page/page.tsx" switcher
+import Welcome from '@/markdown/welcome.mdx'
+
+function CustomH1({ children }) {
+  return <h1 style={{ color: 'blue', fontSize: '100px' }}>{children}</h1>
+}
+
+const overrideComponents = {
+  h1: CustomH1,
+}
+
+export default function Page() {
+  return <Welcome components={overrideComponents} />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/mdx-page/page.js" switcher
+import Welcome from '@/markdown/welcome.mdx'
+
+function CustomH1({ children }) {
+  return <h1 style={{ color: 'blue', fontSize: '100px' }}>{children}</h1>
+}
+
+const overrideComponents = {
+  h1: CustomH1,
+}
+
+export default function Page() {
+  return <Welcome components={overrideComponents} />
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/mdx-page.tsx" switcher
+import Welcome from '@/markdown/welcome.mdx'
+
+function CustomH1({ children }) {
+  return <h1 style={{ color: 'blue', fontSize: '100px' }}>{children}</h1>
+}
+
+const overrideComponents = {
+  h1: CustomH1,
+}
+
+export default function Page() {
+  return <Welcome components={overrideComponents} />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/mdx-page.js" switcher
+import Welcome from '@/markdown/welcome.mdx'
+
+function CustomH1({ children }) {
+  return <h1 style={{ color: 'blue', fontSize: '100px' }}>{children}</h1>
+}
+
+const overrideComponents = {
+  h1: CustomH1,
+}
+
+export default function Page() {
+  return <Welcome components={overrideComponents} />
+}
+```
+
+</TabItem>
+</Tabs>
+
+</PagesOnly>
+
+### 共有レイアウト {#shared-layouts}
+
+<AppOnly>
+
+MDXページ間でレイアウトを共有するには、App Routerで[組み込みのレイアウトサポート](/docs/app/building-your-application/routing/layouts-and-templates#layouts)を使用できます。
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/mdx-page/layout.tsx" switcher
+export default function MdxLayout({ children }: { children: React.ReactNode }) {
+  // ここで共有レイアウトやスタイルを作成します
+  return <div style={{ color: 'blue' }}>{children}</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/mdx-page/layout.js" switcher
+export default function MdxLayout({ children }) {
+  // ここで共有レイアウトやスタイルを作成します
+  return <div style={{ color: 'blue' }}>{children}</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+MDXページ周りでレイアウトを共有するには、レイアウトコンポーネントを作成します:
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="components/mdx-layout.tsx" switcher
+export default function MdxLayout({ children }: { children: React.ReactNode }) {
+  // ここで共有レイアウトやスタイルを作成します
+  return <div style={{ color: 'blue' }}>{children}</div>
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="components/mdx-layout.js" switcher
+export default function MdxLayout({ children }) {
+  // ここで共有レイアウトやスタイルを作成します
+  return <div style={{ color: 'blue' }}>{children}</div>
+}
+```
+
+</TabItem>
+</Tabs>
+
+次に、レイアウトコンポーネントをMDXページにインポートし、MDXコンテンツをレイアウトでラップしてエクスポートします:
+
+```mdx
+import MdxLayout from '../components/mdx-layout'
+
+# Welcome to my MDX page! {#welcome-to-my-mdx-page}
+
+export default function MDXPage({ children }) {
+  return <MdxLayout>{children}</MdxLayout>
+
+}
+```
+
+</PagesOnly>
+
+### Tailwind typographyプラグインの使用 {#using-tailwind-typography-plugin}
+
+アプリケーションのスタイルに[Tailwind](https://tailwindcss.com)を使用している場合、[`@tailwindcss/typography`プラグイン](https://tailwindcss.com/docs/plugins#typography)を使用すると、Tailwindの設定とスタイルをMarkdownファイルで再利用できます。
+
+このプラグインは、Markdownのようなソースからのコンテンツブロックにタイポグラフィスタイルを追加するための`prose`クラスを追加します。
+
+[Tailwind typographyをインストール](https://github.com/tailwindlabs/tailwindcss-typography?tab=readme-ov-file#installation)し、[共有レイアウト](#shared-layouts)で使用して、必要な`prose`を追加します。
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/mdx-page/layout.tsx" switcher
+export default function MdxLayout({ children }: { children: React.ReactNode }) {
+  // ここで共有レイアウトやスタイルを作成します
+  return (
+    <div className="prose prose-headings:mt-8 prose-headings:font-semibold prose-headings:text-black prose-h1:text-5xl prose-h2:text-4xl prose-h3:text-3xl prose-h4:text-2xl prose-h5:text-xl prose-h6:text-lg dark:prose-headings:text-white">
+      {children}
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/mdx-page/layout.js" switcher
+export default function MdxLayout({ children }) {
+  // ここで共有レイアウトやスタイルを作成します
+  return (
+    <div className="prose prose-headings:mt-8 prose-headings:font-semibold prose-headings:text-black prose-h1:text-5xl prose-h2:text-4xl prose-h3:text-3xl prose-h4:text-2xl prose-h5:text-xl prose-h6:text-lg dark:prose-headings:text-white">
+      {children}
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+MDXページ周りでレイアウトを共有するには、レイアウトコンポーネントを作成します:
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="components/mdx-layout.tsx" switcher
+export default function MdxLayout({ children }: { children: React.ReactNode }) {
+  // ここで共有レイアウトやスタイルを作成します
+  return (
+    <div className="prose prose-headings:mt-8 prose-headings:font-semibold prose-headings:text-black prose-h1:text-5xl prose-h2:text-4xl prose-h3:text-3xl prose-h4:text-2xl prose-h5:text-xl prose-h6:text-lg dark:prose-headings:text-white">
+      {children}
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="components/mdx-layout.js" switcher
+export default function MdxLayout({ children }) {
+  // ここで共有レイアウトやスタイルを作成します
+  return (
+    <div className="prose prose-headings:mt-8 prose-headings:font-semibold prose-headings:text-black prose-h1:text-5xl prose-h2:text-4xl prose-h3:text-3xl prose-h4:text-2xl prose-h5:text-xl prose-h6:text-lg dark:prose-headings:text-white">
+      {children}
+    </div>
+  )
+}
+```
+
+</TabItem>
+</Tabs>
+
+次に、レイアウトコンポーネントをMDXページにインポートし、MDXコンテンツをレイアウトでラップしてエクスポートします:
+
+```mdx
+import MdxLayout from '../components/mdx-layout'
+
+# Welcome to my MDX page! {#welcome-to-my-mdx-page}
+
+export default function MDXPage({ children }) {
+  return <MdxLayout>{children}</MdxLayout>
+
+}
+```
+
+</PagesOnly >
+
+## Frontmatter {#frontmatter}
+
+Frontmatterは、ページに関するデータを保存するために使用されるYAMLのようなキー/値のペアリングです。`@next/mdx`はデフォルトではfrontmatterをサポートしていませんが、MDXコンテンツにfrontmatterを追加するための多くのソリューションがあります。例えば:
+
+- [remark-frontmatter](https://github.com/remarkjs/remark-frontmatter)
+- [remark-mdx-frontmatter](https://github.com/remcohaszing/remark-mdx-frontmatter)
+- [gray-matter](https://github.com/jonschlinkert/gray-matter)
+
+`@next/mdx`は、他のJavaScriptコンポーネントと同様にエクスポートを使用することを許可しています:
+
+<Tabs>
+<TabItem value="mdx" label="mdx">
+
+```mdx title="content/blog-post.mdx" switcher
+export const metadata = {
+  author: 'John Doe',
+}
+
+# Blog post {#blog-post}
+```
+
+</TabItem>
+</Tabs>
+
+メタデータは、MDXファイルの外部で参照できます:
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/blog/page.tsx" switcher
+import BlogPost, { metadata } from '@/content/blog-post.mdx'
+
+export default function Page() {
+  console.log('metadata: ', metadata)
+  //=> { author: 'John Doe' }
+  return <BlogPost />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/blog/page.js" switcher
+import BlogPost, { metadata } from '@/content/blog-post.mdx'
+
+export default function Page() {
+  console.log('metadata: ', metadata)
+  //=> { author: 'John Doe' }
+  return <BlogPost />
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/blog.tsx" switcher
+import BlogPost, { metadata } from '@/content/blog-post.mdx'
+
+export default function Page() {
+  console.log('metadata: ', metadata)
+  //=> { author: 'John Doe' }
+  return <BlogPost />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/blog.js" switcher
+import BlogPost, { metadata } from '@/content/blog-post.mdx'
+
+export default function Page() {
+  console.log('metadata: ', metadata)
+  //=> { author: 'John Doe' }
+  return <BlogPost />
+}
+```
+
+</TabItem>
+</Tabs>
+
+</PagesOnly>
+
+これの一般的な使用例は、MDXのコレクションを反復処理してデータを抽出したい場合です。例えば、すべてのブログ投稿からブログインデックスページを作成することです。[Nodeの`fs`モジュール](https://nodejs.org/api/fs.html)や[globby](https://www.npmjs.com/package/globby)などのパッケージを使用して、投稿のディレクトリを読み取り、メタデータを抽出できます。
+
+> **Good to know**:
+>
+> - `fs`、`globby`などはサーバーサイドでのみ使用できます。
+> - 完全な動作例については、[Portfolio Starter Kit](https://vercel.com/templates/next.js/portfolio-starter-kit)テンプレートを参照してください。
+
+## remarkとrehypeプラグイン {#remark-and-rehype-plugins}
+
+MDXコンテンツを変換するために、remarkとrehypeプラグインをオプションで提供できます。
+
+例えば、[`remark-gfm`](https://github.com/remarkjs/remark-gfm)を使用してGitHub Flavored Markdownをサポートできます。
+
+remarkとrehypeのエコシステムはESMのみであるため、設定ファイルとして`next.config.mjs`または`next.config.ts`を使用する必要があります。
+
+```js title="next.config.mjs"
+import remarkGfm from 'remark-gfm'
+import createMDX from '@next/mdx'
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // ファイルの.md拡張子を許可
+  pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+  // 必要に応じて、他のNext.jsの設定を以下に追加
+}
+
+const withMDX = createMDX({
+  // 必要に応じてMarkdownプラグインをここに追加
+  options: {
+    remarkPlugins: [remarkGfm],
+    rehypePlugins: [],
+  },
+})
+
+// MDXとNext.jsの設定を組み合わせる
+export default withMDX(nextConfig)
+```
+
+### Turbopackでのプラグインの使用 {#using-plugins-with-turbopack}
+
+[Turbopack](/docs/app/api-reference/turbopack)でプラグインを使用するには、最新の`@next/mdx`にアップグレードし、プラグイン名を文字列で指定します:
+
+```js title="next.config.mjs"
+import createMDX from '@next/mdx'
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+}
+
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: [],
+    rehypePlugins: [['rehype-katex', { strict: true, throwOnError: true }]],
+  },
+})
+
+export default withMDX(nextConfig)
+```
+
+> **Good to know**:
+>
+> シリアライズ可能なオプションを持たないremarkとrehypeプラグインは、[Turbopack](/docs/app/api-reference/turbopack)ではまだ使用できません。これは、[JavaScript関数をRustに渡すことができないため](https://github.com/vercel/next.js/issues/71819#issuecomment-2461802968)です。
+
+## リモートMDX {#remote-mdx}
+
+MDXファイルやコンテンツが*他の場所に*ある場合、サーバー上で動的にフェッチできます。これは、CMS、データベース、または他の場所に保存されているコンテンツに便利です。この用途のためのコミュニティパッケージは[`next-mdx-remote-client`](https://github.com/ipikuka/next-mdx-remote-client?tab=readme-ov-file#the-part-associated-with-nextjs-app-router)です。
+
+> **Good to know**: 注意して進めてください。MDXはJavaScriptにコンパイルされ、サーバー上で実行されます。信頼できるソースからのみMDXコンテンツをフェッチする必要があります。そうでない場合、リモートコード実行（RCE）につながる可能性があります。
+
+次の例では、`next-mdx-remote-client`を使用しています:
+
+<AppOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="app/mdx-page-remote/page.tsx" switcher
+import { MDXRemote } from 'next-mdx-remote-client/rsc'
+
+export default async function RemoteMdxPage() {
+  // MDXテキスト - データベース、CMS、フェッチ、どこからでも...
+  const res = await fetch('https://...')
+  const markdown = await res.text()
+  return <MDXRemote source={markdown} />
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="app/mdx-page-remote/page.js" switcher
+import { MDXRemote } from 'next-mdx-remote-client/rsc'
+
+export default async function RemoteMdxPage() {
+  // MDXテキスト - データベース、CMS、フェッチ、どこからでも...
+  const res = await fetch('https://...')
+  const markdown = await res.text()
+  return <MDXRemote source={markdown} />
+}
+```
+
+</TabItem>
+</Tabs>
+
+</AppOnly>
+
+<PagesOnly>
+
+<Tabs>
+<TabItem value="tsx" label="TypeScript">
+
+```tsx title="pages/mdx-page-remote.tsx" switcher
+import {
+  serialize,
+  type SerializeResult,
+} from 'next-mdx-remote-client/serialize'
+import { MDXClient } from 'next-mdx-remote-client'
+
+type Props = {
+  mdxSource: SerializeResult
+}
+
+export default function RemoteMdxPage({ mdxSource }: Props) {
+  if ('error' in mdxSource) {
+    // エラーUIをレンダリングするか、`mdxSource.error`をスローします
+  }
+  return <MDXClient {...mdxSource} />
+}
+
+export async function getStaticProps() {
+  // MDXテキスト - データベース、CMS、フェッチ、どこからでも...
+  const res = await fetch('https:...')
+  const mdxText = await res.text()
+  const mdxSource = await serialize({ source: mdxText })
+  return { props: { mdxSource } }
+}
+```
+
+</TabItem>
+<TabItem value="jsx" label="JavaScript">
+
+```jsx title="pages/mdx-page-remote.js" switcher
+import { serialize } from 'next-mdx-remote-client/serialize'
+import { MDXClient } from 'next-mdx-remote-client'
+
+export default function RemoteMdxPage({ mdxSource }) {
+  if ('error' in mdxSource) {
+    // エラーUIをレンダリングするか、`mdxSource.error`をスローします
+  }
+  return <MDXClient {...mdxSource} />
+}
+
+export async function getStaticProps() {
+  // MDXテキスト - データベース、CMS、フェッチ、どこからでも...
+  const res = await fetch('https:...')
+  const mdxText = await res.text()
+  const mdxSource = await serialize({ source: mdxText })
+  return { props: { mdxSource } }
+}
+```
+
+</TabItem>
+</Tabs>
+
+</PagesOnly>
+
+`/mdx-page-remote`ルートに移動すると、レンダリングされたMDXが表示されるはずです。
+
+## 深掘り: MarkdownをHTMLに変換する方法 {#deep-dive-how-do-you-transform-markdown-into-html}
+
+ReactはネイティブにMarkdownを理解しません。Markdownのプレーンテキストは、まずHTMLに変換する必要があります。これは`remark`と`rehype`で実現できます。
+
+`remark`はMarkdownに関するツールのエコシステムです。`rehype`はHTMLに関する同様のものです。例えば、次のコードスニペットはMarkdownをHTMLに変換します:
+
+```js
+import { unified } from 'unified'
+import remarkParse from 'remark-parse'
+import remarkRehype from 'remark-rehype'
+import rehypeSanitize from 'rehype-sanitize'
+import rehypeStringify from 'rehype-stringify'
+
+main()
+
+async function main() {
+  const file = await unified()
+    .use(remarkParse) // Markdown ASTに変換
+    .use(remarkRehype) // HTML ASTに変換
+    .use(rehypeSanitize) // HTML入力をサニタイズ
+    .use(rehypeStringify) // ASTをシリアライズされたHTMLに変換
+    .process('Hello, Next.js!')
+
+  console.log(String(file)) // <p>Hello, Next.js!</p>
+}
+```
+
+`remark`と`rehype`のエコシステムには、[シンタックスハイライト](https://github.com/atomiks/rehype-pretty-code)、[見出しのリンク](https://github.com/rehypejs/rehype-autolink-headings)、[目次の生成](https://github.com/remarkjs/remark-toc)などのプラグインがあります。
+
+上記のように`@next/mdx`を使用する場合、`remark`や`rehype`を直接使用する必要はありません。これらは自動的に処理されます。ここでは、`@next/mdx`パッケージが内部で行っていることをより深く理解するために説明しています。
+
+## RustベースのMDXコンパイラの使用（実験的） {#using-the-rust-based-mdx-compiler-experimental}
+
+Next.jsはRustで書かれた新しいMDXコンパイラをサポートしています。このコンパイラはまだ実験的であり、本番環境での使用は推奨されません。新しいコンパイラを使用するには、`withMDX`に渡すときに`next.config.js`を設定する必要があります:
+
+```js title="next.config.js"
+module.exports = withMDX({
+  experimental: {
+    mdxRs: true,
+  },
+})
+```
+
+`mdxRs`は、mdxファイルを変換する方法を設定するオブジェクトも受け入れます。
+
+```js title="next.config.js"
+module.exports = withMDX({
+  experimental: {
+    mdxRs: {
+      jsxRuntime?: string            // カスタムjsxランタイム
+      jsxImportSource?: string       // カスタムjsxインポートソース
+      mdxType?: 'gfm' | 'commonmark' // 解析と変換に使用するmdx構文の種類を設定
+    },
+  },
+})
+```
+
+## 参考リンク {#helpful-links}
+
+- [MDX](https://mdxjs.com)
+- [`@next/mdx`](https://www.npmjs.com/package/@next/mdx)
+- [remark](https://github.com/remarkjs/remark)
+- [rehype](https://github.com/rehypejs/rehype)
+- [Markdoc](https://markdoc.dev/docs/nextjs)
